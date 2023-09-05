@@ -1,3 +1,7 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.base {
+  @apply max-w-screen-xl w-full
+}
