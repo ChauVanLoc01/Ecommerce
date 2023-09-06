@@ -7,7 +7,8 @@ import {
   arrow,
   FloatingArrow,
   safePolygon,
-  offset
+  offset,
+  shift
 } from '@floating-ui/react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { type AnimationProps } from 'framer-motion'
@@ -51,7 +52,8 @@ function Popover({
       arrow({
         element: arrowRef
       }),
-      offset(5)
+      offset(5),
+      shift()
     ],
     transform: false
   })
