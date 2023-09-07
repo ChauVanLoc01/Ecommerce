@@ -12,6 +12,7 @@ function Sidebar() {
         title='Quản lý Shop'
         content={
           <>
+            <button className='hover:text-primary'>Tổng quan</button>
             <button className='hover:text-primary'>Hồ sơ</button>
             <button className='hover:text-primary'>Danh mục</button>
             <button className='hover:text-primary'>Đánh giá</button>
@@ -47,9 +48,9 @@ function Sidebar() {
         title='Vận chuyển'
         content={
           <>
-            <button>Quản lý vận chuyển</button>
-            <button>Giao Hàng Loạt</button>
-            <button>Cài đặt vận chuyển</button>
+            <button className='hover:text-primary'>Quản lý vận chuyển</button>
+            <button className='hover:text-primary'>Giao Hàng Loạt</button>
+            <button className='hover:text-primary'>Cài đặt vận chuyển</button>
           </>
         }
       />
