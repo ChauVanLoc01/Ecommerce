@@ -10,6 +10,9 @@ export default {
         lg: '1024px',
         xl: '1440px',
         xxl: '2560px'
+      },
+      colors: {
+        primary: '#E54A2B'
       }
     }
   },

@@ -10,7 +10,7 @@ import Notification from '../Notification'
 
 function Header() {
   return (
-    <div className='flex justify-between items-center border-b-2 border-gray-100 p-2 shadow-sm bg-gray-50/70'>
+    <div className='flex justify-between items-center border-b-2 border-gray-100 p-2 shadow-sm bg-white'>
       <div className='space-x-2 flex items-center'>
         <Link to='/' className='flex items-center space-x-2'>
           <Icon icon={<FaOpencart />} size='50px' color='#fa541c' />
@@ -35,13 +35,13 @@ function Header() {
           }
           floatingClassName='flex flex-col items-start border border-gray-200 rounded-md shadow-md bg-white p-2'
           hasArrow={true}
-          arrowClassName='w-3 h-3 fill-white'
+          arrowClassName='w-3 h-3'
           arrowStrokeColor='#f0f0f0'
           arrowStrokeWidth={1}
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: 'auto' }}
-          exit={{ opacity: 0, height: 0 }}
-          transition={{ duration: 0.14 }}
+          initial={{ opacity: 0, height: 0, overflow: 'hidden' }}
+          animate={{ opacity: 1, height: 'auto', overflow: 'hidden' }}
+          exit={{ opacity: 0, height: 0, overflow: 'hidden' }}
+          transition={{ duration: 0.2 }}
         />
         <div className='flex items-center space-x-4'>
           <div>
@@ -142,13 +142,13 @@ function Header() {
               }
               floatingClassName='bg-white shadow-md border border-gray-100 rounded-md max-w-[300px]'
               hasArrow={true}
+              arrowClassName='w-3 h-3 fill-white'
               arrowStrokeColor='#f0f0f0'
               arrowStrokeWidth={1}
-              arrowClassName='fill-white'
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.14 }}
+              initial={{ opacity: 0, height: 0, overflow: 'hidden' }}
+              animate={{ opacity: 1, height: 'auto', overflow: 'hidden' }}
+              exit={{ opacity: 0, height: 0, overflow: 'hidden' }}
+              transition={{ duration: 0.2 }}
             />
           </div>
           <div>
