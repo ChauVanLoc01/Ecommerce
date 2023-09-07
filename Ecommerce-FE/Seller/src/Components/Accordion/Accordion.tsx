@@ -14,7 +14,7 @@ type AccordionProps = {
 function Accordion({ content, title, icon, rootClassName, duration = 0.2 }: AccordionProps) {
   const [isOpen, setIsOpen] = useState(false)
   return (
-    <div className={`${rootClassName} text-xs px-2`}>
+    <div className={`${rootClassName} text-xs px-2 space-y-2`}>
       <button
         onClick={() => setIsOpen(!isOpen)}
         className='flex items-center justify-between group cursor-pointer text-gray-400 font-semibold w-full'
@@ -36,7 +36,7 @@ function Accordion({ content, title, icon, rootClassName, duration = 0.2 }: Acco
               overflow: 'hidden'
             }}
             transition={{ duration, ease: [0.2, 0.2, 0.2, 0.3] }}
-            className='text-gray-600 text-xs pl-5 pr-2 py-1 space-y-1 flex flex-col items-start'
+            className='text-xs pl-5 pr-2 space-y-2 flex flex-col items-start'
           >
             {content}
           </motion.div>

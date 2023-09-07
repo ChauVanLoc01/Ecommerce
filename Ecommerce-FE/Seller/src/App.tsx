@@ -8,7 +8,7 @@ const Register = React.lazy(() => import('./Pages/Register'))
 
 function App() {
   return (
-    <div className='base'>
+    <div className='xll:max-w-screen-xl mx-auto w-full overflow-hidden text-sm bg-[#F6F6F6]'>
       <Header />
       <Routes>
         <Route index element={<Home />} />
