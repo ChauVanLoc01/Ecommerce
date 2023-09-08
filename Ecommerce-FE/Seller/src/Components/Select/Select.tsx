@@ -71,18 +71,20 @@ function Select({
       })}
     >
       <div
-        className={`cursor-pointer border border-gray-200 rounded-xs flex justify-between items-center ${refClassName} hover:border-gray-400`}
+        className={`cursor-pointer border border-gray-200 flex justify-between items-center ${refClassName} hover:border-gray-400`}
         ref={refs.setReference}
         {...getReferenceProps()}
       >
-        <span>{selected === undefined ? (defaultValue ? data[defaultValue] : title) : data[selected]}</span>
+        <span className='line-clamp-1'>
+          {selected === undefined ? (defaultValue ? data[defaultValue] : title) : data[selected]}
+        </span>
         {!isOpen ? <Icon icon={<GoChevronDown />} size='16px' /> : <Icon icon={<GoChevronUp />} size='16px' />}
       </div>
       {isOpen && (
         <FloatingPortal>
           <AnimatePresence>
             <motion.div
-              className={`flex flex-col items-start text-xs bg-white rounded-xs shadow-md overflow-hidden border border-gray-100 ${floatingClassNames}`}
+              className={`flex flex-col items-start text-xs bg-white shadow-md overflow-hidden border border-gray-100 ${floatingClassNames}`}
               ref={refs.setFloating}
               {...getFloatingProps()}
               style={floatingStyles}
@@ -97,12 +99,9 @@ function Select({
             >
               {data.map((e, i) => (
                 <span
-                  className={classNames(
-                    `rounded-xs cursor-default hover:bg-gray-100 w-full truncate ${itemInFloatingClassname}`,
-                    {
-                      'bg-gray-100': selected === i
-                    }
-                  )}
+                  className={classNames(`cursor-default hover:bg-gray-100 w-full truncate ${itemInFloatingClassname}`, {
+                    'bg-gray-100': selected === i
+                  })}
                   onClick={() => {
                     setSelected(i)
                     setChoosed && setChoosed(data[i])

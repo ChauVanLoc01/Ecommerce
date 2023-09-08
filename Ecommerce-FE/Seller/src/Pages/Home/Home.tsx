@@ -8,7 +8,7 @@ function Home() {
       <div className='basis-1/5'>
         <Sidebar />
       </div>
-      <Scrollbars style={{ width: '100%', height: 'auto' }} autoHide className='lg:basis-4/5 w-full'>
+      <Scrollbars style={{ width: '100%', height: 'auto' }} autoHide={true} className='lg:basis-4/5 w-full'>
         <Outlet />
       </Scrollbars>
     </div>
