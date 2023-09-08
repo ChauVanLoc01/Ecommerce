@@ -13,6 +13,9 @@ export default {
       },
       colors: {
         primary: '#E54A2B'
+      },
+      borderRadius: {
+        xs: '4px'
       }
     }
   },
