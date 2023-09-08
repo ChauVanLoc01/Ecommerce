@@ -13,9 +13,3 @@
   padding: 0;
   font: inherit;
 }
-
-@layer components {
-  .base {
-    @apply max-w-screen-xl mx-auto w-full overflow-hidden text-sm bg-[#F6F6F6]
-  }
-}

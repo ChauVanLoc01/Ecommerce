@@ -3,20 +3,35 @@ import { LuNewspaper } from 'react-icons/lu'
 import { LiaTruckSolid } from 'react-icons/lia'
 import { BsShop } from 'react-icons/bs'
 import { AiOutlineShoppingCart } from 'react-icons/ai'
+import { Link } from 'react-router-dom'
 
-function Sidebar() {
+type SidebarProps = {
+  rootClassName?: string
+}
+
+function Sidebar({ rootClassName }: SidebarProps) {
   return (
-    <div className='py-5 space-y-3 border-r border-gray-100 bg-white h-screen'>
+    <div className={`py-5 space-y-3 border-r border-gray-100 bg-white h-screen ${rootClassName}`}>
       <Accordion
         icon={<BsShop />}
         title='Quản lý Shop'
         content={
           <>
-            <button className='hover:text-primary'>Tổng quan</button>
-            <button className='hover:text-primary'>Hồ sơ</button>
-            <button className='hover:text-primary'>Danh mục</button>
-            <button className='hover:text-primary'>Đánh giá</button>
-            <button className='hover:text-primary'>Phân tích bán hàng</button>
+            <Link to={'/'} className='hover:text-primary'>
+              Tổng quan
+            </Link>
+            <Link to={'/'} className='hover:text-primary'>
+              Hồ sơ
+            </Link>
+            <Link to={'/'} className='hover:text-primary'>
+              Danh mục
+            </Link>
+            <Link to={'/'} className='hover:text-primary'>
+              Đánh giá
+            </Link>
+            <Link to={'/'} className='hover:text-primary'>
+              Phân tích bán hàng
+            </Link>
           </>
         }
         duration={0.26}
@@ -26,9 +41,15 @@ function Sidebar() {
         title='Quản lý đơn hàng'
         content={
           <>
-            <button className='hover:text-primary'>Tất cả</button>
-            <button className='hover:text-primary'>Đơn hủy</button>
-            <button className='hover:text-primary'>Trả hàng / Hoàn tiền</button>
+            <Link to={'/'} className='hover:text-primary'>
+              Tất cả
+            </Link>
+            <Link to={'/'} className='hover:text-primary'>
+              Đơn hủy
+            </Link>
+            <Link to={'/'} className='hover:text-primary'>
+              Trả hàng / Hoàn tiền
+            </Link>
           </>
         }
       />
@@ -37,9 +58,15 @@ function Sidebar() {
         title='Quản lý sản phẩm'
         content={
           <>
-            <button className='hover:text-primary'>Tất cả sản phẩm</button>
-            <button className='hover:text-primary'>Thêm sản phẩm</button>
-            <button className='hover:text-primary'>Cài đặt sản phẩm</button>
+            <Link to={'/'} className='hover:text-primary'>
+              Tất cả sản phẩm
+            </Link>
+            <Link to={'/'} className='hover:text-primary'>
+              Thêm sản phẩm
+            </Link>
+            <Link to={'/'} className='hover:text-primary'>
+              Cài đặt sản phẩm
+            </Link>
           </>
         }
       />
@@ -48,9 +75,15 @@ function Sidebar() {
         title='Vận chuyển'
         content={
           <>
-            <button className='hover:text-primary'>Quản lý vận chuyển</button>
-            <button className='hover:text-primary'>Giao Hàng Loạt</button>
-            <button className='hover:text-primary'>Cài đặt vận chuyển</button>
+            <Link to={'/'} className='hover:text-primary'>
+              Quản lý vận chuyển
+            </Link>
+            <Link to={'/'} className='hover:text-primary'>
+              Giao Hàng Loạt
+            </Link>
+            <Link to={'/'} className='hover:text-primary'>
+              Cài đặt vận chuyển
+            </Link>
           </>
         }
       />
