@@ -11,7 +11,7 @@ type SidebarProps = {
 
 function Sidebar({ rootClassName }: SidebarProps) {
   return (
-    <div className={`py-5 space-y-3 border-r border-gray-100 bg-white h-screen ${rootClassName}`}>
+    <div className={`py-5 space-y-3 border-r border-gray-100 bg-white h-screen ${rootClassName} lg:px-2 xl:px-3`}>
       <Accordion
         icon={<BsShop />}
         title='Quản lý Shop'
