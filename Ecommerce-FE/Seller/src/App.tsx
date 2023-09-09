@@ -7,6 +7,7 @@ const Login = React.lazy(() => import('./Pages/Login'))
 const Register = React.lazy(() => import('./Pages/Register'))
 const Management = React.lazy(() => import('./Components/Management'))
 const OverView = React.lazy(() => import('./Pages/Home/OverView'))
+const Rating = React.lazy(() => import('./Pages/Rating'))
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
           <Route path='/' element={<Home />}>
             <Route index element={<OverView />} />
             <Route path='mana' element={<Management />} />
+            <Route path='rating' element={<Rating />} />
           </Route>
           <Route path='login' element={<Login />} />
           <Route path='register' element={<Register />} />

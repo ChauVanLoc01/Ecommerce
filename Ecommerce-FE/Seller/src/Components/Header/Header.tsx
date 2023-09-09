@@ -10,7 +10,7 @@ import Notification from '../Notification'
 
 function Header() {
   return (
-    <div className='flex justify-between items-center border-b-2 border-gray-100 p-2 shadow-sm bg-white'>
+    <div className='flex justify-between items-center border-b-2 border-gray-100 xl:px-4 lg:px-3 py-2 shadow-sm bg-white'>
       <div className='space-x-2 flex items-center'>
         <Link to='/' className='flex items-center space-x-2'>
           <Icon icon={<FaOpencart />} size='50px' color='#fa541c' />
