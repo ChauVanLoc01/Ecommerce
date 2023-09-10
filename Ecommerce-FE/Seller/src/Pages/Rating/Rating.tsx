@@ -2,6 +2,7 @@ import { DatePicker, Table } from 'antd'
 import { ColumnsType } from 'antd/es/table'
 import { AiOutlineLine } from 'react-icons/ai'
 import Icon from 'src/Components/Icon'
+import Underline from 'src/Components/Underline'
 const { RangePicker } = DatePicker
 
 type TableHeaderData = {
@@ -34,7 +35,7 @@ const data: TableHeaderData[] = []
 function Rating() {
   return (
     <div className='p-2 text-xs'>
-      <div className='bg-white space-y-2 rounded-xs'>
+      <div className='bg-white space-y-3 rounded-xs'>
         <div className='flex items-end justify-between w-full border-b border-gray-200 py-2 px-3'>
           <div>
             <div className='font-medium text-base'>Đánh giá shop</div>
@@ -61,7 +62,7 @@ function Rating() {
           </div>
           <div className='flex space-x-2 items-center xl:basis-1/3 lg:basis-1/2 justify-end'>
             <label htmlFor=''>Người mua</label>
-            <div className='px-2 py-2 rounded-xs border border-gray-200'>
+            <div className='px-2 py-1.5 rounded-xs border border-gray-200'>
               <input className='outline-none w-full' placeholder='Nhập tên người mua' type='text' name='' id='' />
             </div>
           </div>
@@ -79,7 +80,22 @@ function Rating() {
             <button className='px-4 py-1 border border-gray-200 rounded-xs'>Nhập lại</button>
           </div>
         </div>
-        <div className='p-3 overflow-hidden'>
+        <div className='px-3'>
+          <Underline
+            rootClassName='border-b border-gray-200'
+            itemClassName='px-2 py-2 rounded-xs'
+            contents={[
+              'Tất cả',
+              'Chờ xác nhận',
+              'Chờ lấy hàng',
+              'Đang giao',
+              'Đã giao',
+              'Đơn hủy',
+              'Trả hàng/Hoàn tiền'
+            ]}
+          />
+        </div>
+        <div className='p-3 overflow-hidden space-y-2'>
           <div className='divide-x rounded-xs border border-gray-200 w-fit h-fit overflow-hidden'>
             <button className='px-3 py-1'>Tất cả</button>
             <button className='px-3 py-1'>5 sao</button>
@@ -88,8 +104,6 @@ function Rating() {
             <button className='px-3 py-1'>2 sao</button>
             <button className='px-3 py-1'>1 sao</button>
           </div>
-        </div>
-        <div className='px-3'>
           <Table
             columns={columns}
             dataSource={data}
