@@ -8,6 +8,7 @@ import { useState } from 'react'
 import type { ColumnsType } from 'antd/es/table'
 import { Link } from 'react-router-dom'
 import { Table } from 'antd'
+import Underline from '../Underline'
 const { RangePicker } = DatePicker
 
 type Delivery = ('TK' | 'HT' | 'NH' | 'KH')[]
@@ -133,16 +134,22 @@ function Management() {
   return (
     <div className='p-2'>
       <div className='bg-white rounded-xs space-y-4 text-xs'>
-        <div className='flex border-b border-gray-200 px-2'>
-          <button className='xl:px-4 md:px-3 py-3'>Tất cả</button>
-          <button className='xl:px-4 md:px-3 py-3'>Chờ xác nhận</button>
-          <button className='xl:px-4 md:px-3 py-3'>Chờ lấy hàng</button>
-          <button className='xl:px-4 md:px-3 py-3'>Đang giao</button>
-          <button className='xl:px-4 md:px-3 py-3'>Đã giao</button>
-          <button className='xl:px-4 md:px-3 py-3'>Đơn hủy</button>
-          <button className='xl:px-4 md:px-3 py-3'>Trả hàng/Hoàn tiền</button>
+        <div className='flex border-b border-gray-200'>
+          <Underline
+            contents={[
+              'Tất cả',
+              'Chờ xác nhận',
+              'Chờ lấy hàng',
+              'Đang giao',
+              'Đã giao',
+              'Đơn hủy',
+              'Trả hàng/Hoàn tiền'
+            ]}
+            rootClassName='px-3'
+            itemClassName='px-3 py-3'
+          />
         </div>
-        <div className='flex justify-end space-x-5 items-center px-2'>
+        <div className='flex justify-end space-x-5 items-center px-3'>
           <span>Ngày đặt hàng:</span>
           <RangePicker
             format={'DD-MM-YYYY'}
@@ -154,7 +161,7 @@ function Management() {
             <button className='px-3 py-1 border border-gray-400 rounded-xs'>Xuất</button>
           </div>
         </div>
-        <div className='px-2 flex items-center justify-between'>
+        <div className='px-3 flex items-center justify-between'>
           <div className='flex xl:basis-10/12 md:basis-3/4'>
             <div className='basis-4/12'>
               <Select
@@ -185,7 +192,7 @@ function Management() {
             <button className='px-3 py-1 hover:bg-gray-100 rounded-xs border border-gray-200'>Đặt lại</button>
           </div>
         </div>
-        <div className='flex justify-between px-2'>
+        <div className='flex justify-between px-3'>
           <span className='text-sm font-semibold'>0 Đơn hàng</span>
           <div>
             <button className='flex items-center space-x-2 px-2 py-1 rounded-xs border border-gray-200 hover:bg-primary/90 text-white bg-primary'>
@@ -194,7 +201,7 @@ function Management() {
             </button>
           </div>
         </div>
-        <div className='px-2'>
+        <div className='px-3'>
           <Table
             columns={columns}
             dataSource={data}
