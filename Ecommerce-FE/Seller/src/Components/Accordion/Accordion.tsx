@@ -36,7 +36,7 @@ function Accordion({ content, title, icon, rootClassName, duration = 0.2 }: Acco
               overflow: 'hidden'
             }}
             transition={{ duration, ease: [0.2, 0.2, 0.2, 0.3] }}
-            className='text-xs pl-5 pr-2 space-y-2 flex flex-col items-start'
+            className='text-xs xl:pl-6 pr-2 space-y-2 flex flex-col items-start'
           >
             {content}
           </motion.div>
