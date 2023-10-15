@@ -132,89 +132,79 @@ const data: TableHeaderData[] = [
 function Management() {
   const [choosed, setChoosed] = useState<string | undefined>(undefined)
   return (
-    <div className='p-2'>
-      <div className='bg-white rounded-xs space-y-4 text-xs'>
-        <div className='flex border-b border-gray-200'>
-          <Underline
-            contents={[
-              'Tất cả',
-              'Chờ xác nhận',
-              'Chờ lấy hàng',
-              'Đang giao',
-              'Đã giao',
-              'Đơn hủy',
-              'Trả hàng/Hoàn tiền'
-            ]}
-            rootClassName='px-3'
-            itemClassName='px-3 py-3'
-          />
+    <div className='bg-white rounded-xs space-y-4 text-xs'>
+      <div className='flex border-b border-gray-200'>
+        <Underline
+          contents={['Tất cả', 'Chờ xác nhận', 'Chờ lấy hàng', 'Đang giao', 'Đã giao', 'Đơn hủy', 'Trả hàng/Hoàn tiền']}
+          rootClassName='px-3'
+          itemClassName='px-3 py-3'
+        />
+      </div>
+      <div className='flex justify-end space-x-5 items-center px-3'>
+        <span>Ngày đặt hàng:</span>
+        <RangePicker
+          format={'DD-MM-YYYY'}
+          placeholder={['Ngày bắt đầu', 'Ngày kết thúc']}
+          separator={<Icon icon={<AiOutlineLine />} size='10px' color='#bfbfbf' />}
+          className='rounded-xs border-gray-200 hover:border-gray-400'
+        />
+        <div>
+          <button className='px-3 py-1 border border-gray-400 rounded-xs'>Xuất</button>
         </div>
-        <div className='flex justify-end space-x-5 items-center px-3'>
-          <span>Ngày đặt hàng:</span>
-          <RangePicker
-            format={'DD-MM-YYYY'}
-            placeholder={['Ngày bắt đầu', 'Ngày kết thúc']}
-            separator={<Icon icon={<AiOutlineLine />} size='10px' color='#bfbfbf' />}
-            className='rounded-xs border-gray-200 hover:border-gray-400'
-          />
-          <div>
-            <button className='px-3 py-1 border border-gray-400 rounded-xs'>Xuất</button>
+      </div>
+      <div className='px-3 flex items-center justify-between'>
+        <div className='flex xl:basis-10/12 md:basis-3/4'>
+          <div className='basis-4/12'>
+            <Select
+              title='Mã đơn hàng'
+              data={['Mã đơn hàng', 'Tên người mua', 'Sản phẩm', 'Mã vận đơn', 'Mã yêu cầu trả hàng']}
+              refClassName='py-[6px] px-2 rounded-none rounded-l-xs border-gray-200'
+              itemInFloatingClassname='px-2 py-1'
+              floatingClassNames='rounded-xs'
+              setChoosed={setChoosed}
+              defaultValue={1}
+            />
+          </div>
+          <div className='border rounded-r-xs border-gray-200 basis-8/12 flex items-center relative hover:border-gray-400'>
+            <input
+              className='outline-none w-full px-3 pr-8'
+              type='text'
+              name='search'
+              id='search'
+              placeholder={`Nhập ${choosed ? choosed.toLowerCase() : '...'}`}
+            />
+            <Icon icon={<GoSearch />} className='absolute right-2 top-1/2 -translate-y-1/2' size='16px' />
           </div>
         </div>
-        <div className='px-3 flex items-center justify-between'>
-          <div className='flex xl:basis-10/12 md:basis-3/4'>
-            <div className='basis-4/12'>
-              <Select
-                title='Mã đơn hàng'
-                data={['Mã đơn hàng', 'Tên người mua', 'Sản phẩm', 'Mã vận đơn', 'Mã yêu cầu trả hàng']}
-                refClassName='py-[6px] px-2 rounded-none rounded-l-xs border-gray-200'
-                itemInFloatingClassname='px-2 py-1'
-                floatingClassNames='rounded-xs'
-                setChoosed={setChoosed}
-                defaultValue={1}
-              />
-            </div>
-            <div className='border rounded-r-xs border-gray-200 basis-8/12 flex items-center relative hover:border-gray-400'>
-              <input
-                className='outline-none w-full px-3 pr-8'
-                type='text'
-                name='search'
-                id='search'
-                placeholder={`Nhập ${choosed ? choosed.toLowerCase() : '...'}`}
-              />
-              <Icon icon={<GoSearch />} className='absolute right-2 top-1/2 -translate-y-1/2' size='16px' />
-            </div>
-          </div>
-          <div>
-            <button className='px-3 py-1 bg-primary text-white hover:bg-primary/90 rounded-xs'>Tìm kiếm</button>
-          </div>
-          <div>
-            <button className='px-3 py-1 hover:bg-gray-100 rounded-xs border border-gray-200'>Đặt lại</button>
-          </div>
+        <div>
+          <button className='px-3 py-1 bg-primary text-white hover:bg-primary/90 rounded-xs'>Tìm kiếm</button>
         </div>
-        <div className='flex justify-between px-3'>
-          <span className='text-sm font-semibold'>0 Đơn hàng</span>
-          <div>
-            <button className='flex items-center space-x-2 px-2 py-1 rounded-xs border border-gray-200 hover:bg-primary/90 text-white bg-primary'>
-              <Icon icon={<BsStackOverflow />} size='18px' />
-              <span>Giao Hàng Loạt</span>
-            </button>
-          </div>
+        <div>
+          <button className='px-3 py-1 hover:bg-gray-100 rounded-xs border border-gray-200'>Đặt lại</button>
         </div>
-        <div className='px-3'>
-          <Table
-            columns={columns}
-            dataSource={data}
-            expandable={{
-              expandedRowRender: (record) => (
-                <div>
-                  <div className='font-semibold'>Chi tiết đơn hàng</div>
-                  <div>{record.name}</div>
-                </div>
-              )
-            }}
-          />
+      </div>
+      <div className='flex justify-between px-3'>
+        <span className='text-sm font-semibold'>0 Đơn hàng</span>
+        <div>
+          <button className='flex items-center space-x-2 px-2 py-1 rounded-xs border border-gray-200 hover:bg-primary/90 text-white bg-primary'>
+            <Icon icon={<BsStackOverflow />} size='18px' />
+            <span>Giao Hàng Loạt</span>
+          </button>
         </div>
+      </div>
+      <div className='px-3'>
+        <Table
+          columns={columns}
+          dataSource={data}
+          expandable={{
+            expandedRowRender: (record) => (
+              <div>
+                <div className='font-semibold'>Chi tiết đơn hàng</div>
+                <div>{record.name}</div>
+              </div>
+            )
+          }}
+        />
       </div>
     </div>
   )

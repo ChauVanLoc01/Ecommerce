@@ -7,10 +7,11 @@ import Popover from '../Popover'
 import { LiaGiftSolid } from 'react-icons/lia'
 import { BsListUl } from 'react-icons/bs'
 import Notification from '../Notification'
+import SimpleBar from 'simplebar-react'
 
 function Header() {
   return (
-    <div className='flex justify-between items-center border-b-2 border-gray-100 xl:px-4 lg:px-3 py-2 shadow-sm bg-white'>
+    <div className='flex justify-between items-center xl:px-4 lg:px-3 py-2 bg-white border border-gray-100'>
       <div className='space-x-2 flex items-center'>
         <Link to='/' className='flex items-center space-x-2'>
           <Icon icon={<FaOpencart />} size='50px' color='#fa541c' />
@@ -99,42 +100,46 @@ function Header() {
               refClassName='relative'
               floatingChild={
                 <>
-                  <div className='flex justify-between text-[10px] border-b border-gray-200 pb-2 p-3'>
+                  <div className='flex justify-between text-[10px] border-b border-gray-200 pb-2 p-3 space-x-4'>
                     <span>Thông báo đã nhận gần đây</span>
                     <button className='text-red-500'>Đánh dấu đã đọc tất cả</button>
                   </div>
-                  <div className='p-3 space-y-3 max-h-72 overflow-y-scroll'>
-                    <Notification
-                      rootClass='gap-x-2'
-                      imgClass='w-8 h-8 object-cover shrink-0'
-                      titleClass='text-[11px]'
-                      footerClass='text-[10px] text-gray-400'
-                    />
-                    <Notification
-                      rootClass='gap-x-2'
-                      imgClass='w-8 h-8 object-cover shrink-0'
-                      titleClass='text-[11px]'
-                      footerClass='text-[10px] text-gray-400'
-                    />
-                    <Notification
-                      rootClass='gap-x-2'
-                      imgClass='w-8 h-8 object-cover shrink-0'
-                      titleClass='text-[11px]'
-                      footerClass='text-[10px] text-gray-400'
-                    />
-                    <Notification
-                      rootClass='gap-x-2'
-                      imgClass='w-8 h-8 object-cover shrink-0'
-                      titleClass='text-[11px]'
-                      footerClass='text-[10px] text-gray-400'
-                    />
-                    <Notification
-                      rootClass='gap-x-2'
-                      imgClass='w-8 h-8 object-cover shrink-0'
-                      titleClass='text-[11px]'
-                      footerClass='text-[10px] text-gray-400'
-                    />
-                  </div>
+                  <SimpleBar
+                    style={{
+                      maxHeight: '288px'
+                    }}
+                    forceVisible='y'
+                    autoHide={true}
+                    color='#bfbfbf'
+                  >
+                    <div className='p-3 space-y-3'>
+                      <Notification
+                        rootClass='gap-x-2'
+                        titleClass='text-[11px]'
+                        footerClass='text-[10px] text-gray-400'
+                      />
+                      <Notification
+                        rootClass='gap-x-2'
+                        titleClass='text-[11px]'
+                        footerClass='text-[10px] text-gray-400'
+                      />
+                      <Notification
+                        rootClass='gap-x-2'
+                        titleClass='text-[11px]'
+                        footerClass='text-[10px] text-gray-400'
+                      />
+                      <Notification
+                        rootClass='gap-x-2'
+                        titleClass='text-[11px]'
+                        footerClass='text-[10px] text-gray-400'
+                      />
+                      <Notification
+                        rootClass='gap-x-2'
+                        titleClass='text-[11px]'
+                        footerClass='text-[10px] text-gray-400'
+                      />
+                    </div>
+                  </SimpleBar>
                   <div className='text-center text-[10px] py-2 border-t border-gray-100 text-blue-500'>
                     <button>Xem tất cả thông báo</button>
                   </div>
