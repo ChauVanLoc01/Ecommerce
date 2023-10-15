@@ -9,11 +9,12 @@ const Management = React.lazy(() => import('./Components/Management'))
 const OverView = React.lazy(() => import('./Pages/Home/OverView'))
 const Rating = React.lazy(() => import('./Pages/Rating'))
 const Profile = React.lazy(() => import('./Pages/Profile'))
+import 'simplebar-react/dist/simplebar.min.css'
 
 function App() {
   return (
     <div className='w-screen h-screen xxl:max-h-fit bg-[#F6F6F6] text-gray-700'>
-      <div className='xxl:max-w-screen-xl mx-auto w-full overflow-hidden text-sm h-screen lg:block xs:hidden'>
+      <div className='xxl:max-w-screen-xl mx-auto w-full overflow-hidden text-xs h-screen lg:block xs:hidden'>
         <Header />
         <Routes>
           <Route path='/' element={<Home />}>

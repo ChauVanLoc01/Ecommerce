@@ -11,12 +11,18 @@ function Notification({ imgClass, titleClass, footerClass, rootClass }: Notifica
   return (
     <article className={`flex justify-start ${rootClass}`}>
       <div className='basis-2/12'>
-        <img className={imgClass} src='https://cf.shopee.vn/file/565277eec233892490bc426672ab6165' alt='img' />
+        <img
+          className={`object-cover bg-cover ${imgClass}`}
+          src='https://cf.shopee.vn/file/565277eec233892490bc426672ab6165'
+          alt='img'
+        />
       </div>
       <div className='basis-10/12'>
         <Link to={'/'} className={titleClass}>
           <p className='line-clamp-2'>Bạn nói Shopee lắng nghe</p>
-          <p className='line-clamp-3'>Hãy kể cho Shopee nghe về trải nghiệm mua sắm của bạn</p>
+          <p className='line-clamp-3'>
+            Hãy kể cho Shopee nghe về trải nghiệm mua sắm của bạnHãy kể cho Shopee nghe về trải nghiệm mua sắm của bạn
+          </p>
         </Link>
         <div className={footerClass}>
           <span className='pr-2 border-r border-gray-400'>Từ Shopee</span>

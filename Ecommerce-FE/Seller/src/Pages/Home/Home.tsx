@@ -1,6 +1,6 @@
 import Sidebar from 'src/Components/Sidebar'
-import { Scrollbars } from 'react-custom-scrollbars'
 import { Outlet } from 'react-router-dom'
+import SimpleBar from 'simplebar-react'
 
 function Home() {
   return (
@@ -8,9 +8,18 @@ function Home() {
       <div className='basis-1/5'>
         <Sidebar />
       </div>
-      <Scrollbars style={{ width: '100%', height: 'auto' }} autoHide={true} className='lg:basis-4/5 w-full'>
+      <SimpleBar
+        forceVisible='y'
+        autoHide={true}
+        style={{
+          height: '100vh',
+          maxHeight: '100vh',
+          width: '80%',
+          padding: '12px'
+        }}
+      >
         <Outlet />
-      </Scrollbars>
+      </SimpleBar>
     </div>
   )
 }
