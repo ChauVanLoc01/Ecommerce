@@ -1,15 +1,11 @@
 use microservice;
 
-create table District (
-	name nvarchar(100) not null primary key
-);
+create table District (name nvarchar(100) not null primary key);
 
-create table City (
-	name nvarchar(100) not null primary key
-);
+create table City (name nvarchar(100) not null primary key);
 
 create table `Rank` (
-	id varchar(50) not null primary key,
+    id varchar(50) not null primary key,
     point int,
     type int not null,
     createdAt timestamp default current_timestamp,
@@ -17,7 +13,7 @@ create table `Rank` (
 );
 
 create table Store (
-	id varchar(50) not null primary key,
+    id varchar(50) not null primary key,
     name nvarchar(255) not null,
     image varchar(255) not null,
     position nvarchar(100) not null,
@@ -30,7 +26,8 @@ create table Store (
 );
 
 create table User (
-	id varchar(50) not null primary key,
+    id varchar(50) not null primary key,
+    roleId varchar(10) not null,
     code varchar(20) not null,
     name nvarchar(255) not null,
     email varchar(255) not null,
@@ -44,7 +41,7 @@ create table User (
 );
 
 create table Account (
-	id varchar(50) not null primary key,
+    id varchar(50) not null primary key,
     user_name varchar(100) not null,
     password varchar(255) not null,
     status int not null,
@@ -54,17 +51,19 @@ create table Account (
     foreign key (userId) references User(id)
 );
 
-create table StorePermission (
-	id varchar(50) not null primary key,
+-- Bảng StoreRole dùng để chia quyền cho user
+-- thuộc tính storeRole dùng để chia quyền cho user của store 
+-- 1: Admin
+-- 2: Moderator
+create table StoreRole (
     accountId varchar(50) not null,
     storeId varchar(50) not null,
-    role int not null,
-    foreign key (storeId) references Store(id),
+    storeRole int not null foreign key (storeId) references Store(id),
     foreign key (accountId) references Account(id)
 );
 
 create table Address (
-	id varchar(50) not null primary key,
+    id varchar(50) not null primary key,
     userId varchar(50) not null,
     detailt nvarchar(1000) not null,
     district nvarchar(100) not null,
@@ -78,7 +77,7 @@ create table Address (
 );
 
 create table Product (
-	id varchar(50) not null primary key,
+    product_id varchar(50) not null primary key,
     code varchar(50) not null,
     name nvarchar(100) not null,
     priceBefore float not null,
@@ -91,11 +90,32 @@ create table Product (
     updatedBy varchar(50) null,
     createdAt timestamp default current_timestamp,
     updatedAt timestamp null,
-    foreign key (createdBy) references Account(id)
+    foreign key (createdBy) references Account(id),
+    FOREIGN KEY (updatedBy) REFERENCES Account(id),
+);
+
+CREATE TABLE Category (
+    category_shortname VARCHAR(50) NOT NULL primary key,
+    code varchar(20) not null,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    is_active BOOLEAN DEFAULT true,
+    foreign key (createdBy) references Account(id),
+    FOREIGN KEY (updatedBy) REFERENCES Account(id),
+);
+
+Create table ProductCategory(
+    FOREIGN KEY (product_id) REFERENCES Product(product_id),
+    FOREIGN KEY (category_id) REFERENCES category(category_shortname),
+    created_by
+    modified_by 
+    Foreign key (createdBy) references Account(id),
+    FOREIGN KEY (updatedBy) REFERENCES Account(id)
+
 );
 
 create table ProductImage (
-	id varchar(50) not null primary key,
+    id varchar(50) not null primary key,
     url nvarchar(255) not null,
     status int not null,
     createdBy varchar(50) not null,
@@ -106,8 +126,8 @@ create table ProductImage (
     foreign key (productId) references Product(id)
 );
 
-create table `Order` (
-	id varchar(50) not null primary key,
+create table Order (
+    id varchar(50) not null primary key,
     userId varchar(50) not null,
     address varchar(50) not null,
     total float not null,
@@ -119,7 +139,7 @@ create table `Order` (
 );
 
 create table ProductOrder (
-	id varchar(50) not null primary key,
+    id varchar(50) not null primary key,
     productId varchar(50) not null,
     quantity int not null,
     priceBefore float not null,
@@ -130,8 +150,8 @@ create table ProductOrder (
     foreign key (productId) references Product(id)
 );
 
-create table Vourcher (
-	id varchar(50) not null primary key,
+create table Voucher (
+    id varchar(50) not null primary key,
     name nvarchar(255) not null,
     description nvarchar(100) not null,
     quantity int null,
@@ -144,29 +164,20 @@ create table Vourcher (
     updatedAt timestamp null
 );
 
+CREATE TABLE roles (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 
+);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+CREATE TABLE user_roles (
+    id SERIAL PRIMARY KEY,
+    user_id varchar(50) NOT NULL,
+    role_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users (id),
+    FOREIGN KEY (role_id) REFERENCES roles (id)
+);
