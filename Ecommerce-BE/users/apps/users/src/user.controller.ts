@@ -1,22 +1,34 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
-import { UserService } from './user.service';
-import { LoginDTO } from './dtos/login.dto';
-import { LocalGuard } from './guards/local.guard';
-import { RegisterDTO } from './dtos/register.dto';
+import { Body, Controller, Get, Post, Res, UseGuards } from '@nestjs/common'
+import { UserService } from './user.service'
+import { LoginDTO } from './dtos/login.dto'
+import { LocalUserGuard } from './guards/localUser.guard'
+import { RegisterDTO } from './dtos/register.dto'
+import { AuthService } from './auth.service'
+import { CurrentUser } from 'common/decorators/current-user.decorator'
+import { CurrentUserType } from 'common/types/currentUser.type'
+import { Response } from 'express'
+import { AuthGuard } from '@nestjs/passport'
 
 @Controller()
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    private authService: AuthService
+  ) {}
 
-  @UseGuards(LocalGuard)
-  @Post()
-  login(@Body() loginDto: LoginDTO) {
-    return this.userService.createJwt(loginDto);
+  @UseGuards(AuthGuard('local'))
+  @Post('login')
+  login(
+    @CurrentUser() user: CurrentUserType,
+    @Body() _: LoginDTO,
+    @Res({ passthrough: true }) response: Response
+  ) {
+    return this.userService.userLogin(user, response)
   }
 
   @Post()
   register(@Body() registerDTO: RegisterDTO) {
-    return this.userService.register(registerDTO);
+    return this.userService.register(registerDTO)
   }
 
   // @Get()
@@ -24,6 +36,8 @@ export class UserController {
 
   // }
 
-  @Get(':slug')
-  findOne() {}
+  @Get()
+  findOne() {
+    return 'Hello'
+  }
 }
