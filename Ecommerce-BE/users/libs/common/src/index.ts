@@ -1,5 +1,5 @@
-import { ConfigModule } from "./config";
-import { PrismaModule } from "./prisma";
+import { ConfigModule } from './config/config.module'
+import { PrismaModule } from './prisma/prisma.module'
 
 export {
     ConfigModule,
