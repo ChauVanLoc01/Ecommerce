@@ -1,3 +1,5 @@
+create database microservice;
+
 use microservice;
 
 create table District (name nvarchar(100) not null primary key);
@@ -14,52 +16,56 @@ create table `Rank` (
 
 create table Store (
     id varchar(50) not null primary key,
+    code varchar(20) not null,
     name nvarchar(255) not null,
     image varchar(255) not null,
-    position nvarchar(100) not null,
+    location nvarchar(100) not null,
     description nvarchar(1000) not null,
+    status int not null,
     createdBy varchar(50) not null,
-    updatedBy varchar(50),
+    updatedBy varchar(50) null,
     createdAt timestamp default current_timestamp,
     updatedAt timestamp null,
-    foreign key (position) references City(name)
+    foreign key (location) references City(name)
 );
 
 create table User (
     id varchar(50) not null primary key,
-    roleId varchar(10) not null,
     code varchar(20) not null,
-    name nvarchar(255) not null,
-    email varchar(255) not null,
+    full_name nvarchar(100) not null,
     birthday timestamp null,
+    email varchar(255) not null,
+    rankId varchar(50) null,
+    role int not null,
     status int not null,
     createdAt timestamp default current_timestamp,
     updatedAt timestamp null,
-    deletedAt timestamp null,
-    rankId varchar(50) not null,
     foreign key (rankId) references `Rank`(id)
 );
 
-create table Account (
+create table StoreRole (
     id varchar(50) not null primary key,
-    user_name varchar(100) not null,
-    password varchar(255) not null,
+    storeId varchar(50) not null,
     status int not null,
-    userId varchar(50) null,
+    role int not null,
+    createdBy varchar(50) not null,
+    updatedBy varchar(50) null,
     createdAt timestamp default current_timestamp,
-    updatedAt timestamp default current_timestamp,
-    foreign key (userId) references User(id)
+    updatedAt timestamp null,
+    foreign key (storeId) references Store(id)
 );
 
--- Bảng StoreRole dùng để chia quyền cho user
--- thuộc tính storeRole dùng để chia quyền cho user của store 
--- 1: Admin
--- 2: Moderator
-create table StoreRole (
-    accountId varchar(50) not null,
-    storeId varchar(50) not null,
-    storeRole int not null foreign key (storeId) references Store(id),
-    foreign key (accountId) references Account(id)
+create table Account (
+    username varchar(100) not null primary key,
+    password varchar(255) not null,
+    userId varchar(50) not null,
+    storeRoleId varchar(50) not null,
+    createdBy varchar(50) not null,
+    updatedBy varchar(50) null,
+    createdAt timestamp default current_timestamp,
+    updatedAt timestamp null,
+    foreign key (userId) references User(id),
+    foreign key (storeRoleId) references StoreRole(id)
 );
 
 create table Address (
@@ -76,8 +82,14 @@ create table Address (
     foreign key (userId) references User(id)
 );
 
+
+/* ----------------------------------------------------------------------- */
+/* MỚI UPDATE TỚI ĐÂY THÔI - BÊN DƯỚI CHƯA CÓ UPDATE NHA */
+/* ----------------------------------------------------------------------- */
+
+
 create table Product (
-    product_id varchar(50) not null primary key,
+    id varchar(50) not null primary key,
     code varchar(50) not null,
     name nvarchar(100) not null,
     priceBefore float not null,
@@ -91,7 +103,7 @@ create table Product (
     createdAt timestamp default current_timestamp,
     updatedAt timestamp null,
     foreign key (createdBy) references Account(id),
-    FOREIGN KEY (updatedBy) REFERENCES Account(id),
+    foreign key (updatedBy) references Account(id)
 );
 
 CREATE TABLE Category (
@@ -101,14 +113,12 @@ CREATE TABLE Category (
     description TEXT,
     is_active BOOLEAN DEFAULT true,
     foreign key (createdBy) references Account(id),
-    FOREIGN KEY (updatedBy) REFERENCES Account(id),
+    foreign key (updatedBy) references Account(id)
 );
 
 Create table ProductCategory(
     FOREIGN KEY (product_id) REFERENCES Product(product_id),
     FOREIGN KEY (category_id) REFERENCES category(category_shortname),
-    created_by
-    modified_by 
     Foreign key (createdBy) references Account(id),
     FOREIGN KEY (updatedBy) REFERENCES Account(id)
 
@@ -126,7 +136,7 @@ create table ProductImage (
     foreign key (productId) references Product(id)
 );
 
-create table Order (
+create table `Order` (
     id varchar(50) not null primary key,
     userId varchar(50) not null,
     address varchar(50) not null,
@@ -162,22 +172,4 @@ create table Voucher (
     endDate timestamp not null,
     createdAt timestamp default current_timestamp,
     updatedAt timestamp null
-);
-
-CREATE TABLE roles (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-
-);
-
-CREATE TABLE user_roles (
-    id SERIAL PRIMARY KEY,
-    user_id varchar(50) NOT NULL,
-    role_id INT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users (id),
-    FOREIGN KEY (role_id) REFERENCES roles (id)
 );

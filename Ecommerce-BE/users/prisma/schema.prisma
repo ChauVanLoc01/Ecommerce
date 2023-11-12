@@ -1,0 +1,113 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  username   String    @id @db.VarChar(100)
+  password    String    @db.VarChar(255)
+  userId      String    @db.VarChar(50)
+  storeRoleId String    @db.VarChar(50)
+  createdBy   String    @db.VarChar(50)
+  updatedBy   String?   @db.VarChar(50)
+  createdAt   DateTime? @default(now()) @db.Timestamp(0)
+  updatedAt   DateTime? @db.Timestamp(0)
+  User        User      @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Account_ibfk_1")
+  StoreRole   StoreRole @relation(fields: [storeRoleId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Account_ibfk_2")
+
+  @@index([userId], map: "userId")
+  @@index([storeRoleId], map: "storeRoleId")
+}
+
+model Address {
+  id        String    @id @db.VarChar(50)
+  userId    String    @db.VarChar(50)
+  detailt   String    @db.VarChar(1000)
+  district  String    @db.VarChar(100)
+  city      String    @db.VarChar(100)
+  isPrimary Boolean?  @default(false)
+  createdAt DateTime? @default(now()) @db.Timestamp(0)
+  updatedAt DateTime? @db.Timestamp(0)
+  District  District  @relation(fields: [district], references: [name], onDelete: NoAction, onUpdate: NoAction, map: "Address_ibfk_1")
+  City      City      @relation(fields: [city], references: [name], onDelete: NoAction, onUpdate: NoAction, map: "Address_ibfk_2")
+  User      User      @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Address_ibfk_3")
+
+  @@index([city], map: "city")
+  @@index([district], map: "district")
+  @@index([userId], map: "userId")
+}
+
+model City {
+  name    String    @id @db.VarChar(100)
+  Address Address[]
+  Store   Store[]
+}
+
+model District {
+  name    String    @id @db.VarChar(100)
+  Address Address[]
+}
+
+model Rank {
+  id        String    @id @db.VarChar(50)
+  point     Int?
+  type      Int
+  createdAt DateTime? @default(now()) @db.Timestamp(0)
+  updatedAt DateTime? @db.Timestamp(0)
+  User      User[]
+}
+
+model Store {
+  id          String      @id @db.VarChar(50)
+  code        String      @db.VarChar(20)
+  name        String      @db.VarChar(255)
+  image       String      @db.VarChar(255)
+  location    String      @db.VarChar(100)
+  description String      @db.VarChar(1000)
+  status      Int
+  createdBy   String      @db.VarChar(50)
+  updatedBy   String?     @db.VarChar(50)
+  createdAt   DateTime?   @default(now()) @db.Timestamp(0)
+  updatedAt   DateTime?   @db.Timestamp(0)
+  City        City        @relation(fields: [location], references: [name], onDelete: NoAction, onUpdate: NoAction, map: "Store_ibfk_1")
+  StoreRole   StoreRole[]
+
+  @@index([location], map: "location")
+}
+
+model User {
+  id        String    @id @db.VarChar(50)
+  code      String    @db.VarChar(20)
+  full_name String    @db.VarChar(100)
+  birthday  DateTime? @db.Timestamp(0)
+  email     String    @db.VarChar(255)
+  rankId    String?   @db.VarChar(50)
+  role      Int
+  status    Int
+  createdAt DateTime? @default(now()) @db.Timestamp(0)
+  updatedAt DateTime? @db.Timestamp(0)
+  Account   Account[]
+  Address   Address[]
+  Rank      Rank?     @relation(fields: [rankId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "User_ibfk_1")
+
+  @@index([rankId], map: "rankId")
+}
+
+model StoreRole {
+  id        String    @id @db.VarChar(50)
+  storeId   String    @db.VarChar(50)
+  status    Int
+  role      Int
+  createdBy String    @db.VarChar(50)
+  updatedBy String?   @db.VarChar(50)
+  createdAt DateTime? @default(now()) @db.Timestamp(0)
+  updatedAt DateTime? @db.Timestamp(0)
+  Account   Account[]
+  Store     Store     @relation(fields: [storeId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "StoreRole_ibfk_1")
+
+  @@index([storeId], map: "storeId")
+}
