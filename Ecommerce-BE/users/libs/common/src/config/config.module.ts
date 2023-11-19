@@ -8,7 +8,7 @@ import appConfig from './data_configs/app.config'
     NestConfigModule.forRoot({
       isGlobal: true,
       load: [appConfig],
-      envFilePath: ['.env']
+      envFilePath: `.env.${process.env.NODE_ENV}`
     })
   ]
 })

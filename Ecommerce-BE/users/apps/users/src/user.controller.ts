@@ -16,8 +16,8 @@ export class UserController {
     private authService: AuthService
   ) {}
 
-  @UseGuards(AuthGuard('local'))
-  @Post('login')
+  @UseGuards(LocalUserGuard)
+  @Post('user-login')
   login(
     @CurrentUser() user: CurrentUserType,
     @Body() _: LoginDTO,
@@ -26,15 +26,10 @@ export class UserController {
     return this.userService.userLogin(user, response)
   }
 
-  @Post()
+  @Post('user-register')
   register(@Body() registerDTO: RegisterDTO) {
-    return this.userService.register(registerDTO)
+    return this.userService.userRegister(registerDTO)
   }
-
-  // @Get()
-  // findAll(@CurrentUser()) {
-
-  // }
 
   @Get()
   findOne() {
