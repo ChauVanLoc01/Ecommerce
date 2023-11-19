@@ -1,11 +1,12 @@
 import { Module } from '@nestjs/common'
-import { ConfigModule, PrismaModule } from '@app/common'
 import { UserController } from './user.controller'
 import { UserService } from './user.service'
 import { PassportModule } from '@nestjs/passport'
 import { AuthService } from './auth.service'
 import { JwtModule } from '@nestjs/jwt'
 import { LocalUserStrategy } from './strategys/localUser.stategy'
+import { PrismaModule } from '@app/common/prisma/prisma.module'
+import { ConfigModule } from '@app/common'
 
 @Module({
   imports: [
