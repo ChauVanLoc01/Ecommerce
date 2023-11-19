@@ -11,8 +11,6 @@
     "start": "nest start",
     "user": "cross-env NODE_ENV=user nest start users --watch",
     "product": "cross-env NODE_ENV=product nest start products --watch",
-    "debug": "nest start --debug --watch",
-    "prod": "node dist/apps/users/main",
     "dev": "nest start --watch",
     "debug": "nest start --debug --watch",
     "prod": "node dist/apps/users/main",
