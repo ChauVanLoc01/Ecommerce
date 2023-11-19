@@ -14,18 +14,32 @@ export class AuthService {
     private readonly prisma: PrismaService
   ) {}
 
+  hashPassword(password: string): Promise<string> {
+    return bcrypt.hash(password, 10)
+  }
+
+  comparePassword(password: string, hash: string): Promise<boolean> {
+    return bcrypt.compare(password, hash)
+  }
+
   async verify(username: string, password: string): Promise<Account> {
     const accountExist = await this.prisma.account.findUnique({
       where: {
         username
       }
     })
+
     if (!accountExist) {
-      throw new UnauthorizedException('User name không tồn tại')
+      throw new UnauthorizedException('Tài khoản không tồn tại')
     }
-    const hashPassword = this.jwtService.decode(password)
-    if (accountExist.password !== hashPassword) {
-      throw new UnauthorizedException('Password không đúng')
+
+    const isTruePassword = await this.comparePassword(
+      password,
+      accountExist.password
+    )
+
+    if (!isTruePassword) {
+      throw new UnauthorizedException('Mật khẩu không đúng')
     }
     return accountExist
   }
@@ -43,7 +57,7 @@ export class AuthService {
       throw new UnauthorizedException('Tài khoản đã bị khóa')
     }
 
-    if (userExist.status === UserRole.EMPLOYEE) {
+    if (userExist.role === UserRole.EMPLOYEE) {
       throw new UnauthorizedException('Tài khoản không được phép mua hàng')
     }
 
@@ -73,10 +87,11 @@ export class AuthService {
     )
   }
 
-  async decode(type: 'access_token' | 'refresh_token', data: string) {
-    if (type === 'access_token') {
-      return this.jwtService.decode(data)
-    }
+  async decodeAccessToken(data: string) {
+    return this.jwtService.decode(data)
+  }
+
+  async decodeRefreshToken(data: string) {
     return this.jwtService.decode(data, {})
   }
 }

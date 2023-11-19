@@ -1,21 +1,13 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException
-} from '@nestjs/common'
-import { LoginDTO } from './dtos/login.dto'
+import { BadRequestException, Injectable } from '@nestjs/common'
 import { PrismaService } from '@app/common/prisma/prisma.service'
-import * as bcrypt from 'bcrypt'
-import { User } from '@prisma/client'
 import { RegisterDTO } from './dtos/register.dto'
 import { AuthService } from './auth.service'
 import { CurrentUserType } from 'common/types/currentUser.type'
-import * as cookieParser from 'cookie-parser'
 import { Response } from 'express'
 import { Return } from 'common/types/result.type'
-import * as uuid from 'uuid'
 import { UserRole } from 'common/enums/userRole.enum'
 import { Status } from 'common/enums/status.enum'
+import { v4 as uuidv4 } from 'uuid'
 
 @Injectable()
 export class UserService {
@@ -24,12 +16,9 @@ export class UserService {
     private readonly authService: AuthService
   ) {}
 
-  hashPassword(password: string): Promise<string> {
-    return bcrypt.hash(password, 10)
-  }
-
-  comparePassword(password: string, hash: string): Promise<boolean> {
-    return bcrypt.compare(password, hash)
+  setToken(access_token: string, refresh_token: string, response: Response) {
+    response.cookie('Authorization', 'Bearer ' + access_token)
+    response.cookie('refresh_token', 'Bearer ' + refresh_token)
   }
 
   async userLogin(user: CurrentUserType, response: Response): Promise<Return> {
@@ -38,9 +27,7 @@ export class UserService {
       this.authService.createRefreshToken(user.id, user.role)
     ])
 
-    response.cookie('Authorization', access_token)
-
-    response.cookie('refresh_token', refresh_token)
+    this.setToken(access_token, refresh_token, response)
 
     const { code, createdAt, role, status, id, ...rest } =
       await this.prisma.user.findUnique({
@@ -55,15 +42,15 @@ export class UserService {
     }
   }
 
-  async userRegister(registerDto: RegisterDTO) {
+  async userRegister(
+    registerDto: RegisterDTO,
+    response: Response
+  ): Promise<Return> {
     const { email, password, username } = registerDto
 
     const userExist = await this.prisma.account.findUnique({
       where: {
-        username,
-        User: {
-          email
-        }
+        username
       }
     })
 
@@ -71,27 +58,39 @@ export class UserService {
       throw new BadRequestException('Tài khoản đã tồn tại')
     }
 
-    // const createdUser = await this.prisma.account.create({
-    //   data: {
-    //     username,
-    //     password: await this.hashPassword(password),
-    //     User: {
-    //       create: {
-    //         code: '1',
-    //         email,
-    //         id: uuid(),
-    //         role: UserRole.USER,
-    //         status: Status.ACCESS,
-    //         Address: {
-    //           create: {
-    //             id: uuid(),
-    //             detailt: 'aasf',
+    const userProfileId = uuidv4()
 
-    //           }
-    //         }
-    //       }
-    //     }
-    //   }
-    // })
+    const [
+      { code, createdAt, role, status, id, ...rest },
+      _,
+      access_token,
+      refresh_token
+    ] = await Promise.all([
+      this.prisma.user.create({
+        data: {
+          id: userProfileId,
+          code: 1,
+          email,
+          role: UserRole.USER,
+          status: Status.ACCESS
+        }
+      }),
+      this.prisma.account.create({
+        data: {
+          username,
+          password: await this.authService.hashPassword(password),
+          userId: userProfileId
+        }
+      }),
+      this.authService.createAccessToken(userProfileId, UserRole.USER),
+      this.authService.createRefreshToken(userProfileId, UserRole.USER)
+    ])
+
+    this.setToken(access_token, refresh_token, response)
+
+    return {
+      msg: 'Đăng kí tài khoản thành công',
+      result: rest
+    }
   }
 }

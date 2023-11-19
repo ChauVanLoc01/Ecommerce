@@ -3,10 +3,10 @@ version: '3.8'
 services:
   mysql:
     image: mysql
-    container_name: mysql
+    container_name: ecommerce
     restart: unless-stopped
     volumes:
-      - mysql_microservice:/var/lib/mysql
+      - mysql_data:/var/lib/mysql
     ports:
       - 3307:3306
     environment:
@@ -15,16 +15,17 @@ services:
       - MYSQL_USER=vanloc
       - MYSQL_PASSWORD=123123
   rabbitmq:
+    container_name: user_rabbitmq
     image: rabbitmq:3-management
     restart: unless-stopped
     volumes:
-      - rabbitmq_microservice:/var/lib/rabbitmq
+      - rabbitmq_data:/var/lib/rabbitmq
     ports:
-      - 6000:6000
+      - 6000:5672
     environment:
       - RABBITMQ_DEFAULT_USER=vanloc
       - RABBITMQ_DEFAULT_PASS=123123
 
 volumes:
-  mysql_microservice:
-  rabbitmq_microservice:
+  mysql_data:
+  rabbitmq_data:

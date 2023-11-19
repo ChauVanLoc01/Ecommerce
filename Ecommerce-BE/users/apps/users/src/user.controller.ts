@@ -7,7 +7,6 @@ import { AuthService } from './auth.service'
 import { CurrentUser } from 'common/decorators/current-user.decorator'
 import { CurrentUserType } from 'common/types/currentUser.type'
 import { Response } from 'express'
-import { AuthGuard } from '@nestjs/passport'
 
 @Controller()
 export class UserController {
@@ -27,8 +26,11 @@ export class UserController {
   }
 
   @Post('user-register')
-  register(@Body() registerDTO: RegisterDTO) {
-    return this.userService.userRegister(registerDTO)
+  register(
+    @Body() registerDTO: RegisterDTO,
+    @Res({ passthrough: true }) response: Response
+  ) {
+    return this.userService.userRegister(registerDTO, response)
   }
 
   @Get()

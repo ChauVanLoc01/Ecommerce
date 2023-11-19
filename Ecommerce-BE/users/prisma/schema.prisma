@@ -8,16 +8,16 @@ datasource db {
 }
 
 model Account {
-  username   String    @id @db.VarChar(100)
-  password    String    @db.VarChar(255)
-  userId      String    @db.VarChar(50)
-  storeRoleId String    @db.VarChar(50)
-  createdBy   String    @db.VarChar(50)
-  updatedBy   String?   @db.VarChar(50)
-  createdAt   DateTime? @default(now()) @db.Timestamp(0)
-  updatedAt   DateTime? @db.Timestamp(0)
-  User        User      @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Account_ibfk_1")
-  StoreRole   StoreRole @relation(fields: [storeRoleId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Account_ibfk_2")
+  username    String     @id @db.VarChar(100)
+  password    String     @db.VarChar(255)
+  userId      String     @db.VarChar(50)
+  storeRoleId String?    @db.VarChar(50)
+  createdBy   String?    @db.VarChar(50)
+  updatedBy   String?    @db.VarChar(50)
+  createdAt   DateTime?  @default(now()) @db.Timestamp(0)
+  updatedAt   DateTime?  @db.Timestamp(0)
+  User        User       @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Account_ibfk_1")
+  StoreRole   StoreRole? @relation(fields: [storeRoleId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Account_ibfk_2")
 
   @@index([userId], map: "userId")
   @@index([storeRoleId], map: "storeRoleId")
@@ -63,7 +63,7 @@ model Rank {
 
 model Store {
   id          String      @id @db.VarChar(50)
-  code        String      @db.VarChar(20)
+  code        Int
   name        String      @db.VarChar(255)
   image       String      @db.VarChar(255)
   location    String      @db.VarChar(100)
@@ -81,8 +81,8 @@ model Store {
 
 model User {
   id        String    @id @db.VarChar(50)
-  code      String    @db.VarChar(20)
-  full_name String    @db.VarChar(100)
+  code      Int
+  full_name String?   @db.VarChar(100)
   birthday  DateTime? @db.Timestamp(0)
   email     String    @db.VarChar(255)
   rankId    String?   @db.VarChar(50)

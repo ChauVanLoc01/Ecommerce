@@ -16,7 +16,7 @@ create table `Rank` (
 
 create table Store (
     id varchar(50) not null primary key,
-    code varchar(20) not null,
+    code int not null,
     name nvarchar(255) not null,
     image varchar(255) not null,
     location nvarchar(100) not null,
@@ -59,8 +59,8 @@ create table Account (
     username varchar(100) not null primary key,
     password varchar(255) not null,
     userId varchar(50) not null,
-    storeRoleId varchar(50) not null,
-    createdBy varchar(50) not null,
+    storeRoleId varchar(50) null,
+    createdBy varchar(50) null,
     updatedBy varchar(50) null,
     createdAt timestamp default current_timestamp,
     updatedAt timestamp null,
