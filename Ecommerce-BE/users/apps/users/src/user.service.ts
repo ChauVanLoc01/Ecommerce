@@ -1,50 +1,52 @@
-import { Injectable } from '@nestjs/common';
-import { LoginDTO } from './dtos/login.dto';
-import { PrismaService } from '@app/common/prisma/prisma.service';
-import * as bcrypt from 'bcrypt';
-import { User } from '@prisma/client';
-import { RegisterDTO } from './dtos/register.dto';
+import { Injectable } from '@nestjs/common'
+import { LoginDTO } from './dtos/login.dto'
+import { PrismaService } from '@app/common/prisma/prisma.service'
+import * as bcrypt from 'bcrypt'
+import { User } from '@prisma/client'
+import { RegisterDTO } from './dtos/register.dto'
+import { AuthService } from './auth.service'
+import { CurrentUserType } from 'common/types/currentUser.type'
+import * as cookieParser from 'cookie-parser'
+import { Response } from 'express'
+import { Return } from 'common/types/result.type'
 
 @Injectable()
 export class UserService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly authService: AuthService
+  ) {}
 
-  async hashPassword(password: string, hash: string): Promise<boolean> {
-    return bcrypt.compareSync(password, hash);
+  hashPassword(password: string): string {
+    return bcrypt.hashSync(password, 10)
   }
 
-  async validateUser(user_name: string, password: string) {
-    const accountExit = await this.prisma.account.findFirst({
-      where: {
-        user_name,
-      },
-    });
+  comparePassword(password: string, hash: string): boolean {
+    return bcrypt.compareSync(password, hash)
+  }
 
-    if (!accountExit) {
-      return 'User not found';
+  async userLogin(user: CurrentUserType, response: Response): Promise<Return> {
+    const [access_token, refresh_token] = await Promise.all([
+      this.authService.createAccessToken(user.id, user.role),
+      this.authService.createRefreshToken(user.id, user.role)
+    ])
+
+    response.cookie('Authorization', access_token)
+
+    response.cookie('refresh_token', refresh_token)
+
+    const { code, createdAt, role, status, id, ...rest } =
+      await this.prisma.user.findUnique({
+        where: {
+          id: user.id
+        }
+      })
+
+    return {
+      msg: 'Đăng nhập thành công',
+      result: rest
     }
-
-    const isCorrectPassword = await this.hashPassword(
-      password,
-      accountExit.password,
-    );
-
-    if (!isCorrectPassword) {
-      return 'Password is correct';
-    }
-
-    const userExist = await this.prisma.user.findUnique({
-      where: {
-        id: accountExit.userId,
-      },
-    });
-
-    return userExist;
   }
 
-  async createJwt(user: any) {}
-
-  async register(registerDto: RegisterDTO) {
-
-  }
+  async register(registerDto: RegisterDTO) {}
 }
