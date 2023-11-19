@@ -5,6 +5,7 @@ import { UserService } from './user.service'
 import { User, Account, StoreRole } from '@prisma/client'
 import { PrismaService } from '@app/common/prisma/prisma.service'
 import { UserRole } from 'common/enums/userRole.enum'
+import { Status } from 'common/enums/status.enum'
 
 @Injectable()
 export class AuthService {
@@ -38,7 +39,7 @@ export class AuthService {
       }
     })
 
-    if (userExist.status === UserRole.BLOCK) {
+    if (userExist.status === Status.BLOCK) {
       throw new UnauthorizedException('Tài khoản đã bị khóa')
     }
 

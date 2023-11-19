@@ -1,4 +1,8 @@
-import { Injectable } from '@nestjs/common'
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException
+} from '@nestjs/common'
 import { LoginDTO } from './dtos/login.dto'
 import { PrismaService } from '@app/common/prisma/prisma.service'
 import * as bcrypt from 'bcrypt'
@@ -9,6 +13,9 @@ import { CurrentUserType } from 'common/types/currentUser.type'
 import * as cookieParser from 'cookie-parser'
 import { Response } from 'express'
 import { Return } from 'common/types/result.type'
+import * as uuid from 'uuid'
+import { UserRole } from 'common/enums/userRole.enum'
+import { Status } from 'common/enums/status.enum'
 
 @Injectable()
 export class UserService {
@@ -17,12 +24,12 @@ export class UserService {
     private readonly authService: AuthService
   ) {}
 
-  hashPassword(password: string): string {
-    return bcrypt.hashSync(password, 10)
+  hashPassword(password: string): Promise<string> {
+    return bcrypt.hash(password, 10)
   }
 
-  comparePassword(password: string, hash: string): boolean {
-    return bcrypt.compareSync(password, hash)
+  comparePassword(password: string, hash: string): Promise<boolean> {
+    return bcrypt.compare(password, hash)
   }
 
   async userLogin(user: CurrentUserType, response: Response): Promise<Return> {
@@ -48,5 +55,43 @@ export class UserService {
     }
   }
 
-  async register(registerDto: RegisterDTO) {}
+  async userRegister(registerDto: RegisterDTO) {
+    const { email, password, username } = registerDto
+
+    const userExist = await this.prisma.account.findUnique({
+      where: {
+        username,
+        User: {
+          email
+        }
+      }
+    })
+
+    if (userExist) {
+      throw new BadRequestException('Tài khoản đã tồn tại')
+    }
+
+    // const createdUser = await this.prisma.account.create({
+    //   data: {
+    //     username,
+    //     password: await this.hashPassword(password),
+    //     User: {
+    //       create: {
+    //         code: '1',
+    //         email,
+    //         id: uuid(),
+    //         role: UserRole.USER,
+    //         status: Status.ACCESS,
+    //         Address: {
+    //           create: {
+    //             id: uuid(),
+    //             detailt: 'aasf',
+
+    //           }
+    //         }
+    //       }
+    //     }
+    //   }
+    // })
+  }
 }
