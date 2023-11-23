@@ -1,0 +1,26 @@
+import { AuthService } from './auth.service'
+import { AuthController } from './auth.controller'
+import { Module } from '@nestjs/common'
+import { LocalUserStrategy } from '../strategys/local_user.stategy'
+import { PassportModule } from '@nestjs/passport'
+import { JwtModule } from '@nestjs/jwt'
+import { ConfigModule, PrismaModule } from '@app/common'
+
+@Module({
+  imports: [
+    ConfigModule,
+    PrismaModule,
+    PassportModule,
+    JwtModule.register({
+      global: true,
+      secret: 'Chauvanloc',
+      signOptions: {
+        expiresIn: 1000 * 60 * 60 * 8
+      }
+    })
+  ],
+  controllers: [AuthController],
+  providers: [AuthService, LocalUserStrategy],
+  exports: [AuthService, LocalUserStrategy]
+})
+export class AuthModule {}

@@ -1,6 +1,7 @@
 import { Global, Module } from '@nestjs/common'
 import { ConfigModule as NestConfigModule } from '@nestjs/config'
 import appConfig from './data_configs/app.config'
+import rabbitmqConfig from './data_configs/rabbitmq.config'
 
 @Global()
 @Global()
@@ -8,7 +9,7 @@ import appConfig from './data_configs/app.config'
   imports: [
     NestConfigModule.forRoot({
       isGlobal: true,
-      load: [appConfig],
+      load: [appConfig, rabbitmqConfig],
       envFilePath: `.env.${process.env.NODE_ENV}`
     })
   ]
