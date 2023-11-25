@@ -7,7 +7,7 @@ import * as bcrypt from 'bcrypt'
 import { JwtService } from '@nestjs/jwt'
 import { User, Account, StoreRole } from '@prisma/client'
 import { PrismaService } from '@app/common/prisma/prisma.service'
-import { UserRole } from 'common/enums/userRole.enum'
+import { Role } from 'common/enums/role.enum'
 import { Status } from 'common/enums/status.enum'
 import { CurrentUserType } from 'common/types/currentUser.type'
 import { Return } from 'common/types/result.type'
@@ -15,14 +15,46 @@ import { RegisterDTO } from '../dtos/register.dto'
 import { Response } from 'express'
 import { ConfigService } from '@nestjs/config'
 import * as uuidv4 from 'uuid'
+import { LoginDTO } from '../dtos/login.dto'
 
 @Injectable()
 export class AuthService {
+  private readonly refresh_token_secret_key: string
   constructor(
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService
-  ) {}
+  ) {
+    this.refresh_token_secret_key = configService.get<string>(
+      'app.refresh_token_secret_key'
+    )
+  }
+
+  createAccessToken(id: string, role: number, option?: any): Promise<string> {
+    return this.jwtService.signAsync({ id, role, ...option })
+  }
+
+  createRefreshToken(id: string, role: number, option?: any): Promise<string> {
+    return this.jwtService.signAsync(
+      { id, role, ...option },
+      {
+        expiresIn: this.configService.get<number>(
+          'app.refresh_token_expire_time'
+        ),
+        privateKey: this.refresh_token_secret_key
+      }
+    )
+  }
+
+  decodeAccessToken(data: string) {
+    return this.jwtService.verifyAsync(data)
+  }
+
+  decodeRefreshToken(data: string) {
+    return this.jwtService.verifyAsync(data, {
+      secret: this.refresh_token_secret_key
+    })
+  }
 
   hashPassword(password: string): Promise<string> {
     return bcrypt.hash(password, 10)
@@ -30,6 +62,19 @@ export class AuthService {
 
   comparePassword(password: string, hash: string): Promise<boolean> {
     return bcrypt.compare(password, hash)
+  }
+
+  setToken(access_token: string, refresh_token: string, response: Response) {
+    response.cookie('Authentication', `Bearer ${access_token}`, {
+      httpOnly: true,
+      secure: true,
+      maxAge: this.configService.get<number>('app.access_token_expire_time')
+    })
+    response.cookie('RefreshToken', `Bearer ${refresh_token}`, {
+      httpOnly: true,
+      secure: true,
+      maxAge: this.configService.get<number>('app.refresh_token_expire_time')
+    })
   }
 
   async verify(username: string, password: string): Promise<Account> {
@@ -54,7 +99,10 @@ export class AuthService {
     return accountExist
   }
 
-  async validateUser(username: string, password: string): Promise<User> {
+  async validateUser(
+    username: string,
+    password: string
+  ): Promise<User & { storeRoleId: string }> {
     const accountExist = await this.verify(username, password)
 
     const userExist = await this.prisma.user.findUnique({
@@ -67,11 +115,14 @@ export class AuthService {
       throw new UnauthorizedException('Tài khoản đã bị khóa')
     }
 
-    if (userExist.role === UserRole.EMPLOYEE) {
+    if (userExist.role === Role.EMPLOYEE) {
       throw new UnauthorizedException('Tài khoản không được phép mua hàng')
     }
 
-    return userExist
+    return {
+      ...userExist,
+      storeRoleId: accountExist.storeRoleId
+    }
   }
 
   async validateStore(username: string, password: string): Promise<StoreRole> {
@@ -83,41 +134,6 @@ export class AuthService {
     })
   }
 
-  createAccessToken(user_id: string, role: number): Promise<string> {
-    return this.jwtService.signAsync({ user_id, role })
-  }
-
-  createRefreshToken(id: string, role: number): Promise<string> {
-    return this.jwtService.signAsync(
-      { id, role },
-      {
-        expiresIn: '8h',
-        privateKey: 'chauvanloc'
-      }
-    )
-  }
-
-  async decodeAccessToken(data: string) {
-    return this.jwtService.decode(data)
-  }
-
-  async decodeRefreshToken(data: string) {
-    return this.jwtService.decode(data, {})
-  }
-
-  setToken(access_token: string, refresh_token: string, response: Response) {
-    response.cookie('Authentication', `Bearer ${access_token}`, {
-      httpOnly: true,
-      secure: true,
-      maxAge: this.configService.get<number>('app.access_token_expire_time')
-    })
-    response.cookie('RefreshToken', `Bearer ${refresh_token}`, {
-      httpOnly: true,
-      secure: true,
-      maxAge: this.configService.get<number>('app.refresh_token_expire_time')
-    })
-  }
-
   async userLogin(user: CurrentUserType, response: Response): Promise<Return> {
     const [access_token, refresh_token] = await Promise.all([
       this.createAccessToken(user.id, user.role),
@@ -126,7 +142,7 @@ export class AuthService {
 
     this.setToken(access_token, refresh_token, response)
 
-    const { code, createdAt, role, status, id, ...rest } =
+    const { code, createdAt, status, ...rest } =
       await this.prisma.user.findUnique({
         where: {
           id: user.id
@@ -168,7 +184,7 @@ export class AuthService {
           id: userProfileId,
           code: 1,
           email,
-          role: UserRole.USER,
+          role: Role.USER,
           status: Status.ACCESS
         }
       }),
@@ -179,8 +195,8 @@ export class AuthService {
           userId: userProfileId
         }
       }),
-      this.createAccessToken(userProfileId, UserRole.USER),
-      this.createRefreshToken(userProfileId, UserRole.USER)
+      this.createAccessToken(userProfileId, Role.USER),
+      this.createRefreshToken(userProfileId, Role.USER)
     ])
 
     this.setToken(access_token, refresh_token, response)
@@ -190,4 +206,6 @@ export class AuthService {
       result: rest
     }
   }
+
+  async storeLogin(dto: LoginDTO, response: Response) {}
 }
