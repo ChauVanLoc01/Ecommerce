@@ -7,7 +7,7 @@ import { AuthService } from './auth.service'
 import { LocalUserGuard } from '../guards/local_user.guard'
 import { Response } from 'express'
 
-@Controller('authen')
+@Controller('authentication')
 export class AuthController {
   constructor(private authService: AuthService) {}
 
@@ -33,9 +33,10 @@ export class AuthController {
   @UseGuards(LocalUserGuard)
   @Post('store/login')
   storeLogin(
+    @CurrentUser() user: CurrentUserType,
     @Body() loginDTO: LoginDTO,
     @Res({ passthrough: true }) response: Response
   ) {
-    return this.authService.storeLogin(loginDTO, response)
+    return this.authService.storeLogin(user, response)
   }
 }

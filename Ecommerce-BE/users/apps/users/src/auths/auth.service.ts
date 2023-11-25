@@ -30,20 +30,17 @@ export class AuthService {
     )
   }
 
-  createAccessToken(id: string, role: number, option?: any): Promise<string> {
-    return this.jwtService.signAsync({ id, role, ...option })
+  createAccessToken(data: CurrentUserType): Promise<string> {
+    return this.jwtService.signAsync(data)
   }
 
-  createRefreshToken(id: string, role: number, option?: any): Promise<string> {
-    return this.jwtService.signAsync(
-      { id, role, ...option },
-      {
-        expiresIn: this.configService.get<number>(
-          'app.refresh_token_expire_time'
-        ),
-        privateKey: this.refresh_token_secret_key
-      }
-    )
+  createRefreshToken(data: CurrentUserType): Promise<string> {
+    return this.jwtService.signAsync(data, {
+      expiresIn: this.configService.get<number>(
+        'app.refresh_token_expire_time'
+      ),
+      secret: this.refresh_token_secret_key
+    })
   }
 
   decodeAccessToken(data: string) {
@@ -64,16 +61,22 @@ export class AuthService {
     return bcrypt.compare(password, hash)
   }
 
-  setToken(access_token: string, refresh_token: string, response: Response) {
-    response.cookie('Authentication', `Bearer ${access_token}`, {
-      httpOnly: true,
-      secure: true,
-      maxAge: this.configService.get<number>('app.access_token_expire_time')
-    })
-    response.cookie('RefreshToken', `Bearer ${refresh_token}`, {
-      httpOnly: true,
-      secure: true,
-      maxAge: this.configService.get<number>('app.refresh_token_expire_time')
+  setToken(
+    access_token: string,
+    refresh_token: string,
+    response: Response
+  ): Promise<() => void> {
+    return Promise.resolve(() => {
+      response.cookie('Authentication', `Bearer ${access_token}`, {
+        httpOnly: true,
+        secure: true,
+        maxAge: this.configService.get<number>('app.access_token_expire_time')
+      })
+      response.cookie('RefreshToken', `Bearer ${refresh_token}`, {
+        httpOnly: true,
+        secure: true,
+        maxAge: this.configService.get<number>('app.refresh_token_expire_time')
+      })
     })
   }
 
@@ -136,11 +139,11 @@ export class AuthService {
 
   async userLogin(user: CurrentUserType, response: Response): Promise<Return> {
     const [access_token, refresh_token] = await Promise.all([
-      this.createAccessToken(user.id, user.role),
-      this.createRefreshToken(user.id, user.role)
+      this.createAccessToken(user),
+      this.createRefreshToken(user)
     ])
 
-    this.setToken(access_token, refresh_token, response)
+    await this.setToken(access_token, refresh_token, response)
 
     const { code, createdAt, status, ...rest } =
       await this.prisma.user.findUnique({
@@ -151,7 +154,10 @@ export class AuthService {
 
     return {
       msg: 'Đăng nhập thành công',
-      result: rest
+      result: {
+        ...rest,
+        storeRoleId: user.storeRoleId
+      }
     }
   }
 
@@ -161,24 +167,19 @@ export class AuthService {
   ): Promise<Return> {
     const { email, password, username } = registerDto
 
-    const userExist = await this.prisma.account.findUnique({
+    const accountExist = await this.prisma.account.findUnique({
       where: {
         username
       }
     })
 
-    if (userExist) {
-      throw new BadRequestException('Tài khoản đã tồn tại')
+    if (accountExist) {
+      throw new BadRequestException('User name đã tồn tại')
     }
 
     const userProfileId = uuidv4()
 
-    const [
-      { code, createdAt, role, status, id, ...rest },
-      _,
-      access_token,
-      refresh_token
-    ] = await Promise.all([
+    const [{ code, createdAt, status, ...rest }, _] = await Promise.all([
       this.prisma.user.create({
         data: {
           id: userProfileId,
@@ -194,18 +195,60 @@ export class AuthService {
           password: await this.hashPassword(password),
           userId: userProfileId
         }
-      }),
-      this.createAccessToken(userProfileId, Role.USER),
-      this.createRefreshToken(userProfileId, Role.USER)
+      })
     ])
 
-    this.setToken(access_token, refresh_token, response)
+    const [access_token, refresh_token] = await Promise.all([
+      this.createAccessToken({
+        id: rest.id,
+        role: rest.role,
+        storeRoleId: accountExist.storeRoleId
+      }),
+      this.createRefreshToken({
+        id: rest.id,
+        role: rest.role,
+        storeRoleId: accountExist.storeRoleId
+      })
+    ])
+
+    await this.setToken(access_token, refresh_token, response)
 
     return {
       msg: 'Đăng kí tài khoản thành công',
-      result: rest
+      result: {
+        ...rest,
+        storeRoleId: accountExist.storeRoleId
+      }
     }
   }
 
-  async storeLogin(dto: LoginDTO, response: Response) {}
+  async storeLogin(user: CurrentUserType, response: Response) {
+    const [access_token, refresh_token] = await Promise.all([
+      this.createAccessToken(user),
+      this.createRefreshToken(user)
+    ])
+
+    await this.setToken(access_token, refresh_token, response)
+
+    const [user_profile, store] = await Promise.all([
+      this.prisma.user.findUnique({
+        where: {
+          id: user.id
+        }
+      }),
+      this.prisma.storeRole.findUnique({
+        where: {
+          id: user.storeRoleId
+        },
+        include: {
+          Store: true
+        }
+      })
+    ])
+
+    return {
+      user: user_profile,
+      store
+    }
+  }
 }
