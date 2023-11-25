@@ -11,9 +11,10 @@ import { Response } from 'express'
 export class AuthController {
   constructor(private authService: AuthService) {}
 
+  // Phần này là dành cho User và cả Admin
   @UseGuards(LocalUserGuard)
   @Post('user/login')
-  login(
+  userLogin(
     @CurrentUser() user: CurrentUserType,
     @Body() _: LoginDTO,
     @Res({ passthrough: true }) response: Response
@@ -22,10 +23,19 @@ export class AuthController {
   }
 
   @Post('user/register')
-  register(
+  userRegister(
     @Body() registerDTO: RegisterDTO,
     @Res({ passthrough: true }) response: Response
   ) {
     return this.authService.userRegister(registerDTO, response)
+  }
+
+  @UseGuards(LocalUserGuard)
+  @Post('store/login')
+  storeLogin(
+    @Body() loginDTO: LoginDTO,
+    @Res({ passthrough: true }) response: Response
+  ) {
+    return this.authService.storeLogin(loginDTO, response)
   }
 }
