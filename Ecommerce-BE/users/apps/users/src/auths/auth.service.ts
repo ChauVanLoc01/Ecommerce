@@ -14,42 +14,29 @@ import { Return } from 'common/types/result.type'
 import { RegisterDTO } from '../dtos/register.dto'
 import { Response } from 'express'
 import { ConfigService } from '@nestjs/config'
-import * as uuidv4 from 'uuid'
-import { LoginDTO } from '../dtos/login.dto'
+import { v4 as uuidv4 } from 'uuid'
+import { ChangePasswordType } from '../dtos/change_password.dto'
+import { SendOtpType } from '../dtos/sendOTP.dto'
 
 @Injectable()
 export class AuthService {
-  private readonly refresh_token_secret_key: string
   constructor(
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService
-  ) {
-    this.refresh_token_secret_key = configService.get<string>(
-      'app.refresh_token_secret_key'
-    )
-  }
+  ) {}
 
   createAccessToken(data: CurrentUserType): Promise<string> {
-    return this.jwtService.signAsync(data)
+    return this.jwtService.signAsync(data, {
+      secret: this.configService.get<string>('app.access_token_secret_key'),
+      expiresIn: this.configService.get<number>('app.access_token_expire_time')
+    })
   }
 
   createRefreshToken(data: CurrentUserType): Promise<string> {
     return this.jwtService.signAsync(data, {
-      expiresIn: this.configService.get<number>(
-        'app.refresh_token_expire_time'
-      ),
-      secret: this.refresh_token_secret_key
-    })
-  }
-
-  decodeAccessToken(data: string) {
-    return this.jwtService.verifyAsync(data)
-  }
-
-  decodeRefreshToken(data: string) {
-    return this.jwtService.verifyAsync(data, {
-      secret: this.refresh_token_secret_key
+      secret: this.configService.get<string>('app.refresh_token_secret_key'),
+      expiresIn: this.configService.get<number>('app.refresh_token_expire_time')
     })
   }
 
@@ -106,11 +93,11 @@ export class AuthService {
     username: string,
     password: string
   ): Promise<User & { storeRoleId: string }> {
-    const accountExist = await this.verify(username, password)
+    const { userId, storeRoleId } = await this.verify(username, password)
 
     const userExist = await this.prisma.user.findUnique({
       where: {
-        id: accountExist.userId
+        id: userId
       }
     })
 
@@ -124,7 +111,7 @@ export class AuthService {
 
     return {
       ...userExist,
-      storeRoleId: accountExist.storeRoleId
+      storeRoleId
     }
   }
 
@@ -177,38 +164,38 @@ export class AuthService {
       throw new BadRequestException('User name đã tồn tại')
     }
 
-    const userProfileId = uuidv4()
+    const [{ code, createdAt, status, ...rest }, { storeRoleId }] =
+      await this.prisma.$transaction(async (tx) => {
+        const user = await tx.user.create({
+          data: {
+            id: uuidv4(),
+            code: 1,
+            email,
+            role: Role.USER,
+            status: Status.ACCESS
+          }
+        })
 
-    const [{ code, createdAt, status, ...rest }, _] = await Promise.all([
-      this.prisma.user.create({
-        data: {
-          id: userProfileId,
-          code: 1,
-          email,
-          role: Role.USER,
-          status: Status.ACCESS
-        }
-      }),
-      this.prisma.account.create({
-        data: {
-          username,
-          password: await this.hashPassword(password),
-          userId: userProfileId
-        }
+        const account = await tx.account.create({
+          data: {
+            username,
+            password: await this.hashPassword(password),
+            userId: user.id
+          }
+        })
+
+        return [user, account]
       })
-    ])
+
+    const current_user = {
+      id: rest.id,
+      role: rest.role,
+      storeRoleId
+    } as CurrentUserType
 
     const [access_token, refresh_token] = await Promise.all([
-      this.createAccessToken({
-        id: rest.id,
-        role: rest.role,
-        storeRoleId: accountExist.storeRoleId
-      }),
-      this.createRefreshToken({
-        id: rest.id,
-        role: rest.role,
-        storeRoleId: accountExist.storeRoleId
-      })
+      this.createAccessToken(current_user),
+      this.createRefreshToken(current_user)
     ])
 
     await this.setToken(access_token, refresh_token, response)
@@ -217,7 +204,7 @@ export class AuthService {
       msg: 'Đăng kí tài khoản thành công',
       result: {
         ...rest,
-        storeRoleId: accountExist.storeRoleId
+        storeRoleId
       }
     }
   }
@@ -251,4 +238,10 @@ export class AuthService {
       store
     }
   }
+
+  async changePassword(user: CurrentUserType, body: ChangePasswordType) {}
+
+  async sendOTP(email: string) {}
+
+  async resetPassword(body: SendOtpType) {}
 }

@@ -10,7 +10,7 @@ import rabbitmqConfig from './data_configs/rabbitmq.config'
     NestConfigModule.forRoot({
       isGlobal: true,
       load: [appConfig, rabbitmqConfig],
-      envFilePath: `.env.${process.env.NODE_ENV}`
+      envFilePath: ['.env', `.env.${process.env.NODE_ENV}`]
     })
   ]
 })
