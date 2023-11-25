@@ -3,7 +3,7 @@ version: '3.8'
 services:
   mysql:
     image: mysql
-    container_name: ecommerce
+    container_name: mysql1
     restart: unless-stopped
     volumes:
       - mysql_data:/var/lib/mysql
@@ -15,7 +15,7 @@ services:
       - MYSQL_USER=vanloc
       - MYSQL_PASSWORD=123123
   rabbitmq:
-    container_name: user_rabbitmq
+    container_name: rabbitmq1
     image: rabbitmq:3-management
     restart: unless-stopped
     volumes:
@@ -25,6 +25,11 @@ services:
     environment:
       - RABBITMQ_DEFAULT_USER=vanloc
       - RABBITMQ_DEFAULT_PASS=123123
+  adminer:
+    image: adminer
+    restart: unless-stopped
+    ports:
+      - 8080:8080
 
 volumes:
   mysql_data:
