@@ -239,7 +239,39 @@ export class AuthService {
     }
   }
 
-  async changePassword(user: CurrentUserType, body: ChangePasswordType) {}
+  async changePassword(
+    user: CurrentUserType,
+    body: ChangePasswordType
+  ): Promise<Return> {
+    const { current_password, new_password } = body
+
+    if (current_password === new_password) {
+      throw new BadRequestException('Mật khẩu mới phải khác mật khẩu cũ')
+    }
+
+    const accountExist = await this.prisma.account.findFirst({
+      where: {
+        userId: user.id
+      }
+    })
+
+    if (!accountExist) throw new BadRequestException('Tải khoản không tồn tại')
+
+    const { password, ...rest } = await this.prisma.account.update({
+      where: {
+        username: accountExist.username
+      },
+      data: {
+        password: await this.hashPassword(new_password),
+        updatedAt: new Date()
+      }
+    })
+
+    return {
+      msg: 'Thay đổi mật khẩu thành công',
+      result: rest
+    }
+  }
 
   async sendOTP(email: string) {}
 
