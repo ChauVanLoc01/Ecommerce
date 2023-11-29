@@ -19,12 +19,21 @@ services:
     image: rabbitmq:3-management
     restart: unless-stopped
     volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
+      - user_rabbitmq_data:/var/lib/rabbitmq
     ports:
-      - 6000:5672
+      - 5700:5672
+      - 17000:15672
     environment:
       - RABBITMQ_DEFAULT_USER=vanloc
       - RABBITMQ_DEFAULT_PASS=123123
+  redis:
+    container_name: redis1
+    image: redis
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    ports:
+      - 6400:6379
   adminer:
     image: adminer
     restart: unless-stopped
@@ -33,4 +42,6 @@ services:
 
 volumes:
   mysql_data:
-  rabbitmq_data:
+  user_rabbitmq_data:
+  product_rabbitmq_data:
+  redis_data:

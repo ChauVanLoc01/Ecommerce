@@ -15,32 +15,16 @@ async function bootstrap() {
 
     const configService = app.get(ConfigService)
 
-    const username = configService.get('rabbitmq.user')
-    const password = configService.get('rabbitmq.password')
-    const hostname = configService.get('rabbitmq.host')
-    const port = configService.get('rabbitmq.port')
-    const queue = configService.get('rabbitmq.queue')
-
-    await NestFactory.createMicroservice<MicroserviceOptions>(UserModule, {
+    app.connectMicroservice<MicroserviceOptions>({
       transport: Transport.RMQ,
       options: {
-        urls: [
-          {
-            username,
-            password,
-            hostname,
-            port
-          }
-        ],
-        queue,
+        urls: [configService.get<string>('rabbitmq.uri')],
+        queue: configService.get<string>('rabbitmq.user_queue'),
         queueOptions: {
-          durable: false
+          durable: true
         }
       }
     })
-
-    app.startAllMicroservices()
-
     app.enableCors()
     app.use(cookieParser())
 
@@ -75,11 +59,14 @@ async function bootstrap() {
       })
     )
 
+    app.startAllMicroservices()
+
     app.listen(configService.get('app.port'))
 
     console.log(
-      `App running with RMQ: rmq:${username}:${password}@${hostname}:${port}`
+      `App running with RMQ: ${configService.get<string>('rabbitmq.uri')}`
     )
+
     console.log(
       `App running at endpoint: http://localhost:${configService.get(
         'app.port'

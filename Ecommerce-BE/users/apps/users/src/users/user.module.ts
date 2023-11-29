@@ -5,7 +5,6 @@ import { ConfigModule } from '@app/common'
 import { UserController } from './user.controller'
 
 @Module({
-  imports: [ConfigModule, PrismaModule],
   controllers: [UserController],
   providers: [UserService]
 })
