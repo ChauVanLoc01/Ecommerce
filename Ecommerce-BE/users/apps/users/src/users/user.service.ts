@@ -13,6 +13,8 @@ import { Role } from 'common/enums/role.enum'
 import { Status } from 'common/enums/status.enum'
 import { v4 as uuidv4 } from 'uuid'
 import { ConfigService } from '@nestjs/config'
+import { UpdateUserProfileType } from '../dtos/update_user_profile.dto'
+import { User } from '@prisma/client'
 
 @Injectable()
 export class UserService {
@@ -21,7 +23,7 @@ export class UserService {
     private readonly configService: ConfigService
   ) {}
 
-  async userProfileDetail(id: string) {
+  async profileDetail(id: string): Promise<User> {
     const userExist = await this.prisma.user.findUnique({
       where: {
         id
@@ -36,5 +38,21 @@ export class UserService {
     return userExist
   }
 
-  async useProfileList() {}
+  async updateProfile(
+    userId: string,
+    body: UpdateUserProfileType
+  ): Promise<User> {
+    const { birthday, email, full_name } = body
+    const updatedUser = await this.prisma.user.update({
+      where: {
+        id: userId
+      },
+      data: {
+        birthday,
+        email,
+        full_name
+      }
+    })
+    return updatedUser
+  }
 }
