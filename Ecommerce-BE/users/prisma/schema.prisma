@@ -111,3 +111,113 @@ model StoreRole {
 
   @@index([storeId], map: "storeId")
 }
+model Product {
+  id               String     @id @default(auto()) @map(name: "id", dbgenerated: false)
+  code             String     @map(name: "code")
+  name             String     @map(name: "name")
+  priceBefore      Float      @map(name: "priceBefore")
+  priceAfter       Float      @map(name: "priceAfter")
+  initQuantity     Int        @map(name: "initQuantity")
+  currentQuantity  Int        @map(name: "currentQuantity")
+  description      String     @map(name: "description")
+  status           Int        @map(name: "status")
+  createdBy        String     @map(name: "createdBy")
+  updatedBy        String?    @map(name: "updatedBy")
+  createdAt        DateTime   @default(now()) @map(name: "createdAt")
+  updatedAt        DateTime?  @map(name: "updatedAt")
+
+  // Liên kết đến bảng Account cho createdBy và updatedBy
+  createdByUser    Account    @relation("CreatedByUser", fields: [createdBy], references: [id])
+  updatedByUser    Account?   @relation("UpdatedByUser", fields: [updatedBy], references: [id])
+
+  // Liên kết với bảng ProductCategory
+  ProductCategories ProductCategory[]
+}
+
+// Định nghĩa bảng Category
+model Category {
+  categoryShortname String   @id @map(name: "category_shortname")
+  code              String   @map(name: "code")
+  name              String   @map(name: "name")
+  description       String?  @map(name: "description")
+  isActive          Boolean? @default(true) @map(name: "is_active")
+
+  // Liên kết đến bảng Account cho createdBy và updatedBy
+  createdBy         Account  @relation("CategoryCreatedByUser", fields: [createdBy], references: [id])
+  updatedBy         Account? @relation("CategoryUpdatedByUser", fields: [updatedBy], references: [id])
+
+  // Liên kết với bảng ProductCategory
+  ProductCategories ProductCategory[]
+}
+
+// Định nghĩa bảng ProductCategory
+model ProductCategory {
+  id            Int      @id @default(auto()) @map(name: "id", dbgenerated: false)
+  productId     String   @map(name: "product_id")
+  categoryId    String   @map(name: "category_id")
+  createdBy     String   @map(name: "createdBy")
+  updatedBy     String   @map(name: "updatedBy")
+  createdAt     DateTime @default(now()) @map(name: "created_at")
+  updatedAt     DateTime @map(name: "updated_at")
+
+  // Liên kết với bảng Product
+  product       Product  @relation(fields: [productId], references: [id])
+
+  // Liên kết với bảng Category
+  category      Category @relation(fields: [categoryId], references: [categoryShortname])
+
+  // Liên kết đến bảng Account cho createdBy và updatedBy
+  createdByUser Account  @relation("ProductCategoryCreatedByUser", fields: [createdBy], references: [id])
+  updatedByUser Account  @relation("ProductCategoryUpdatedByUser", fields: [updatedBy], references: [id])
+}
+// Định nghĩa bảng Order
+model Order {
+  id        String    @id @default(auto()) @map(name: "id", dbgenerated: false)
+  userId    String    @map(name: "userId")
+  address   String    @map(name: "address")
+  total     Float     @map(name: "total")
+  status    Int       @map(name: "status")
+  createdAt DateTime  @default(now()) @map(name: "createdAt")
+  updatedAt DateTime? @map(name: "updatedAt")
+
+  // Liên kết với bảng User
+  user      User      @relation(fields: [userId], references: [id])
+
+  // Liên kết với bảng Address
+  shippingAddress Address @relation("ShippingAddress", fields: [address], references: [id])
+
+  // Liên kết với bảng ProductOrder
+  orderItems ProductOrder[]
+}
+
+// Định nghĩa bảng ProductOrder
+model ProductOrder {
+  id          String   @id @default(auto()) @map(name: "id", dbgenerated: false)
+  productId   String   @map(name: "productId")
+  quantity    Int      @map(name: "quantity")
+  priceBefore Float    @map(name: "priceBefore")
+  priceAfter  Float    @map(name: "priceAfter")
+  orderId     String   @map(name: "orderId")
+  note        String?  @map(name: "note")
+
+  // Liên kết với bảng Order
+  order       Order    @relation(fields: [orderId], references: [id])
+
+  // Liên kết với bảng Product
+  product     Product  @relation(fields: [productId], references: [id])
+}
+
+// Định nghĩa bảng Voucher
+model Voucher {
+  id          String    @id @default(auto()) @map(name: "id", dbgenerated: false)
+  name        String    @map(name: "name")
+  description String    @map(name: "description")
+  quantity    Int?      @map(name: "quantity")
+  status      Int       @map(name: "status")
+  type        Int       @map(name: "type")
+  isDeleted   Boolean   @default(false) @map(name: "isDeleted")
+  startDate   DateTime  @map(name: "startDate")
+  endDate     DateTime  @map(name: "endDate")
+  createdAt   DateTime  @default(now()) @map(name: "createdAt")
+  updatedAt   DateTime? @map(name: "updatedAt")
+}
