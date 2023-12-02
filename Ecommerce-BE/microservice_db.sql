@@ -52,7 +52,9 @@ create table StoreRole (
     updatedBy varchar(50) null,
     createdAt timestamp default current_timestamp,
     updatedAt timestamp null,
-    foreign key (storeId) references Store(id)
+    foreign key (storeId) references Store(id),
+    foreign key (createdBy) references User(id),
+    foreign key (updatedBy) references User(id)
 );
 
 create table Account (
@@ -65,6 +67,8 @@ create table Account (
     createdAt timestamp default current_timestamp,
     updatedAt timestamp null,
     foreign key (userId) references User(id),
+    foreign key (createdBy) references User(id),
+    foreign key (updatedBy) references User(id),
     foreign key (storeRoleId) references StoreRole(id)
 );
 
@@ -102,26 +106,27 @@ create table Product (
     updatedBy varchar(50) null,
     createdAt timestamp default current_timestamp,
     updatedAt timestamp null,
-    foreign key (createdBy) references Account(id),
-    foreign key (updatedBy) references Account(id)
+    storeId varchar(50) not null,
+    foreign key (createdBy) references User(id),
+    foreign key (updatedBy) references User(id),
+    foreign key (storeId) references Store(id)
 );
 
 CREATE TABLE Category (
-    category_shortname VARCHAR(50) NOT NULL primary key,
-    code varchar(20) not null,
-    name VARCHAR(255) NOT NULL,
-    description TEXT,
-    is_active BOOLEAN DEFAULT true,
-    foreign key (createdBy) references Account(id),
-    foreign key (updatedBy) references Account(id)
+    shortname varchar(50) not null primary key,
+    name nvarchar(255) NOT NULL,
+    description TEXT
 );
 
 Create table ProductCategory(
-    FOREIGN KEY (product_id) REFERENCES Product(product_id),
-    FOREIGN KEY (category_id) REFERENCES category(category_shortname),
-    Foreign key (createdBy) references Account(id),
-    FOREIGN KEY (updatedBy) REFERENCES Account(id)
-
+	product_id varchar(50) not null,
+    category_id varchar(50) not null,
+    createdBy varchar(50) not null,
+    updatedBy varchar(50) not null,
+    foreign key (product_id) references Product(id),
+    foreign key (category_id) references Category(shortname),
+    foreign key (createdBy) references User(id),
+    foreign key (updatedBy) references User(id)
 );
 
 create table ProductImage (
@@ -136,16 +141,38 @@ create table ProductImage (
     foreign key (productId) references Product(id)
 );
 
+create table Voucher (
+    id varchar(50) not null primary key,
+    code varchar(50) not null,
+    name nvarchar(255) not null,
+    description text not null,
+    initQuantity int not null,
+    currentQuantity int not null,
+    status int not null,
+    type int not null,
+    storeId varchar(50) not null,
+    startDate timestamp not null,
+    endDate timestamp not null,
+    createdAt timestamp default current_timestamp,
+    updatedAt timestamp null,
+    foreign key (storeId) references Store(id)
+);
+
 create table `Order` (
     id varchar(50) not null primary key,
     userId varchar(50) not null,
     address varchar(50) not null,
     total float not null,
+    discount float,
+    score int,
+    pay float not null,
+    voucherId varchar(50),
     status int not null,
     createdAt timestamp default current_timestamp,
     updatedAt timestamp null,
     foreign key (address) references Address(id),
-    foreign key (userId) references User(id)
+    foreign key (userId) references User(id),
+    foreign key (voucherId) references Voucher(id)
 );
 
 create table ProductOrder (
@@ -153,23 +180,18 @@ create table ProductOrder (
     productId varchar(50) not null,
     quantity int not null,
     priceBefore float not null,
-    priceAfter float not null,
+    priceAfter float,
     orderId varchar(50) not null,
     note nvarchar(255) null,
-    foreign key (orderId) references `Order`(id),
-    foreign key (productId) references Product(id)
+    foreign key (productId) references Product(id),
+    foreign key (orderId) references `Order`(id)
 );
 
-create table Voucher (
-    id varchar(50) not null primary key,
-    name nvarchar(255) not null,
-    description nvarchar(100) not null,
-    quantity int null,
-    status int not null,
-    type int not null,
-    isDeleted boolean default false,
-    startDate timestamp not null,
-    endDate timestamp not null,
+create table UserScore(
+	userId varchar(50) not null,
+    storeId varchar(50) not null,
+    quantity int,
     createdAt timestamp default current_timestamp,
-    updatedAt timestamp null
+    updatedAt timestamp,
+    primary key (userId, storeId)
 );
