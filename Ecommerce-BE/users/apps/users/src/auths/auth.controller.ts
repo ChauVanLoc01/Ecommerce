@@ -61,11 +61,6 @@ export class AuthController {
     return this.authService.changePassword(user, body)
   }
 
-  @Get('send-otp/:email')
-  sendOTP(@Param('email') email: string) {
-    return this.authService.sendOTP(email)
-  }
-
   @Post('reset-password')
   resetPassword(@Body() body: SendOtpDTO) {
     return this.authService.resetPassword(body)

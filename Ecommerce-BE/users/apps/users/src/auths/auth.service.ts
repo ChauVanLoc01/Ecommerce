@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  Inject,
   Injectable,
   UnauthorizedException
 } from '@nestjs/common'
@@ -17,13 +18,19 @@ import { ConfigService } from '@nestjs/config'
 import { v4 as uuidv4 } from 'uuid'
 import { ChangePasswordType } from '../dtos/change_password.dto'
 import { SendOtpType } from '../dtos/sendOTP.dto'
+import { CACHE_MANAGER } from '@nestjs/cache-manager'
+import { InjectQueue } from '@nestjs/bull'
+import { Queue } from 'bull'
+import { Queue as QueueConstant } from 'common/constants/queue.constant'
+import { EmailInfor, ForgotPasswordType } from '../workers/mail.worker'
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
-    private readonly configService: ConfigService
+    private readonly configService: ConfigService,
+    @InjectQueue(QueueConstant.sendMail) private sendMailQueue: Queue,
   ) {}
 
   createAccessToken(data: CurrentUserType): Promise<string> {
@@ -132,7 +139,7 @@ export class AuthService {
 
     await this.setToken(access_token, refresh_token, response)
 
-    const { code, createdAt, status, ...rest } =
+    const { createdAt, status, ...rest } =
       await this.prisma.user.findUnique({
         where: {
           id: user.id
@@ -164,12 +171,11 @@ export class AuthService {
       throw new BadRequestException('User name đã tồn tại')
     }
 
-    const [{ code, createdAt, status, ...rest }, { storeRoleId }] =
+    const [{ createdAt, status, ...rest }, { storeRoleId }] =
       await this.prisma.$transaction(async (tx) => {
         const user = await tx.user.create({
           data: {
             id: uuidv4(),
-            code: 1,
             email,
             role: Role.USER,
             status: Status.ACCESS,
@@ -200,6 +206,14 @@ export class AuthService {
     ])
 
     await this.setToken(access_token, refresh_token, response)
+
+    this.sendMailQueue.add(QueueConstant.register, {
+      to: email,
+      subject: "Chúc mừng bạn đã đăng kí tài khoản thành công",
+      html: `<p>Xin chào người dùng ${full_name}. Chúc bạn có trải nghiệm mua sắm thật tuyệt vời</p>`
+    } as EmailInfor, {
+      removeOnComplete: true
+    })
 
     return {
       msg: 'Đăng kí tài khoản thành công',
@@ -274,7 +288,22 @@ export class AuthService {
     }
   }
 
-  async sendOTP(email: string) {}
+  // async sendOTP(email: string) {
+  //   const code = Math.floor(100000 + Math.random() * 900000);
+
+  //   this.sendMailQueue.add(QueueConstant.forgetPassword, {
+  //     code,
+  //     email,
+  //     email_infor: {
+  //       to: email,
+  //       subject: 'Thay đổi mật khẩu của bạn',
+  //       html: ``
+  //     },
+
+  //   } as ForgotPasswordType, {
+  //     removeOnComplete: true
+  //   })
+  // }
 
   async resetPassword(body: SendOtpType) {}
 }
