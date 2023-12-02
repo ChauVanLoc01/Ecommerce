@@ -31,7 +31,7 @@ create table Store (
 
 create table User (
     id varchar(50) not null primary key,
-    code varchar(20) not null,
+    code int not null,
     full_name nvarchar(100) not null,
     birthday timestamp null,
     email varchar(255) not null,
@@ -94,7 +94,7 @@ create table Address (
 
 create table Product (
     id varchar(50) not null primary key,
-    code varchar(50) not null,
+    code int not null,
     name nvarchar(100) not null,
     priceBefore float not null,
     priceAfter float not null,
@@ -143,7 +143,7 @@ create table ProductImage (
 
 create table Voucher (
     id varchar(50) not null primary key,
-    code varchar(50) not null,
+    code int not null,
     name nvarchar(255) not null,
     description text not null,
     initQuantity int not null,
@@ -160,6 +160,7 @@ create table Voucher (
 
 create table `Order` (
     id varchar(50) not null primary key,
+    code int not null,
     userId varchar(50) not null,
     address varchar(50) not null,
     total float not null,
