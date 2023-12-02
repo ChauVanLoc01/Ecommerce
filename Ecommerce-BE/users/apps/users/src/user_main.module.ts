@@ -10,11 +10,15 @@ import { ConfigService } from '@nestjs/config'
 
 @Module({
   imports: [
-    BullModule.forRoot({
-      redis: {
-        host: 'localhost',
-        port: 6400
-      }
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        redis: {
+          host: configService.get('bullqueue.host'),
+          port: configService.get('bullqueue.port')
+        }
+      }),
+      inject: [ConfigService]
     }),
     ConfigModule,
     PrismaModule,
