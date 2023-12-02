@@ -152,7 +152,7 @@ export class AuthService {
     registerDto: RegisterDTO,
     response: Response
   ): Promise<Return> {
-    const { email, password, username } = registerDto
+    const { email, password, username, full_name } = registerDto
 
     const accountExist = await this.prisma.account.findUnique({
       where: {
@@ -172,7 +172,8 @@ export class AuthService {
             code: 1,
             email,
             role: Role.USER,
-            status: Status.ACCESS
+            status: Status.ACCESS,
+            full_name
           }
         })
 

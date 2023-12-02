@@ -66,7 +66,6 @@ model District {
 
 model Order {
   id           String         @id @db.VarChar(50)
-  code         Int
   userId       String         @db.VarChar(50)
   address      String         @db.VarChar(50)
   total        Float          @db.Float
@@ -89,7 +88,6 @@ model Order {
 
 model Product {
   id                           String            @id @db.VarChar(50)
-  code                         Int
   name                         String            @db.VarChar(100)
   priceBefore                  Float             @db.Float
   priceAfter                   Float             @db.Float
@@ -172,7 +170,6 @@ model Rank {
 
 model Store {
   id          String      @id @db.VarChar(50)
-  code        Int
   name        String      @db.VarChar(255)
   image       String      @db.VarChar(255)
   location    String      @db.VarChar(100)
@@ -211,7 +208,6 @@ model StoreRole {
 
 model User {
   id                                              String            @id @db.VarChar(50)
-  code                                            Int
   full_name                                       String            @db.VarChar(100)
   birthday                                        DateTime?         @db.Timestamp(0)
   email                                           String            @db.VarChar(255)
