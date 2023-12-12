@@ -1,26 +1,17 @@
-import { memo } from 'react'
-import { Outlet } from 'react-router-dom'
+import React from 'react'
+import { Outlet, useLocation } from 'react-router-dom'
 import Footer from 'src/components/Footer'
-import Headers from 'src/components/Header'
+import Header from 'src/components/Header'
 
-interface Props {
-  children?: React.ReactNode
-}
-
-function MainLayoutInner({ children }: Props) {
-  console.log('MainLayout')
+function MainLayout() {
+  const location = useLocation()
   return (
-    <div>
-      <div>
-        <Headers />
-        {children}
-        <Outlet />
-        <Footer />
-      </div>
+    <div className='select-none'>
+      <Header />
+      <Outlet />
+      <Footer />
     </div>
   )
 }
-
-const MainLayout = memo(MainLayoutInner)
 
 export default MainLayout

@@ -1,326 +1,357 @@
-import { useMutation, useQuery } from '@tanstack/react-query'
-import React, { useContext, useEffect, useMemo } from 'react'
-import { Link, useLocation } from 'react-router-dom'
-import purchaseApi from 'src/apis/purchase.api'
-import Button from 'src/components/Button'
-import QuantityController from 'src/components/QuantityController'
-import path from 'src/constants/path'
-import { purchasesStatus } from 'src/constants/purchase'
-import { Purchase } from 'src/types/purchase.type'
-import { formatCurrency, generateNameId } from 'src/utils/utils'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import Empty from 'antd/lib/empty'
+import classNames from 'classnames'
 import produce from 'immer'
 import keyBy from 'lodash/keyBy'
+import { useContext, useState, useEffect, useMemo, useCallback } from 'react'
+import { Helmet } from 'react-helmet-async'
+import { Link, NavLink, useLocation } from 'react-router-dom'
 import { toast } from 'react-toastify'
-import { AppContext } from 'src/contexts/app.context'
-import noproduct from 'src/assets/images/no-product.png'
+import { PurchaseFetching } from 'src/Api/PurchaseFetching'
+import { PurchaseStatus } from 'src/constants/PurchaseStatus'
+import { Context } from 'src/context/AppContext'
+import useQueryListPurchase from 'src/hooks/useQueryListPurchase'
+import { Order, Purchase } from 'src/types/Purchase.type'
+import { convertCurrentcy, initId } from 'src/utils/utils'
 
-export default function Cart() {
-  const { extendedPurchases, setExtendedPurchases } = useContext(AppContext)
-  const { data: purchasesInCartData, refetch } = useQuery({
-    queryKey: ['purchases', { status: purchasesStatus.inCart }],
-    queryFn: () => purchaseApi.getPurchases({ status: purchasesStatus.inCart })
-  })
-  const updatePurchaseMutation = useMutation({
-    mutationFn: purchaseApi.updatePurchase,
-    onSuccess: () => {
-      refetch()
+export type CartType = Purchase & {
+  isChecked: boolean
+  disable: boolean
+}
+
+function Cart() {
+  const queryClient = useQueryClient()
+  const { isAuth } = useContext(Context)
+  const [purchases, setPurchases] = useState<CartType[]>([])
+  const purchaseFetching = useQueryListPurchase(isAuth)
+  const location = useLocation()
+  const deleteMutation = useMutation({
+    mutationFn: (id: string[]) => PurchaseFetching.DeletePurchaseFetching(id),
+    onSuccess() {
+      queryClient.invalidateQueries({ queryKey: ['purchases', -1] })
+      purchaseFetching.isRefetching && setDisibleAll(true)
+    },
+    onMutate() {
+      setDisibleAll(false)
     }
   })
-  const buyProductsMutation = useMutation({
-    mutationFn: purchaseApi.buyProducts,
-    onSuccess: (data) => {
-      refetch()
+  const orderMutation = useMutation({
+    mutationFn: (body: Order[]) => PurchaseFetching.BuyPurchaseFetching(body),
+    onSuccess(data) {
+      queryClient.invalidateQueries({
+        queryKey: ['purchases', PurchaseStatus.IN_CART]
+      })
       toast.success(data.data.message, {
         position: 'top-center',
-        autoClose: 1000
+        autoClose: 1000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        theme: 'colored'
       })
     }
   })
-  const deletePurchasesMutation = useMutation({
-    mutationFn: purchaseApi.deletePurchase,
-    onSuccess: () => {
-      refetch()
-    }
-  })
-
-  const location = useLocation()
-  const choosenPurchaseIdFromLocation = (location.state as { purchaseId: string } | null)?.purchaseId
-  const purchasesInCart = purchasesInCartData?.data.data
-  const isAllChecked = useMemo(() => extendedPurchases.every((purchase) => purchase.checked), [extendedPurchases])
-  const checkedPurchases = useMemo(() => extendedPurchases.filter((purchase) => purchase.checked), [extendedPurchases])
-  const checkedPurchasesCount = checkedPurchases.length
-  const totalCheckedPurchasePrice = useMemo(
+  const totalPrice = useMemo(
     () =>
-      checkedPurchases.reduce((result, current) => {
-        return result + current.product.price * current.buy_count
-      }, 0),
-    [checkedPurchases]
+      purchases &&
+      purchases.reduce(
+        (total, current) =>
+          total + (current.isChecked ? current.price * current.buy_count : 0),
+        0
+      ),
+    [purchases]
   )
-  const totalCheckedPurchaseSavingPrice = useMemo(
+  const totalPriceBeforDiscount = useMemo(
     () =>
-      checkedPurchases.reduce((result, current) => {
-        return result + (current.product.price_before_discount - current.product.price) * current.buy_count
-      }, 0),
-    [checkedPurchases]
+      purchases &&
+      purchases.reduce(
+        (total, current) =>
+          total +
+          (current.isChecked
+            ? current.price_before_discount * current.buy_count
+            : 0),
+        0
+      ),
+    [purchases]
   )
-
-  useEffect(() => {
-    setExtendedPurchases((prev) => {
-      const extendedPurchasesObject = keyBy(prev, '_id')
-      return (
-        purchasesInCart?.map((purchase) => {
-          const isChoosenPurchaseFromLocation = choosenPurchaseIdFromLocation === purchase._id
-          return {
-            ...purchase,
-            disabled: false,
-            checked: isChoosenPurchaseFromLocation || Boolean(extendedPurchasesObject[purchase._id]?.checked)
-          }
-        }) || []
-      )
-    })
-  }, [purchasesInCart, choosenPurchaseIdFromLocation])
-
-  useEffect(() => {
-    return () => {
-      history.replaceState(null, '')
-    }
+  const isCheckedAll = useMemo(
+    () => purchases.every((e) => e.isChecked),
+    [purchases]
+  )
+  const setDisibleAll = useCallback((disible: boolean) => {
+    setPurchases(
+      produce((draf) => {
+        draf.map((e) => (e.disable = disible))
+      })
+    )
   }, [])
 
-  const handleCheck = (purchaseIndex: number) => (event: React.ChangeEvent<HTMLInputElement>) => {
-    setExtendedPurchases(
-      produce((draft) => {
-        draft[purchaseIndex].checked = event.target.checked
-      })
-    )
+  const handleChecked =
+    (all: boolean, index?: number) =>
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      all
+        ? setPurchases(
+            produce((draf) => {
+              draf.map((o) => (o.isChecked = e.target.checked))
+            })
+          )
+        : setPurchases(
+            produce((draf) => {
+              draf[index as number].isChecked = e.target.checked
+            })
+          )
+    }
+  const handleDelete = (id: string) => () => {
+    deleteMutation.mutate([id])
   }
-
-  const handleCheckAll = () => {
-    setExtendedPurchases((prev) =>
-      prev.map((purchase) => ({
-        ...purchase,
-        checked: !isAllChecked
-      }))
-    )
+  const handleOrder = () => {
+    const orders: Order[] = purchases
+      .filter((o) => o.isChecked)
+      .map((e) => ({ product_id: e.product._id, buy_count: e.buy_count }))
+    orders.length > 0
+      ? orderMutation.mutate(orders)
+      : toast.warn(
+          'Mua hàng không thành công vì không có đơn hàng nào được chọn',
+          {
+            position: 'top-right',
+            autoClose: 2000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            theme: 'colored'
+          }
+        )
   }
-
-  const handleTypeQuantity = (purchaseIndex: number) => (value: number) => {
-    setExtendedPurchases(
-      produce((draft) => {
-        draft[purchaseIndex].buy_count = value
-      })
-    )
-  }
-
-  const handleQuantity = (purchaseIndex: number, value: number, enable: boolean) => {
-    if (enable) {
-      const purchase = extendedPurchases[purchaseIndex]
-      setExtendedPurchases(
-        produce((draft) => {
-          draft[purchaseIndex].disabled = true
+  useEffect(() => {
+    purchaseFetching.data &&
+      setPurchases((pre) => {
+        const newPurchases = keyBy(purchases, '_id')
+        return purchaseFetching.data?.data.data.map((e, i) => {
+          return {
+            ...e,
+            disable: false,
+            isChecked: location.state
+              ? location.state.id === e._id
+              : Object.keys(newPurchases).length > 0
+              ? newPurchases[e._id].isChecked
+              : false
+          }
         })
-      )
-      updatePurchaseMutation.mutate({ product_id: purchase.product._id, buy_count: value })
-    }
-  }
-
-  const handleDelete = (purchaseIndex: number) => () => {
-    const purchaseId = extendedPurchases[purchaseIndex]._id
-    deletePurchasesMutation.mutate([purchaseId])
-  }
-
-  const handleDeleteManyPurchases = () => {
-    const purchasesIds = checkedPurchases.map((purchase) => purchase._id)
-    deletePurchasesMutation.mutate(purchasesIds)
-  }
-
-  const handleBuyPurchases = () => {
-    if (checkedPurchases.length > 0) {
-      const body = checkedPurchases.map((purchase) => ({
-        product_id: purchase.product._id,
-        buy_count: purchase.buy_count
-      }))
-      buyProductsMutation.mutate(body)
-    }
-  }
-
+      })
+  }, [purchaseFetching.isSuccess, purchaseFetching.isRefetching])
+  useEffect(() => {
+    window.history.replaceState({}, '')
+  }, [])
   return (
-    <div className='bg-neutral-100 py-16'>
-      <div className='container'>
-        {extendedPurchases.length > 0 ? (
-          <>
-            <div className='overflow-auto'>
-              <div className='min-w-[1000px]'>
-                <div className='grid grid-cols-12 rounded-sm bg-white px-9 py-5 text-sm capitalize text-gray-500 shadow'>
-                  <div className='col-span-6'>
+    <div className='bg-backg p-2 md:p-3 lg:p-0 xl:p-0'>
+      <Helmet>
+        <title>Giỏ hàng | TechShop</title>
+        <meta name='description' content='Giỏ hàng TechShop' />
+      </Helmet>
+      <div className='mx-auto space-y-3 bg-backg text-center text-xs md:max-w-3xl md:text-xs lg:max-w-4xl lg:py-4 lg:text-sm xl:max-w-7xl xl:text-base'>
+        {purchases && purchases.length > 0 && (
+          <div className='hidden rounded-sm bg-product px-8 py-5 text-center shadow-sm md:grid md:grid-cols-16 md:items-center'>
+            <input
+              onChange={handleChecked(true)}
+              id='check-all-product'
+              type='checkbox'
+              checked={isCheckedAll}
+              className='bg-produc m-auto block h-4 w-4 rounded border-gray-100 accent-primary'
+            />
+            <label
+              className='col-span-5 col-start-2 text-start'
+              htmlFor='check-all-product'
+            >
+              Sản phẩm
+            </label>
+            <span className='col-span-3 col-start-8 text-center text-gray-500'>
+              Đơn Giá
+            </span>
+            <span className='col-span-2 col-start-11 text-gray-500'>
+              Số Lượng
+            </span>
+            <span className='col-span-2 col-start-13 text-gray-500'>
+              Số Tiền
+            </span>
+            <span className='col-start-15 col-span-2 text-gray-500'>
+              Thao Tác
+            </span>
+          </div>
+        )}
+
+        {purchases.length > 0 ? (
+          purchases.map((purchase, index) => (
+            <div
+              key={purchase._id}
+              className='flex items-center space-x-3 rounded-sm bg-product px-3 py-4 shadow-sm md:my-4 md:grid md:grid-cols-16 md:space-x-0 md:px-8 md:py-5'
+            >
+              <input
+                disabled={purchase.disable}
+                onChange={handleChecked(false, index)}
+                checked={purchase.isChecked}
+                type='checkbox'
+                className={`bg-produc m-auto block h-4 w-4 flex-shrink-0 cursor-pointer rounded border-gray-100 accent-primary ${classNames(
+                  { 'cursor-wait': purchase.disable }
+                )}`}
+              />
+              <NavLink
+                to={`/${initId(purchase.product.name)}-id,${
+                  purchase.product._id
+                }`}
+                className='col-span-5 col-start-2 text-start'
+              >
+                <div className='relative flex items-center justify-between space-x-2'>
+                  <div className='mr-2 flex-shrink-0 md:mr-2 lg:mr-4 xl:mr-5'>
+                    <img
+                      className='h-[80px] w-[80px] object-cover md:h-[60px] md:w-[60px] lg:h-[70px] lg:w-[70px] xl:h-[80px] xl:w-[80px]'
+                      src={purchase.product.image}
+                      alt='img'
+                    />
+                  </div>
+                  <div className='grow-0 space-y-1 md:space-y-2'>
+                    <p className='line-clamp-2'>{purchase.product.name}</p>
+                    <div className='md:hidden'>
+                      <span className='mr-2 text-gray-400 line-through md:mr-2 lg:mr-3 xl:mr-3'>
+                        ₫
+                        {convertCurrentcy(
+                          purchase.product.price_before_discount,
+                          0
+                        )}
+                      </span>
+                      <span className='text-primary'>
+                        ₫{convertCurrentcy(purchase.product.price, 0)}
+                      </span>
+                    </div>
+                    <span className='absolute top-1/2 right-4 translate-y-[-50%] text-sm text-primary md:hidden'>
+                      x{purchase.buy_count}
+                    </span>
                     <div className='flex items-center'>
-                      <div className='flex flex-shrink-0 items-center justify-center pr-3'>
-                        <input
-                          type='checkbox'
-                          className='h-5 w-5 accent-orange'
-                          checked={isAllChecked}
-                          onChange={handleCheckAll}
-                        />
-                      </div>
-                      <div className='flex-grow text-black'>Sản phẩm</div>
-                    </div>
-                  </div>
-                  <div className='col-span-6'>
-                    <div className='grid grid-cols-5 text-center'>
-                      <div className='col-span-2'>Đơn giá</div>
-                      <div className='col-span-1'>Số lượng</div>
-                      <div className='col-span-1'>Số tiền</div>
-                      <div className='col-span-1'>Thao tác</div>
-                    </div>
-                  </div>
-                </div>
-                {extendedPurchases.length > 0 && (
-                  <div className='my-3 rounded-sm bg-white p-5 shadow'>
-                    {extendedPurchases.map((purchase, index) => (
-                      <div
-                        key={purchase._id}
-                        className='mb-5 grid grid-cols-12 items-center rounded-sm border border-gray-200 bg-white px-4 py-5 text-center text-sm text-gray-500 first:mt-0'
+                      <svg
+                        xmlns='http://www.w3.org/2000/svg'
+                        fill='none'
+                        viewBox='0 0 24 24'
+                        strokeWidth={1.5}
+                        stroke='currentColor'
+                        className='h-3 w-3 text-primary md:h-4 md:w-4 xl:h-5 xl:w-5'
                       >
-                        <div className='col-span-6'>
-                          <div className='flex'>
-                            <div className='flex flex-shrink-0 items-center justify-center pr-3'>
-                              <input
-                                type='checkbox'
-                                className='h-5 w-5 accent-orange'
-                                checked={purchase.checked}
-                                onChange={handleCheck(index)}
-                              />
-                            </div>
-                            <div className='flex-grow'>
-                              <div className='flex'>
-                                <Link
-                                  className='h-20 w-20 flex-shrink-0'
-                                  to={`${path.home}${generateNameId({
-                                    name: purchase.product.name,
-                                    id: purchase.product._id
-                                  })}`}
-                                >
-                                  <img alt={purchase.product.name} src={purchase.product.image} />
-                                </Link>
-                                <div className='flex-grow px-2 pb-2 pt-1'>
-                                  <Link
-                                    to={`${path.home}${generateNameId({
-                                      name: purchase.product.name,
-                                      id: purchase.product._id
-                                    })}`}
-                                    className='text-left line-clamp-2'
-                                  >
-                                    {purchase.product.name}
-                                  </Link>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        <div className='col-span-6'>
-                          <div className='grid grid-cols-5 items-center'>
-                            <div className='col-span-2'>
-                              <div className='flex items-center justify-center'>
-                                <span className='text-gray-300 line-through'>
-                                  ₫{formatCurrency(purchase.product.price_before_discount)}
-                                </span>
-                                <span className='ml-3'>₫{formatCurrency(purchase.product.price)}</span>
-                              </div>
-                            </div>
-                            <div className='col-span-1'>
-                              <QuantityController
-                                max={purchase.product.quantity}
-                                value={purchase.buy_count}
-                                classNameWrapper='flex items-center'
-                                onIncrease={(value) => handleQuantity(index, value, value <= purchase.product.quantity)}
-                                onDecrease={(value) => handleQuantity(index, value, value >= 1)}
-                                onType={handleTypeQuantity(index)}
-                                onFocusOut={(value) =>
-                                  handleQuantity(
-                                    index,
-                                    value,
-                                    value >= 1 &&
-                                      value <= purchase.product.quantity &&
-                                      value !== (purchasesInCart as Purchase[])[index].buy_count
-                                  )
-                                }
-                                disabled={purchase.disabled}
-                              />
-                            </div>
-                            <div className='col-span-1'>
-                              <span className='text-orange'>
-                                ₫{formatCurrency(purchase.product.price * purchase.buy_count)}
-                              </span>
-                            </div>
-                            <div className='col-span-1'>
-                              <button
-                                onClick={handleDelete(index)}
-                                className='bg-none text-black transition-colors hover:text-orange'
-                              >
-                                Xóa
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+                        <path
+                          strokeLinecap='round'
+                          strokeLinejoin='round'
+                          d='M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25'
+                        />
+                      </svg>
+                      <span className='ml-1 text-[9px] md:text-[9px] lg:ml-2 lg:text-xs xl:ml-3 xl:text-xs'>
+                        7 Ngày Miễn Phí Trả Hàng
+                      </span>
+                    </div>
                   </div>
-                )}
-              </div>
-            </div>
-            <div className='sticky bottom-0 z-10 mt-8 flex flex-col rounded-sm border border-gray-100 bg-white p-5 shadow sm:flex-row sm:items-center'>
-              <div className='flex items-center'>
-                <div className='flex flex-shrink-0 items-center justify-center pr-3'>
-                  <input
-                    type='checkbox'
-                    className='h-5 w-5 accent-orange'
-                    checked={isAllChecked}
-                    onChange={handleCheckAll}
-                  />
                 </div>
-                <button className='mx-3 border-none bg-none' onClick={handleCheckAll}>
-                  Chọn tất cả ({extendedPurchases.length})
-                </button>
-                <button className='mx-3 border-none bg-none' onClick={handleDeleteManyPurchases}>
+              </NavLink>
+              <div className='col-span-3 col-start-8 hidden text-center md:block'>
+                <span className='text-gray-400 line-through md:mr-2 lg:mr-3 xl:mr-3'>
+                  ₫{convertCurrentcy(purchase.product.price_before_discount, 0)}
+                </span>
+                <span className=''>
+                  ₫{convertCurrentcy(purchase.product.price, 0)}
+                </span>
+              </div>
+              <span className='hidden text-center md:col-span-2 md:col-start-11 md:block'>
+                {purchase.buy_count}
+              </span>
+              <span className='col-span-2 col-start-13 hidden text-center text-primary md:block'>
+                ₫
+                {convertCurrentcy(
+                  purchase.buy_count * purchase.product.price,
+                  0
+                )}
+              </span>
+              <div className='md:col-start-15 hidden text-center md:col-span-2 md:block'>
+                <button
+                  disabled={purchase.disable}
+                  onClick={handleDelete(purchase._id)}
+                  className={`cursor-pointer duration-150 hover:text-primary ${classNames(
+                    { 'cursor-wait hover:bg-primary': purchase.disable }
+                  )}`}
+                >
                   Xóa
                 </button>
               </div>
-
-              <div className='mt-5 flex flex-col sm:ml-auto sm:mt-0 sm:flex-row sm:items-center'>
-                <div>
-                  <div className='flex items-center sm:justify-end'>
-                    <div>Tổng thanh toán ({checkedPurchasesCount} sản phẩm):</div>
-                    <div className='ml-2 text-2xl text-orange'>₫{formatCurrency(totalCheckedPurchasePrice)}</div>
-                  </div>
-                  <div className='flex items-center text-sm sm:justify-end'>
-                    <div className='text-gray-500'>Tiết kiệm</div>
-                    <div className='ml-6 text-orange'>₫{formatCurrency(totalCheckedPurchaseSavingPrice)}</div>
-                  </div>
-                </div>
-                <Button
-                  className='mt-5 flex h-10 w-52 items-center justify-center bg-red-500 text-sm uppercase text-white hover:bg-red-600 sm:ml-4 sm:mt-0'
-                  onClick={handleBuyPurchases}
-                  disabled={buyProductsMutation.isLoading}
-                >
-                  Mua hàng
-                </Button>
-              </div>
             </div>
-          </>
+          ))
         ) : (
-          <div className='text-center'>
-            <img src={noproduct} alt='no purchase' className='mx-auto h-24 w-24' />
-            <div className='mt-5 font-bold text-gray-400'>Giỏ hàng của bạn còn trống</div>
-            <div className='mt-5 text-center'>
+          <div className='flex h-[450px] items-center justify-center bg-product'>
+            <Empty
+              className='mb-5'
+              imageStyle={{
+                margin: '10px auto',
+                width: '150px',
+                height: '150px'
+              }}
+              image='https://deo.shopeemobile.com/shopee/shopee-pcmall-live-sg/assets/9bdd8040b334d31946f49e36beaf32db.png'
+              description={
+                <span className='mt-5 pb-7 text-lg font-medium text-gray-400'>
+                  Giỏ hàng của bạn rỗng
+                </span>
+              }
+            >
               <Link
-                to={path.home}
-                className='rounded-sm bg-orange px-10 py-2 uppercase text-white transition-all hover:bg-orange/80'
+                to={'/'}
+                className='bg-primary px-4 py-2 text-sm uppercase text-white duration-150 hover:bg-primary/90 hover:text-white md:px-6 lg:text-base'
               >
                 Mua ngay
               </Link>
+            </Empty>
+          </div>
+        )}
+        {purchases.length > 0 && (
+          <div className='fixed bottom-0 left-0 right-0 flex items-center justify-between rounded-sm border border-gray-200 bg-product px-3 py-8 text-center md:sticky md:mb-4 md:grid md:grid-cols-16 md:px-8 md:py-5'>
+            <input
+              onChange={handleChecked(true)}
+              id='check-all'
+              type='checkbox'
+              checked={isCheckedAll}
+              className='bg-produc block h-4 w-4 cursor-pointer rounded border-gray-100 accent-primary md:m-auto'
+            />
+            <div className='col-span-5 col-start-2 text-start'>
+              <label className='cursor-pointer' htmlFor='check-all'>
+                {location.pathname.includes('cart')
+                  ? 'Tất cả'
+                  : `Chọn tất cả (${purchases?.length})`}
+              </label>
             </div>
+            <span className='col-span-3 col-start-8 hidden text-end md:block'>
+              Tổng thanh toán ({purchases?.length} sản phẩm):
+            </span>
+            <span className='col-span-3 col-start-11 pl-4 text-start text-primary md:text-lg lg:text-xl xl:text-2xl'>
+              <span className='flex items-baseline'>
+                <span className={`mr-1 block text-sm text-gray-700 md:hidden`}>
+                  Tổng cộng
+                </span>
+                <span className='hidden md:block'>
+                  ₫{convertCurrentcy(totalPrice, 0)}
+                </span>
+                <span className='text-lg md:hidden'>
+                  ₫{convertCurrentcy(totalPrice, 0)}
+                </span>
+              </span>
+              <div className='flex md:text-xs lg:text-sm xl:text-sm'>
+                <span className='mr-1 text-gray-600 md:mr-2 lg:mr-4 xl:mr-4'>
+                  Tiết kiệm
+                </span>
+                <span className='md:text-xs lg:text-sm xl:text-base'>
+                  ₫{convertCurrentcy(totalPriceBeforDiscount - totalPrice, 0)}
+                </span>
+              </div>
+            </span>
+            <button
+              onClick={handleOrder}
+              className='col-start-14 col-span-3 rounded-sm bg-primary px-4 py-2 text-white shadow-sm duration-200 hover:bg-primary/90 md:ml-1 md:px-[10px] md:py-2 lg:ml-2 lg:px-3 lg:py-[6px] xl:px-4 xl:py-2'
+            >
+              Mua hàng ({purchases?.length})
+            </button>
           </div>
         )}
       </div>
     </div>
   )
 }
+
+export default Cart
