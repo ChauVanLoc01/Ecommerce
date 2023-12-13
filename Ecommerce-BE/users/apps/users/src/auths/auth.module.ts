@@ -7,6 +7,7 @@ import { JwtModule } from '@nestjs/jwt'
 import { ConfigModule, PrismaModule } from '@app/common'
 import { BullModule } from '@nestjs/bull'
 import { Queue } from 'common/constants/queue.constant'
+import { StoreStrategy } from 'common/strategys/store.stategy'
 
 @Module({
   imports: [
@@ -19,7 +20,7 @@ import { Queue } from 'common/constants/queue.constant'
     JwtModule
   ],
   controllers: [AuthController],
-  providers: [AuthService, LocalUserStrategy, ],
+  providers: [AuthService, LocalUserStrategy, StoreStrategy],
   exports: [AuthService]
 })
 export class AuthModule {}

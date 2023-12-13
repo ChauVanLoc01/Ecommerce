@@ -3,3 +3,9 @@ export type CurrentUserType = {
   role: number
   storeRoleId?: string
 }
+
+export type CurrentStoreType = {
+  userId: string
+  storeId: string
+  role: number
+}

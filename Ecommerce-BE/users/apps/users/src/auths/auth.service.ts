@@ -4,13 +4,16 @@ import {
   Injectable,
   UnauthorizedException
 } from '@nestjs/common'
-import * as bcrypt from 'bcrypt'
+import * as bcrypt from 'bcryptjs'
 import { JwtService } from '@nestjs/jwt'
 import { User, Account, StoreRole } from '@prisma/client'
 import { PrismaService } from '@app/common/prisma/prisma.service'
 import { Role } from 'common/enums/role.enum'
 import { Status } from 'common/enums/status.enum'
-import { CurrentUserType } from 'common/types/currentUser.type'
+import {
+  CurrentStoreType,
+  CurrentUserType
+} from 'common/types/currentUser.type'
 import { Return } from 'common/types/result.type'
 import { RegisterDTO } from '../dtos/register.dto'
 import { Response } from 'express'
@@ -30,7 +33,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
-    @InjectQueue(QueueConstant.sendMail) private sendMailQueue: Queue,
+    @InjectQueue(QueueConstant.sendMail) private sendMailQueue: Queue
   ) {}
 
   createAccessToken(data: CurrentUserType): Promise<string> {
@@ -122,13 +125,44 @@ export class AuthService {
     }
   }
 
-  async validateStore(username: string, password: string): Promise<StoreRole> {
+  async validateStore(
+    username: string,
+    password: string
+  ): Promise<CurrentStoreType> {
     const accountExist = await this.verify(username, password)
-    return await this.prisma.storeRole.findUnique({
+
+    const { storeId, role } = await this.prisma.storeRole.findUnique({
       where: {
         id: accountExist.storeRoleId
       }
     })
+
+    if (!storeId) {
+      throw new UnauthorizedException('Tài khoản quản lý không tồn tại')
+    }
+
+    const [{ id: userId }, store] = await Promise.all([
+      this.prisma.user.findUnique({
+        where: {
+          id: accountExist.userId
+        }
+      }),
+      this.prisma.store.findUnique({
+        where: {
+          id: storeId
+        }
+      })
+    ])
+
+    if (!store) {
+      throw new UnauthorizedException('Cửa hàng không tồn tại')
+    }
+
+    return {
+      role,
+      storeId,
+      userId
+    }
   }
 
   async userLogin(user: CurrentUserType, response: Response): Promise<Return> {
@@ -139,12 +173,11 @@ export class AuthService {
 
     await this.setToken(access_token, refresh_token, response)
 
-    const { createdAt, status, ...rest } =
-      await this.prisma.user.findUnique({
-        where: {
-          id: user.id
-        }
-      })
+    const { createdAt, status, ...rest } = await this.prisma.user.findUnique({
+      where: {
+        id: user.id
+      }
+    })
 
     return {
       msg: 'Đăng nhập thành công',
@@ -159,7 +192,7 @@ export class AuthService {
     registerDto: RegisterDTO,
     response: Response
   ): Promise<Return> {
-    const { email, password, username, full_name } = registerDto
+    const { email, password, username, full_name, address } = registerDto
 
     const accountExist = await this.prisma.account.findUnique({
       where: {
@@ -179,7 +212,8 @@ export class AuthService {
             email,
             role: Role.USER,
             status: Status.ACCESS,
-            full_name
+            full_name,
+            address
           }
         })
 
@@ -207,13 +241,17 @@ export class AuthService {
 
     await this.setToken(access_token, refresh_token, response)
 
-    this.sendMailQueue.add(QueueConstant.register, {
-      to: email,
-      subject: "Chúc mừng bạn đã đăng kí tài khoản thành công",
-      html: `<p>Xin chào người dùng ${full_name}. Chúc bạn có trải nghiệm mua sắm thật tuyệt vời</p>`
-    } as EmailInfor, {
-      removeOnComplete: true
-    })
+    this.sendMailQueue.add(
+      QueueConstant.register,
+      {
+        to: email,
+        subject: 'Chúc mừng bạn đã đăng kí tài khoản thành công',
+        html: `<p>Xin chào người dùng ${full_name}. Chúc bạn có trải nghiệm mua sắm thật tuyệt vời</p>`
+      } as EmailInfor,
+      {
+        removeOnComplete: true
+      }
+    )
 
     return {
       msg: 'Đăng kí tài khoản thành công',
@@ -288,22 +326,24 @@ export class AuthService {
     }
   }
 
-  // async sendOTP(email: string) {
-  //   const code = Math.floor(100000 + Math.random() * 900000);
+  async sendOtp(email: string, current_password: string, new_password: string) {
+    const userExist = await this.prisma.account.findFirst({
+      where: {}
+    })
 
-  //   this.sendMailQueue.add(QueueConstant.forgetPassword, {
-  //     code,
-  //     email,
-  //     email_infor: {
-  //       to: email,
-  //       subject: 'Thay đổi mật khẩu của bạn',
-  //       html: ``
-  //     },
+    const code = Math.floor(100000 + Math.random() * 900000)
 
-  //   } as ForgotPasswordType, {
-  //     removeOnComplete: true
-  //   })
-  // }
+    // this.sendMailQueue.add(QueueConstant.forgetPassword, {
+    //   code,
+    //   new_password,
+    //   user_id,
+    //   email_infor: {
+    //     to: email,
+    //     html: '',
+    //     subject: ''
+    //   }
+    // } as ForgotPasswordType)
+  }
 
   async resetPassword(body: SendOtpType) {}
 }

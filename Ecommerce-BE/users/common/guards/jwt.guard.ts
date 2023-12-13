@@ -8,6 +8,8 @@ import { ConfigService } from '@nestjs/config'
 import { Reflector } from '@nestjs/core'
 import { JwtService } from '@nestjs/jwt'
 import { PUBLIC_KEY } from 'common/decorators/public.decorator'
+import { ROLES_KEY } from 'common/decorators/roles.decorator'
+import { CurrentUserType } from 'common/types/currentUser.type'
 import { Request } from 'express'
 
 @Injectable()
@@ -35,10 +37,25 @@ export class JwtGuard implements CanActivate {
     if (!token) {
       throw new UnauthorizedException('Token không tồn tại')
     }
+
     try {
-      const payload = await this.jwtService.verifyAsync(token, {
-        secret: this.configService.get<string>('app.access_token_secret_key')
-      })
+      const payload: CurrentUserType = await this.jwtService.verifyAsync(
+        token,
+        {
+          secret: this.configService.get<string>('app.access_token_secret_key')
+        }
+      )
+
+      const { role } = payload
+
+      const roles = this.reflector.getAllAndOverride<number[]>(ROLES_KEY, [
+        context.getHandler(),
+        context.getClass()
+      ])
+
+      if (roles.includes(role)) {
+        return true
+      }
 
       request['user'] = payload
 

@@ -18,12 +18,16 @@ import { Response } from 'express'
 import { JwtGuard } from 'common/guards/jwt.guard'
 import { ChangePasswordDTO } from '../dtos/change_password.dto'
 import { SendOtpDTO } from '../dtos/sendOTP.dto'
+import { ApiBearerAuth, ApiResponse, ApiTags } from '@nestjs/swagger'
+import { StoreStrategy } from 'common/strategys/store.stategy'
 
+@ApiTags('authentication')
+@ApiBearerAuth()
 @Controller('authentication')
 export class AuthController {
   constructor(private authService: AuthService) {}
 
-  // Phần này là dành cho User và cả Admin
+  @ApiResponse({ status: 200})
   @UseGuards(LocalUserGuard)
   @Post('user-login')
   userLogin(
@@ -34,6 +38,7 @@ export class AuthController {
     return this.authService.userLogin(user, response)
   }
 
+  @ApiResponse({ status: 201})
   @Post('user-register')
   userRegister(
     @Body() registerDTO: RegisterDTO,
@@ -42,7 +47,7 @@ export class AuthController {
     return this.authService.userRegister(registerDTO, response)
   }
 
-  @UseGuards(LocalUserGuard)
+  @UseGuards(StoreStrategy)
   @Post('store-login')
   storeLogin(
     @CurrentUser() user: CurrentUserType,
@@ -59,6 +64,11 @@ export class AuthController {
     @Body() body: ChangePasswordDTO
   ) {
     return this.authService.changePassword(user, body)
+  }
+
+  @Get('otp/:email')
+  sendOtp(@Param('email') email: string) {
+    // return this.authService.sendOtp(email)
   }
 
   @Post('reset-password')

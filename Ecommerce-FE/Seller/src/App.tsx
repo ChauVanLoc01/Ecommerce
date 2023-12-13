@@ -19,7 +19,7 @@ function App() {
         <Routes>
           <Route path='/' element={<Home />}>
             <Route index element={<OverView />} />
-            <Route path='mana' element={<Management />} />
+            <Route path='management' element={<Management />} />
             <Route path='rating' element={<Rating />} />
             <Route path='profile' element={<Profile />} />
           </Route>

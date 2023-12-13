@@ -1,6 +1,18 @@
 version: '3.8'
 
 services:
+  userService:
+    image: chauvanloc/user-api
+    ports:
+      - 3001:3001
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+      - .env.bullqueue
+      - .env.db
+      - .env.user
+      - .env.rabbitmq
   mysql:
     image: mysql
     container_name: mysql1
@@ -34,6 +46,22 @@ services:
       - redis_data:/data
     ports:
       - 6400:6379
+  es01:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.9.1
+    container_name: es01
+    environment:
+      - node.name=es01
+      - cluster.name=es-docker-cluster
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - es01_data:/usr/share/elasticsearch/data
+    ports:
+      - 9200:9200
   adminer:
     image: adminer
     restart: unless-stopped
@@ -45,3 +73,4 @@ volumes:
   user_rabbitmq_data:
   product_rabbitmq_data:
   redis_data:
+  es01_data:

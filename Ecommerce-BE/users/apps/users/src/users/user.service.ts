@@ -28,9 +28,6 @@ export class UserService {
       where: {
         id
       },
-      include: {
-        Rank: true
-      }
     })
 
     if (!userExist) throw new NotFoundException('Người dùng không tồn tại')

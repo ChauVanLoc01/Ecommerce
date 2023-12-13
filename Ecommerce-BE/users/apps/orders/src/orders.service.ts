@@ -12,7 +12,16 @@ export class OrdersService {
   async getAll(userId: string) {
     return await this.prisma.order.findMany({
       where: {
-        userId
+        userId,
+        ProductOrder: {
+          some: {
+            Product: {
+              name: {
+                
+              }
+            }
+          }
+        }
       }
     })
   }
