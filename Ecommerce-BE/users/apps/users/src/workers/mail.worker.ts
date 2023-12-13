@@ -13,10 +13,13 @@ export type EmailInfor = {
   html: string
 }
 
-export type ForgotPasswordType = {
-  code: number
-  user_id: string
+export type PasswordData = {
+  username: string
   new_password: string
+}
+
+export type ResetPasswordType = PasswordData & {
+  code: number
   email_infor: EmailInfor
 }
 
@@ -33,13 +36,13 @@ export class MailConsummer {
   }
 
   @Process(Queue.forgetPassword)
-  async forgotPassword(job: Job<ForgotPasswordType>) {
-    const { code, user_id, new_password, email_infor } = job.data
+  async forgotPassword(job: Job<ResetPasswordType>) {
+    const { code, email_infor, ...rest } = job.data
     await Promise.all([
       this.mailService.sendMail(email_infor),
       this.cacheManager.set(
-        JSON.stringify({ code, user_id }),
-        JSON.stringify({ user_id, new_password }),
+        `${code}_RESET_PASSWORD`,
+        JSON.stringify(rest),
         1000 * 30
       )
     ])

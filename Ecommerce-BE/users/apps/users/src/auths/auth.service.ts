@@ -10,10 +10,7 @@ import { User, Account, StoreRole } from '@prisma/client'
 import { PrismaService } from '@app/common/prisma/prisma.service'
 import { Role } from 'common/enums/role.enum'
 import { Status } from 'common/enums/status.enum'
-import {
-  CurrentStoreType,
-  CurrentUserType
-} from 'common/types/currentUser.type'
+import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
 import { Return } from 'common/types/result.type'
 import { RegisterDTO } from '../dtos/register.dto'
 import { Response } from 'express'
@@ -25,7 +22,13 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager'
 import { InjectQueue } from '@nestjs/bull'
 import { Queue } from 'bull'
 import { Queue as QueueConstant } from 'common/constants/queue.constant'
-import { EmailInfor, ForgotPasswordType } from '../workers/mail.worker'
+import {
+  EmailInfor,
+  PasswordData,
+  ResetPasswordType
+} from '../workers/mail.worker'
+import { ResetPasswordType as ResetPasswordDTOType } from '../dtos/reset_password.dto'
+import { Cache } from 'cache-manager'
 
 @Injectable()
 export class AuthService {
@@ -33,7 +36,8 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
-    @InjectQueue(QueueConstant.sendMail) private sendMailQueue: Queue
+    @InjectQueue(QueueConstant.sendMail) private sendMailQueue: Queue,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache
   ) {}
 
   createAccessToken(data: CurrentUserType): Promise<string> {
@@ -316,7 +320,8 @@ export class AuthService {
       },
       data: {
         password: await this.hashPassword(new_password),
-        updatedAt: new Date()
+        updatedAt: new Date(),
+        updatedBy: user.id
       }
     })
 
@@ -326,24 +331,62 @@ export class AuthService {
     }
   }
 
-  async sendOtp(email: string, current_password: string, new_password: string) {
-    const userExist = await this.prisma.account.findFirst({
-      where: {}
+  async sendOtp({ email, new_password }: SendOtpType): Promise<Return> {
+    const userExist = await this.prisma.user.findFirst({
+      where: {
+        email
+      },
+      include: {
+        Account_Account_userIdToUser: true
+      }
     })
+
+    if (!userExist) {
+      throw new UnauthorizedException('Người dùng không tồn tại')
+    }
 
     const code = Math.floor(100000 + Math.random() * 900000)
 
-    // this.sendMailQueue.add(QueueConstant.forgetPassword, {
-    //   code,
-    //   new_password,
-    //   user_id,
-    //   email_infor: {
-    //     to: email,
-    //     html: '',
-    //     subject: ''
-    //   }
-    // } as ForgotPasswordType)
+    const email_infor: EmailInfor = {
+      html: `<div>Mã xác nhận làm mới mật khẩu của bạn là: <p style="color: red">${code}</p>. Vui lòng không cung cấp mã xác nhận cho bất kỳ ai.</div>`,
+      subject: 'Thay đổi mật khẩu khẩn cấp',
+      to: email
+    }
+
+    this.sendMailQueue.add(QueueConstant.forgetPassword, {
+      code,
+      username: userExist.Account_Account_userIdToUser[0].username,
+      new_password,
+      email_infor
+    } as ResetPasswordType)
+
+    return {
+      msg: 'Vui lòng kiểm tra email để nhận mã xác nhận',
+      result: undefined
+    }
   }
 
-  async resetPassword(body: SendOtpType) {}
+  async resetPassword({ code }: ResetPasswordDTOType): Promise<Return> {
+    const { username, new_password }: PasswordData =
+      await this.cacheManager.get(`${code}_RESET_PASSWORD`)
+
+    if (!code) {
+      throw new BadRequestException('Mã xác nhận không đúng hoặc đã hết hạn')
+    }
+
+    const { password, ...rest } = await this.prisma.account.update({
+      where: {
+        username
+      },
+      data: {
+        password: await this.hashPassword(new_password),
+        updatedAt: new Date()
+      }
+    })
+
+    return {
+      msg: 'Thay đổi mật khẩu thành công',
+      result: rest
+    }
+  }
 }

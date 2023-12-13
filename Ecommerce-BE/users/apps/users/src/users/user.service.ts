@@ -6,7 +6,7 @@ import {
 import { PrismaService } from '@app/common/prisma/prisma.service'
 import { RegisterDTO } from '../dtos/register.dto'
 import { AuthService } from '../auths/auth.service'
-import { CurrentUserType } from 'common/types/currentUser.type'
+import { CurrentUserType } from 'common/types/current.type'
 import { Response } from 'express'
 import { Return } from 'common/types/result.type'
 import { Role } from 'common/enums/role.enum'
@@ -27,7 +27,7 @@ export class UserService {
     const userExist = await this.prisma.user.findUnique({
       where: {
         id
-      },
+      }
     })
 
     if (!userExist) throw new NotFoundException('Người dùng không tồn tại')

@@ -9,7 +9,7 @@ import { Reflector } from '@nestjs/core'
 import { JwtService } from '@nestjs/jwt'
 import { PUBLIC_KEY } from 'common/decorators/public.decorator'
 import { ROLES_KEY } from 'common/decorators/roles.decorator'
-import { CurrentUserType } from 'common/types/currentUser.type'
+import { CurrentUserType } from 'common/types/current.type'
 import { Request } from 'express'
 
 @Injectable()
