@@ -1,6 +1,6 @@
 import { Controller, Get } from '@nestjs/common'
 import { CurrentUser } from 'common/decorators/current_user.decorator'
-import { CurrentUserType } from 'common/types/currentUser.type'
+import { CurrentUserType } from 'common/types/current.type'
 import { EmployeeService } from './employee.service'
 
 @Controller('user')

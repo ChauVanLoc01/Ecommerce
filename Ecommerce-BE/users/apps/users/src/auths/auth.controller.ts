@@ -9,7 +9,7 @@ import {
   Param
 } from '@nestjs/common'
 import { CurrentUser } from 'common/decorators/current_user.decorator'
-import { CurrentUserType } from 'common/types/currentUser.type'
+import { CurrentUserType } from 'common/types/current.type'
 import { LoginDTO } from '../dtos/login.dto'
 import { RegisterDTO } from '../dtos/register.dto'
 import { AuthService } from './auth.service'
@@ -18,12 +18,17 @@ import { Response } from 'express'
 import { JwtGuard } from 'common/guards/jwt.guard'
 import { ChangePasswordDTO } from '../dtos/change_password.dto'
 import { SendOtpDTO } from '../dtos/sendOTP.dto'
+import { ApiBearerAuth, ApiResponse, ApiTags } from '@nestjs/swagger'
+import { StoreStrategy } from 'common/strategys/store.stategy'
+import { ResetPasswordDTO } from '../dtos/reset_password.dto'
+import { StoreGuard } from 'common/guards/store.guard'
 
+@ApiTags('authentication')
 @Controller('authentication')
 export class AuthController {
   constructor(private authService: AuthService) {}
 
-  // Phần này là dành cho User và cả Admin
+  @ApiResponse({ status: 200 })
   @UseGuards(LocalUserGuard)
   @Post('user-login')
   userLogin(
@@ -34,6 +39,7 @@ export class AuthController {
     return this.authService.userLogin(user, response)
   }
 
+  @ApiResponse({ status: 201 })
   @Post('user-register')
   userRegister(
     @Body() registerDTO: RegisterDTO,
@@ -42,7 +48,7 @@ export class AuthController {
     return this.authService.userRegister(registerDTO, response)
   }
 
-  @UseGuards(LocalUserGuard)
+  @UseGuards(StoreGuard)
   @Post('store-login')
   storeLogin(
     @CurrentUser() user: CurrentUserType,
@@ -53,6 +59,7 @@ export class AuthController {
   }
 
   @UseGuards(JwtGuard)
+  @ApiBearerAuth()
   @Put('change-password')
   changePassword(
     @CurrentUser() user: CurrentUserType,
@@ -61,8 +68,13 @@ export class AuthController {
     return this.authService.changePassword(user, body)
   }
 
+  @Get('otp')
+  sendOtp(@Body() body: SendOtpDTO) {
+    return this.authService.sendOtp(body)
+  }
+
   @Post('reset-password')
-  resetPassword(@Body() body: SendOtpDTO) {
+  resetPassword(@Body() body: ResetPasswordDTO) {
     return this.authService.resetPassword(body)
   }
 }

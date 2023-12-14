@@ -1,5 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger'
-import { IsEmail, IsInt, IsNotEmpty } from 'class-validator'
+import {
+  IsEmail,
+  IsInt,
+  IsNotEmpty,
+  IsString,
+  MaxLength
+} from 'class-validator'
 
 export class SendOtpDTO {
   @ApiProperty()
@@ -8,9 +14,10 @@ export class SendOtpDTO {
   email: string
 
   @ApiProperty()
-  @IsInt()
+  @IsString()
   @IsNotEmpty()
-  otp: number
+  @MaxLength(16)
+  new_password: string
 }
 
 export type SendOtpType = InstanceType<typeof SendOtpDTO>

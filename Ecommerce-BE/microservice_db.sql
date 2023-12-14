@@ -2,18 +2,6 @@ create database microservice;
 
 use microservice;
 
-create table District (name nvarchar(100) not null primary key);
-
-create table City (name nvarchar(100) not null primary key);
-
-create table `Rank` (
-    id varchar(50) not null primary key,
-    point int,
-    type int not null,
-    createdAt timestamp default current_timestamp,
-    updatedAt timestamp null
-);
-
 create table Store (
     id varchar(50) not null primary key,
     name nvarchar(255) not null,
@@ -24,8 +12,7 @@ create table Store (
     createdBy varchar(50) not null,
     updatedBy varchar(50) null,
     createdAt timestamp default current_timestamp,
-    updatedAt timestamp null,
-    foreign key (location) references City(name)
+    updatedAt timestamp null
 );
 
 create table User (
@@ -33,12 +20,12 @@ create table User (
     full_name nvarchar(100) not null,
     birthday timestamp null,
     email varchar(255) not null,
+    address text,
     rankId varchar(50) null,
     role int not null,
     status int not null,
     createdAt timestamp default current_timestamp,
-    updatedAt timestamp null,
-    foreign key (rankId) references `Rank`(id)
+    updatedAt timestamp null
 );
 
 create table StoreRole (
@@ -69,26 +56,6 @@ create table Account (
     foreign key (updatedBy) references User(id),
     foreign key (storeRoleId) references StoreRole(id)
 );
-
-create table Address (
-    id varchar(50) not null primary key,
-    userId varchar(50) not null,
-    detailt nvarchar(1000) not null,
-    district nvarchar(100) not null,
-    city nvarchar(100) not null,
-    isPrimary boolean default false,
-    createdAt timestamp default current_timestamp,
-    updatedAt timestamp null,
-    foreign key (district) references District(name),
-    foreign key (city) references City(name),
-    foreign key (userId) references User(id)
-);
-
-
-/* ----------------------------------------------------------------------- */
-/* MỚI UPDATE TỚI ĐÂY THÔI - BÊN DƯỚI CHƯA CÓ UPDATE NHA */
-/* ----------------------------------------------------------------------- */
-
 
 create table Product (
     id varchar(50) not null primary key,
@@ -123,7 +90,8 @@ Create table ProductCategory(
     foreign key (product_id) references Product(id),
     foreign key (category_id) references Category(shortname),
     foreign key (createdBy) references User(id),
-    foreign key (updatedBy) references User(id)
+    foreign key (updatedBy) references User(id),
+    primary key (product_id, category_id)
 );
 
 create table ProductImage (
@@ -158,7 +126,7 @@ create table Voucher (
 create table `Order` (
     id varchar(50) not null primary key,
     userId varchar(50) not null,
-    address varchar(50) not null,
+    address text not null,
     total float not null,
     discount float,
     score int,
@@ -167,7 +135,6 @@ create table `Order` (
     status int not null,
     createdAt timestamp default current_timestamp,
     updatedAt timestamp null,
-    foreign key (address) references Address(id),
     foreign key (userId) references User(id),
     foreign key (voucherId) references Voucher(id)
 );
