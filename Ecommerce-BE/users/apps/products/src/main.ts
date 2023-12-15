@@ -1,5 +1,5 @@
 import { NestFactory } from '@nestjs/core'
-import { ProductsModule } from './products.module'
+import { ProductsModule } from './product/product.module'
 import { ConfigService } from '@nestjs/config'
 import { MicroserviceOptions, Transport } from '@nestjs/microservices'
 

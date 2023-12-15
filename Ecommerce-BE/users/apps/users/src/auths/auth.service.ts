@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common'
 import * as bcrypt from 'bcryptjs'
 import { JwtService } from '@nestjs/jwt'
-import { User, Account, StoreRole } from '@prisma/client'
+import { User, Account } from '@prisma/client'
 import { PrismaService } from '@app/common/prisma/prisma.service'
 import { Role } from 'common/enums/role.enum'
 import { Status } from 'common/enums/status.enum'

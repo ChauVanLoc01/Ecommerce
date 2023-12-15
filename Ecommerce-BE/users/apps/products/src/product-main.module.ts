@@ -1,10 +1,8 @@
-/* eslint-disable prettier/prettier */
-
 import { Module } from '@nestjs/common'
-import { ProductsModule } from './products.module'
 import { ConfigModule } from '@app/common'
+import { ProductModule } from './product/product.module'
 
 @Module({
-  imports: [ConfigModule, ProductsModule]
+  imports: [ConfigModule, ProductModule]
 })
 export class ProductMainModule {}

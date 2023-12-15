@@ -2,6 +2,7 @@ import { ApiPropertyOptional } from '@nestjs/swagger'
 import {
   IsDate,
   IsEmail,
+  IsInt,
   IsOptional,
   IsString,
   MaxLength
@@ -15,6 +16,11 @@ export class UpdateUserProfileDTO {
   full_name?: string
 
   @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  address?: string
+
+  @ApiPropertyOptional()
   @IsDate()
   @IsOptional()
   birthday?: Date
@@ -23,6 +29,11 @@ export class UpdateUserProfileDTO {
   @IsEmail()
   @IsOptional()
   email?: string
+
+  @ApiPropertyOptional()
+  @IsInt()
+  @IsOptional()
+  status?: number
 }
 
 export type UpdateUserProfileType = InstanceType<typeof UpdateUserProfileDTO>

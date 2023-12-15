@@ -159,3 +159,14 @@ create table UserScore(
     updatedAt timestamp,
     primary key (userId, storeId)
 );
+
+create table Payment(
+  id varchar(50) primary key,
+  orderID varchar(50) not null,
+  amount float not null,
+  status int not null,
+  createdAt timestamp default current_timestamp,
+  method int not null,
+  transactionId varchar(255),
+  FOREIGN KEY (orderID) references `Order`(id)
+);

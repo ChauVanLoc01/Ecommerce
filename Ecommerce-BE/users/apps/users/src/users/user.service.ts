@@ -15,6 +15,7 @@ import { v4 as uuidv4 } from 'uuid'
 import { ConfigService } from '@nestjs/config'
 import { UpdateUserProfileType } from '../dtos/update_user_profile.dto'
 import { User } from '@prisma/client'
+import { QueryAllUserProfileType } from '../dtos/all_user.dto'
 
 @Injectable()
 export class UserService {
@@ -23,10 +24,18 @@ export class UserService {
     private readonly configService: ConfigService
   ) {}
 
-  async profileDetail(id: string): Promise<User> {
+  async findAllUserProfile(query: QueryAllUserProfileType) {
+    return await this.prisma.user.findMany({
+      where: {
+
+      }
+    })
+  }
+
+  async profileDetail(user: CurrentUserType): Promise<User> {
     const userExist = await this.prisma.user.findUnique({
       where: {
-        id
+        id: user.id
       }
     })
 
@@ -36,18 +45,20 @@ export class UserService {
   }
 
   async updateProfile(
-    userId: string,
+    user: CurrentUserType,
     body: UpdateUserProfileType
   ): Promise<User> {
-    const { birthday, email, full_name } = body
+    const { birthday, email, full_name, address, status } = body
     const updatedUser = await this.prisma.user.update({
       where: {
-        id: userId
+        id: user.id
       },
       data: {
         birthday,
         email,
-        full_name
+        full_name,
+        address,
+        status
       }
     })
     return updatedUser
