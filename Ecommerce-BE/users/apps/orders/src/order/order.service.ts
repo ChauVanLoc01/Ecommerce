@@ -1,13 +1,10 @@
-import { PrismaService } from '@app/common/prisma/prisma.service';
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { CreateOrderType } from './dtos/create_order.dto';
+import { PrismaService } from '@app/common/prisma/prisma.service'
+import { Injectable, NotFoundException } from '@nestjs/common'
+import { CreateOrderType } from '../dtos/create_order.dto'
 
 @Injectable()
-export class OrdersService {
-
-  constructor(
-    private readonly prisma: PrismaService
-  ) {}
+export class OrderService {
+  constructor(private readonly prisma: PrismaService) {}
 
   async getAll(userId: string) {
     return await this.prisma.order.findMany({
@@ -16,9 +13,7 @@ export class OrdersService {
         ProductOrder: {
           some: {
             Product: {
-              name: {
-                
-              }
+              name: {}
             }
           }
         }
@@ -42,5 +37,4 @@ export class OrdersService {
   create(userId: string, body: CreateOrderType) {}
 
   update() {}
-
 }

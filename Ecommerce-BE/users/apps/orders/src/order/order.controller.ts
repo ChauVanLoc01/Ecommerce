@@ -1,12 +1,12 @@
 import { Body, Controller, Get, Param, Post, Put } from '@nestjs/common'
-import { OrdersService } from './orders.service'
+import { OrderService } from './order.service'
 import { CurrentUser } from 'common/decorators/current_user.decorator'
 import { CurrentUserType } from 'common/types/current.type'
-import { CreateOrderDTO } from './dtos/create_order.dto'
+import { CreateOrderDTO } from '../dtos/create_order.dto'
 
 @Controller('order')
-export class OrdersController {
-  constructor(private readonly ordersService: OrdersService) {}
+export class OrderController {
+  constructor(private readonly ordersService: OrderService) {}
 
   @Get()
   getAll(@CurrentUser() user: CurrentUserType) {
