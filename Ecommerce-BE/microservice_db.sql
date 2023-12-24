@@ -2,19 +2,6 @@ create database microservice;
 
 use microservice;
 
-create table Store (
-    id varchar(50) not null primary key,
-    name nvarchar(255) not null,
-    image varchar(255) not null,
-    location nvarchar(100) not null,
-    description nvarchar(1000) not null,
-    status int not null,
-    createdBy varchar(50) not null,
-    updatedBy varchar(50) null,
-    createdAt timestamp default current_timestamp,
-    updatedAt timestamp null
-);
-
 create table User (
     id varchar(50) not null primary key,
     full_name nvarchar(100) not null,
@@ -26,6 +13,21 @@ create table User (
     status int not null,
     createdAt timestamp default current_timestamp,
     updatedAt timestamp null
+);
+
+create table Store (
+    id varchar(50) not null primary key,
+    name nvarchar(255) not null,
+    image varchar(255) not null,
+    location nvarchar(100),
+    description nvarchar(1000),
+    status int not null,
+    createdBy varchar(50) not null,
+    updatedBy varchar(50) null,
+    createdAt timestamp default current_timestamp,
+    updatedAt timestamp null,
+    foreign key (createdBy) references User(id),
+    foreign key (updatedBy) references User(id)
 );
 
 create table StoreRole (
@@ -57,53 +59,32 @@ create table Account (
     foreign key (storeRoleId) references StoreRole(id)
 );
 
-create table Product (
-    id varchar(50) not null primary key,
-    name nvarchar(100) not null,
-    priceBefore float not null,
-    priceAfter float not null,
-    initQuantity int not null,
-    currentQuantity int not null,
-    description text not null,
-    status int not null,
-    createdBy varchar(50) not null,
-    updatedBy varchar(50) null,
-    createdAt timestamp default current_timestamp,
-    updatedAt timestamp null,
-    storeId varchar(50) not null,
-    foreign key (createdBy) references User(id),
-    foreign key (updatedBy) references User(id),
-    foreign key (storeId) references Store(id)
-);
-
 CREATE TABLE Category (
     shortname varchar(50) not null primary key,
     name nvarchar(255) NOT NULL,
     description TEXT
 );
 
-Create table ProductCategory(
-	product_id varchar(50) not null,
-    category_id varchar(50) not null,
-    createdBy varchar(50) not null,
-    updatedBy varchar(50) not null,
-    foreign key (product_id) references Product(id),
-    foreign key (category_id) references Category(shortname),
-    foreign key (createdBy) references User(id),
-    foreign key (updatedBy) references User(id),
-    primary key (product_id, category_id)
-);
-
-create table ProductImage (
+create table Product (
     id varchar(50) not null primary key,
-    url nvarchar(255) not null,
+    name text not null,
+    image text not null,
+    priceBefore float not null,
+    priceAfter float null,
+    initQuantity int not null,
+    currentQuantity int not null,
+    description text,
     status int not null,
+    category varchar(50),
     createdBy varchar(50) not null,
     updatedBy varchar(50) null,
     createdAt timestamp default current_timestamp,
     updatedAt timestamp null,
-    productId varchar(50) not null,
-    foreign key (productId) references Product(id)
+    storeId varchar(50) not null,
+    foreign key (category) references Category(shortname),
+    foreign key (createdBy) references User(id),
+    foreign key (updatedBy) references User(id),
+    foreign key (storeId) references Store(id)
 );
 
 create table Voucher (
