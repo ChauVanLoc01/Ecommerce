@@ -1,10 +1,10 @@
 import { NestFactory } from '@nestjs/core'
-import { ProductsModule } from './product/product.module'
 import { ConfigService } from '@nestjs/config'
 import { MicroserviceOptions, Transport } from '@nestjs/microservices'
+import { ProductModule } from './product/product.module'
 
 async function bootstrap() {
-  const app = await NestFactory.create(ProductsModule)
+  const app = await NestFactory.create(ProductModule)
 
   const configService = app.get(ConfigService)
 
