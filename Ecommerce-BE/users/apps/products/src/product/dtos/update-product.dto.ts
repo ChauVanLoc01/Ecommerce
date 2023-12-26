@@ -1,57 +1,50 @@
 /* eslint-disable prettier/prettier */
-import { IsNotEmpty, IsNumber, IsString, IsOptional } from "class-validator"
-import { ApiProperty, PartialType } from "@nestjs/swagger"
-import { CreateProductDTO } from './create-product.dto';
+import {
+  IsNotEmpty,
+  IsNumber,
+  IsString,
+  IsOptional,
+  IsEnum
+} from 'class-validator'
+import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger'
 
 export class UpdateProductDTO {
-    @ApiProperty()
-    @IsString()
-    @IsNotEmpty()
-    id: string
+  @ApiPropertyOptional({
+    required: false,
+    type: 'string',
+    format: 'binary'
+  })
+  image?: Express.Multer.File
 
-    @ApiProperty()
-    @IsString()
-    code: string
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  name?: string
 
+  @ApiPropertyOptional()
+  @IsNumber()
+  @IsOptional()
+  priceBefore?: number
 
-    @ApiProperty()
-    @IsString()
-    @IsNotEmpty()
-    name: string
+  @ApiPropertyOptional()
+  @IsNumber()
+  @IsOptional()
+  priceAfter?: number
 
-    @ApiProperty()
-    @IsNumber()
-    priceBefore: number
+  @ApiPropertyOptional()
+  @IsNumber()
+  @IsOptional()
+  currentQuantity?: number
 
-    @ApiProperty()
-    @IsNumber()
-    @IsNotEmpty()
-    priceAfter: number
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  description?: string
 
-    @ApiProperty()
-    @IsNumber()
-    @IsNotEmpty()
-    initQuantity: number
-
-    @ApiProperty()
-    @IsNumber()
-    @IsNotEmpty()
-    currentQuantity: number
-
-    @ApiProperty()
-    @IsString()
-    @IsNotEmpty()
-    description: string
-    
-    @ApiProperty()
-    @IsString()
-    @IsNotEmpty()
-    status: string
-
+  @ApiPropertyOptional()
+  @IsEnum([0, 1])
+  @IsOptional()
+  status?: 0 | 1
 }
-export class UpdateProductDto extends PartialType(CreateProductDTO) {
-    @IsOptional()
-    @IsNotEmpty()
-    @IsString()
-    productImage: string;
-  }
+
+export type UpdateProductType = InstanceType<typeof UpdateProductDTO>

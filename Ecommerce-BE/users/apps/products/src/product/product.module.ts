@@ -1,10 +1,12 @@
 import { Module } from '@nestjs/common'
 import { ConfigModule } from '@app/common'
-
 import { ClientsModule, Transport } from '@nestjs/microservices'
 import { ConfigService } from '@nestjs/config'
 import { ProductService } from './product.service'
 import { ProductController } from './product.controller'
+import { MulterModule } from '@nestjs/platform-express'
+import { diskStorage } from 'multer'
+import { v4 as uuidv4 } from 'uuid'
 
 @Module({
   imports: [
@@ -27,6 +29,19 @@ import { ProductController } from './product.controller'
           inject: [ConfigService]
         }
       ]
+    }),
+    MulterModule.register({
+      storage: diskStorage({
+        destination(req, file, callback) {
+          callback(null, process.cwd() + '/public/images')
+        },
+        filename(req, file, callback) {
+          callback(
+            null,
+            `${new Date().toISOString()}-${uuidv4()}-${file.originalname}`
+          )
+        }
+      })
     }),
     ConfigModule
   ],

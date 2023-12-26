@@ -1,50 +1,44 @@
 /* eslint-disable prettier/prettier */
-import { IsNotEmpty, IsNumber, IsString } from "class-validator"
-import { ApiProperty } from "@nestjs/swagger"
+import { IsNotEmpty, IsNumber, IsString } from 'class-validator'
+import { ApiProperty } from '@nestjs/swagger'
 export class CreateProductDTO {
-    @ApiProperty()
-    @IsString()
-    @IsNotEmpty()
-    id: string
+  @ApiProperty({
+    required: true,
+    type: 'string',
+    format: 'binary'
+  })
+  @IsNotEmpty()
+  image: Express.Multer.File
 
-    @ApiProperty()
-    @IsString()
-    code: string
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  name: string
 
+  @ApiProperty()
+  @IsNumber()
+  @IsNotEmpty()
+  priceBefore: number
 
-    @ApiProperty()
-    @IsString()
-    @IsNotEmpty()
-    name: string
+  @ApiProperty()
+  @IsNumber()
+  @IsNotEmpty()
+  priceAfter: number
 
-    @ApiProperty()
-    @IsNumber()
-    priceBefore: number
+  @ApiProperty()
+  @IsNumber()
+  @IsNotEmpty()
+  initQuantity: number
 
-    @ApiProperty()
-    @IsNumber()
-    @IsNotEmpty()
-    priceAfter: number
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  description: string
 
-    @ApiProperty()
-    @IsNumber()
-    @IsNotEmpty()
-    initQuantity: number
-
-    @ApiProperty()
-    @IsNumber()
-    @IsNotEmpty()
-    currentQuantity: number
-
-    @ApiProperty()
-    @IsString()
-    @IsNotEmpty()
-    description: string
-    
-    @ApiProperty()
-    @IsString()
-    @IsNotEmpty()
-    status: string
-
-   
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  status: string
 }
+
+export type CreateProductType = InstanceType<typeof CreateProductDTO>
