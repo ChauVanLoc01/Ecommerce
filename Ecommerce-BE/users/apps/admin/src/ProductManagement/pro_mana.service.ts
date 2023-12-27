@@ -1,4 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common'
 
 @Injectable()
-export class ProductManagementService {}
+export class ProductManagementService {
+  constructor() {}
+
+  async analyticProduct() {}
+
+  async blockProduct() {}
+}

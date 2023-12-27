@@ -35,21 +35,22 @@ model Category {
 }
 
 model Order {
-  id           String         @id @db.VarChar(50)
-  userId       String         @db.VarChar(50)
-  address      String         @db.Text
-  total        Float          @db.Float
-  discount     Float?         @db.Float
-  score        Int?
-  pay          Float          @db.Float
-  voucherId    String?        @db.VarChar(50)
-  status       Int
-  createdAt    DateTime?      @default(now()) @db.Timestamp(0)
-  updatedAt    DateTime?      @db.Timestamp(0)
-  User         User           @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Order_ibfk_1")
-  Voucher      Voucher?       @relation(fields: [voucherId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Order_ibfk_2")
-  Payment      Payment[]
-  ProductOrder ProductOrder[]
+  id              String         @id @db.VarChar(50)
+  userId          String         @db.VarChar(50)
+  address         String         @db.Text
+  total           Float          @db.Float
+  discount        Float?         @db.Float
+  score           Int?
+  pay             Float          @db.Float
+  transactionType Int
+  voucherId       String?        @db.VarChar(50)
+  status          Int
+  createdAt       DateTime?      @default(now()) @db.Timestamp(0)
+  updatedAt       DateTime?      @db.Timestamp(0)
+  User            User           @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Order_ibfk_1")
+  Voucher         Voucher?       @relation(fields: [voucherId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Order_ibfk_2")
+  Payment         Payment[]
+  ProductOrder    ProductOrder[]
 
   @@index([userId], map: "userId")
   @@index([voucherId], map: "voucherId")

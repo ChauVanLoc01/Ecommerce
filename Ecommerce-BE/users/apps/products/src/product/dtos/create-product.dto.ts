@@ -1,6 +1,14 @@
 /* eslint-disable prettier/prettier */
-import { IsNotEmpty, IsNumber, IsString } from 'class-validator'
-import { ApiProperty } from '@nestjs/swagger'
+import {
+  IsEnum,
+  IsInt,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString
+} from 'class-validator'
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
+import { Status } from 'common/enums/status.enum'
 export class CreateProductDTO {
   @ApiProperty({
     required: true,
@@ -20,13 +28,13 @@ export class CreateProductDTO {
   @IsNotEmpty()
   priceBefore: number
 
-  @ApiProperty()
+  @ApiPropertyOptional()
   @IsNumber()
-  @IsNotEmpty()
-  priceAfter: number
+  @IsOptional()
+  priceAfter?: number
 
   @ApiProperty()
-  @IsNumber()
+  @IsInt()
   @IsNotEmpty()
   initQuantity: number
 
@@ -35,10 +43,13 @@ export class CreateProductDTO {
   @IsNotEmpty()
   description: string
 
-  @ApiProperty()
-  @IsString()
-  @IsNotEmpty()
-  status: string
+  @ApiPropertyOptional({
+    required: false,
+    default: Status.ACCESS
+  })
+  @IsEnum(Status)
+  @IsOptional()
+  status: Status.ACCESS
 }
 
 export type CreateProductType = InstanceType<typeof CreateProductDTO>

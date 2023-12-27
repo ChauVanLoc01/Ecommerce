@@ -7,6 +7,7 @@ import {
   IsEnum
 } from 'class-validator'
 import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger'
+import { Status } from 'common/enums/status.enum'
 
 export class UpdateProductDTO {
   @ApiPropertyOptional({
@@ -41,10 +42,12 @@ export class UpdateProductDTO {
   @IsOptional()
   description?: string
 
-  @ApiPropertyOptional()
-  @IsEnum([0, 1])
+  @ApiPropertyOptional({
+    enum: Status
+  })
+  @IsEnum(Status)
   @IsOptional()
-  status?: 0 | 1
+  status?: Status
 }
 
 export type UpdateProductType = InstanceType<typeof UpdateProductDTO>
