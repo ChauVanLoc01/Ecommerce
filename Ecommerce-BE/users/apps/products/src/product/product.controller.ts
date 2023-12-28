@@ -27,11 +27,15 @@ import { CurrentUserType } from 'common/types/current.type'
 import { FileInterceptor } from '@nestjs/platform-express'
 import { CreateProductDTO } from './dtos/create-product.dto'
 import { UpdateProductDTO } from './dtos/update-product.dto'
+import { SearchProductService } from './search-product.service'
 
 @UseGuards(JwtGuard)
 @Controller('product')
 export class ProductController {
-  constructor(private readonly productsService: ProductService) {}
+  constructor(
+    private readonly productsService: ProductService,
+    private searchProductService: SearchProductService
+  ) {}
 
   @Public()
   @Get()

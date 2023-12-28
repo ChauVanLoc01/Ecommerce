@@ -1,16 +1,14 @@
-import { NestFactory } from '@nestjs/core'
-import { ConfigService } from '@nestjs/config'
-import * as cookieParser from 'cookie-parser'
-import { MicroserviceOptions } from '@nestjs/microservices'
-import { Transport } from '@nestjs/microservices/enums'
 import { BadRequestException, ValidationPipe } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
+import { NestFactory } from '@nestjs/core'
+import { MicroserviceOptions, Transport } from '@nestjs/microservices'
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
+import * as cookieParser from 'cookie-parser'
 import { ValidationError } from 'class-validator'
-import { UserMainModule } from './user_main.module'
 
-async function bootstrap() {
+export async function bootstrap(mainModule: any) {
   try {
-    const app = await NestFactory.create(UserMainModule)
+    const app = await NestFactory.create(mainModule)
 
     const configService = app.get(ConfigService)
 
@@ -18,13 +16,15 @@ async function bootstrap() {
       transport: Transport.RMQ,
       options: {
         urls: [configService.get<string>('rabbitmq.uri')],
-        queue: configService.get<string>('rabbitmq.user_queue'),
+        queue: configService.get<string>('rabbitmq.queue_name'),
         queueOptions: {
           durable: true
         }
       }
     })
+
     app.enableCors()
+
     app.use(cookieParser())
 
     const config = new DocumentBuilder()
@@ -33,7 +33,9 @@ async function bootstrap() {
       .setVersion('1.0')
       .addBearerAuth()
       .build()
+
     const document = SwaggerModule.createDocument(app, config)
+
     SwaggerModule.setup('docs', app, document)
 
     app.useGlobalPipes(
@@ -63,7 +65,9 @@ async function bootstrap() {
     app.listen(configService.get('app.port'))
 
     console.log(
-      `App running with RMQ: ${configService.get<string>('rabbitmq.uri')}`
+      `App running with RMQ: ${configService.get<string>(
+        'rabbitmq.uri'
+      )} with ${configService.get<string>('rabbitmq.queue_name')}`
     )
 
     console.log(
@@ -75,4 +79,3 @@ async function bootstrap() {
     console.log('Error:::', err.message)
   }
 }
-bootstrap()

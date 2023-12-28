@@ -1,10 +1,10 @@
 import { CategoryService } from './category.service'
 import { CategoryController } from './category.controller'
 import { Module } from '@nestjs/common'
+import { JwtService } from '@nestjs/jwt'
 
 @Module({
-  imports: [],
   controllers: [CategoryController],
-  providers: [CategoryService]
+  providers: [CategoryService, JwtService]
 })
 export class CategoryModule {}

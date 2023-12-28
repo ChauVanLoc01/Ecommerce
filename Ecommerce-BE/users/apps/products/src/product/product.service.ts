@@ -6,7 +6,7 @@ import { CreateProductType } from './dtos/create-product.dto'
 import { UpdateProductType } from './dtos/update-product.dto'
 import { v4 as uuidv4 } from 'uuid'
 import { Status } from 'common/enums/status.enum'
-import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
+import { CurrentUserType } from 'common/types/current.type'
 
 @Injectable()
 export class ProductService {
