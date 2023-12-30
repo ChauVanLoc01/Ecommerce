@@ -53,8 +53,8 @@ export class JwtGuard implements CanActivate {
         context.getClass()
       ])
 
-      if (roles.includes(role)) {
-        return true
+      if (roles && !roles.includes(role)) {
+        throw new UnauthorizedException('Người dùng không có quyền truy cập')
       }
 
       request['user'] = payload

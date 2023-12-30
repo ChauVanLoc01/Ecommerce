@@ -22,6 +22,7 @@ import { ApiBearerAuth, ApiResponse, ApiTags } from '@nestjs/swagger'
 import { StoreStrategy } from 'common/strategys/store.stategy'
 import { ResetPasswordDTO } from '../dtos/reset_password.dto'
 import { StoreGuard } from 'common/guards/store.guard'
+import { Public } from 'common/decorators/public.decorator'
 
 @ApiTags('authentication')
 @Controller('authentication')

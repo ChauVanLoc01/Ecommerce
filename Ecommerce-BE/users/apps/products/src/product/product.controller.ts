@@ -12,6 +12,7 @@ import {
   ParseFilePipe,
   Post,
   Put,
+  Query,
   UploadedFile,
   UseGuards,
   UseInterceptors
@@ -28,6 +29,9 @@ import { FileInterceptor } from '@nestjs/platform-express'
 import { CreateProductDTO } from './dtos/create-product.dto'
 import { UpdateProductDTO } from './dtos/update-product.dto'
 import { SearchProductService } from './search-product.service'
+import { ElasticSearchProductDTO } from './dtos/elasticsearch-product.dto'
+import { QueryAllUserProfileDTO } from 'apps/users/src/dtos/all_user.dto'
+import { QueryProductDTO } from './dtos/query-product.dto'
 
 @UseGuards(JwtGuard)
 @Controller('product')
@@ -38,9 +42,15 @@ export class ProductController {
   ) {}
 
   @Public()
+  @Get('es-search')
+  searchProduct(@Query('search') search: string) {
+    return this.productsService.searchProduct(search)
+  }
+
+  @Public()
   @Get()
-  getAll() {
-    return this.productsService.getALlProduct()
+  getAll(@Query() query: QueryProductDTO) {
+    return this.productsService.getALlProduct(query)
   }
 
   @Public()

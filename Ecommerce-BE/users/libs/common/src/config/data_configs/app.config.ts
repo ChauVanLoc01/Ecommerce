@@ -11,5 +11,7 @@ export default registerAs('app', () => ({
 
   refresh_token_expire_time: Number(process.env.REFRESH_TOKEN_EXPIRATION_TIME),
 
-  refresh_token_secret_key: process.env.REFRESH_TOKEN_SECRET_KEY
+  refresh_token_secret_key: process.env.REFRESH_TOKEN_SECRET_KEY,
+
+  limit_default: Number(process.env.TAKE_LIMTI_DEFAULT)
 }))

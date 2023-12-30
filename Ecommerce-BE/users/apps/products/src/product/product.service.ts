@@ -7,15 +7,81 @@ import { UpdateProductType } from './dtos/update-product.dto'
 import { v4 as uuidv4 } from 'uuid'
 import { Status } from 'common/enums/status.enum'
 import { CurrentUserType } from 'common/types/current.type'
+import { ElasticsearchService } from '@nestjs/elasticsearch'
+import { SearchProductService } from './search-product.service'
+import { QueryProductType } from './dtos/query-product.dto'
+import { ConfigService } from '@nestjs/config'
 
 @Injectable()
 export class ProductService {
   constructor(
     private readonly prisma: PrismaService,
-    @Inject('USER_SERVICE') private readonly user_service: ClientProxy
+    @Inject('USER_SERVICE') private readonly user_service: ClientProxy,
+    private readonly searchService: SearchProductService,
+    private readonly configService: ConfigService
   ) {}
 
-  async getALlProduct() {}
+  async searchProduct(search: string) {
+    const result = this.searchService.searchProduct(search)
+
+    console.log(result)
+
+    return result
+  }
+
+  async getALlProduct(query: QueryProductType): Promise<Return> {
+    const {
+      category,
+      createdAt,
+      end_date,
+      price_max,
+      price_min,
+      sell,
+      start_date,
+      limit,
+      page
+    } = query
+
+    const products = await this.prisma.product.findMany({
+      where: {
+        OR: [
+          {
+            category,
+            createdAt: {
+              lte: end_date,
+              gte: start_date
+            },
+            priceBefore: {
+              lte: price_max,
+              gte: price_min
+            }
+          },
+          {
+            category,
+            createdAt: {
+              lte: end_date,
+              gte: start_date
+            },
+            priceAfter: {
+              lte: price_max,
+              gte: price_min
+            }
+          }
+        ]
+      },
+      orderBy: {
+        createdAt,
+        rate: sell
+      },
+      take: limit | this.configService.get<number>('app.limit_default'),
+      skip: page && page > 0 ? (page - 1) * limit : 0
+    })
+
+    return {
+      msg: 'Lấy danh sách sản phẩm thành công',
+      result: products
+    }
+  }
 
   async getProductDetail(productId: string): Promise<Return> {
     const productExist = await this.prisma.product.findUnique({

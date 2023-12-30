@@ -62,22 +62,16 @@ export class AuthService {
     return bcrypt.compare(password, hash)
   }
 
-  setToken(
-    access_token: string,
-    refresh_token: string,
-    response: Response
-  ): Promise<() => void> {
-    return Promise.resolve(() => {
-      response.cookie('Authentication', `Bearer ${access_token}`, {
-        httpOnly: true,
-        secure: true,
-        maxAge: this.configService.get<number>('app.access_token_expire_time')
-      })
-      response.cookie('RefreshToken', `Bearer ${refresh_token}`, {
-        httpOnly: true,
-        secure: true,
-        maxAge: this.configService.get<number>('app.refresh_token_expire_time')
-      })
+  setToken(access_token: string, refresh_token: string, response: Response) {
+    response.cookie('Authorization', `Bearer ${access_token}`, {
+      httpOnly: true,
+      secure: true,
+      maxAge: this.configService.get<number>('app.access_token_expire_time')
+    })
+    response.cookie('RefreshToken', `Bearer ${refresh_token}`, {
+      httpOnly: true,
+      secure: true,
+      maxAge: this.configService.get<number>('app.refresh_token_expire_time')
     })
   }
 
@@ -175,7 +169,7 @@ export class AuthService {
       this.createRefreshToken(user)
     ])
 
-    await this.setToken(access_token, refresh_token, response)
+    this.setToken(access_token, refresh_token, response)
 
     const { createdAt, status, ...rest } = await this.prisma.user.findUnique({
       where: {
@@ -313,6 +307,12 @@ export class AuthService {
     })
 
     if (!accountExist) throw new BadRequestException('Tải khoản không tồn tại')
+
+    if (
+      !(await this.comparePassword(current_password, accountExist.password))
+    ) {
+      throw new BadRequestException('Mật khẩu hiện tại không đúng')
+    }
 
     const { password, ...rest } = await this.prisma.account.update({
       where: {

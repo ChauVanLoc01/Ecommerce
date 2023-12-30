@@ -5,6 +5,7 @@ import { MicroserviceOptions, Transport } from '@nestjs/microservices'
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
 import * as cookieParser from 'cookie-parser'
 import { ValidationError } from 'class-validator'
+import { RabbitmqEnv } from '@app/common/config/data_configs/rabbitmq.config'
 
 export async function bootstrap(mainModule: any) {
   try {
@@ -15,8 +16,8 @@ export async function bootstrap(mainModule: any) {
     app.connectMicroservice<MicroserviceOptions>({
       transport: Transport.RMQ,
       options: {
-        urls: [configService.get<string>('rabbitmq.uri')],
-        queue: configService.get<string>('rabbitmq.queue_name'),
+        urls: [configService.get<string>(RabbitmqEnv.uri)],
+        queue: configService.get<string>(RabbitmqEnv.queue_name),
         queueOptions: {
           durable: true
         }
@@ -27,14 +28,14 @@ export async function bootstrap(mainModule: any) {
 
     app.use(cookieParser())
 
-    const config = new DocumentBuilder()
+    const swaggerConfig = new DocumentBuilder()
       .setTitle('Store Api')
       .setDescription('The api for store')
       .setVersion('1.0')
       .addBearerAuth()
       .build()
 
-    const document = SwaggerModule.createDocument(app, config)
+    const document = SwaggerModule.createDocument(app, swaggerConfig)
 
     SwaggerModule.setup('docs', app, document)
 

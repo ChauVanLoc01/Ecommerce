@@ -3,7 +3,7 @@ import { AuthController } from './auth.controller'
 import { Module } from '@nestjs/common'
 import { LocalUserStrategy } from '../../../../common/strategys/local.stategy'
 import { PassportModule } from '@nestjs/passport'
-import { JwtModule } from '@nestjs/jwt'
+import { JwtModule, JwtService } from '@nestjs/jwt'
 import { ConfigModule, PrismaModule } from '@app/common'
 import { BullModule } from '@nestjs/bull'
 import { Queue } from 'common/constants/queue.constant'
@@ -20,7 +20,7 @@ import { StoreStrategy } from 'common/strategys/store.stategy'
     JwtModule
   ],
   controllers: [AuthController],
-  providers: [AuthService, LocalUserStrategy, StoreStrategy],
+  providers: [AuthService, LocalUserStrategy, StoreStrategy, JwtService],
   exports: [AuthService]
 })
 export class AuthModule {}
