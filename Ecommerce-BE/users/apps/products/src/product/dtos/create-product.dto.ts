@@ -38,10 +38,10 @@ export class CreateProductDTO {
   @IsNotEmpty()
   initQuantity: number
 
-  @ApiProperty()
+  @ApiPropertyOptional()
   @IsString()
-  @IsNotEmpty()
-  description: string
+  @IsOptional()
+  description?: string
 
   @ApiPropertyOptional({
     required: false,

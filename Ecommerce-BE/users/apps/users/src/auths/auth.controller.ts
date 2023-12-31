@@ -9,7 +9,7 @@ import {
   Param
 } from '@nestjs/common'
 import { CurrentUser } from 'common/decorators/current_user.decorator'
-import { CurrentUserType } from 'common/types/current.type'
+import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
 import { LoginDTO } from '../dtos/login.dto'
 import { RegisterDTO } from '../dtos/register.dto'
 import { AuthService } from './auth.service'
@@ -52,7 +52,7 @@ export class AuthController {
   @UseGuards(StoreGuard)
   @Post('store-login')
   storeLogin(
-    @CurrentUser() user: CurrentUserType,
+    @CurrentUser() user: CurrentStoreType,
     @Body() _: LoginDTO,
     @Res({ passthrough: true }) response: Response
   ) {

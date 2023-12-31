@@ -5,38 +5,62 @@ import {
   Param,
   Post,
   Put,
+  Query,
   UseGuards
 } from '@nestjs/common'
 import { OrderService } from './order.service'
 import { CurrentUser } from 'common/decorators/current_user.decorator'
-import { CurrentUserType } from 'common/types/current.type'
+import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
 import { CreateOrderDTO } from '../dtos/create_order.dto'
 import { Roles } from 'common/decorators/roles.decorator'
 import { Role } from 'common/enums/role.enum'
 import { JwtGuard } from 'common/guards/jwt.guard'
 import { ApiBearerAuth } from '@nestjs/swagger'
 import { UpdateOrderDTO } from '../dtos/update_order.dto'
+import { QueryOrderDTO } from '../dtos/query-order.dto'
 
+@ApiBearerAuth()
 @UseGuards(JwtGuard)
-@Controller('order')
+@Controller()
 export class OrderController {
   constructor(private readonly ordersService: OrderService) {}
 
-  @ApiBearerAuth()
-  @Roles(Role.USER, Role.EMPLOYEE, Role.STORE_OWNER)
-  @Get()
-  getProductAll(@CurrentUser() user: CurrentUserType) {
-    return this.ordersService.getAll(user.id)
+  @Roles(Role.USER)
+  @Get('user/order')
+  getAllOrderByUser(
+    @CurrentUser() user: CurrentUserType,
+    @Query() query: QueryOrderDTO
+  ) {
+    return this.ordersService.getAllOrderByUser(user, query)
   }
 
-  @ApiBearerAuth()
-  @Roles(Role.USER, Role.EMPLOYEE, Role.STORE_OWNER)
-  @Get(':orderId')
-  getOrderDetail(@Param('orderId') orderId: string) {
-    return this.ordersService.getProductDetail(orderId)
+  @Roles(Role.USER)
+  @Get('user/order/:orderId')
+  getOrderDetailByUser(
+    @CurrentUser() user: CurrentUserType,
+    @Param('orderId') orderId: string
+  ) {
+    return this.ordersService.getOrderDetailByUser(user, orderId)
   }
 
-  @ApiBearerAuth()
+  @Roles(Role.EMPLOYEE, Role.STORE_OWNER, Role.ADMIN)
+  @Get('user/order')
+  getAllOrderByStore(
+    @CurrentUser() user: CurrentStoreType,
+    @Query() query: QueryOrderDTO
+  ) {
+    return this.ordersService.getAllOrderByStore(user, query)
+  }
+
+  @Roles(Role.USER)
+  @Get('user/order/:orderId')
+  getOrderDetailByStore(
+    @CurrentUser() user: CurrentStoreType,
+    @Param('orderId') orderId: string
+  ) {
+    return this.ordersService.getOrderDetailByStore(user, orderId)
+  }
+
   @Roles(Role.USER)
   @Post()
   createOrder(
@@ -46,6 +70,7 @@ export class OrderController {
     return this.ordersService.createOrder(user.id, body)
   }
 
+  @Roles(Role.USER)
   @Put(':orderId')
   updateOrder(
     @Param('orderId') orderId: string,

@@ -40,14 +40,16 @@ export class AuthService {
     @Inject(CACHE_MANAGER) private cacheManager: Cache
   ) {}
 
-  createAccessToken(data: CurrentUserType): Promise<string> {
+  createAccessToken(data: CurrentUserType | CurrentStoreType): Promise<string> {
     return this.jwtService.signAsync(data, {
       secret: this.configService.get<string>('app.access_token_secret_key'),
       expiresIn: this.configService.get<number>('app.access_token_expire_time')
     })
   }
 
-  createRefreshToken(data: CurrentUserType): Promise<string> {
+  createRefreshToken(
+    data: CurrentUserType | CurrentStoreType
+  ): Promise<string> {
     return this.jwtService.signAsync(data, {
       secret: this.configService.get<string>('app.refresh_token_secret_key'),
       expiresIn: this.configService.get<number>('app.refresh_token_expire_time')
@@ -260,33 +262,36 @@ export class AuthService {
     }
   }
 
-  async storeLogin(user: CurrentUserType, response: Response) {
+  async storeLogin(
+    user: CurrentStoreType,
+    response: Response
+  ): Promise<Return> {
     const [access_token, refresh_token] = await Promise.all([
       this.createAccessToken(user),
       this.createRefreshToken(user)
     ])
 
-    await this.setToken(access_token, refresh_token, response)
+    this.setToken(access_token, refresh_token, response)
 
     const [user_profile, store] = await Promise.all([
       this.prisma.user.findUnique({
         where: {
-          id: user.id
+          id: user.userId
         }
       }),
-      this.prisma.storeRole.findUnique({
+      this.prisma.store.findUnique({
         where: {
-          id: user.storeRoleId
-        },
-        include: {
-          Store: true
+          id: user.storeId
         }
       })
     ])
 
     return {
-      user: user_profile,
-      store
+      msg: 'Đăng nhập cửa hàng thành công',
+      result: {
+        user: user_profile,
+        store
+      }
     }
   }
 

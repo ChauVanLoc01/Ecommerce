@@ -24,7 +24,7 @@ import { Role } from 'common/enums/role.enum'
 import { JwtGuard } from 'common/guards/jwt.guard'
 import { Public } from 'common/decorators/public.decorator'
 import { CurrentUser } from 'common/decorators/current_user.decorator'
-import { CurrentUserType } from 'common/types/current.type'
+import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
 import { FileInterceptor } from '@nestjs/platform-express'
 import { CreateProductDTO } from './dtos/create-product.dto'
 import { UpdateProductDTO } from './dtos/update-product.dto'
@@ -77,7 +77,7 @@ export class ProductController {
       })
     )
     file: Express.Multer.File,
-    @CurrentUser() user: CurrentUserType,
+    @CurrentUser() user: CurrentStoreType,
     @Body() body: CreateProductDTO
   ) {
     return this.productsService.createProduct(user, file.filename, body)
@@ -88,7 +88,7 @@ export class ProductController {
   @Put(':productId')
   updateProduct(
     @Param('productId') productId: string,
-    @CurrentUser() user: CurrentUserType,
+    @CurrentUser() user: CurrentStoreType,
     @Body() body: UpdateProductDTO,
     @UploadedFile(
       new ParseFilePipe({
@@ -116,9 +116,9 @@ export class ProductController {
   @Roles(Role.STORE_OWNER)
   @Delete(':productId')
   deleteProduct(
-    @CurrentUser() user: CurrentUserType,
+    @CurrentUser() user: CurrentStoreType,
     @Param('productId') productId: string
   ) {
-    return this.productsService.deleteProduct(user.id, productId)
+    return this.productsService.deleteProduct(user, productId)
   }
 }

@@ -6,33 +6,154 @@ import {
 } from '@nestjs/common'
 import { CreateOrderType } from '../dtos/create_order.dto'
 import { Return } from 'common/types/result.type'
-import { CurrentUserType } from 'common/types/current.type'
+import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
 import { UpdateOrderDTO, UpdateOrderType } from '../dtos/update_order.dto'
 import { OrderStatus } from 'common/enums/orderStatus.enum'
+import { QueryOrderType } from '../dtos/query-order.dto'
+import { ConfigService } from '@nestjs/config'
 
 @Injectable()
 export class OrderService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly configService: ConfigService
+  ) {}
 
-  async getAll(userId: string) {
-    return await this.prisma.order.findMany({
+  async getAllOrderByUser(
+    user: CurrentUserType,
+    query: QueryOrderType
+  ): Promise<Return> {
+    const { id } = user
+
+    const {
+      product_name,
+      createdAt,
+      total,
+      start_date,
+      end_date,
+      limit,
+      page
+    } = query
+
+    const orders = await this.prisma.order.findMany({
       where: {
-        userId,
+        userId: id,
+        createdAt: {
+          lte: end_date,
+          gte: start_date
+        },
         ProductOrder: {
           some: {
             Product: {
-              name: {}
+              name: product_name
             }
+          }
+        }
+      },
+      orderBy: {
+        createdAt,
+        total
+      },
+      take: limit | this.configService.get('app.limit_default'),
+      skip: page && page > 1 ? (page - 1) * limit : 0,
+      include: {
+        ProductOrder: {
+          include: {
+            Product: true
           }
         }
       }
     })
+
+    return {
+      msg: 'Lấy dánh sách order thành công',
+      result: orders
+    }
   }
 
-  async getProductDetail(orderId: string): Promise<Return> {
+  async getOrderDetailByUser(
+    user: CurrentUserType,
+    orderId: string
+  ): Promise<Return> {
     const orderExist = await this.prisma.order.findUnique({
       where: {
-        id: orderId
+        id: orderId,
+        userId: user.id
+      }
+    })
+
+    if (!orderExist) throw new NotFoundException('Đơn hàng không tồn tại')
+
+    return {
+      msg: 'Lấy thông tin đơn hàng thành công',
+      result: orderExist
+    }
+  }
+
+  // Dành cho store and admin
+
+  async getAllOrderByStore(
+    user: CurrentStoreType,
+    query: QueryOrderType
+  ): Promise<Return> {
+    const { storeId } = user
+
+    const {
+      product_name,
+      createdAt,
+      total,
+      start_date,
+      end_date,
+      limit,
+      page
+    } = query
+
+    const orders = await this.prisma.order.findMany({
+      where: {
+        storeId,
+        createdAt: {
+          lte: end_date,
+          gte: start_date
+        },
+        ProductOrder: {
+          some: {
+            Product: {
+              name: {
+                contains: product_name
+              }
+            }
+          }
+        }
+      },
+      orderBy: {
+        createdAt,
+        total
+      },
+      take: limit | this.configService.get('app.limit_default'),
+      skip: page && page > 1 ? (page - 1) * limit : 0,
+      include: {
+        ProductOrder: {
+          include: {
+            Product: true
+          }
+        }
+      }
+    })
+
+    return {
+      msg: 'Lấy dánh sách order thành công',
+      result: orders
+    }
+  }
+
+  async getOrderDetailByStore(
+    user: CurrentStoreType,
+    orderId: string
+  ): Promise<Return> {
+    const orderExist = await this.prisma.order.findUnique({
+      where: {
+        id: orderId,
+        storeId: user.storeId
       }
     })
 

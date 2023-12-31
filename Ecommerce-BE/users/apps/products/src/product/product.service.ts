@@ -6,7 +6,7 @@ import { CreateProductType } from './dtos/create-product.dto'
 import { UpdateProductType } from './dtos/update-product.dto'
 import { v4 as uuidv4 } from 'uuid'
 import { Status } from 'common/enums/status.enum'
-import { CurrentUserType } from 'common/types/current.type'
+import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
 import { ElasticsearchService } from '@nestjs/elasticsearch'
 import { SearchProductService } from './search-product.service'
 import { QueryProductType } from './dtos/query-product.dto'
@@ -99,18 +99,14 @@ export class ProductService {
   }
 
   async createProduct(
-    user: CurrentUserType,
+    user: CurrentStoreType,
     imageUrl: string,
     body: CreateProductType
   ): Promise<Return> {
+    const { storeId, userId } = user
+
     const { name, initQuantity, priceAfter, priceBefore, description, status } =
       body
-
-    const storeRoleExist = await this.prisma.storeRole.findUnique({
-      where: {
-        id: user.storeRoleId
-      }
-    })
 
     return {
       msg: 'Tạo sản phẩm thành công',
@@ -125,15 +121,15 @@ export class ProductService {
           description,
           image: imageUrl,
           status: status | Status.ACCESS,
-          storeId: storeRoleExist.storeId,
-          createdBy: user.storeRoleId
+          storeId,
+          createdBy: userId
         }
       })
     }
   }
 
   async updateProduct(
-    user: CurrentUserType,
+    user: CurrentStoreType,
     productId: string,
     body: UpdateProductType,
     imageUrl?: string
@@ -154,12 +150,17 @@ export class ProductService {
         where: {
           id: productId
         },
-        data: { ...rest }
+        data: { ...rest, updatedBy: user.userId }
       })
     }
   }
 
-  async deleteProduct(userId: string, productId: string): Promise<Return> {
+  async deleteProduct(
+    user: CurrentStoreType,
+    productId: string
+  ): Promise<Return> {
+    const { userId } = user
+
     const productExist = await this.prisma.product.update({
       where: {
         id: productId

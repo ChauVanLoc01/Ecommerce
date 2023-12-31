@@ -38,31 +38,24 @@ export class JwtGuard implements CanActivate {
       throw new UnauthorizedException('Token không tồn tại')
     }
 
-    try {
-      const payload: CurrentUserType = await this.jwtService.verifyAsync(
-        token,
-        {
-          secret: this.configService.get<string>('app.access_token_secret_key')
-        }
-      )
+    const payload: CurrentUserType = await this.jwtService.verifyAsync(token, {
+      secret: this.configService.get<string>('app.access_token_secret_key')
+    })
 
-      const { role } = payload
+    const { role } = payload
 
-      const roles = this.reflector.getAllAndOverride<number[]>(ROLES_KEY, [
-        context.getHandler(),
-        context.getClass()
-      ])
+    const roles = this.reflector.getAllAndOverride<number[]>(ROLES_KEY, [
+      context.getHandler(),
+      context.getClass()
+    ])
 
-      if (roles && !roles.includes(role)) {
-        throw new UnauthorizedException('Người dùng không có quyền truy cập')
-      }
-
-      request['user'] = payload
-
-      return true
-    } catch (e) {
-      throw new UnauthorizedException('Token không đúng')
+    if (roles && !roles.includes(role)) {
+      throw new UnauthorizedException('Người dùng không có quyền truy cập')
     }
+
+    request['user'] = payload
+
+    return true
   }
 
   private extractTokenFromHeader(request: Request): string | undefined {
