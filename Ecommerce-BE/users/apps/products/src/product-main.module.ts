@@ -3,9 +3,37 @@ import { ConfigModule } from '@app/common'
 import { ProductModule } from './product/product.module'
 import { CategoryModule } from './category/category.module'
 import { JwtService } from '@nestjs/jwt'
+import { CacheModule } from '@nestjs/cache-manager'
+import * as redisStore from 'cache-manager-redis-store'
+import { ConfigService } from '@nestjs/config'
+import { BullModule } from '@nestjs/bull'
 
 @Module({
-  imports: [ConfigModule, ProductModule, CategoryModule],
+  imports: [
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: async (configService: ConfigService) => ({
+        redis: {
+          host: configService.get('bullqueue.host'),
+          port: configService.get('bullqueue.port')
+        }
+      })
+    }),
+    CacheModule.registerAsync({
+      isGlobal: true,
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
+        store: redisStore.create({
+          host: configService.get<string>('bullqueue.port')
+        }),
+        isGlobal: true
+      })
+    }),
+    ConfigModule,
+    ProductModule,
+    CategoryModule
+  ],
   providers: [JwtService]
 })
 export class ProductMainModule {}

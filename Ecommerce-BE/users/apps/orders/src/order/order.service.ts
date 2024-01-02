@@ -165,7 +165,11 @@ export class OrderService {
     }
   }
 
-  createOrder(userId: string, body: CreateOrderType) {}
+  createOrder(user: CurrentUserType, body: CreateOrderType) {
+    const { id } = user
+
+    const { productIds, address, score, voucherId } = body
+  }
 
   async updateOrder(
     user: CurrentUserType,

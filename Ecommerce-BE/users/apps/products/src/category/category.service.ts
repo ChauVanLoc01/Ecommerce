@@ -1,5 +1,7 @@
 import { PrismaService } from '@app/common/prisma/prisma.service'
-import { Injectable } from '@nestjs/common'
+import { CACHE_MANAGER } from '@nestjs/cache-manager'
+import { Inject, Injectable } from '@nestjs/common'
+import { Cache } from 'cache-manager'
 import { Return } from 'common/types/result.type'
 
 @Injectable()

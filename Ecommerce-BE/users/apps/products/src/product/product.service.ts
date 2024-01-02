@@ -6,11 +6,15 @@ import { CreateProductType } from './dtos/create-product.dto'
 import { UpdateProductType } from './dtos/update-product.dto'
 import { v4 as uuidv4 } from 'uuid'
 import { Status } from 'common/enums/status.enum'
-import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
-import { ElasticsearchService } from '@nestjs/elasticsearch'
+import { CurrentStoreType } from 'common/types/current.type'
 import { SearchProductService } from './search-product.service'
 import { QueryProductType } from './dtos/query-product.dto'
 import { ConfigService } from '@nestjs/config'
+import { InjectQueue } from '@nestjs/bull'
+import { QueueAction, QueueName } from 'common/constants/queue.constant'
+import { Queue } from 'bull'
+import { CACHE_MANAGER } from '@nestjs/cache-manager'
+import { Cache } from 'cache-manager'
 
 @Injectable()
 export class ProductService {
@@ -18,7 +22,9 @@ export class ProductService {
     private readonly prisma: PrismaService,
     @Inject('USER_SERVICE') private readonly user_service: ClientProxy,
     private readonly searchService: SearchProductService,
-    private readonly configService: ConfigService
+    private readonly configService: ConfigService,
+    @InjectQueue(QueueName.product) private productBullQueue: Queue,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache
   ) {}
 
   async searchProduct(search: string) {
@@ -84,17 +90,27 @@ export class ProductService {
   }
 
   async getProductDetail(productId: string): Promise<Return> {
-    const productExist = await this.prisma.product.findUnique({
-      where: {
-        id: productId
+    const productInCache = await this.cacheManager.get(productId)
+
+    if (!productInCache) {
+      const productExist = await this.prisma.product.findUnique({
+        where: {
+          id: productId
+        }
+      })
+
+      if (!productExist) throw new NotFoundException('Sản phẩm không tồn tại')
+
+      await this.productBullQueue.add(QueueAction.addToCache, productId)
+
+      return {
+        msg: 'Lấy thông tin chi tiết sản phẩm thành công',
+        result: productExist
       }
-    })
-
-    if (!productExist) throw new NotFoundException('Sản phẩm không tồn tại')
-
+    }
     return {
       msg: 'Lấy thông tin chi tiết sản phẩm thành công',
-      result: productExist
+      result: JSON.parse(productInCache as string)
     }
   }
 
@@ -150,7 +166,7 @@ export class ProductService {
         where: {
           id: productId
         },
-        data: { ...rest, updatedBy: user.userId }
+        data: { ...rest, updatedBy: user.userId, image: imageUrl }
       })
     }
   }

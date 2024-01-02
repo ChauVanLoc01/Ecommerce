@@ -10,9 +10,14 @@ import { v4 as uuidv4 } from 'uuid'
 import { SearchProductService } from './search-product.service'
 import { ElasticsearchModule } from '@nestjs/elasticsearch'
 import { JwtService } from '@nestjs/jwt'
+import { BullModule } from '@nestjs/bull'
+import { QueueName } from 'common/constants/queue.constant'
 
 @Module({
   imports: [
+    BullModule.registerQueue({
+      name: QueueName.product
+    }),
     ClientsModule.registerAsync({
       isGlobal: true,
       clients: [

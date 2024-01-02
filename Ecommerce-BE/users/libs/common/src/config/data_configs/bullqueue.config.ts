@@ -9,5 +9,7 @@ export default registerAs('bullqueue', () => ({
 
   mail_password: process.env.MAIL_PASSWORD,
 
-  mail_transport: process.env.MAIL_TRANSPORT
+  mail_transport: process.env.MAIL_TRANSPORT,
+
+  ttl: Number(process.env.BULL_QUEUE_TTL)
 }))

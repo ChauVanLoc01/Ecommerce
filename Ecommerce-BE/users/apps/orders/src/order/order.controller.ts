@@ -43,8 +43,10 @@ export class OrderController {
     return this.ordersService.getOrderDetailByUser(user, orderId)
   }
 
+  // Store management
+
   @Roles(Role.EMPLOYEE, Role.STORE_OWNER, Role.ADMIN)
-  @Get('user/order')
+  @Get('store/order')
   getAllOrderByStore(
     @CurrentUser() user: CurrentStoreType,
     @Query() query: QueryOrderDTO
@@ -52,8 +54,8 @@ export class OrderController {
     return this.ordersService.getAllOrderByStore(user, query)
   }
 
-  @Roles(Role.USER)
-  @Get('user/order/:orderId')
+  @Roles(Role.EMPLOYEE, Role.STORE_OWNER, Role.ADMIN)
+  @Get('store/order/:orderId')
   getOrderDetailByStore(
     @CurrentUser() user: CurrentStoreType,
     @Param('orderId') orderId: string
@@ -67,7 +69,7 @@ export class OrderController {
     @CurrentUser() user: CurrentUserType,
     @Body() body: CreateOrderDTO
   ) {
-    return this.ordersService.createOrder(user.id, body)
+    return this.ordersService.createOrder(user, body)
   }
 
   @Roles(Role.USER)

@@ -21,7 +21,7 @@ import { SendOtpType } from '../dtos/sendOTP.dto'
 import { CACHE_MANAGER } from '@nestjs/cache-manager'
 import { InjectQueue } from '@nestjs/bull'
 import { Queue } from 'bull'
-import { Queue as QueueConstant } from 'common/constants/queue.constant'
+import { QueueAction, QueueName } from 'common/constants/queue.constant'
 import {
   EmailInfor,
   PasswordData,
@@ -36,7 +36,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
-    @InjectQueue(QueueConstant.sendMail) private sendMailQueue: Queue,
+    @InjectQueue(QueueName.mail) private sendMailQueue: Queue,
     @Inject(CACHE_MANAGER) private cacheManager: Cache
   ) {}
 
@@ -242,7 +242,7 @@ export class AuthService {
     await this.setToken(access_token, refresh_token, response)
 
     this.sendMailQueue.add(
-      QueueConstant.register,
+      QueueAction.register,
       {
         to: email,
         subject: 'Chúc mừng bạn đã đăng kí tài khoản thành công',
@@ -358,7 +358,7 @@ export class AuthService {
       to: email
     }
 
-    this.sendMailQueue.add(QueueConstant.forgetPassword, {
+    this.sendMailQueue.add(QueueAction.forgetPassword, {
       code,
       username: userExist.Account_Account_userIdToUser[0].username,
       new_password,

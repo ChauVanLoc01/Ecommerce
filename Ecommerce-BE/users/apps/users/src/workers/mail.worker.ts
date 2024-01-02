@@ -5,7 +5,7 @@ import { HttpStatus } from '@nestjs/common'
 import { Inject } from '@nestjs/common/decorators'
 import { Job } from 'bull'
 import { Cache } from 'cache-manager'
-import { Queue } from 'common/constants/queue.constant'
+import { QueueName, QueueAction } from 'common/constants/queue.constant'
 
 export type EmailInfor = {
   to: string
@@ -23,19 +23,19 @@ export type ResetPasswordType = PasswordData & {
   email_infor: EmailInfor
 }
 
-@Processor(Queue.sendMail)
+@Processor(QueueName.mail)
 export class MailConsummer {
   constructor(
     private readonly mailService: MailerService,
     @Inject(CACHE_MANAGER) private cacheManager: Cache
   ) {}
 
-  @Process(Queue.register)
+  @Process(QueueAction.register)
   async register(job: Job<EmailInfor>) {
     await this.mailService.sendMail(job.data)
   }
 
-  @Process(Queue.forgetPassword)
+  @Process(QueueAction.forgetPassword)
   async forgotPassword(job: Job<ResetPasswordType>) {
     const { code, email_infor, ...rest } = job.data
     await Promise.all([
