@@ -1,6 +1,7 @@
 import { PrismaService } from '@app/common/prisma/prisma.service'
 import {
   BadRequestException,
+  Inject,
   Injectable,
   NotFoundException
 } from '@nestjs/common'
@@ -11,12 +12,16 @@ import { UpdateOrderDTO, UpdateOrderType } from '../dtos/update_order.dto'
 import { OrderStatus } from 'common/enums/orderStatus.enum'
 import { QueryOrderType } from '../dtos/query-order.dto'
 import { ConfigService } from '@nestjs/config'
+import { v4 as uuidv4 } from 'uuid'
+import { CACHE_MANAGER } from '@nestjs/cache-manager'
+import { Cache } from 'cache-manager'
 
 @Injectable()
 export class OrderService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly configService: ConfigService
+    private readonly configService: ConfigService,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache
   ) {}
 
   async getAllOrderByUser(
@@ -169,6 +174,18 @@ export class OrderService {
     const { id } = user
 
     const { productIds, address, score, voucherId } = body
+
+    const productsInCache = Promise.all(
+      productIds.map(async (productId) => {
+        return await this.cacheManager.get(productId)
+      })
+    )
+
+    const createdOrder = await this.prisma.order.create({
+      data: {
+        id: uuidv4()
+      }
+    })
   }
 
   async updateOrder(
