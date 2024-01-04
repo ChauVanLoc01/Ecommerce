@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Inject,
   Param,
   Post,
   Put,
@@ -18,6 +19,8 @@ import { JwtGuard } from 'common/guards/jwt.guard'
 import { ApiBearerAuth } from '@nestjs/swagger'
 import { UpdateOrderDTO } from '../dtos/update_order.dto'
 import { QueryOrderDTO } from '../dtos/query-order.dto'
+import { QueueName } from 'common/constants/queue.constant'
+import { ClientProxy } from '@nestjs/microservices'
 
 @ApiBearerAuth()
 @UseGuards(JwtGuard)

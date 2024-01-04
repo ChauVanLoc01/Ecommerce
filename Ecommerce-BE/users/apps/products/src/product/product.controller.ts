@@ -17,7 +17,7 @@ import {
   UseGuards,
   UseInterceptors
 } from '@nestjs/common'
-import { ClientProxy } from '@nestjs/microservices'
+import { ClientProxy, MessagePattern, Payload } from '@nestjs/microservices'
 import { ProductService } from './product.service'
 import { Roles } from 'common/decorators/roles.decorator'
 import { Role } from 'common/enums/role.enum'
@@ -31,6 +31,7 @@ import { UpdateProductDTO } from './dtos/update-product.dto'
 import { SearchProductService } from './search-product.service'
 import { ElasticSearchProductDTO } from './dtos/elasticsearch-product.dto'
 import { QueryAllUserProfileDTO } from 'apps/users/src/dtos/all_user.dto'
+import { OrderParameter } from 'common/types/order-parameter.type'
 import { QueryProductDTO } from './dtos/query-product.dto'
 
 @UseGuards(JwtGuard)
@@ -120,5 +121,10 @@ export class ProductController {
     @Param('productId') productId: string
   ) {
     return this.productsService.deleteProduct(user, productId)
+  }
+
+  @MessagePattern('product::quantity::update')
+  updateQuantiyProducts(@Payload() data: OrderParameter[]) {
+    return this.productsService.updateQuantityProducts(data)
   }
 }

@@ -6,16 +6,16 @@ import { ConfigService } from '@nestjs/config'
 import { Product } from '@prisma/client'
 import { Job } from 'bull'
 import { Cache } from 'cache-manager'
-import { QueueName, QueueAction } from 'common/constants/queue.constant'
+import { BackgroundName, BackgroundAction } from 'common/constants/background-job.constant'
 
-@Processor(QueueName.product)
+@Processor(BackgroundName.product)
 export class ProductConsummer {
   constructor(
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
     private readonly configService: ConfigService
   ) {}
 
-  @Process(QueueAction.register)
+  @Process(BackgroundAction.addToCache)
   async cacheProduct({ data }: Job<Product>) {
     await this.cacheManager.set(
       data.id,
@@ -24,22 +24,25 @@ export class ProductConsummer {
     )
   }
 
-  async changeQuantity({ data }: Job<[string, number]>) {
+  @Process(BackgroundAction.changeQuantityProduct)
+  async changeQuantity({ data }: Job<[string, number][]>) {
     try {
-      const productId = data[0]
+      await Promise.all(
+        data.map(async (order) => {
+          const [productId, quantity] = order
 
-      const quantity = data[1]
+          const stringifyProduct: string = await this.cacheManager.get(productId)
 
-      const stringifyProduct: string = await this.cacheManager.get(productId)
+          const jsonProduct = JSON.parse(stringifyProduct) as Product
 
-      const jsonProduct = JSON.parse(stringifyProduct) as Product
+          await this.cacheManager.del(productId)
 
-      await this.cacheManager.del(productId)
-
-      await this.cacheManager.set(productId, {
-        ...jsonProduct,
-        currentQuantity: quantity
-      } as Product)
+          await this.cacheManager.set(productId, {
+            ...jsonProduct,
+            currentQuantity: quantity
+          } as Product)
+        })
+      )
     } catch (err) {
       throw new InternalServerErrorException('Lỗi xử lý cache')
     }

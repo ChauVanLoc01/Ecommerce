@@ -11,10 +11,14 @@ import { SearchProductService } from './search-product.service'
 import { QueryProductType } from './dtos/query-product.dto'
 import { ConfigService } from '@nestjs/config'
 import { InjectQueue } from '@nestjs/bull'
-import { QueueAction, QueueName } from 'common/constants/queue.constant'
+import {
+  BackgroundAction,
+  BackgroundName
+} from 'common/constants/background-job.constant'
 import { Queue } from 'bull'
 import { CACHE_MANAGER } from '@nestjs/cache-manager'
 import { Cache } from 'cache-manager'
+import { OrderParameter } from 'common/types/order-parameter.type'
 
 @Injectable()
 export class ProductService {
@@ -23,7 +27,7 @@ export class ProductService {
     @Inject('USER_SERVICE') private readonly user_service: ClientProxy,
     private readonly searchService: SearchProductService,
     private readonly configService: ConfigService,
-    @InjectQueue(QueueName.product) private productBullQueue: Queue,
+    @InjectQueue(BackgroundName.product) private productBullQueue: Queue,
     @Inject(CACHE_MANAGER) private cacheManager: Cache
   ) {}
 
@@ -101,7 +105,7 @@ export class ProductService {
 
       if (!productExist) throw new NotFoundException('Sản phẩm không tồn tại')
 
-      await this.productBullQueue.add(QueueAction.addToCache, productId)
+      await this.productBullQueue.add(BackgroundAction.addToCache, productId)
 
       return {
         msg: 'Lấy thông tin chi tiết sản phẩm thành công',
@@ -193,5 +197,20 @@ export class ProductService {
       msg: 'Xóa sản phẩm thành công',
       result: undefined
     }
+  }
+
+  async updateQuantityProducts(data: OrderParameter[]) {
+    return await Promise.all(
+      data.map(async (parameter) => {
+        return await this.prisma.product.update({
+          where: {
+            id: parameter.productId
+          },
+          data: {
+            currentQuantity: parameter.quantity
+          }
+        })
+      })
+    )
   }
 }

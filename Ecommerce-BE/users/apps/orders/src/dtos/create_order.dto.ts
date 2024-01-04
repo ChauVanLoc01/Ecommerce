@@ -7,6 +7,7 @@ import {
   IsOptional,
   IsString
 } from 'class-validator'
+import { OrderParameter } from 'common/types/order-parameter.type'
 
 export class CreateOrderDTO {
   @ApiProperty({
@@ -14,7 +15,7 @@ export class CreateOrderDTO {
   })
   @IsArray()
   @IsNotEmpty()
-  productIds: string[]
+  orderParameters: OrderParameter[]
 
   @ApiPropertyOptional()
   @IsString()

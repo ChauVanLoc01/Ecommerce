@@ -1,0 +1,21 @@
+export const PathRoute = {
+  login: 'login',
+  register: 'register',
+  logout: 'logout',
+  user: 'user',
+  account: 'account',
+  profile: 'profile',
+  password: 'password',
+  address: 'address',
+  order: 'purchase',
+  uploadAvatar: 'upload-avatar',
+  listProduct: 'products',
+  product: 'products',
+  category: 'categories',
+  idNameProduct: 'idNameProduct',
+  purchase: 'purchases',
+  addToCard: 'add-to-cart',
+  updatePurchase: 'update-purchase',
+  buyPurchase: 'buy-products',
+  cart: 'cart'
+} as const

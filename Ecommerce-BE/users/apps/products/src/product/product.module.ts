@@ -11,12 +11,12 @@ import { SearchProductService } from './search-product.service'
 import { ElasticsearchModule } from '@nestjs/elasticsearch'
 import { JwtService } from '@nestjs/jwt'
 import { BullModule } from '@nestjs/bull'
-import { QueueName } from 'common/constants/queue.constant'
+import { BackgroundName } from 'common/constants/background-job.constant'
 
 @Module({
   imports: [
     BullModule.registerQueue({
-      name: QueueName.product
+      name: BackgroundName.product
     }),
     ClientsModule.registerAsync({
       isGlobal: true,

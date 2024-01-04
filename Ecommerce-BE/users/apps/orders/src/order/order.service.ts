@@ -170,16 +170,18 @@ export class OrderService {
     }
   }
 
-  createOrder(user: CurrentUserType, body: CreateOrderType) {
+  async createOrder(user: CurrentUserType, body: CreateOrderType) {
     const { id } = user
 
-    const { productIds, address, score, voucherId } = body
+    const { orderParameters, address, score, voucherId } = body
 
-    const productsInCache = Promise.all(
-      productIds.map(async (productId) => {
-        return await this.cacheManager.get(productId)
-      })
-    )
+    const result = await this.prisma.$transaction(async (tx) => {
+      const productsInCache = Promise.all(
+        orderParameters.map(async (parameter) => {
+          return await this.cacheManager.get(parameter.productId)
+        })
+      )
+    })
 
     const createdOrder = await this.prisma.order.create({
       data: {
