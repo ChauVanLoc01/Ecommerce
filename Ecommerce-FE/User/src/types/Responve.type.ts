@@ -1,4 +1,4 @@
 export type ResponveApi<T> = {
-  msg: string
-  result: T
+  message: string
+  data: T
 }

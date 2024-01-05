@@ -15,4 +15,15 @@ export type OptionUser = {
   password: string
   new_password: string
 }
-export type User = DefaultUser & Partial<OptionUser>
+export type User = {
+  id: string
+  full_name: string
+  birthday: Date
+  email: string
+  address: string
+  rankId: string
+  role: number
+  status: number
+  createdAt: Date
+  updatedAt: Date
+}
