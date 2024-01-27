@@ -1,8 +1,8 @@
-import Sidebar from 'src/Components/Sidebar'
 import { Outlet } from 'react-router-dom'
 import SimpleBar from 'simplebar-react'
+import Sidebar from 'src/Components/Sidebar'
 
-function Home() {
+function MainLayout() {
   return (
     <div className='flex'>
       <div className='basis-1/5'>
@@ -24,4 +24,4 @@ function Home() {
   )
 }
 
-export default Home
+export default MainLayout

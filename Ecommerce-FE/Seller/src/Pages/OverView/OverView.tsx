@@ -1,7 +1,7 @@
 function OverView() {
   return (
     <div className='p-2 text-xs space-y-2'>
-      <section className='space-y-3 bg-white rounded-xs px-3 py-2 shadow-sm'>
+      <section className='space-y-3 bg-white rounded-xs px-3 py-2 shadow-sm hover:shadow-md'>
         <div className='space-y-2'>
           <div className='font-semibold text-sm'>Danh sách cần làm</div>
           <span>Những việc bạn sẽ phải làm</span>
@@ -61,7 +61,7 @@ function OverView() {
           </div>
         </div>
       </section>
-      <section className='space-y-3 bg-white rounded-xs px-3 py-2 shadow-sm'>
+      <section className='space-y-3 bg-white rounded-xs px-3 py-2 shadow-sm hover:shadow-md'>
         <div className='space-y-2'>
           <div className='font-semibold text-sm'>Phân tích bán hàng</div>
           <span>Tổng quan dữ liệu của shop đối với đơn hàng đã xác nhận</span>

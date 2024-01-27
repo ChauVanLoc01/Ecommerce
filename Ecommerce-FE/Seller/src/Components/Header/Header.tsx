@@ -11,7 +11,7 @@ import SimpleBar from 'simplebar-react'
 
 function Header() {
   return (
-    <div className='flex justify-between items-center xl:px-4 lg:px-3 py-2 bg-white border border-gray-100'>
+    <div className='flex justify-between items-center xl:px-4 lg:px-3 py-2 bg-white border border-gray-100 shadow-sm'>
       <div className='space-x-2 flex items-center'>
         <Link to='/' className='flex items-center space-x-2'>
           <Icon icon={<FaOpencart />} size='50px' color='#fa541c' />

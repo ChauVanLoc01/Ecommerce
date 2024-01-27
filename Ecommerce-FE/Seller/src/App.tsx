@@ -1,15 +1,14 @@
 import { Routes, Route } from 'react-router-dom'
-import React from 'react'
-import Home from './Pages/Home'
 import Header from './Components/Header'
-
-const Login = React.lazy(() => import('./Pages/Login'))
-const Register = React.lazy(() => import('./Pages/Register'))
-const Management = React.lazy(() => import('./Components/Management'))
-const OverView = React.lazy(() => import('./Pages/Home/OverView'))
-const Rating = React.lazy(() => import('./Pages/Rating'))
-const Profile = React.lazy(() => import('./Pages/Profile'))
-import 'simplebar-react/dist/simplebar.min.css'
+import { Path } from './constants/path.enum'
+import OverView from './Pages/OverView'
+import Rating from './Pages/Rating'
+import Profile from './Pages/Profile'
+import Login from './Pages/Login'
+import Register from './Pages/Register'
+import MainLayout from './layouts/MainLayout'
+import Order from './Pages/Order'
+import Product from './Pages/Product'
 
 function App() {
   return (
@@ -17,14 +16,15 @@ function App() {
       <div className='xxl:max-w-screen-xl mx-auto w-full overflow-hidden text-xs h-screen lg:block xs:hidden'>
         <Header />
         <Routes>
-          <Route path='/' element={<Home />}>
+          <Route path='/' element={<MainLayout />}>
             <Route index element={<OverView />} />
-            <Route path='management' element={<Management />} />
-            <Route path='rating' element={<Rating />} />
-            <Route path='profile' element={<Profile />} />
+            <Route path={Path.profile} element={<Profile />} />
+            <Route path={Path.order} element={<Order />} />
+            <Route path={Path.product} element={<Product />} />
+            <Route path={Path.rating} element={<Rating />} />
           </Route>
-          <Route path='login' element={<Login />} />
-          <Route path='register' element={<Register />} />
+          <Route path={Path.login} element={<Login />} />
+          <Route path={Path.register} element={<Register />} />
         </Routes>
       </div>
       <div className='w-screen h-screen xs:flex lg:hidden relative justify-center items-center'>

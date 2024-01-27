@@ -2,6 +2,7 @@ import { GoChevronDown } from 'react-icons/go'
 import Icon from '../Icon'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useState } from 'react'
+import classNames from 'classnames'
 
 type AccordionProps = {
   icon?: React.ReactNode
@@ -9,15 +10,21 @@ type AccordionProps = {
   rootClassName?: string
   content: React.ReactNode
   duration?: number
+  isActive: boolean
 }
 
-function Accordion({ content, title, icon, rootClassName, duration = 0.2 }: AccordionProps) {
+function Accordion({ content, title, icon, rootClassName, isActive, duration = 0.2 }: AccordionProps) {
   const [isOpen, setIsOpen] = useState(false)
   return (
     <div className={`${rootClassName} text-xs px-2 space-y-2`}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className='flex items-center justify-between group cursor-pointer text-gray-400 font-medium w-full'
+        className={classNames(
+          'flex items-center justify-between group cursor-pointer text-gray-400 font-medium w-full',
+          {
+            'text-primary': isActive
+          }
+        )}
       >
         <div className='flex gap-x-2 items-center relative xl:pl-6 pr-2 group-hover:text-primary'>
           <Icon icon={icon} className='absolute top-1/2 left-0 -translate-y-1/2 lg:hidden xl:block' size='16px' />
