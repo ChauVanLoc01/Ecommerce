@@ -1,20 +1,19 @@
 import { Routes, Route } from 'react-router-dom'
-import Header from './Components/Header'
 import { Path } from './constants/path.enum'
 import OverView from './Pages/OverView'
 import Rating from './Pages/Rating'
 import Profile from './Pages/Profile'
 import Login from './Pages/Login'
-import Register from './Pages/Register'
 import MainLayout from './layouts/MainLayout'
 import Order from './Pages/Order'
 import Product from './Pages/Product'
+import { createPortal } from 'react-dom'
 
 function App() {
+  const isShowLoading = false
   return (
-    <div className='w-screen h-screen xxl:max-h-fit bg-[#F6F6F6] text-gray-700'>
-      <div className='xxl:max-w-screen-xl mx-auto w-full overflow-hidden text-xs h-screen lg:block xs:hidden'>
-        <Header />
+    <div className='w-screen h-screen bg-[#F6F6F6] text-gray-700'>
+      <div className='mx-auto w-full text-xs h-screen overflow-hidden'>
         <Routes>
           <Route path='/' element={<MainLayout />}>
             <Route index element={<OverView />} />
@@ -24,7 +23,6 @@ function App() {
             <Route path={Path.rating} element={<Rating />} />
           </Route>
           <Route path={Path.login} element={<Login />} />
-          <Route path={Path.register} element={<Register />} />
         </Routes>
       </div>
       <div className='w-screen h-screen xs:flex lg:hidden relative justify-center items-center'>
@@ -33,6 +31,14 @@ function App() {
         </h2>
         <img src='src/Assets/sorry.png' alt='image' className='object-cover w-5/6' />
       </div>
+      {isShowLoading &&
+        createPortal(
+          <div className='wrap-loader'>
+            <div className='layout' />
+            <div className='loader' />
+          </div>,
+          document.body
+        )}
     </div>
   )
 }

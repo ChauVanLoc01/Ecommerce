@@ -8,10 +8,14 @@ import { LiaGiftSolid } from 'react-icons/lia'
 import { BsListUl } from 'react-icons/bs'
 import Notification from '../Notification'
 import SimpleBar from 'simplebar-react'
+import { forwardRef } from 'react'
 
-function Header() {
+const Header = forwardRef<HTMLDivElement>((_, ref) => {
   return (
-    <div className='flex justify-between items-center xl:px-4 lg:px-3 py-2 bg-white border border-gray-100 shadow-sm'>
+    <div
+      ref={ref}
+      className='flex justify-between items-center xl:px-4 lg:px-3 py-2 bg-white border border-gray-100 shadow-sm'
+    >
       <div className='space-x-2 flex items-center'>
         <Link to='/' className='flex items-center space-x-2'>
           <Icon icon={<FaOpencart />} size='50px' color='#fa541c' />
@@ -163,6 +167,6 @@ function Header() {
       </div>
     </div>
   )
-}
+})
 
 export default Header

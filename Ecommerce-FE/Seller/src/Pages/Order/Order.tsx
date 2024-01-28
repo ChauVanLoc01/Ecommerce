@@ -4,7 +4,7 @@ import { BsStackOverflow } from 'react-icons/bs'
 import { DatePicker } from 'antd'
 import { useState } from 'react'
 import type { ColumnsType } from 'antd/es/table'
-import { Link } from 'react-router-dom'
+import { Link, useOutletContext } from 'react-router-dom'
 import { Table } from 'antd'
 import Underline from 'src/Components/Underline'
 import Icon from 'src/Components/Icon'
@@ -63,14 +63,22 @@ const columns: ColumnsType<TableHeaderData> = [
               )
             case 'TK':
               return (
-                <span className='p-0.5 text-center rounded-xs border border-green-500 text-green-500'>Tiết kiệm</span>
+                <span className='p-0.5 text-center rounded-xs border border-green-500 text-green-500'>
+                  Tiết kiệm
+                </span>
               )
             case 'NH':
               return (
-                <span className='p-0.5 text-center rounded-xs border border-orange-500 text-orange-500'>Nhanh</span>
+                <span className='p-0.5 text-center rounded-xs border border-orange-500 text-orange-500'>
+                  Nhanh
+                </span>
               )
             case 'KH':
-              return <span className='p-0.5 text-center rounded-xs border border-blue-500 text-blue-500'>Khác</span>
+              return (
+                <span className='p-0.5 text-center rounded-xs border border-blue-500 text-blue-500'>
+                  Khác
+                </span>
+              )
             default:
               break
           }
@@ -133,8 +141,11 @@ const data: TableHeaderData[] = [
 
 function Order() {
   const [choosed, setChoosed] = useState<string | undefined>(undefined)
+  const maxHeight = useOutletContext()
   return (
-    <div className='bg-white rounded-xs space-y-4 text-xs shadow-sm hover:shadow-md'>
+    <div
+      className={`bg-white rounded-xs space-y-4 text-xs shadow-sm hover:shadow-md pb-3 h-[${maxHeight}px]`}
+    >
       <div className='flex border-b border-gray-200'>
         <Underline
           contents={[
@@ -188,11 +199,15 @@ function Order() {
         <RangePicker
           format={'DD-MM-YYYY'}
           placeholder={['Ngày bắt đầu', 'Ngày kết thúc']}
-          separator={<Icon icon={<AiOutlineLine />} size='10px' color='#bfbfbf' />}
+          separator={
+            <Icon icon={<AiOutlineLine />} size='10px' color='#bfbfbf' />
+          }
           className='rounded-xs border-gray-200 hover:border-gray-400'
         />
         <div>
-          <button className='px-3 py-1 border border-gray-400 rounded-xs'>Xuất</button>
+          <button className='px-3 py-1 border border-gray-400 rounded-xs'>
+            Xuất
+          </button>
         </div>
       </div>
       <div className='px-3 flex items-center justify-between'>
@@ -200,7 +215,13 @@ function Order() {
           <div className='basis-4/12'>
             <Select
               title='Mã đơn hàng'
-              data={['Mã đơn hàng', 'Tên người mua', 'Sản phẩm', 'Mã vận đơn', 'Mã yêu cầu trả hàng']}
+              data={[
+                'Mã đơn hàng',
+                'Tên người mua',
+                'Sản phẩm',
+                'Mã vận đơn',
+                'Mã yêu cầu trả hàng'
+              ]}
               refClassName='py-[6px] px-2 rounded-none rounded-l-xs border-gray-200'
               itemInFloatingClassname='px-2 py-1'
               floatingClassNames='rounded-xs'
@@ -216,14 +237,22 @@ function Order() {
               id='search'
               placeholder={`Nhập ${choosed ? choosed.toLowerCase() : '...'}`}
             />
-            <Icon icon={<GoSearch />} className='absolute right-2 top-1/2 -translate-y-1/2' size='16px' />
+            <Icon
+              icon={<GoSearch />}
+              className='absolute right-2 top-1/2 -translate-y-1/2'
+              size='16px'
+            />
           </div>
         </div>
         <div>
-          <button className='px-3 py-1 bg-primary text-white hover:bg-primary/90 rounded-xs'>Tìm kiếm</button>
+          <button className='px-3 py-1 bg-primary text-white hover:bg-primary/90 rounded-xs'>
+            Tìm kiếm
+          </button>
         </div>
         <div>
-          <button className='px-3 py-1 hover:bg-gray-100 rounded-xs border border-gray-200'>Đặt lại</button>
+          <button className='px-3 py-1 hover:bg-gray-100 rounded-xs border border-gray-200'>
+            Đặt lại
+          </button>
         </div>
       </div>
       <div className='flex justify-between px-3'>
@@ -237,6 +266,7 @@ function Order() {
       </div>
       <div className='px-3'>
         <Table
+          className='border rounded-lg mb-2'
           columns={columns}
           dataSource={data}
           expandable={{

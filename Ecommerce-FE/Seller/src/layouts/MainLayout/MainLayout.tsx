@@ -1,26 +1,32 @@
 import { Outlet } from 'react-router-dom'
-import SimpleBar from 'simplebar-react'
+import Header from 'src/Components/Header'
 import Sidebar from 'src/Components/Sidebar'
+import SimpleBar from 'simplebar-react'
+import 'simplebar-react/dist/simplebar.min.css'
+import { useEffect, useRef, useState } from 'react'
 
 function MainLayout() {
+  const [maxHeight, setMaxHeight] = useState<number>(0)
+  const crollRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (crollRef?.current) {
+      setMaxHeight(window.innerHeight - crollRef.current.offsetHeight - 16)
+    }
+  }, [crollRef])
+
   return (
-    <div className='flex'>
-      <div className='basis-1/5'>
-        <Sidebar />
+    <>
+      <Header ref={crollRef} />
+      <div className='flex'>
+        <div className='basis-1/5'>
+          <Sidebar />
+        </div>
+        <SimpleBar style={{ maxHeight: `${maxHeight}px`, height: `${maxHeight}px`, flexGrow: 1, padding: '16px' }}>
+          <Outlet context={maxHeight} />
+        </SimpleBar>
       </div>
-      <SimpleBar
-        forceVisible='y'
-        autoHide={true}
-        style={{
-          height: '100vh',
-          maxHeight: '100vh',
-          width: '80%',
-          padding: '12px'
-        }}
-      >
-        <Outlet />
-      </SimpleBar>
-    </div>
+    </>
   )
 }
 

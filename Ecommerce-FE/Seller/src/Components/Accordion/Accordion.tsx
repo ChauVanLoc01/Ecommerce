@@ -14,7 +14,7 @@ type AccordionProps = {
 }
 
 function Accordion({ content, title, icon, rootClassName, isActive, duration = 0.2 }: AccordionProps) {
-  const [isOpen, setIsOpen] = useState(false)
+  const [isOpen, setIsOpen] = useState(isActive)
   return (
     <div className={`${rootClassName} text-xs px-2 space-y-2`}>
       <button
