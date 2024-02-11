@@ -1,286 +1,300 @@
-import { AiOutlineLine } from 'react-icons/ai'
-import { GoSearch } from 'react-icons/go'
-import { BsStackOverflow } from 'react-icons/bs'
-import { DatePicker } from 'antd'
 import { useState } from 'react'
+
+import { DatePicker, Table, Tag } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
+import { motion } from 'framer-motion'
+import { AiOutlineLine } from 'react-icons/ai'
+import { BsStackOverflow } from 'react-icons/bs'
+import { GoSearch } from 'react-icons/go'
 import { Link, useOutletContext } from 'react-router-dom'
-import { Table } from 'antd'
-import Underline from 'src/Components/Underline'
+
 import Icon from 'src/Components/Icon'
 import Select from 'src/Components/Select'
-import { Path } from 'src/constants/path.enum'
-import { orderStatus } from 'src/constants/orderStatus.enum'
+import Underline from 'src/Components/Underline'
+import { delivery } from 'src/constants/delivery.constants'
+import { orderColor, orderStatus } from 'src/constants/orderStatus.enum'
 const { RangePicker } = DatePicker
 
-type Delivery = ('TK' | 'HT' | 'NH' | 'KH')[]
-
 type TableHeaderData = {
-  key: string
-  name: string
-  total: number
-  pay: number
-  code: number
-  delivery: Delivery
+    id: string
+    user_name: string
+    address: string
+    time_start: string
+    time_end: string
+    status: orderStatus
+    total: number
+    delivery: 'Tiết Kiệm' | 'Hỏa Tốc' | 'Nhanh' | 'Viettel Post'
 }
 
-const columns: ColumnsType<TableHeaderData> = [
-  Table.EXPAND_COLUMN,
-  {
-    title: 'Tên sản phẩm',
-    dataIndex: 'name',
-    key: 'name',
-    render: (text) => <Link to={'/'}>{text}</Link>
-  },
-  {
-    title: 'Tổng đơn hàng',
-    dataIndex: 'total',
-    key: 'total'
-  },
-  {
-    title: 'Đã thanh toán',
-    dataIndex: 'pay',
-    key: 'pay'
-  },
-  {
-    title: 'Ship code',
-    dataIndex: 'code',
-    key: 'code'
-  },
-  {
-    title: 'DVVC',
-    dataIndex: 'delivery',
-    key: 'delivery',
-    render: (_, { delivery }) => (
-      <div className='grid grid-cols-2 gap-1'>
-        {delivery.map((d) => {
-          switch (d) {
-            case 'HT':
-              return (
-                <span className='p-0.5 text-center rounded-xs border border-blue-500 text-blue-500 bg-blue-50'>
-                  Hỏa tốc
-                </span>
-              )
-            case 'TK':
-              return (
-                <span className='p-0.5 text-center rounded-xs border border-green-500 text-green-500'>
-                  Tiết kiệm
-                </span>
-              )
-            case 'NH':
-              return (
-                <span className='p-0.5 text-center rounded-xs border border-orange-500 text-orange-500'>
-                  Nhanh
-                </span>
-              )
-            case 'KH':
-              return (
-                <span className='p-0.5 text-center rounded-xs border border-blue-500 text-blue-500'>
-                  Khác
-                </span>
-              )
-            default:
-              break
-          }
-        })}
-      </div>
-    )
-  }
-]
-
-const data: TableHeaderData[] = [
-  {
-    key: '1',
-    name: 'Quần áo trẻ em',
-    total: 10,
-    pay: 3,
-    code: 7,
-    delivery: ['HT', 'NH']
-  },
-  {
-    key: '2',
-    name: 'Quần áo trẻ em',
-    total: 10,
-    pay: 3,
-    code: 7,
-    delivery: ['HT', 'NH']
-  },
-  {
-    key: '3',
-    name: 'Quần áo trẻ em',
-    total: 10,
-    pay: 3,
-    code: 7,
-    delivery: ['HT', 'NH']
-  },
-  {
-    key: '4',
-    name: 'Quần áo trẻ em',
-    total: 10,
-    pay: 3,
-    code: 7,
-    delivery: ['HT', 'NH']
-  },
-  {
-    key: '5',
-    name: 'Quần áo trẻ em',
-    total: 10,
-    pay: 3,
-    code: 7,
-    delivery: ['HT', 'NH']
-  },
-  {
-    key: '6',
-    name: 'Quần áo trẻ em',
-    total: 10,
-    pay: 3,
-    code: 7,
-    delivery: ['HT', 'NH']
-  }
-]
-
 function Order() {
-  const [choosed, setChoosed] = useState<string | undefined>(undefined)
-  const maxHeight = useOutletContext()
-  return (
-    <div
-      className={`bg-white rounded-xs space-y-4 text-xs shadow-sm hover:shadow-md pb-3 h-[${maxHeight}px]`}
-    >
-      <div className='flex border-b border-gray-200'>
-        <Underline
-          contents={[
-            {
-              title: 'Tất cả',
-              to: ''
-            },
-            {
-              title: 'Chờ xác nhận',
-              to: {
-                search: `status=${orderStatus.confirm}`
-              }
-            },
-            {
-              title: 'Chờ lấy hàng',
-              to: {
-                search: `status=${orderStatus.waitingShiper}`
-              }
-            },
-            {
-              title: 'Đang giao',
-              to: {
-                search: `status=${orderStatus.shipperIsShipping}`
-              }
-            },
-            {
-              title: 'Đã giao',
-              to: {
-                search: `status=${orderStatus.shippingSuccess}`
-              }
-            },
-            {
-              title: 'Đơn hủy',
-              to: {
-                search: `status=${orderStatus.cancel}`
-              }
-            },
-            {
-              title: 'Trả hàng/Hoàn tiền',
-              to: {
-                search: `status=${orderStatus.refund}`
-              }
-            }
-          ]}
-          rootClassName='px-3'
-          itemClassName='px-3 py-3'
-        />
-      </div>
-      <div className='flex justify-end space-x-5 items-center px-3'>
-        <span>Ngày đặt hàng:</span>
-        <RangePicker
-          format={'DD-MM-YYYY'}
-          placeholder={['Ngày bắt đầu', 'Ngày kết thúc']}
-          separator={
-            <Icon icon={<AiOutlineLine />} size='10px' color='#bfbfbf' />
-          }
-          className='rounded-xs border-gray-200 hover:border-gray-400'
-        />
-        <div>
-          <button className='px-3 py-1 border border-gray-400 rounded-xs'>
-            Xuất
-          </button>
-        </div>
-      </div>
-      <div className='px-3 flex items-center justify-between'>
-        <div className='flex xl:basis-10/12 md:basis-3/4'>
-          <div className='basis-4/12'>
-            <Select
-              title='Mã đơn hàng'
-              data={[
-                'Mã đơn hàng',
-                'Tên người mua',
-                'Sản phẩm',
-                'Mã vận đơn',
-                'Mã yêu cầu trả hàng'
-              ]}
-              refClassName='py-[6px] px-2 rounded-none rounded-l-xs border-gray-200'
-              itemInFloatingClassname='px-2 py-1'
-              floatingClassNames='rounded-xs'
-              setChoosed={setChoosed}
-              defaultValue={1}
-            />
-          </div>
-          <div className='border rounded-r-xs border-gray-200 basis-8/12 flex items-center relative hover:border-gray-400'>
-            <input
-              className='outline-none w-full px-3 pr-8'
-              type='text'
-              name='search'
-              id='search'
-              placeholder={`Nhập ${choosed ? choosed.toLowerCase() : '...'}`}
-            />
-            <Icon
-              icon={<GoSearch />}
-              className='absolute right-2 top-1/2 -translate-y-1/2'
-              size='16px'
-            />
-          </div>
-        </div>
-        <div>
-          <button className='px-3 py-1 bg-primary text-white hover:bg-primary/90 rounded-xs'>
-            Tìm kiếm
-          </button>
-        </div>
-        <div>
-          <button className='px-3 py-1 hover:bg-gray-100 rounded-xs border border-gray-200'>
-            Đặt lại
-          </button>
-        </div>
-      </div>
-      <div className='flex justify-between px-3'>
-        <span className='text-sm font-semibold'>0 Đơn hàng</span>
-        <div>
-          <button className='flex items-center space-x-2 px-2 py-1 rounded-xs border border-gray-200 hover:bg-primary/90 text-white bg-primary'>
-            <Icon icon={<BsStackOverflow />} size='18px' />
-            <span>Giao Hàng Loạt</span>
-          </button>
-        </div>
-      </div>
-      <div className='px-3'>
-        <Table
-          className='border rounded-lg mb-2'
-          columns={columns}
-          dataSource={data}
-          expandable={{
-            expandedRowRender: (record) => (
-              <div>
-                <div className='font-semibold'>Chi tiết đơn hàng</div>
-                <div>{record.name}</div>
-              </div>
+    const [choosed, setChoosed] = useState<string | undefined>(undefined)
+    const [isOpenModal, setIsOpenModal] = useState<boolean>(false)
+    const maxHeight = useOutletContext()
+
+    const columns: ColumnsType<TableHeaderData> = [
+        {
+            title: 'Khách hàng',
+            dataIndex: 'user_name',
+            key: 'user_name'
+        },
+        {
+            title: 'Địa chỉ',
+            dataIndex: 'address',
+            key: 'address'
+        },
+        {
+            title: 'Đặt hàng',
+            dataIndex: 'time_start',
+            key: 'time_start'
+        },
+        {
+            title: 'Nhận hàng',
+            dataIndex: 'time_end',
+            key: 'time_end'
+        },
+        {
+            title: 'Tổng tiền',
+            dataIndex: 'total',
+            key: 'total'
+        },
+        {
+            title: 'Trạng thái',
+            dataIndex: 'status',
+            key: 'status',
+            render: (_, { status }) => (
+                <Tag color={orderColor[status]}>{status}</Tag>
             )
-          }}
-        />
-      </div>
-    </div>
-  )
+        },
+        {
+            title: 'Vận chuyển',
+            dataIndex: 'delivery',
+            key: 'delivery',
+            render: (_, { delivery: vc }) => (
+                <Tag color={delivery[vc]}>{vc}</Tag>
+            )
+        },
+        {
+            dataIndex: 'id',
+            key: 'id',
+            render: (_, { id }) => (
+                <section className='flex items-center'>
+                    <Link to={id} onClick={() => setIsOpenModal(true)}>
+                        <Tag color='#096dd9'>Edit</Tag>
+                    </Link>
+                    <button onClick={() => setIsOpenModal(false)}>
+                        <Tag color='#f5222d'>Delete</Tag>
+                    </button>
+                </section>
+            )
+        }
+    ]
+
+    const data: TableHeaderData[] = [
+        {
+            id: '1',
+            user_name: 'Chau Van Loc',
+            address: 'Tien Giang',
+            time_start: '16h 22-12-2024',
+            time_end: '16h 22-12-2024',
+            total: 100,
+            status: orderStatus.cancel,
+            delivery: 'Nhanh'
+        },
+        {
+            id: '2',
+            user_name: 'Chau Van Loc',
+            address: 'Tien Giang',
+            time_start: '16h 22-12-2024',
+            time_end: '16h 22-12-2024',
+            total: 100,
+            status: orderStatus.shipperIsShipping,
+            delivery: 'Hỏa Tốc'
+        },
+        {
+            id: '3',
+            user_name: 'Chau Van Loc',
+            address: 'Tien Giang',
+            time_start: '16h 22-12-2024',
+            time_end: '16h 22-12-2024',
+            total: 100,
+            status: orderStatus.confirm,
+            delivery: 'Viettel Post'
+        },
+        {
+            id: '4',
+            user_name: 'Chau Van Loc',
+            address: 'Tien Giang',
+            time_start: '16h 22-12-2024',
+            time_end: '16h 22-12-2024',
+            total: 100,
+            status: orderStatus.success,
+            delivery: 'Tiết Kiệm'
+        },
+        {
+            id: '5',
+            user_name: 'Chau Van Loc',
+            address: 'Tien Giang',
+            time_start: '16h 22-12-2024',
+            time_end: '16h 22-12-2024',
+            total: 100,
+            status: orderStatus.waitingShiper,
+            delivery: 'Hỏa Tốc'
+        }
+    ]
+
+    return (
+        <motion.section
+            className={`bg-white border border-gray-200 rounded-primary overflow-hidden  space-y-4 text-[15px] shadow-md pb-3 h-[${maxHeight}px]`}
+            initial={{ x: -20, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: 20, opacity: 0.9 }}
+            transition={{ duration: 0.75 }}
+        >
+            <div className='flex border-b border-gray-200 sticky top-0 bg-white z-50'>
+                <Underline
+                    contents={[
+                        {
+                            title: 'Tất cả',
+                            to: ''
+                        },
+                        {
+                            title: 'Chờ xác nhận',
+                            to: {
+                                search: `status=${orderStatus.confirm}`
+                            }
+                        },
+                        {
+                            title: 'Chờ lấy hàng',
+                            to: {
+                                search: `status=${orderStatus.waitingShiper}`
+                            }
+                        },
+                        {
+                            title: 'Đang giao',
+                            to: {
+                                search: `status=${orderStatus.shipperIsShipping}`
+                            }
+                        },
+                        {
+                            title: 'Đã giao',
+                            to: {
+                                search: `status=${orderStatus.shippingSuccess}`
+                            }
+                        },
+                        {
+                            title: 'Đơn hủy',
+                            to: {
+                                search: `status=${orderStatus.cancel}`
+                            }
+                        },
+                        {
+                            title: 'Trả hàng / Hoàn tiền',
+                            to: {
+                                search: `status=${orderStatus.refund}`
+                            }
+                        }
+                    ]}
+                    rootClassName='px-5'
+                    itemClassName='px-4 py-3'
+                />
+            </div>
+            <div className='px-5 flex items-center space-x-4'>
+                <div className='flex basis-8/12'>
+                    <Select
+                        title='Mã đơn hàng'
+                        data={[
+                            'Mã đơn hàng',
+                            'Tên người mua',
+                            'Sản phẩm',
+                            'Mã vận đơn',
+                            'Mã yêu cầu trả hàng'
+                        ]}
+                        setChoosed={setChoosed}
+                        defaultValue={1}
+                    />
+                    <div className='border rounded-r-xs border-gray-200 basis-8/12 flex items-center relative hover:border-gray-400 flex-grow'>
+                        <input
+                            className='outline-none w-full px-3 pr-8'
+                            type='text'
+                            name='search'
+                            id='search'
+                            placeholder={`Nhập ${
+                                choosed ? choosed.toLowerCase() : '...'
+                            }`}
+                        />
+                        <Icon
+                            icon={<GoSearch />}
+                            className='absolute right-2 top-1/2 -translate-y-1/2'
+                            size='16px'
+                        />
+                    </div>
+                </div>
+                <div>
+                    <button className='px-3 py-1 bg-primary text-white hover:bg-primary/90 rounded-xs'>
+                        Tìm kiếm
+                    </button>
+                </div>
+                <div>
+                    <button className='px-3 py-1 hover:bg-gray-100 rounded-xs border border-gray-200'>
+                        Đặt lại
+                    </button>
+                </div>
+            </div>
+            <div className='flex space-x-5 items-center px-5'>
+                <div className='flex items-center space-x-3'>
+                    <span>Đơn vị vận chuyển:</span>
+                    <Select
+                        data={[
+                            'Hỏa tốc',
+                            'Shop express',
+                            'Giao hàng tiết kiệm',
+                            'Viettel Post'
+                        ]}
+                        title='Lựa chọn ...'
+                    />
+                </div>
+                <div className='flex space-x-3'>
+                    <span>Ngày đặt hàng:</span>
+                    <RangePicker
+                        format={'DD-MM-YYYY'}
+                        placeholder={['Ngày bắt đầu', 'Ngày kết thúc']}
+                        separator={
+                            <Icon
+                                icon={<AiOutlineLine />}
+                                size='10px'
+                                color='#bfbfbf'
+                            />
+                        }
+                        className='rounded-xs border-gray-200 hover:border-gray-400'
+                    />
+                </div>
+                <div className='flex items-center space-x-3'>
+                    <span>Sắp xếp theo:</span>
+                    <Select
+                        data={[
+                            'Mới nhất',
+                            'Cũ nhất',
+                            'Đơn hàng giá trị cao',
+                            'Đơn hàng giá trị thấp'
+                        ]}
+                        title='Lựa chọn ...'
+                    />
+                </div>
+            </div>
+            <div className='flex justify-between px-5'>
+                <span className='text-sm font-semibold'>0 Đơn hàng</span>
+                <div>
+                    <button className='flex items-center space-x-2 px-2 py-1 rounded-xs border border-gray-200 hover:bg-primary/90 text-white bg-primary'>
+                        <Icon icon={<BsStackOverflow />} size='18px' />
+                        <span>Giao Hàng Loạt</span>
+                    </button>
+                </div>
+            </div>
+            <div className='px-5'>
+                <Table className='mb-2' columns={columns} dataSource={data} />
+            </div>
+        </motion.section>
+    )
 }
 
 export default Order

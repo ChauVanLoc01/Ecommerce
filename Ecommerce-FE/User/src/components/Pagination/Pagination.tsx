@@ -30,7 +30,12 @@ Với range = 2 áp dụng cho khoảng cách đầu, cuối và xung quanh curr
 1 2 ... 18 19 [20]
  */
 
-export default function Pagination({ page, pageSize, stringPagination, range = 2 }: Props) {
+export default function Pagination({
+  page,
+  pageSize,
+  stringPagination,
+  range = 2
+}: Props) {
   const renderPagination = () => {
     let dotAfter = false
     let dotBefore = false
@@ -38,7 +43,10 @@ export default function Pagination({ page, pageSize, stringPagination, range = 2
       if (!dotBefore) {
         dotBefore = true
         return (
-          <span key={index} className='mx-2 rounded border bg-white px-3 py-2 shadow-sm'>
+          <span
+            key={index}
+            className='mx-2 rounded border bg-white px-2 py-1 shadow-sm'
+          >
             ...
           </span>
         )
@@ -49,7 +57,10 @@ export default function Pagination({ page, pageSize, stringPagination, range = 2
       if (!dotAfter) {
         dotAfter = true
         return (
-          <span key={index} className='mx-2 rounded border bg-white px-3 py-2 shadow-sm'>
+          <span
+            key={index}
+            className='mx-2 rounded border bg-white px-2 py-1 shadow-sm'
+          >
             ...
           </span>
         )
@@ -62,22 +73,35 @@ export default function Pagination({ page, pageSize, stringPagination, range = 2
         const pageNumber = index + 1
 
         // Điều kiện để return về ...
-        if (page <= range * 2 + 1 && pageNumber > page + range && pageNumber < pageSize - range + 1) {
+        if (
+          page <= range * 2 + 1 &&
+          pageNumber > page + range &&
+          pageNumber < pageSize - range + 1
+        ) {
           return renderDotAfter(index)
         } else if (page > range * 2 + 1 && page < pageSize - range * 2) {
           if (pageNumber < page - range && pageNumber > range) {
             return renderDotBefore(index)
-          } else if (pageNumber > page + range && pageNumber < pageSize - range + 1) {
+          } else if (
+            pageNumber > page + range &&
+            pageNumber < pageSize - range + 1
+          ) {
             return renderDotAfter(index)
           }
-        } else if (page >= pageSize - range * 2 && pageNumber > range && pageNumber < page - range) {
+        } else if (
+          page >= pageSize - range * 2 &&
+          pageNumber > range &&
+          pageNumber < page - range
+        ) {
           return renderDotBefore(index)
         }
 
         return page === pageNumber ? (
           <span
             key={index}
-            className={classNames('mx-2 cursor-pointer rounded border border-cyan-500 bg-white px-3 py-2 shadow-sm')}
+            className={classNames(
+              'mx-2 cursor-pointer rounded border border-cyan-500 bg-white px-2 py-1 shadow-sm'
+            )}
           >
             {pageNumber}
           </span>
@@ -85,7 +109,9 @@ export default function Pagination({ page, pageSize, stringPagination, range = 2
           <Link
             to={stringPagination({ page: pageNumber })}
             key={index}
-            className={classNames('mx-2 cursor-pointer rounded border border-transparent bg-white px-3 py-2 shadow-sm')}
+            className={classNames(
+              'mx-2 cursor-pointer rounded border border-transparent bg-white px-2 py-1 shadow-sm'
+            )}
           >
             {pageNumber}
           </Link>
@@ -93,24 +119,28 @@ export default function Pagination({ page, pageSize, stringPagination, range = 2
       })
   }
   return (
-    <div className='mt-6 flex flex-wrap justify-center'>
+    <div className='mt-6 flex flex-wrap justify-center text-xs'>
       {page === 1 ? (
-        <span className='mx-2 cursor-pointer rounded border bg-gray-300/30 bg-white px-3 py-2  shadow-sm'>Prev</span>
+        <span className='mx-2 cursor-pointer rounded border bg-gray-300/30 bg-white px-2 py-1  shadow-sm'>
+          Prev
+        </span>
       ) : (
         <Link
           to={stringPagination({ page: page - 1 })}
-          className='mx-2 cursor-pointer rounded border bg-white px-3 py-2  shadow-sm'
+          className='mx-2 cursor-pointer rounded border bg-white px-2 py-1  shadow-sm'
         >
           Prev
         </Link>
       )}
       {renderPagination()}
       {page === pageSize ? (
-        <span className='mx-2 cursor-pointer rounded border bg-gray-300/30 bg-white px-3 py-2  shadow-sm'>Prev</span>
+        <span className='mx-2 cursor-pointer rounded border bg-gray-300/30 bg-white px-2 py-1  shadow-sm'>
+          Prev
+        </span>
       ) : (
         <Link
           to={stringPagination({ page: page + 1 })}
-          className='mx-2 cursor-pointer rounded border bg-white px-3 py-2  shadow-sm'
+          className='mx-2 cursor-pointer rounded border bg-white px-2 py-1  shadow-sm'
         >
           Next
         </Link>
