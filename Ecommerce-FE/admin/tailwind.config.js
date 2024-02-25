@@ -36,6 +36,12 @@ module.exports = {
             gap: {
                 25: '25px',
                 48: '48px'
+            },
+            fontFamily: {
+                default: 'Inter, sans-serif'
+            },
+            boxShadow: {
+                input: '0 0 0 2px rgba(5, 145, 255, 0.1)'
             }
         }
     },

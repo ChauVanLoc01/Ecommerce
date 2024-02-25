@@ -1,6 +1,7 @@
 import { useRef } from 'react'
 
 import classNames from 'classnames'
+import { AiOutlineCloudUpload } from 'react-icons/ai'
 import { FaFacebookSquare, FaGoogle } from 'react-icons/fa'
 import { FaApple } from 'react-icons/fa6'
 import { HiOutlineInformationCircle } from 'react-icons/hi2'
@@ -25,19 +26,26 @@ const CardProfile = ({ rootClassName }: CardProps) => {
     return (
         <div
             className={classNames(
-                'p-24 border border-border/30 rounded-8 bg-white space-y-8 relative',
+                'p-24 border border-border/30 rounded-8 bg-white space-y-8 relative shrink-0',
                 rootClassName
             )}
         >
             <section className='space-y-2 text-center'>
                 <button
-                    className='w-20 h-20 rounded-full border border-dashed border-blue object-cover mx-auto overflow-hidden relative hover:after:content-[url("https://cdn-icons-png.flaticon.com/512/2951/2951086.png")] hover:after:inline-block hover:after:w-20 hover:after:h-20 hover:after:absolute hover:after:inset-0 hover:after:bg-white after:ease-in-out after:duration-300 after:transition-all'
+                    className='w-20 h-20 rounded-full border border-dashed border-blue object-cover mx-auto overflow-hidden relative group'
                     onClick={handleOpenFile}
                 >
                     <img
                         src='https://cdn-icons-png.flaticon.com/512/2202/2202112.png'
                         alt='background'
+                        className='group-hover:opacity-0 transition-all duration-100 ease-linear rounded-full'
                     />
+                    <span className='opacity-0 absolute inset-0 flex justify-center items-center bg-white group-hover:opacity-100 transition-all duration-100 ease-linear rounded-full delay-100'>
+                        <AiOutlineCloudUpload
+                            size={30}
+                            className='w-full hful text-blue'
+                        />
+                    </span>
                 </button>
                 <input
                     type='file'

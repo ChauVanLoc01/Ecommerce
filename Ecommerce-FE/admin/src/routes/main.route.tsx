@@ -2,6 +2,7 @@ import loadable from '@loadable/component'
 import { createBrowserRouter } from 'react-router-dom'
 
 import { route } from 'src/constants/route'
+import Login from 'src/pages/Login'
 
 const MainLayout = loadable(() => import('src/layouts/MainLayout'))
 const Analytic = loadable(() => import('src/pages/Analytic'))
@@ -48,7 +49,8 @@ const routes = createBrowserRouter([
         ]
     },
     {
-        path: route.login
+        path: route.login,
+        element: <Login />
     }
 ])
 

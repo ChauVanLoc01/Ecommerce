@@ -53,3 +53,30 @@ body {
 .simplebar-track.simplebar-vertical .simplebar-scrollbar:before {
     background-image: linear-gradient(blue, orange);
 }
+
+.ant-picker.ant-picker-outlined:focus-within {
+    border-color: #3366ff;
+}
+
+.ant-picker .ant-picker-input input {
+    font-family: 'Inter', sans-serif;
+    font-size: 18px;
+}
+
+.ant-picker-dropdown .ant-picker-date-panel {
+    width: 400px;
+}
+
+.ant-picker-dropdown .ant-picker-header {
+    padding: 8px 16px;
+}
+
+.ant-picker-dropdown .ant-picker-body {
+    padding: 8px 16px;
+}
+
+.ant-picker-dropdown .ant-picker-cell .ant-picker-cell-inner {
+    padding: 8px 16px;
+    width: auto;
+    height: auto;
+}

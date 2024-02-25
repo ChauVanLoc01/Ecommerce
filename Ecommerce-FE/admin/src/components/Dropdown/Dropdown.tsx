@@ -42,26 +42,28 @@ const Dropdown = ({
 
     return (
         <>
-            <button
-                className={classNames(
-                    'px-16 py-8 rounded-8 border border-border flex items-center justify-between w-full focus-within:ring-[1px] focus-within:ring-blue',
-                    refClassNames
-                )}
-                ref={refs.setReference}
-                {...getReferenceProps()}
-                onClick={() => setIsOpen((preState) => !preState)}
-            >
-                <span>Dropdown</span>
-                <MdOutlineArrowDropDown
-                    size={25}
+            <section className='hover:bg-gradient-to-bl hover:from-green-600 hover:via-blue hover:to-rose-700 hover:shadow-input focus-within:bg-gradient-to-bl focus-within:from-green-600 focus-within:via-blue focus-within:to-rose-700 focus-within:shadow-input p-[1px] bg-border rounded-8'>
+                <button
                     className={classNames(
-                        'transition-all duration-300 ease-in-out',
-                        {
-                            '-rotate-180': isOpen
-                        }
+                        'px-16 py-8 rounded-8 flex items-center justify-between w-full bg-white',
+                        refClassNames
                     )}
-                />
-            </button>
+                    ref={refs.setReference}
+                    {...getReferenceProps()}
+                    onClick={() => setIsOpen((preState) => !preState)}
+                >
+                    <span>Dropdown</span>
+                    <MdOutlineArrowDropDown
+                        size={25}
+                        className={classNames(
+                            'transition-all duration-300 ease-in-out',
+                            {
+                                '-rotate-180': isOpen
+                            }
+                        )}
+                    />
+                </button>
+            </section>
             <FloatingPortal>
                 <motion.section
                     className={classNames(

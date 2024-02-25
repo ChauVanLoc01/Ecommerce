@@ -1,13 +1,21 @@
 import { Outlet } from 'react-router-dom'
+import SimpleBar from 'simplebar-react'
 
 import Card from './CardProfile'
 
 const Profile = () => {
     return (
-        <div className='flex items-start gap-x-25'>
+        <section className='flex items-start gap-x-25'>
             <Card rootClassName='basis-1/5' />
-            <Outlet />
-        </div>
+            <SimpleBar
+                style={{
+                    width: '100%',
+                    maxHeight: 'calc(100vh - 130px)'
+                }}
+            >
+                <Outlet />
+            </SimpleBar>
+        </section>
     )
 }
 

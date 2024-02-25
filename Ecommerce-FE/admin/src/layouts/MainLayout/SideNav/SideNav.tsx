@@ -13,7 +13,7 @@ const SideNav = () => {
                         alt='logo'
                         className='object-cover w-10 h-10'
                     />
-                    <span className='font-mono text-xl font-semibold text-blue'>
+                    <span className='font-mono text-xl font-semibold text-transparent bg-gradient-to-tr from-blue to-[#CF1512] bg-clip-text'>
                         Trang quản lý
                     </span>
                 </div>

@@ -1,3 +1,6 @@
+import { DatePicker } from 'antd'
+
+import Button from 'src/components/Button'
 import Dropdown from 'src/components/Dropdown'
 import Input from 'src/components/Input'
 
@@ -18,11 +21,10 @@ const PersonalInformation = () => {
                     </section>
                     <section className='space-y-2 flex-grow-0'>
                         <h4>Ngày sinh:</h4>
-                        <div className='flex items-center'>
-                            <Input rootClassName='w-1/3' />
-                            <Input rootClassName='w-1/3' />
-                            <Input rootClassName='w-1/3' />
-                        </div>
+                        <DatePicker
+                            rootClassName='px-16 py-8 w-full text-[18px]'
+                            placeholder=''
+                        />
                     </section>
                 </section>
                 <section className='basis-1/2 space-y-5'>
@@ -50,6 +52,13 @@ const PersonalInformation = () => {
                     </section>
                 </section>
             </div>
+            <section className='flex items-center justify-end space-x-5 mt-5'>
+                <Button
+                    text='Hủy thay đổi'
+                    rootClassNames='bg-red hover:bg-red_hover'
+                />
+                <Button text='Lưu' />
+            </section>
         </LayoutProfile>
     )
 }
