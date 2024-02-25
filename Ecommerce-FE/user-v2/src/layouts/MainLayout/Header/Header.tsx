@@ -146,13 +146,30 @@ const Header = () => {
                         </>
                     }
                 />
-                <button className='rounded-full w-[40px] h-[40px]'>
-                    <img
-                        src='https://cdn-icons-png.flaticon.com/512/2202/2202112.png'
-                        alt='background'
-                        className='object-cover'
-                    />
-                </button>
+                <Popover
+                    referenceChildren={
+                        <img
+                            src='https://cdn-icons-png.flaticon.com/512/2202/2202112.png'
+                            alt='background'
+                            className='object-cover'
+                        />
+                    }
+                    referenceClassName='rounded-full w-[40px] h-[40px]'
+                    floatingClassName='p-12 rounded-8 bg-[#FFFFFF] border border-border/30 flex flex-col shadow-md'
+                    floatingChildren={
+                        <>
+                            <Link
+                                to={'/'}
+                                className='p-12 rounded-6 hover:bg-gray-200'
+                            >
+                                Thông tin cá nhân
+                            </Link>
+                            <button className='p-12 rounded-6 hover:bg-gray-200 w-full text-left'>
+                                Đăng xuất
+                            </button>
+                        </>
+                    }
+                />
             </section>
         </header>
     )
