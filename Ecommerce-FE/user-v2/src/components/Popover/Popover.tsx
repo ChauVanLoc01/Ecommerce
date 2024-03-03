@@ -9,7 +9,11 @@ import { useFloating } from 'src/hooks/useFloating'
 type PopoverProps = {
     referenceChildren: ReactNode | string
     referenceClassName?: string
-    floatingChildren: ReactNode
+    floatingChildren: ({
+        setIsOpen
+    }: {
+        setIsOpen: React.Dispatch<React.SetStateAction<boolean>>
+    }) => JSX.Element
     floatingClassName?: string
 }
 
@@ -65,7 +69,7 @@ const Popover = ({
                                 ...floatingStyles
                             }}
                         >
-                            {floatingChildren}
+                            {floatingChildren({ setIsOpen })}
                         </motion.section>
                     )}
                 </AnimatePresence>

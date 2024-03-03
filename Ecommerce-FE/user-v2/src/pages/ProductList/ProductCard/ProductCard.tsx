@@ -10,6 +10,10 @@ const ProductCard = () => {
         <motion.article
             className='rounded-12 border border-border/30 bg-[#FFFFFF] hover:shadow-md'
             whileHover={{ scale: 1.02 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
         >
             <Link to={'/aaa'} className='border-b border-border/30'>
                 <Image

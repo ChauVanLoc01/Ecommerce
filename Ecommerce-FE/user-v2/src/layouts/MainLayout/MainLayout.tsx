@@ -6,7 +6,7 @@ const Header = loadable(() => import('./Header'))
 
 const MainLayout = () => {
     return (
-        <div className='bg-[#F8F9FA] min-h-screen'>
+        <div className='bg-[#F8F9FA] min-h-screen select-none'>
             <SimpleBar style={{ maxHeight: '100vh', height: '100vh' }}>
                 <div className='mx-auto w-full max-w-screen-xl max-h-screen'>
                     <Header />

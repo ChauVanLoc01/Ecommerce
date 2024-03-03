@@ -1,12 +1,14 @@
 import classNames from 'classnames'
 
 type InputProps = {
+    rootClassName?: string
     lable?: string
     lableClassName?: string
     htmlFor?: string
 } & React.InputHTMLAttributes<HTMLInputElement>
 
 const Input = ({
+    rootClassName,
     lable,
     lableClassName,
     htmlFor,
@@ -15,7 +17,7 @@ const Input = ({
     ...rest
 }: InputProps) => {
     return (
-        <section>
+        <section className={rootClassName}>
             <label
                 htmlFor={htmlFor}
                 className={classNames(

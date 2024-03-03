@@ -15,6 +15,7 @@
     "dependencies": {
         "@floating-ui/react": "^0.26.9",
         "@loadable/component": "^5.16.3",
+        "@nextui-org/react": "^2.2.9",
         "classnames": "^2.5.1",
         "framer-motion": "^11.0.6",
         "preline": "^2.0.3",

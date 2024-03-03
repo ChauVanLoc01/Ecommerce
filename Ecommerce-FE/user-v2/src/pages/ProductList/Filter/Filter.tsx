@@ -1,10 +1,18 @@
+import { motion } from 'framer-motion'
+
 import Button from 'src/components/Button'
 import Checkbox from 'src/components/Checkbox'
 import Input from 'src/components/Input'
 
 const Filter = () => {
     return (
-        <section className='p-[24px] bg-[#FFFFFF] rounded-12 border border-border/30 space-y-4 sticky top-0'>
+        <motion.section
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className='p-[24px] bg-[#FFFFFF] rounded-12 border border-border/30 space-y-4 sticky top-0'
+        >
             <div className='space-y-3'>
                 <h2 className='text-base font-semibold tracking-wide'>
                     Danh mục
@@ -43,7 +51,7 @@ const Filter = () => {
                 />
                 <Button text='Áp dụng' className='w-full py-[10px] text-xs' />
             </div>
-        </section>
+        </motion.section>
     )
 }
 

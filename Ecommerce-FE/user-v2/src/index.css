@@ -45,6 +45,7 @@ body {
     line-height: 1;
 }
 
+
 .simplebar-track.simplebar-vertical .simplebar-scrollbar:before {
-    background-color: #1890ff;
+    background-color: #595959;
 }

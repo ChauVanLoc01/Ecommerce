@@ -3,6 +3,12 @@ import { createBrowserRouter } from 'react-router-dom'
 
 import { route } from 'src/constants/route'
 import MainLayout from 'src/layouts/MainLayout'
+import Checkout from 'src/pages/Checkout'
+import Profile from 'src/pages/Profile'
+import ChangePassword from 'src/pages/Profile/LayoutProfile/ChangePassword'
+import Order from 'src/pages/Profile/LayoutProfile/Order'
+import Payment from 'src/pages/Profile/LayoutProfile/Payment'
+import PersonalInformation from 'src/pages/Profile/LayoutProfile/PersonalInformation'
 
 const Login = loadable(() => import('src/pages/Login'))
 const Register = loadable(() => import('src/pages/Register'))
@@ -30,6 +36,32 @@ const routes = createBrowserRouter([
             {
                 path: ':productId',
                 element: <Product />
+            },
+            {
+                path: 'profile',
+                element: <Profile />,
+                children: [
+                    {
+                        index: true,
+                        element: <PersonalInformation />
+                    },
+                    {
+                        path: route.order,
+                        element: <Order />
+                    },
+                    {
+                        path: route.changePassword,
+                        element: <ChangePassword />
+                    },
+                    {
+                        path: route.payment,
+                        element: <Payment />
+                    }
+                ]
+            },
+            {
+                path: route.checkout,
+                element: <Checkout />
             }
         ]
     }

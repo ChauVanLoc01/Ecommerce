@@ -1,4 +1,5 @@
 import loadable from '@loadable/component'
+import { motion } from 'framer-motion'
 import { IoSearchOutline } from 'react-icons/io5'
 
 import Dropdown from 'src/components/Dropdown'
@@ -11,7 +12,13 @@ const Filter = loadable(() => import('./Filter'))
 
 const ProductList = () => {
     return (
-        <main className='flex gap-x-5'>
+        <motion.main
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className='flex gap-x-5'
+        >
             <section className='basis-1/5 flex-shrink-0'>
                 <Filter />
             </section>
@@ -49,7 +56,7 @@ const ProductList = () => {
                     <Pagination pageSize={20} />
                 </div>
             </section>
-        </main>
+        </motion.main>
     )
 }
 

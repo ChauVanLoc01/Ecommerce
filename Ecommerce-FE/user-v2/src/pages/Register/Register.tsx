@@ -15,7 +15,7 @@ const Register = () => {
                 rootClassName='basis-3/5 object-cover flex-shrink-0'
                 className='object-cover'
             />
-            <main className='w-[25%] mx-auto py-16 space-y-4'>
+            <main className='w-[25%] mx-auto py-16 space-y-4 flex flex-col justify-center'>
                 <section className='text-center'>
                     <Link to={route.root} className='inline-block'>
                         <img

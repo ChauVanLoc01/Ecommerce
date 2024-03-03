@@ -23,7 +23,7 @@ const Button = ({
                 }
             }}
             whileTap={{
-                scale: 0.98
+                scale: 0.95
             }}
             type={type}
             className={classNames(
