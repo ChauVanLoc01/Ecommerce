@@ -1,4 +1,4 @@
 export enum Status {
-  ACCESS,
-  BLOCK
+  ACTIVE = 'ACTIVE',
+  BLOCK = 'BLOCK'
 }

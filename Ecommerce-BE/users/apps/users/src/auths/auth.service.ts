@@ -53,19 +53,6 @@ export class AuthService {
     return bcrypt.compare(password, hash)
   }
 
-  setToken(access_token: string, refresh_token: string, response: Response) {
-    response.cookie('Authorization', `Bearer ${access_token}`, {
-      httpOnly: true,
-      secure: true,
-      maxAge: this.configService.get<number>('app.access_token_expire_time')
-    })
-    response.cookie('RefreshToken', `Bearer ${refresh_token}`, {
-      httpOnly: true,
-      secure: true,
-      maxAge: this.configService.get<number>('app.refresh_token_expire_time')
-    })
-  }
-
   async verify(username: string, password: string): Promise<Account> {
     const accountExist = await this.prisma.account.findUnique({
       where: {
@@ -151,8 +138,6 @@ export class AuthService {
       this.createRefreshToken(user)
     ])
 
-    this.setToken(access_token, refresh_token, response)
-
     const userExist = await this.prisma.user.findUnique({
       where: {
         id: user.id
@@ -169,8 +154,8 @@ export class AuthService {
     }
   }
 
-  async userRegister(registerDto: RegisterDTO, response: Response): Promise<Return> {
-    const { email, password, username, full_name, address } = registerDto
+  async userRegister(registerDto: RegisterDTO): Promise<Return> {
+    const { email, password, username, full_name } = registerDto
 
     const accountExist = await this.prisma.account.findUnique({
       where: {
@@ -184,26 +169,26 @@ export class AuthService {
 
     const [{ createdAt, status, ...rest }, { storeRoleId }] = await this.prisma.$transaction(
       async (tx) => {
-        const user = await tx.user.create({
-          data: {
-            id: uuidv4(),
-            email,
-            role: Role.USER,
-            status: Status.ACCESS,
-            full_name,
-            address
-          }
-        })
-
-        const account = await tx.account.create({
-          data: {
-            username,
-            password: await this.hashPassword(password),
-            userId: user.id
-          }
-        })
-
-        return [user, account]
+        const userId = uuidv4()
+        const [userCreated, accountCreated] = await Promise.all([
+          tx.user.create({
+            data: {
+              id: userId,
+              email,
+              role: Role.USER,
+              status: Status.ACTIVE,
+              full_name,
+            }
+          }),
+          tx.account.create({
+            data: {
+              username,
+              password: await this.hashPassword(password),
+              userId: userId
+            }
+          })
+        ])
+        return [userCreated, accountCreated]
       }
     )
 
@@ -217,8 +202,6 @@ export class AuthService {
       this.createAccessToken(current_user),
       this.createRefreshToken(current_user)
     ])
-
-    await this.setToken(access_token, refresh_token, response)
 
     this.sendMailQueue.add(
       BackgroundAction.register,
@@ -235,8 +218,9 @@ export class AuthService {
     return {
       msg: 'Đăng kí tài khoản thành công',
       result: {
-        ...rest,
-        storeRoleId
+        user: rest,
+        access_token: `Bearer ${access_token}`,
+        refresh_token: `Bearer ${refresh_token}`
       }
     }
   }
@@ -246,8 +230,6 @@ export class AuthService {
       this.createAccessToken(user),
       this.createRefreshToken(user)
     ])
-
-    this.setToken(access_token, refresh_token, response)
 
     const [user_profile, store] = await Promise.all([
       this.prisma.user.findUnique({

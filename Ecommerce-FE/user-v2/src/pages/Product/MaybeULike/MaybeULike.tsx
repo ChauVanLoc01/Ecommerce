@@ -1,27 +1,40 @@
+import classNames from 'classnames'
 import { Link } from 'react-router-dom'
 
 import Stars from 'src/components/Stars'
+import { Product } from 'src/types/product.type'
+import { convertCurrentcy, removeSpecialCharacter } from 'src/utils/utils.ts'
 
-const MaybeULike = () => {
+type MaybeULikeProps = {
+    product: Product
+}
+
+const MaybeULike = ({ product }: MaybeULikeProps) => {
     return (
         <section className='flex gap-4 hover:bg-[#F8F9FA] p-[24px] relative'>
-            <Link to={'/'} className='flex-shrink-0'>
+            <Link to={`/${removeSpecialCharacter(product.name)}-0-${product.id}`} className='flex-shrink-0'>
                 <img
-                    src='https://ableproadmin.com/react/static/media/prod-1.0a0009b51cfdd224835e.png'
+                    src={product.image}
                     alt='review-img'
                     className='rounded-12 w-14 h-14 object-cover border border-border/30'
                 />
             </Link>
             <div className='space-y-1'>
                 <Link
-                    to={'/'}
-                    className='font-semibold text-sm tracking-wide line-clamp-2 leading-5 w-fit pr-4'
+                    to={`/${removeSpecialCharacter(product.name)}-0-${product.id}`}
+                    className='font-semibold text-sm tracking-wide line-clamp-2 leading-5 w-fit pr-7'
                 >
-                    Apple MacBook Pro with Iphone
+                    {product.name}
                 </Link>
-                <div className='space-x-3 text-xs'>
-                    <span className=''>$12.99</span>
-                    <span className='line-through text-gray-400'>$15.99</span>
+                <div className='space-x-3 text-sm'>
+                    <span className=''>{convertCurrentcy(product.priceAfter || 0, 0)}đ</span>
+                    <span
+                        className={classNames('line-through text-gray-400', {
+                            hidden: !product.priceBefore
+                        })}
+                    >
+                        {convertCurrentcy(product.priceBefore || 0, 0)}đ
+                    </span>
                 </div>
                 <Stars amount={3} />
             </div>

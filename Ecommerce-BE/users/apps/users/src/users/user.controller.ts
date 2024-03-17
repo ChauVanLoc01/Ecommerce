@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Put, Query } from '@nestjs/common'
+import { Body, Controller, Get, Param, Put, Query, UseGuards } from '@nestjs/common'
 import { UserService } from './user.service'
 import { CurrentUser } from 'common/decorators/current_user.decorator'
 import { CurrentUserType } from 'common/types/current.type'
@@ -6,6 +6,7 @@ import { UpdateUserProfileDTO } from '../dtos/update_user_profile.dto'
 import { Roles } from 'common/decorators/roles.decorator'
 import { QueryAllUserProfileDTO } from '../dtos/all_user.dto'
 import { Role } from 'common/enums/role.enum'
+import { JwtGuard } from 'common/guards/jwt.guard'
 
 @Controller('profile')
 export class UserController {
@@ -14,7 +15,7 @@ export class UserController {
   @Roles(Role.ADMIN, Role.STORE_OWNER)
   @Get('all-user')
   getAllUserProfile(@Query() query: QueryAllUserProfileDTO) {
-    return this.userService.findAllUserProfile(query);
+    return this.userService.findAllUserProfile(query)
   }
 
   @Roles(Role.USER)
@@ -24,11 +25,9 @@ export class UserController {
   }
 
   @Roles(Role.ADMIN, Role.USER)
+  @UseGuards(JwtGuard)
   @Put()
-  updateProfile(
-    @CurrentUser() user: CurrentUserType,
-    @Body() body: UpdateUserProfileDTO
-  ) {
+  updateProfile(@CurrentUser() user: CurrentUserType, @Body() body: UpdateUserProfileDTO) {
     return this.userService.updateProfile(user, body)
   }
 }

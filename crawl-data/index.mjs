@@ -13975,8 +13975,8 @@ const users = Array(20)
       id: uuidv4(),
       email: `a${i}@gmail.com`,
       full_name: `User ${i}`,
-      role: 1,
-      status: 0,
+      role: 'STORE_OWNER',
+      status: 'ACTIVE',
     };
   });
 
@@ -13988,46 +13988,29 @@ const stores = Array(users.length - 3)
       image: `Store Image ${i}`,
       name: `Store ${i}`,
       createdBy: users[i].id,
-      status: 0,
+      status: 'ACTIVE',
     };
   });
 
 const insertDataIntoMyDB = async () => {
   const vanlocuser = uuidv4();
-  const tanlocuser = uuidv4();
 
-  await prisma.user.createMany({
-    data: [
-      {
-        id: vanlocuser,
-        email: 'chauvanloc.tg@gmail.com',
-        full_name: 'Chau Van Loc',
-        role: 3,
-        status: 0,
-      },
-      {
-        id: tanlocuser,
-        email: 'erwin.cao01@gmail.com',
-        full_name: 'Cao Huy Tan Loc',
-        role: 3,
-        status: 0,
-      },
-    ],
+  await prisma.user.create({
+    data: {
+      id: vanlocuser,
+      email: 'chauvanloc.tg@gmail.com',
+      full_name: 'Chau Van Loc',
+      role: 'ADMIN',
+      status: 'ACTIVE',
+    },
   });
 
-  await prisma.account.createMany({
-    data: [
-      {
-        username: 'vanloc',
-        password: '123123',
-        userId: vanlocuser,
-      },
-      {
-        username: 'tanloc',
-        password: '123123',
-        userId: tanlocuser,
-      },
-    ],
+  await prisma.account.create({
+    data: {
+      username: 'vanloc',
+      password: '123123',
+      userId: vanlocuser,
+    },
   });
 
   await prisma.user.createMany({
@@ -14054,17 +14037,18 @@ const insertDataIntoMyDB = async () => {
         name: product.name,
         initQuantity,
         currentQuantity: rest,
-        status: 0,
-        priceBefore: product.priceAfter
-          ? Number(product.priceAfter.replace('.', '').replace('₫', ''))
-          : 0,
-        priceAfter: product.priceBefore
+        status: 'ACTIVE',
+        priceBefore: product.priceBefore
           ? Number(product.priceBefore.replace('.', '').replace('₫', ''))
           : 0,
+        priceAfter: Number(
+          product.priceAfter.replace('.', '').replace('₫', '')
+        ),
         storeId: storeRandom.id,
         createdBy: storeRandom.createdBy,
         image: product.image,
         category: product.category,
+        sold: initQuantity - rest,
       };
     }
     return undefined;

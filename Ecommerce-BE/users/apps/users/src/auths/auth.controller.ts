@@ -44,9 +44,8 @@ export class AuthController {
   @Post('user-register')
   userRegister(
     @Body() registerDTO: RegisterDTO,
-    @Res({ passthrough: true }) response: Response
   ) {
-    return this.authService.userRegister(registerDTO, response)
+    return this.authService.userRegister(registerDTO)
   }
 
   @UseGuards(StoreGuard)

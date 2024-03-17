@@ -1,12 +1,5 @@
 /* eslint-disable prettier/prettier */
-import {
-  IsEnum,
-  IsInt,
-  IsNotEmpty,
-  IsNumber,
-  IsOptional,
-  IsString
-} from 'class-validator'
+import { IsEnum, IsInt, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator'
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 import { Status } from 'common/enums/status.enum'
 export class CreateProductDTO {
@@ -45,11 +38,11 @@ export class CreateProductDTO {
 
   @ApiPropertyOptional({
     required: false,
-    default: Status.ACCESS
+    default: Status.ACTIVE
   })
   @IsEnum(Status)
   @IsOptional()
-  status: Status.ACCESS
+  status: Status.ACTIVE
 }
 
 export type CreateProductType = InstanceType<typeof CreateProductDTO>

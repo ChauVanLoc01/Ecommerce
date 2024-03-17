@@ -1,11 +1,11 @@
 export type CurrentUserType = {
   id: string
-  role: number
+  role: string
   storeRoleId?: string
 }
 
 export type CurrentStoreType = {
   userId: string
   storeId: string
-  role: number
+  role: string
 }

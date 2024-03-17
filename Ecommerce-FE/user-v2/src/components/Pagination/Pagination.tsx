@@ -1,13 +1,20 @@
 import classNames from 'classnames'
-import { Link } from 'react-router-dom'
+import useQueryParams from 'src/hooks/useQueryParams'
+import { ProductListQuery } from 'src/types/product.type'
 
 interface Props {
     pageSize: number
 }
 
-const RANGE = 2
+const RANGE = 3
 export default function Pagination({ pageSize }: Props) {
-    const page = 1
+    const [queryParams, setQueryParams] = useQueryParams<Partial<Record<keyof ProductListQuery, string>>>()
+
+    const page = Number(queryParams?.page) || 1
+
+    const handleRedirectPage = (pageNumber: number) => () => {
+        setQueryParams({ ...queryParams, page: pageNumber } as any)
+    }
 
     const renderPagination = () => {
         let dotAfter = false
@@ -16,10 +23,7 @@ export default function Pagination({ pageSize }: Props) {
             if (!dotBefore) {
                 dotBefore = true
                 return (
-                    <span
-                        key={index}
-                        className='mx-2 rounded border bg-[#FFFFFF] px-3 py-2 shadow-sm border-border/30'
-                    >
+                    <span key={index} className='mx-2 rounded border bg-[#FFFFFF] px-3 py-2 shadow-sm border-border/30'>
                         ...
                     </span>
                 )
@@ -30,10 +34,7 @@ export default function Pagination({ pageSize }: Props) {
             if (!dotAfter) {
                 dotAfter = true
                 return (
-                    <span
-                        key={index}
-                        className='mx-2 rounded border border-border/30 bg-[#FFFFFF] px-3 py-2 shadow-sm'
-                    >
+                    <span key={index} className='mx-2 rounded border border-border/30 bg-[#FFFFFF] px-3 py-2 shadow-sm'>
                         ...
                     </span>
                 )
@@ -46,48 +47,29 @@ export default function Pagination({ pageSize }: Props) {
                 const pageNumber = index + 1
 
                 // Điều kiện để return về ...
-                if (
-                    page <= RANGE * 2 + 1 &&
-                    pageNumber > page + RANGE &&
-                    pageNumber < pageSize - RANGE + 1
-                ) {
+                if (page <= RANGE * 2 + 1 && pageNumber > page + RANGE && pageNumber < pageSize - RANGE + 1) {
                     return renderDotAfter(index)
-                } else if (
-                    page > RANGE * 2 + 1 &&
-                    page < pageSize - RANGE * 2
-                ) {
+                } else if (page > RANGE * 2 + 1 && page < pageSize - RANGE * 2) {
                     if (pageNumber < page - RANGE && pageNumber > RANGE) {
                         return renderDotBefore(index)
-                    } else if (
-                        pageNumber > page + RANGE &&
-                        pageNumber < pageSize - RANGE + 1
-                    ) {
+                    } else if (pageNumber > page + RANGE && pageNumber < pageSize - RANGE + 1) {
                         return renderDotAfter(index)
                     }
-                } else if (
-                    page >= pageSize - RANGE * 2 &&
-                    pageNumber > RANGE &&
-                    pageNumber < page - RANGE
-                ) {
+                } else if (page >= pageSize - RANGE * 2 && pageNumber > RANGE && pageNumber < page - RANGE) {
                     return renderDotBefore(index)
                 }
 
                 return (
-                    <Link
-                        to={'/'}
+                    <button
+                        onClick={handleRedirectPage(pageNumber)}
                         key={index}
-                        className={classNames(
-                            'mx-2 cursor-pointer rounded border px-3 py-2 shadow-sm',
-                            {
-                                'border-none bg-blue-600 text-white':
-                                    pageNumber === page,
-                                'border-border/30 bg-[#FFFFFF]':
-                                    pageNumber !== page
-                            }
-                        )}
+                        className={classNames('mx-2 cursor-pointer rounded border px-3 py-2 shadow-sm', {
+                            'border-none bg-blue-600 text-white': pageNumber === page,
+                            'border-border/30 bg-[#FFFFFF]': pageNumber !== page
+                        })}
                     >
                         {pageNumber}
-                    </Link>
+                    </button>
                 )
             })
     }
@@ -98,12 +80,12 @@ export default function Pagination({ pageSize }: Props) {
                     Prev
                 </span>
             ) : (
-                <Link
-                    to={'/'}
+                <button
                     className='mx-2 cursor-pointer rounded border bg-[#FFFFFF] px-3 py-2  shadow-sm'
+                    onClick={() => setQueryParams({ ...queryParams, page: Number(queryParams?.page) - 1 } as any)}
                 >
                     Prev
-                </Link>
+                </button>
             )}
 
             {renderPagination()}
@@ -112,12 +94,12 @@ export default function Pagination({ pageSize }: Props) {
                     Next
                 </span>
             ) : (
-                <Link
-                    to={'/'}
+                <button
                     className='mx-2 cursor-pointer rounded border bg-[#FFFFFF] px-3 py-2  shadow-sm'
+                    onClick={() => setQueryParams({ ...queryParams, page: Number(queryParams?.page || 1) + 1 } as any)}
                 >
                     Next
-                </Link>
+                </button>
             )}
         </div>
     )

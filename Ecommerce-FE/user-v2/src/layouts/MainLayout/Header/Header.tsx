@@ -1,24 +1,25 @@
+import classNames from 'classnames'
 import { motion } from 'framer-motion'
+import { useContext } from 'react'
 import { PiShoppingCartLight } from 'react-icons/pi'
 import { Link, useNavigate } from 'react-router-dom'
 import SimpleBar from 'simplebar-react'
 
 import Button from 'src/components/Button'
+import Image from 'src/components/Image'
 import Popover from 'src/components/Popover'
 import { route } from 'src/constants/route'
+import { AppContext } from 'src/contexts/AppContext'
+import { convertCurrentcy, removeSpecialCharacter } from 'src/utils/utils.ts'
 
 const Header = () => {
+    const { products } = useContext(AppContext)
     const navigate = useNavigate()
 
-    const handleNavigate =
-        (
-            setIsOpen: React.Dispatch<React.SetStateAction<boolean>>,
-            path?: string
-        ) =>
-        () => {
-            setIsOpen(false)
-            path && navigate(path)
-        }
+    const handleNavigate = (setIsOpen: React.Dispatch<React.SetStateAction<boolean>>, path?: string) => () => {
+        setIsOpen(false)
+        path && navigate(path)
+    }
 
     return (
         <motion.header
@@ -37,143 +38,93 @@ const Header = () => {
             </Link>
             <section className='flex items-center justify-end space-x-2'>
                 <Popover
-                    referenceChildren={<PiShoppingCartLight size={27} />}
-                    referenceClassName='p-8 hover:bg-gray-200 rounded-8 relative after:w-[18px] after:h-[18px] after:rounded-full after:bg-red-600 after:absolute after:top-1 after:right-1 after:content-["2"] after:text-[10px] after:text-white after:flex after:items-center after:justify-center'
+                    referenceChildren={
+                        <div className='relative'>
+                            <PiShoppingCartLight size={27} />
+                            <span
+                                className={classNames(
+                                    'absolute -top-1 -right-1 inline-block p-1 rounded-full bg-red-500 text-[11px] text-white',
+                                    {
+                                        'px-1.5': products.length < 9
+                                    }
+                                )}
+                            >
+                                {products.length < 9 ? products.length : '9+'}
+                            </span>
+                        </div>
+                    }
+                    referenceClassName='p-8 hover:bg-gray-200 rounded-8'
+                    data-length={products.length}
                     floatingClassName='p-[24px] bg-[#FFFFFF] rounded-12 border border-border/30 shadow-md w-96 space-y-4'
                     floatingChildren={({ setIsOpen }) => (
                         <>
                             <div className='flex justify-between items-baseline'>
-                                <h3 className='font-semibold text-lg'>
-                                    Giỏ hàng
-                                </h3>
-                                <h4>10 sản phẩm</h4>
+                                <h3 className='font-semibold text-lg'>Giỏ hàng</h3>
+                                <h4>{products.length} sản phẩm</h4>
                             </div>
-                            <SimpleBar
-                                style={{ maxHeight: 210, paddingRight: 20 }}
-                            >
-                                <ul className='space-y-3'>
-                                    <li className='flex gap-x-3'>
-                                        <Link
-                                            to={'/'}
-                                            className='flex-shrink-0'
-                                        >
-                                            <img
-                                                src='https://down-vn.img.susercontent.com/file/6d5ad8d0713d2109f35efd5131f46999_tn'
-                                                alt='cart-img'
-                                                className='w-12 h-12 rounded-6 shadow-sm flex-shrink-0'
-                                            />
-                                        </Link>
-                                        <Link
-                                            to={'/'}
-                                            className='line-clamp-2 tracking-wide leading-4'
-                                        >
-                                            Kê tay bàn phím Kê tay bàn phím Kê
-                                            tay bàn phím
-                                        </Link>
-                                        <h4 className='ml-auto w-fit text-red-700'>
-                                            80.000đ
-                                        </h4>
-                                    </li>
-                                    <li className='flex gap-x-3'>
-                                        <Link
-                                            to={'/'}
-                                            className='flex-shrink-0'
-                                        >
-                                            <img
-                                                src='https://down-vn.img.susercontent.com/file/6d5ad8d0713d2109f35efd5131f46999_tn'
-                                                alt='cart-img'
-                                                className='w-12 h-12 rounded-6 shadow-sm flex-shrink-0'
-                                            />
-                                        </Link>
-                                        <Link
-                                            to={'/'}
-                                            className='line-clamp-2 tracking-wide leading-4'
-                                        >
-                                            Kê tay bàn phím Kê tay bàn phím Kê
-                                            tay bàn phím
-                                        </Link>
-                                        <h4 className='ml-auto w-fit text-red-700'>
-                                            80.000đ
-                                        </h4>
-                                    </li>
-                                    <li className='flex gap-x-3'>
-                                        <Link
-                                            to={'/'}
-                                            className='flex-shrink-0'
-                                        >
-                                            <img
-                                                src='https://down-vn.img.susercontent.com/file/6d5ad8d0713d2109f35efd5131f46999_tn'
-                                                alt='cart-img'
-                                                className='w-12 h-12 rounded-6 shadow-sm flex-shrink-0'
-                                            />
-                                        </Link>
-                                        <Link
-                                            to={'/'}
-                                            className='line-clamp-2 tracking-wide leading-4'
-                                        >
-                                            Kê tay bàn phím Kê tay bàn phím Kê
-                                            tay bàn phím
-                                        </Link>
-                                        <h4 className='ml-auto w-fit text-red-700'>
-                                            80.000đ
-                                        </h4>
-                                    </li>
-                                    <li className='flex gap-x-3'>
-                                        <Link
-                                            to={'/'}
-                                            className='flex-shrink-0'
-                                        >
-                                            <img
-                                                src='https://down-vn.img.susercontent.com/file/6d5ad8d0713d2109f35efd5131f46999_tn'
-                                                alt='cart-img'
-                                                className='w-12 h-12 rounded-6 shadow-sm flex-shrink-0'
-                                            />
-                                        </Link>
-                                        <Link
-                                            to={'/'}
-                                            className='line-clamp-2 tracking-wide leading-4'
-                                        >
-                                            Kê tay bàn phím Kê tay bàn phím Kê
-                                            tay bàn phím
-                                        </Link>
-                                        <h4 className='ml-auto w-fit text-red-700'>
-                                            80.000đ
-                                        </h4>
-                                    </li>
-                                    <li className='flex gap-x-3'>
-                                        <Link
-                                            to={'/'}
-                                            className='flex-shrink-0'
-                                        >
-                                            <img
-                                                src='https://down-vn.img.susercontent.com/file/6d5ad8d0713d2109f35efd5131f46999_tn'
-                                                alt='cart-img'
-                                                className='w-12 h-12 rounded-6 shadow-sm flex-shrink-0'
-                                            />
-                                        </Link>
-                                        <Link
-                                            to={'/'}
-                                            className='line-clamp-2 tracking-wide leading-4'
-                                        >
-                                            Kê tay bàn phím Kê tay bàn phím Kê
-                                            tay bàn phím
-                                        </Link>
-                                        <h4 className='ml-auto w-fit text-red-700'>
-                                            80.000đ
-                                        </h4>
-                                    </li>
-                                </ul>
-                            </SimpleBar>
-                            <div className='text-right'>
-                                <Button
-                                    text='Đặt hàng'
-                                    className='w-full py-[10px] text-xs'
-                                    onClick={handleNavigate(
-                                        setIsOpen,
-                                        `${route.root}${route.checkout}`
-                                    )}
-                                />
-                            </div>
+                            {!products.length ? (
+                                <>
+                                    <div className='w-1/2 mx-auto'>
+                                        <img
+                                            className='object-cover'
+                                            src='https://cdn-icons-png.flaticon.com/512/13637/13637462.png'
+                                            alt='cart-empty'
+                                        />
+                                    </div>
+                                    <div className='text-right'></div>
+                                    <Button
+                                        text='Tiếp tục mua sắm'
+                                        className='w-full py-[10px] text-xs'
+                                        onClick={handleNavigate(setIsOpen)}
+                                    />
+                                </>
+                            ) : (
+                                <>
+                                    <SimpleBar style={{ maxHeight: 210, paddingRight: 20 }}>
+                                        <ul className='space-y-3'>
+                                            {products.map((e) => (
+                                                <li className='flex gap-x-3'>
+                                                    <button
+                                                        className='flex-shrink-0'
+                                                        onClick={handleNavigate(
+                                                            setIsOpen,
+                                                            `/${removeSpecialCharacter(e.name)}-0-${e.id}`
+                                                        )}
+                                                    >
+                                                        <Image
+                                                            src={e.image}
+                                                            alt='cart-img'
+                                                            className='w-12 h-12 rounded-6 shadow-sm flex-shrink-0'
+                                                        />
+                                                    </button>
+                                                    <button
+                                                        onClick={handleNavigate(
+                                                            setIsOpen,
+                                                            `/${removeSpecialCharacter(e.name)}-0-${e.id}`
+                                                        )}
+                                                        className='tracking-wide leading-4 text-left flex flex-col justify-start'
+                                                    >
+                                                        <span className='line-clamp-2'>{e.name}</span>
+                                                        <span className='text-red-500 text-xs'>
+                                                            {convertCurrentcy(e.priceAfter || 0, 0)}đ x {e.buy}
+                                                        </span>
+                                                    </button>
+                                                    <h4 className='ml-auto w-fit text-red-700'>
+                                                        {convertCurrentcy(e.priceAfter * e.buy || 0, 0)}đ
+                                                    </h4>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </SimpleBar>
+                                    <div className='text-right'>
+                                        <Button
+                                            text='Đặt hàng'
+                                            className='w-full py-[10px] text-xs'
+                                            onClick={handleNavigate(setIsOpen, `${route.root}${route.checkout}`)}
+                                        />
+                                    </div>
+                                </>
+                            )}
                         </>
                     )}
                 />
@@ -191,19 +142,13 @@ const Header = () => {
                         <>
                             <button
                                 className='p-12 rounded-6 hover:bg-gray-200'
-                                onClick={handleNavigate(
-                                    setIsOpen,
-                                    `/${route.profile}`
-                                )}
+                                onClick={handleNavigate(setIsOpen, `/${route.profile}`)}
                             >
                                 Thông tin cá nhân
                             </button>
                             <button
                                 className='p-12 rounded-6 hover:bg-gray-200'
-                                onClick={handleNavigate(
-                                    setIsOpen,
-                                    `/${route.profile}/${route.order}`
-                                )}
+                                onClick={handleNavigate(setIsOpen, `/${route.profile}/${route.order}`)}
                             >
                                 Đơn hàng đã mua
                             </button>

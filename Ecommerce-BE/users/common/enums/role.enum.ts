@@ -1,6 +1,6 @@
 export enum Role {
-  EMPLOYEE,
-  USER,
-  STORE_OWNER,
-  ADMIN
+  EMPLOYEE = 'EMPLOYEE',
+  USER = 'USER',
+  STORE_OWNER = 'STORE_OWNER',
+  ADMIN = 'ADMIN'
 }

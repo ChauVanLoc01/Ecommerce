@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException
-} from '@nestjs/common'
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
 import { PrismaService } from '@app/common/prisma/prisma.service'
 import { RegisterDTO } from '../dtos/register.dto'
 import { AuthService } from '../auths/auth.service'
@@ -26,13 +22,12 @@ export class UserService {
 
   async findAllUserProfile(query: QueryAllUserProfileType) {
     return await this.prisma.user.findMany({
-      where: {
-
-      }
+      where: {}
     })
   }
 
   async profileDetail(user: CurrentUserType): Promise<User> {
+    console.log('do day')
     const userExist = await this.prisma.user.findUnique({
       where: {
         id: user.id
@@ -44,23 +39,27 @@ export class UserService {
     return userExist
   }
 
-  async updateProfile(
-    user: CurrentUserType,
-    body: UpdateUserProfileType
-  ): Promise<User> {
+  async updateProfile(user: CurrentUserType, body: UpdateUserProfileType): Promise<Return> {
     const { birthday, email, full_name, address, status } = body
-    const updatedUser = await this.prisma.user.update({
-      where: {
-        id: user.id
-      },
-      data: {
-        birthday,
-        email,
-        full_name,
-        address,
-        status
-      }
-    })
-    return updatedUser
+
+    console.log('id', user)
+
+    // const updatedUser = await this.prisma.user.update({
+    //   where: {
+    //     id: user.id
+    //   },
+    //   data: {
+    //     birthday,
+    //     email,
+    //     full_name,
+    //     address,
+    //     status
+    //   }
+    // })
+
+    return {
+      msg: 'Cập nhật thành công',
+      result: undefined
+    }
   }
 }

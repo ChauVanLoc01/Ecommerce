@@ -1,10 +1,11 @@
-import { useState } from 'react'
-
 import { LuMinus, LuPlus } from 'react-icons/lu'
 
-const InputNumber = () => {
-    const [quantity, setQuantity] = useState<number>(1)
+type InputNumberProps = {
+    quantity: number
+    setQuantity: React.Dispatch<React.SetStateAction<number>>
+}
 
+const InputNumber = ({ quantity, setQuantity }: InputNumberProps) => {
     const handleOnChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         console.log('target', e.target)
         console.log('currentTarget', e.currentTarget)
@@ -30,7 +31,7 @@ const InputNumber = () => {
             <input
                 type='text'
                 id='Quantity'
-                className='h-5 w-14 border-transparent text-center text-xs flex justify-center items-center'
+                className='h-5 w-14 border-transparent text-center text-sm font-semibold font-mono flex justify-center items-center'
                 value={quantity}
                 onChange={handleOnChange}
             />

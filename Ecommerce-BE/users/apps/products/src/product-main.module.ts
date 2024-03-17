@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common'
-import { ConfigModule } from '@app/common'
+import { ConfigModule, PrismaModule } from '@app/common'
 import { ProductModule } from './product/product.module'
 import { CategoryModule } from './category/category.module'
 import { JwtService } from '@nestjs/jwt'
@@ -23,14 +23,16 @@ import { BullModule } from '@nestjs/bull'
     CacheModule.registerAsync({
       isGlobal: true,
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        store: redisStore.create({
-          host: configService.get<string>('bullqueue.port')
-        }),
-        isGlobal: true
+      inject: [ConfigService],
+      useFactory: async (configService: ConfigService) => ({
+        isGlobal: true,
+        store: redisStore,
+        host: configService.get<string>('bullqueue.host'),
+        port: configService.get<number>('bullqueue.port')
       })
     }),
     ConfigModule,
+    PrismaModule,
     ProductModule,
     CategoryModule
   ],

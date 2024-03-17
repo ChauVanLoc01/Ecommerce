@@ -7,6 +7,8 @@ import { MdOutlineArrowDropDown } from 'react-icons/md'
 import SimpleBar from 'simplebar-react'
 
 import { useFloating } from 'src/hooks/useFloating'
+import useQueryParams from 'src/hooks/useQueryParams'
+import { ProductListQuery } from 'src/types/product.type'
 
 type DropdownProps = {
     rootClassNames?: string
@@ -17,30 +19,24 @@ type DropdownProps = {
     data: { [key: string]: string }
 }
 
-const Dropdown = ({
-    data,
-    rootClassNames,
-    floatingClassNames,
-    refClassNames,
-    active,
-    title
-}: DropdownProps) => {
-    const [choosed, setChoosed] = useState<string | undefined>(
-        active ? data[active] : undefined
-    )
+const Dropdown = ({ data, rootClassNames, floatingClassNames, refClassNames, active, title }: DropdownProps) => {
+    const [queryParams, setQueryParams] = useQueryParams<Partial<Record<keyof ProductListQuery, string>>>()
 
-    const {
-        floatingStyles,
-        getFloatingProps,
-        getReferenceProps,
-        isOpen,
-        refs,
-        setIsOpen
-    } = useFloating(['bottom-start'])
+    const [choosed, setChoosed] = useState<string | undefined>(active ? data[active] : undefined)
+
+    const { floatingStyles, getFloatingProps, getReferenceProps, isOpen, refs, setIsOpen } = useFloating([
+        'bottom-start'
+    ])
 
     const handleChoose = (key: string) => () => {
         setChoosed(data[key])
         setIsOpen(false)
+        const filter = key.split('_')
+        const excludeFilter = Object.entries(queryParams).filter(([_, value]) => !['asc', 'desc'].includes(value))
+        setQueryParams({
+            ...Object.fromEntries(excludeFilter),
+            [filter[0]]: filter[1]
+        })
     }
 
     return (
@@ -63,12 +59,9 @@ const Dropdown = ({
                     <span>{choosed ?? title}</span>
                     <MdOutlineArrowDropDown
                         size={25}
-                        className={classNames(
-                            'transition-all duration-300 ease-in-out',
-                            {
-                                '-rotate-180': isOpen
-                            }
-                        )}
+                        className={classNames('transition-all duration-300 ease-in-out', {
+                            '-rotate-180': isOpen
+                        })}
                     />
                 </button>
             </section>

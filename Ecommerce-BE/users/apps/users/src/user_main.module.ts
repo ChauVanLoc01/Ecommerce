@@ -7,7 +7,9 @@ import { BullModule } from '@nestjs/bull'
 import { ConfigService } from '@nestjs/config'
 import { MailerModule } from '@nestjs-modules/mailer'
 import { CacheModule } from '@nestjs/cache-manager'
-import * as redisStore from 'cache-manager-redis-store';
+import * as redisStore from 'cache-manager-redis-store'
+import { JwtGuard } from 'common/guards/jwt.guard'
+import { JwtService } from '@nestjs/jwt'
 
 @Module({
   imports: [
@@ -19,8 +21,8 @@ import * as redisStore from 'cache-manager-redis-store';
         isGlobal: true,
         store: redisStore,
         host: configService.get<string>('bullqueue.host'),
-        port: configService.get<number>('bullqueue.port'),
-      }),
+        port: configService.get<number>('bullqueue.port')
+      })
     }),
     MailerModule.forRootAsync({
       imports: [ConfigModule],
@@ -28,9 +30,9 @@ import * as redisStore from 'cache-manager-redis-store';
       useFactory: async (configService: ConfigService) => ({
         transport: configService.get<string>('bullqueue.mail_transport'),
         defaults: {
-          from: configService.get<string>('bullqueue.my_mail'),
-        },
-      }),
+          from: configService.get<string>('bullqueue.my_mail')
+        }
+      })
     }),
     BullModule.forRootAsync({
       imports: [ConfigModule],
@@ -40,13 +42,14 @@ import * as redisStore from 'cache-manager-redis-store';
           host: configService.get('bullqueue.host'),
           port: configService.get('bullqueue.port')
         }
-      }),
+      })
     }),
     ConfigModule,
     PrismaModule,
     AuthModule,
     EmployeeModule,
     UserModule
-  ]
+  ],
+  providers: [JwtService]
 })
 export class UserMainModule {}

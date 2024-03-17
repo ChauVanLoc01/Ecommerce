@@ -1,17 +1,16 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 import { Transform } from 'class-transformer'
-import {
-  IsDateString,
-  IsEnum,
-  IsNumber,
-  IsOptional,
-  IsString
-} from 'class-validator'
+import { IsDateString, IsEnum, IsNumber, IsOptional, IsString } from 'class-validator'
 import { GreaterThanPrice } from 'common/decorators/greater-than-price.decorator'
 import { GreaterThanDate } from 'common/decorators/greater_than_date.decorator'
 import { PaginationDTO } from 'common/decorators/pagination.dto'
 
 export class QueryProductDTO extends PaginationDTO {
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  category?: string
+
   @ApiPropertyOptional({
     enum: ['asc', 'desc']
   })
@@ -24,12 +23,14 @@ export class QueryProductDTO extends PaginationDTO {
   })
   @IsEnum(['asc', 'desc'])
   @IsOptional()
-  sell?: 'asc' | 'desc'
+  sold?: 'asc' | 'desc'
 
-  @ApiPropertyOptional()
-  @IsString()
+  @ApiPropertyOptional({
+    enum: ['asc', 'desc']
+  })
+  @IsEnum(['asc', 'desc'])
   @IsOptional()
-  category?: string
+  price?: 'asc' | 'desc'
 
   @ApiPropertyOptional()
   @Transform(({ value }) => Number(value))
@@ -43,17 +44,6 @@ export class QueryProductDTO extends PaginationDTO {
   @GreaterThanPrice('price_min')
   @IsOptional()
   price_max?: number
-
-  @ApiPropertyOptional()
-  @IsDateString()
-  @IsOptional()
-  start_date?: Date
-
-  @ApiPropertyOptional()
-  @IsDateString()
-  @IsOptional()
-  @GreaterThanDate('start_date')
-  end_date?: Date
 }
 
 export type QueryProductType = InstanceType<typeof QueryProductDTO>

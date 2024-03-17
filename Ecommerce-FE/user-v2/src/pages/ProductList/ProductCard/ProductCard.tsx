@@ -1,49 +1,80 @@
+import classNames from 'classnames'
 import { motion } from 'framer-motion'
+import { useContext } from 'react'
 import { Link } from 'react-router-dom'
+import { toast } from 'sonner'
 
 import Button from 'src/components/Button'
 import Image from 'src/components/Image'
 import Stars from 'src/components/Stars'
+import { AppContext } from 'src/contexts/AppContext'
+import { Product } from 'src/types/product.type'
+import { convertCurrentcy, removeSpecialCharacter } from 'src/utils/utils.ts'
 
-const ProductCard = () => {
+type ProductCardProps = {
+    product: Product
+    isLoading?: boolean
+}
+
+const ProductCard = ({ product }: ProductCardProps) => {
+    const { name, image, priceAfter, priceBefore, id } = product
+
+    const { setProducts, products } = useContext(AppContext)
+
+    const handleAddToCart = () => {
+        toast.info('Thêm sản phẩm thành công')
+        const index = products.findIndex((p) => p.id === product.id)
+        if (index !== -1) {
+            products[index].buy += 1
+            setProducts(products)
+        } else {
+            setProducts((repo) => [...repo, { ...product, buy: 1, checked: false }])
+        }
+    }
+
     return (
         <motion.article
-            className='rounded-12 border border-border/30 bg-[#FFFFFF] hover:shadow-md'
-            whileHover={{ scale: 1.02 }}
+            className='rounded-12 border border-border/30 bg-[#FFFFFF] hover:shadow-md overflow-hidden'
+            whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
             initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+            animate={{ opacity: 1, transition: { duration: 0.8, ease: 'backInOut' } }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
         >
-            <Link to={'/aaa'} className='border-b border-border/30'>
-                <Image
-                    src='https://ableproadmin.com/react/static/media/prod-5.51c518a97f9ee4861176.png'
-                    alt='product-img'
-                    className='object-cover'
-                />
+            <Link to={`/${removeSpecialCharacter(name)}-0-${id}`} className='p-[16px] pb-0 inline-block'>
+                {
+                    <Image
+                        src={image}
+                        alt='product-img'
+                        className='object-cover overflow-hidden rounded-12 h-[295px] max-h-[295px]'
+                    />
+                }
             </Link>
             <div className='p-[16px] space-y-4'>
                 <div className='space-y-1'>
                     <Link
-                        to={'/'}
-                        className='font-semibold text-base tracking-wide'
+                        to={`/${removeSpecialCharacter(name)}-0-${id}`}
+                        className='font-semibold text-base tracking-wide line-clamp-2'
                     >
-                        Canon EOS 1500D 24.1 Digital SLR
+                        {name}
                     </Link>
                     <h4 className='tracking-wide'>Cannon</h4>
                 </div>
                 <div className='flex justify-between items-end'>
                     <div>
                         <h3 className='space-x-2 text-base'>
-                            <span className='font-semibold'>$29.99</span>
-                            <span className='line-through text-gray-400'>
-                                $29.99
+                            <span className='font-semibold'>{convertCurrentcy(priceAfter || 0, 0)}đ</span>
+                            <span
+                                className={classNames('line-through text-gray-400', {
+                                    hidden: !priceBefore
+                                })}
+                            >
+                                {convertCurrentcy(priceBefore || 0, 0)}đ
                             </span>
                         </h3>
                         <Stars amount={5} />
                     </div>
                     <div>
-                        <Button className='px-5 py-[10px] text-xs' text='Add' />
+                        <Button className='px-5 py-[10px] text-xs' text='Add' onClick={handleAddToCart} />
                     </div>
                 </div>
             </div>

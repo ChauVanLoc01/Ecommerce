@@ -3,6 +3,7 @@ import { createBrowserRouter } from 'react-router-dom'
 
 import { route } from 'src/constants/route'
 import MainLayout from 'src/layouts/MainLayout'
+import { productDetailLoader, productListLoader } from 'src/loaders/product.loader'
 import Checkout from 'src/pages/Checkout'
 import Profile from 'src/pages/Profile'
 import ChangePassword from 'src/pages/Profile/LayoutProfile/ChangePassword'
@@ -31,11 +32,13 @@ const routes = createBrowserRouter([
         children: [
             {
                 index: true,
-                element: <ProductList />
+                element: <ProductList />,
+                loader: productListLoader
             },
             {
                 path: ':productId',
-                element: <Product />
+                element: <Product />,
+                loader: productDetailLoader
             },
             {
                 path: 'profile',

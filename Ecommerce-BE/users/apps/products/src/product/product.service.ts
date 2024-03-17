@@ -1,5 +1,5 @@
 import { PrismaService } from '@app/common/prisma/prisma.service'
-import { Inject, Injectable, NotFoundException } from '@nestjs/common'
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common'
 import { ClientProxy } from '@nestjs/microservices'
 import { Return } from 'common/types/result.type'
 import { CreateProductType } from './dtos/create-product.dto'
@@ -11,14 +11,12 @@ import { SearchProductService } from './search-product.service'
 import { QueryProductType } from './dtos/query-product.dto'
 import { ConfigService } from '@nestjs/config'
 import { InjectQueue } from '@nestjs/bull'
-import {
-  BackgroundAction,
-  BackgroundName
-} from 'common/constants/background-job.constant'
+import { BackgroundAction, BackgroundName } from 'common/constants/background-job.constant'
 import { Queue } from 'bull'
 import { CACHE_MANAGER } from '@nestjs/cache-manager'
 import { Cache } from 'cache-manager'
 import { OrderParameter } from 'common/types/order-parameter.type'
+import { omitBy, isUndefined, pickBy, omit } from 'lodash'
 
 @Injectable()
 export class ProductService {
@@ -40,81 +38,85 @@ export class ProductService {
   }
 
   async getALlProduct(query: QueryProductType): Promise<Return> {
-    const {
-      category,
-      createdAt,
-      end_date,
-      price_max,
-      price_min,
-      sell,
-      start_date,
-      limit,
-      page
-    } = query
+    const { category, createdAt, price_max, price_min, sold, price, limit, page } = query
 
-    const products = await this.prisma.product.findMany({
-      where: {
-        OR: [
+    if (
+      Object.keys(
+        omitBy(
           {
-            category,
-            createdAt: {
-              lte: end_date,
-              gte: start_date
-            },
-            priceBefore: {
-              lte: price_max,
-              gte: price_min
-            }
+            createdAt,
+            sold,
+            price
           },
-          {
-            category,
-            createdAt: {
-              lte: end_date,
-              gte: start_date
-            },
-            priceAfter: {
-              lte: price_max,
-              gte: price_min
-            }
+          isUndefined
+        )
+      ).length > 1
+    ) {
+      throw new BadRequestException('Tối đa 1 field order')
+    }
+
+    const [productAll, products] = await Promise.all([
+      this.prisma.product.findMany({
+        where: {
+          category,
+          priceAfter: {
+            lte: price_max,
+            gte: price_min
           }
-        ]
-      },
-      orderBy: {
-        createdAt,
-        rate: sell
-      },
-      take: limit | this.configService.get<number>('app.limit_default'),
-      skip: page && page > 0 ? (page - 1) * limit : 0
-    })
+        }
+      }),
+      this.prisma.product.findMany({
+        where: {
+          category,
+          priceAfter: {
+            lte: price_max,
+            gte: price_min
+          }
+        },
+        orderBy: {
+          createdAt,
+          sold,
+          priceAfter: price
+        },
+        take: limit || this.configService.get<number>('app.limit_default'),
+        skip:
+          page && page > 0
+            ? (page - 1) * (limit || this.configService.get<number>('app.limit_default'))
+            : 0
+      })
+    ])
 
     return {
       msg: 'Lấy danh sách sản phẩm thành công',
-      result: products
+      result: {
+        data: products,
+        query: omitBy(
+          {
+            ...query,
+            page: page || 1,
+            page_size: Math.ceil(
+              productAll.length / (limit || this.configService.get<number>('app.limit_default'))
+            )
+          },
+          isUndefined
+        )
+      }
     }
   }
 
   async getProductDetail(productId: string): Promise<Return> {
-    const productInCache = await this.cacheManager.get(productId)
-
-    if (!productInCache) {
-      const productExist = await this.prisma.product.findUnique({
-        where: {
-          id: productId
-        }
-      })
-
-      if (!productExist) throw new NotFoundException('Sản phẩm không tồn tại')
-
-      await this.productBullQueue.add(BackgroundAction.addToCache, productId)
-
-      return {
-        msg: 'Lấy thông tin chi tiết sản phẩm thành công',
-        result: productExist
+    const productExist = await this.prisma.product.findUnique({
+      where: {
+        id: productId,
+        status: Status.ACTIVE
       }
-    }
+    })
+
+    if (!productExist) throw new NotFoundException('Sản phẩm không tồn tại')
+
     return {
       msg: 'Lấy thông tin chi tiết sản phẩm thành công',
-      result: JSON.parse(productInCache as string)
+      result: productExist
     }
   }
 
@@ -125,8 +127,7 @@ export class ProductService {
   ): Promise<Return> {
     const { storeId, userId } = user
 
-    const { name, initQuantity, priceAfter, priceBefore, description, status } =
-      body
+    const { name, initQuantity, priceAfter, priceBefore, description, status } = body
 
     return {
       msg: 'Tạo sản phẩm thành công',
@@ -140,7 +141,7 @@ export class ProductService {
           priceAfter: priceAfter | 0,
           description,
           image: imageUrl,
-          status: status | Status.ACCESS,
+          status: status || Status.ACTIVE,
           storeId,
           createdBy: userId
         }
@@ -175,10 +176,7 @@ export class ProductService {
     }
   }
 
-  async deleteProduct(
-    user: CurrentStoreType,
-    productId: string
-  ): Promise<Return> {
+  async deleteProduct(user: CurrentStoreType, productId: string): Promise<Return> {
     const { userId } = user
 
     const productExist = await this.prisma.product.update({

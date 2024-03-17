@@ -6,56 +6,90 @@ import Dropdown from 'src/components/Dropdown'
 import InputIcon from 'src/components/InputIcon'
 import Pagination from 'src/components/Pagination'
 
+import { useQuery } from '@tanstack/react-query'
+import { isUndefined, omitBy } from 'lodash'
+import { useEffect } from 'react'
+import { productFetching } from 'src/apis/product'
+import useQueryParams from 'src/hooks/useQueryParams'
+import { ProductListQuery } from 'src/types/product.type'
+import FlashSale from './FlashSale'
 import ProductCard from './ProductCard'
 
 const Filter = loadable(() => import('./Filter'))
 
 const ProductList = () => {
+    const [queryParams] = useQueryParams<Partial<Record<keyof ProductListQuery, string>>>()
+
+    const { data, refetch } = useQuery({
+        queryKey: ['productList'],
+        queryFn: () =>
+            productFetching.productList(
+                omitBy(
+                    {
+                        ...queryParams,
+                        page: Number(queryParams?.page) || undefined
+                    },
+                    isUndefined
+                ) as ProductListQuery
+            ),
+        enabled: false
+    })
+
+    useEffect(() => {
+        refetch({ cancelRefetch: true })
+    }, [JSON.stringify(queryParams)])
+
     return (
         <motion.main
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className='flex gap-x-5'
+            variants={{
+                open: {
+                    opacity: 1
+                },
+                close: {
+                    opacity: 0
+                }
+            }}
+            transition={{
+                duration: 0.8
+            }}
+            initial={'close'}
+            animate={'open'}
+            exit={'close'}
+            className='space-y-5'
         >
-            <section className='basis-1/5 flex-shrink-0'>
-                <Filter />
-            </section>
-            <section className='grow space-y-3 mb-10'>
-                <div className='p-[16px] bg-[#FFFFFF] rounded-12 border border-border/30 flex justify-between'>
-                    <InputIcon
-                        icon={
-                            <IoSearchOutline
-                                size={22}
-                                className='text-gray-400'
-                            />
-                        }
-                        placeholder='Tìm kiếm sản phẩm'
-                        rootClassName='basis-2/5'
-                    />
-                    <Dropdown
-                        data={{
-                            1: 'Mới nhất',
-                            2: 'Bán chạy nhất',
-                            3: 'Giá từ thấp đến cao',
-                            4: 'Giá từ cao đến thấp'
-                        }}
-                        title='Sắp xếp theo ...'
-                        rootClassNames='basis-1/4'
-                    />
-                </div>
-                <div className='space-y-8'>
-                    <div className='grid grid-cols-3 gap-3'>
-                        {Array(12)
-                            .fill(0)
-                            .map((_, idx) => (
-                                <ProductCard key={idx} />
-                            ))}
+            <FlashSale />
+            <div className='flex gap-x-5'>
+                <section className='basis-1/5 flex-shrink-0'>
+                    <Filter />
+                </section>
+                <section className='grow space-y-3 mb-10'>
+                    <div className='p-[16px] bg-[#FFFFFF] rounded-12 border border-border/30 flex justify-between'>
+                        <InputIcon
+                            icon={<IoSearchOutline size={22} className='text-gray-400' />}
+                            placeholder='Tìm kiếm sản phẩm'
+                            rootClassName='basis-2/5'
+                        />
+                        <Dropdown
+                            data={{
+                                createdAt_desc: 'Mới nhất',
+                                sold_desc: 'Bán chạy nhất',
+                                price_asc: 'Giá từ thấp đến cao',
+                                price_desc: 'Giá từ cao đến thấp'
+                            }}
+                            title='Sắp xếp theo ...'
+                            rootClassNames='basis-1/4'
+                        />
                     </div>
-                    <Pagination pageSize={20} />
-                </div>
-            </section>
+                    <div className='space-y-8'>
+                        <div className='grid grid-cols-3 gap-3'>
+                            {data?.data.result.data.map((product) => (
+                                <ProductCard key={product.id} product={product} />
+                            ))}
+                        </div>
+                        <Pagination pageSize={data?.data.result.query.page_size || 10} />
+                    </div>
+                </section>
+            </div>
         </motion.main>
     )
 }

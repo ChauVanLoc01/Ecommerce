@@ -81,8 +81,9 @@ model Product {
   priceAfter                   Float?         @db.Float
   initQuantity                 Int
   currentQuantity              Int
+  sold                         Int            @default(0)
   description                  String?        @db.Text
-  status                       Int
+  status                       String         @db.VarChar(20)
   category                     String?        @db.VarChar(50)
   createdBy                    String         @db.VarChar(50)
   updatedBy                    String?        @db.VarChar(50)
@@ -130,7 +131,7 @@ model Store {
   image                      String      @db.VarChar(255)
   location                   String?     @db.VarChar(100)
   description                String?     @db.VarChar(1000)
-  status                     Int
+  status                     String      @db.VarChar(10)
   createdBy                  String      @db.VarChar(50)
   updatedBy                  String?     @db.VarChar(50)
   createdAt                  DateTime?   @default(now()) @db.Timestamp(0)
@@ -149,8 +150,8 @@ model Store {
 model StoreRole {
   id                             String    @id @db.VarChar(50)
   storeId                        String    @db.VarChar(50)
-  status                         Int
-  role                           Int
+  status                         String    @db.VarChar(10)
+  role                           String    @db.VarChar(20)
   createdBy                      String    @db.VarChar(50)
   updatedBy                      String?   @db.VarChar(50)
   createdAt                      DateTime? @default(now()) @db.Timestamp(0)
@@ -172,8 +173,8 @@ model User {
   email                               String      @db.VarChar(255)
   address                             String?     @db.Text
   rankId                              String?     @db.VarChar(50)
-  role                                Int
-  status                              Int
+  role                                String      @db.VarChar(20)
+  status                              String      @db.VarChar(10)
   createdAt                           DateTime?   @default(now()) @db.Timestamp(0)
   updatedAt                           DateTime?   @db.Timestamp(0)
   Account_Account_userIdToUser        Account[]   @relation("Account_userIdToUser")

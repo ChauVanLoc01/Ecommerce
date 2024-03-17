@@ -11,9 +11,10 @@ module.exports = {
         'plugin:jsx-a11y/recommended',
         'plugin:@typescript-eslint/recommended',
         'eslint-config-prettier',
-        'prettier'
+        'prettier',
+        'plugin:@tanstack/eslint-plugin-query/recommended'
     ],
-    plugins: ['prettier'],
+    plugins: ['prettier', '@tanstack/query'],
     settings: {
         react: {
             // Nói eslint-plugin-react tự động biết version của React.
@@ -65,6 +66,9 @@ module.exports = {
                     caseInsensitive: true
                 }
             }
-        ]
+        ],
+        '@tanstack/query/exhaustive-deps': 'error',
+        '@tanstack/query/no-rest-destructuring': 'warn',
+        '@tanstack/query/stable-query-client': 'error'
     }
 }
