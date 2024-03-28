@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { RiDeleteBin5Line } from 'react-icons/ri'
 
 import { CheckedState } from '@radix-ui/react-checkbox'
+import { motion } from 'framer-motion'
 import { debounce } from 'lodash'
 import { Link } from 'react-router-dom'
 import Button from 'src/components/Button'
@@ -18,7 +19,6 @@ import {
 } from 'src/components/Shadcn/dialog'
 import { ProductContext } from 'src/types/context.type'
 import { convertCurrentcy, removeSpecialCharacter } from 'src/utils/utils.ts'
-import { motion } from 'framer-motion'
 
 type CartItemProps = {
     product: ProductContext
@@ -38,15 +38,13 @@ const CartItem = ({ product, handleChangeQuantity, handleDeleteProduct, handleCh
     }
 
     useEffect(() => {
-        if (product.buy !== quantity) {
-            debounceRef.current = debounce(() => {
-                handleChangeQuantity(product.id, quantity)
-            }, 2000)
-            debounceRef.current()
-        }
+        debounceRef.current = debounce(() => {
+            handleChangeQuantity(product.id, quantity)
+        }, 1000)
+        debounceRef.current()
 
         return () => {
-            debounceRef.current && debounceRef.current.cancel()
+            debounceRef.current.cancel()
         }
     }, [quantity])
 

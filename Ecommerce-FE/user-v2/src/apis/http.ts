@@ -1,5 +1,4 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios'
-import { da } from 'date-fns/locale'
 import { profileEvent } from 'src/constants/event'
 import { route } from 'src/constants/route'
 import { LoginResponse } from 'src/types/auth.type'

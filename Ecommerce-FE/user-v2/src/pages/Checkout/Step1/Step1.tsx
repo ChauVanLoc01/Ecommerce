@@ -16,6 +16,7 @@ const Step1 = () => {
     }
 
     const handleChangeQuantity = (id: string, quantity: number) => {
+        console.log('quantity', quantity);
         const new_products = products.map((product) => {
             if (product.id === id) {
                 product.buy = quantity
