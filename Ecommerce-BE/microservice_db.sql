@@ -7,6 +7,8 @@ SET sql_mode = 'NO_AUTO_VALUE_ON_ZERO';
 
 SET NAMES utf8mb4;
 
+use microservice;
+
 DROP TABLE IF EXISTS `Account`;
 CREATE TABLE `Account` (
   `username` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
