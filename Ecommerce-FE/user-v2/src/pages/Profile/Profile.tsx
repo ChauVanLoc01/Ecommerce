@@ -2,10 +2,18 @@ import { Outlet } from 'react-router-dom'
 import SimpleBar from 'simplebar-react'
 
 import { motion } from 'framer-motion'
-
+import { useContext, useEffect } from 'react'
+import { route } from 'src/constants/route'
+import { AppContext } from 'src/contexts/AppContext'
 import CardProfile from './CardProfile'
 
 const Profile = () => {
+    const { setPreviousPage } = useContext(AppContext)
+
+    useEffect(() => {
+        setPreviousPage(route.profile)
+    }, [])
+
     return (
         <motion.section
             initial='hidden'

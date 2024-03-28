@@ -11,6 +11,7 @@
     "start": "nest start",
     "user": "cross-env NODE_ENV=user nest start users --watch",
     "product": "cross-env NODE_ENV=product nest start products --watch",
+    "order": "cross-env NODE_ENV=order nest start orders --watch",
     "store": "cross-env NODE_ENV=store nest start store --watch",
     "dev": "nest start --watch",
     "debug": "nest start --debug --watch",

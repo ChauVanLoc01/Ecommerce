@@ -52,6 +52,7 @@ const Input = ({
                         'focus:border-blue-500 focus:ring-blue-500': !error
                     }
                 )}
+                autoComplete='off'
                 {...register}
                 {...rest}
             />

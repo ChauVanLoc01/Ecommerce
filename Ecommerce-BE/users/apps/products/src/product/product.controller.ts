@@ -17,13 +17,13 @@ import {
 } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
 import { FileInterceptor } from '@nestjs/platform-express'
+import { updateQuantityProducts } from 'common/constants/event.constant'
 import { CurrentUser } from 'common/decorators/current_user.decorator'
 import { Public } from 'common/decorators/public.decorator'
 import { Roles } from 'common/decorators/roles.decorator'
 import { Role } from 'common/enums/role.enum'
 import { JwtGuard } from 'common/guards/jwt.guard'
 import { CurrentStoreType } from 'common/types/current.type'
-import { OrderParameter } from 'common/types/order-parameter.type'
 import { CreateProductDTO } from './dtos/create-product.dto'
 import { QueryProductDTO } from './dtos/query-product.dto'
 import { UpdateProductDTO } from './dtos/update-product.dto'
@@ -111,8 +111,12 @@ export class ProductController {
     return this.productsService.deleteProduct(user, productId)
   }
 
-  @MessagePattern('product::quantity::update')
-  updateQuantiyProducts(@Payload() data: OrderParameter[]) {
+  @Public()
+  @MessagePattern(updateQuantityProducts)
+  updateQuantiyProducts(
+    @Payload()
+    data: { storeId: string; note?: string; orders: { productId: string; quantity: number }[] }[]
+  ) {
     return this.productsService.updateQuantityProducts(data)
   }
 }

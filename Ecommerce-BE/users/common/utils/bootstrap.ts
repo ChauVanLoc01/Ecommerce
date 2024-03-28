@@ -3,8 +3,8 @@ import { ConfigService } from '@nestjs/config'
 import { NestFactory } from '@nestjs/core'
 import { MicroserviceOptions, Transport } from '@nestjs/microservices'
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
-import * as cookieParser from 'cookie-parser'
 import { ValidationError } from 'class-validator'
+import * as cookieParser from 'cookie-parser'
 
 export async function bootstrap(mainModule: any) {
   try {

@@ -8,4 +8,6 @@ export type AppContext = {
     setProfile: React.Dispatch<React.SetStateAction<LoginResponse | undefined>>
     products: ProductContext[]
     setProducts: React.Dispatch<React.SetStateAction<ProductContext[]>>
+    previousPage: string
+    setPreviousPage: React.Dispatch<React.SetStateAction<string>>
 }

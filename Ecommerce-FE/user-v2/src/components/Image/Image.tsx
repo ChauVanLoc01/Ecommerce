@@ -1,12 +1,14 @@
 import { useState } from 'react'
 
 import { motion } from 'framer-motion'
+import classNames from 'classnames'
 
 type ImageProps = {
     rootClassName?: string
+    overlay?: boolean
 } & React.ImgHTMLAttributes<HTMLImageElement>
 
-const Image = ({ rootClassName, src, alt, ...rest }: ImageProps) => {
+const Image = ({ rootClassName, src, alt, overlay, ...rest }: ImageProps) => {
     const [isLoaded, setIsLoaded] = useState(false)
     const [isInView, setIsInView] = useState(false)
 
@@ -23,9 +25,14 @@ const Image = ({ rootClassName, src, alt, ...rest }: ImageProps) => {
             transition={{ duration: 0.7 }}
             viewport={{ once: true }}
             onViewportEnter={() => setIsInView(true)}
-            className={rootClassName}
+            className={classNames(rootClassName, 'relative')}
         >
             <img src={src} alt={alt} onLoad={() => setIsLoaded(true)} {...rest} />
+            <div
+                className={classNames('absolute inset-0 bg-gray-700/50 rounded-12', {
+                    hidden: !overlay
+                })}
+            />
         </motion.section>
     )
 }

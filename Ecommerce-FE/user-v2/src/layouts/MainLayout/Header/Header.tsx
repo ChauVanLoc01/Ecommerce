@@ -8,17 +8,23 @@ import SimpleBar from 'simplebar-react'
 import Button from 'src/components/Button'
 import Image from 'src/components/Image'
 import Popover from 'src/components/Popover'
+import { exitEvent } from 'src/constants/event'
 import { route } from 'src/constants/route'
 import { AppContext } from 'src/contexts/AppContext'
 import { convertCurrentcy, removeSpecialCharacter } from 'src/utils/utils.ts'
 
 const Header = () => {
-    const { products } = useContext(AppContext)
+    const { products, profile } = useContext(AppContext)
     const navigate = useNavigate()
 
     const handleNavigate = (setIsOpen: React.Dispatch<React.SetStateAction<boolean>>, path?: string) => () => {
         setIsOpen(false)
         path && navigate(path)
+    }
+
+    const handleExit = (setIsOpen: React.Dispatch<React.SetStateAction<boolean>>) => () => {
+        setIsOpen(false)
+        window.dispatchEvent(new CustomEvent(exitEvent))
     }
 
     return (
@@ -36,7 +42,11 @@ const Header = () => {
                     className='w-14 h-1w-14 object-cover'
                 />
             </Link>
-            <section className='flex items-center justify-end space-x-2'>
+            <section
+                className={classNames('flex items-center justify-end space-x-2', {
+                    hidden: !profile
+                })}
+            >
                 <Popover
                     referenceChildren={
                         <div className='relative'>
@@ -153,7 +163,7 @@ const Header = () => {
                                 Đơn hàng đã mua
                             </button>
                             <button
-                                onClick={handleNavigate(setIsOpen)}
+                                onClick={handleExit(setIsOpen)}
                                 className='p-12 rounded-6 hover:bg-gray-200 w-full text-left'
                             >
                                 Đăng xuất
@@ -161,6 +171,19 @@ const Header = () => {
                         </>
                     )}
                 />
+            </section>
+            <section
+                className={classNames('space-x-2 text-sm text-gray-600', {
+                    '!hidden': profile
+                })}
+            >
+                <Link to={route.login} className='hover:text-blue-500'>
+                    Đăng Nhập
+                </Link>
+                <span>/</span>
+                <Link to={route.register} className='hover:text-red-500'>
+                    Đăng Kí
+                </Link>
             </section>
         </motion.header>
     )

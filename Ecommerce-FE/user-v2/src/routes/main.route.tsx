@@ -1,9 +1,12 @@
 import loadable from '@loadable/component'
-import { createBrowserRouter } from 'react-router-dom'
+import { useContext } from 'react'
+import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom'
 
 import { route } from 'src/constants/route'
+import { AppContext } from 'src/contexts/AppContext'
 import MainLayout from 'src/layouts/MainLayout'
 import { productDetailLoader, productListLoader } from 'src/loaders/product.loader'
+import { profileLoader } from 'src/loaders/profile.loader'
 import Checkout from 'src/pages/Checkout'
 import Profile from 'src/pages/Profile'
 import ChangePassword from 'src/pages/Profile/LayoutProfile/ChangePassword'
@@ -17,14 +20,35 @@ const Register = loadable(() => import('src/pages/Register'))
 const ProductList = loadable(() => import('src/pages/ProductList'))
 const Product = loadable(() => import('src/pages/Product'))
 
+const PrivateRoute = () => {
+    const { profile, previousPage } = useContext(AppContext)
+    return profile ? (
+        <Outlet />
+    ) : previousPage === route.profile ? (
+        <Navigate to={route.root} />
+    ) : (
+        <Navigate to={route.login} />
+    )
+}
+
+const RejectRoute = () => {
+    const { profile } = useContext(AppContext)
+    return profile ? <Navigate to={route.root} /> : <Outlet />
+}
+
 const routes = createBrowserRouter([
     {
-        path: route.login,
-        element: <Login />
-    },
-    {
-        path: route.register,
-        element: <Register />
+        element: <RejectRoute />,
+        children: [
+            {
+                path: route.login,
+                element: <Login />
+            },
+            {
+                path: route.register,
+                element: <Register />
+            }
+        ]
     },
     {
         path: route.root,
@@ -41,30 +65,36 @@ const routes = createBrowserRouter([
                 loader: productDetailLoader
             },
             {
-                path: 'profile',
-                element: <Profile />,
+                element: <PrivateRoute />,
                 children: [
                     {
-                        index: true,
-                        element: <PersonalInformation />
+                        path: 'profile',
+                        element: <Profile />,
+                        children: [
+                            {
+                                index: true,
+                                element: <PersonalInformation />,
+                                loader: profileLoader
+                            },
+                            {
+                                path: route.order,
+                                element: <Order />
+                            },
+                            {
+                                path: route.changePassword,
+                                element: <ChangePassword />
+                            },
+                            {
+                                path: route.payment,
+                                element: <Payment />
+                            }
+                        ]
                     },
                     {
-                        path: route.order,
-                        element: <Order />
-                    },
-                    {
-                        path: route.changePassword,
-                        element: <ChangePassword />
-                    },
-                    {
-                        path: route.payment,
-                        element: <Payment />
+                        path: route.checkout,
+                        element: <Checkout />
                     }
                 ]
-            },
-            {
-                path: route.checkout,
-                element: <Checkout />
             }
         ]
     }

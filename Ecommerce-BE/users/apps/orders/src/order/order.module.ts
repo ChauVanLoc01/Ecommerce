@@ -1,14 +1,11 @@
-import { Module } from '@nestjs/common'
-import { OrderController } from './order.controller'
-import { OrderService } from './order.service'
-import { CacheModule } from '@nestjs/cache-manager'
 import { ConfigModule, PrismaModule } from '@app/common'
+import { Module } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import * as redisStore from 'cache-manager-redis-store'
 import { JwtModule } from '@nestjs/jwt'
 import { ClientsModule, Transport } from '@nestjs/microservices'
-import { RabbitmqEnv } from '@app/common/config/data_configs/rabbitmq.config'
 import { QueueName } from 'common/constants/queue.constant'
+import { OrderController } from './order.controller'
+import { OrderService } from './order.service'
 
 @Module({
   imports: [
@@ -16,31 +13,61 @@ import { QueueName } from 'common/constants/queue.constant'
       isGlobal: true,
       clients: [
         {
-          name: 'ProductClient',
+          name: 'PRODUCT_SERVICE',
           imports: [ConfigModule],
-          inject: [ConfigService],
-          useFactory: (configService: ConfigService) => {
-            return {
-              transport: Transport.RMQ,
-              options: {
-                urls: [configService.get<string>(RabbitmqEnv.uri)],
-                queue: QueueName.product
+          useFactory: (configService: ConfigService) => ({
+            transport: Transport.RMQ,
+            options: {
+              urls: [configService.get<string>('rabbitmq.uri')],
+              queue: QueueName.product,
+              queueOptions: {
+                durable: true
               }
             }
-          }
+          }),
+          inject: [ConfigService]
         }
       ]
     }),
-    CacheModule.registerAsync({
+    ClientsModule.registerAsync({
       isGlobal: true,
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: async (configService: ConfigService) => ({
-        isGlobal: true,
-        store: redisStore,
-        host: configService.get<string>('bullqueue.host'),
-        port: configService.get<number>('bullqueue.port')
-      })
+      clients: [
+        {
+          name: 'USER_SERVICE',
+          imports: [ConfigModule],
+          useFactory: (configService: ConfigService) => ({
+            transport: Transport.RMQ,
+            options: {
+              urls: [configService.get<string>('rabbitmq.uri')],
+              queue: QueueName.user,
+              queueOptions: {
+                durable: true
+              }
+            }
+          }),
+          inject: [ConfigService]
+        }
+      ]
+    }),
+    ClientsModule.registerAsync({
+      isGlobal: true,
+      clients: [
+        {
+          name: 'STORE_SERVICE',
+          imports: [ConfigModule],
+          useFactory: (configService: ConfigService) => ({
+            transport: Transport.RMQ,
+            options: {
+              urls: [configService.get<string>('rabbitmq.uri')],
+              queue: QueueName.store,
+              queueOptions: {
+                durable: true
+              }
+            }
+          }),
+          inject: [ConfigService]
+        }
+      ]
     }),
     PrismaModule,
     JwtModule

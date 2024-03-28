@@ -1,11 +1,13 @@
 import { ReactNode } from 'react'
 
 import classNames from 'classnames'
+import { UseFormRegisterReturn } from 'react-hook-form'
 
 type InputProps = {
     icon?: ReactNode
     direct?: 'left' | 'right'
     rootClassName?: string
+    register?: UseFormRegisterReturn<any>
 } & React.InputHTMLAttributes<HTMLInputElement>
 
 const InputIcon = ({
@@ -14,6 +16,7 @@ const InputIcon = ({
     type = 'text',
     rootClassName,
     className,
+    register,
     ...rest
 }: InputProps) => {
     return (
@@ -36,6 +39,7 @@ const InputIcon = ({
                     },
                     className
                 )}
+                {...register}
                 {...rest}
             />
         </section>

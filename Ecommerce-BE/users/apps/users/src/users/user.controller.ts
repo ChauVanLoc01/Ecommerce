@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Put, Query, UseGuards } from '@nestjs/common'
+import { Body, Controller, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common'
 import { UserService } from './user.service'
 import { CurrentUser } from 'common/decorators/current_user.decorator'
 import { CurrentUserType } from 'common/types/current.type'
@@ -7,6 +7,8 @@ import { Roles } from 'common/decorators/roles.decorator'
 import { QueryAllUserProfileDTO } from '../dtos/all_user.dto'
 import { Role } from 'common/enums/role.enum'
 import { JwtGuard } from 'common/guards/jwt.guard'
+import { MessagePattern, Payload } from '@nestjs/microservices'
+import { checkDeliveryInformationId } from 'common/constants/event.constant'
 
 @Controller('profile')
 export class UserController {
@@ -19,15 +21,16 @@ export class UserController {
   }
 
   @Roles(Role.USER)
+  @UseGuards(JwtGuard)
   @Get()
   profileDetail(@CurrentUser() user: CurrentUserType) {
     return this.userService.profileDetail(user)
   }
 
-  @Roles(Role.ADMIN, Role.USER)
+  @Roles(Role.USER)
   @UseGuards(JwtGuard)
   @Put()
-  updateProfile(@CurrentUser() user: CurrentUserType, @Body() body: UpdateUserProfileDTO) {
-    return this.userService.updateProfile(user, body)
+  userUpdateProfile(@CurrentUser() user: CurrentUserType, @Body() body: UpdateUserProfileDTO) {
+    return this.userService.userUpdateProfile(user, body)
   }
 }

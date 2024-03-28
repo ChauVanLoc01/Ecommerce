@@ -14,13 +14,4 @@ export class ProductConsummer {
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
     private readonly configService: ConfigService
   ) {}
-
-  @Process(BackgroundAction.createOrder)
-  async cacheProduct({ data }: Job<>) {
-    await this.cacheManager.set(
-      data.id,
-      JSON.stringify(data),
-      this.configService.get<number>('bullqueue.ttl')
-    )
-  }
 }

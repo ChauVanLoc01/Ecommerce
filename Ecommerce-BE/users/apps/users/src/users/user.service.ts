@@ -26,8 +26,7 @@ export class UserService {
     })
   }
 
-  async profileDetail(user: CurrentUserType): Promise<User> {
-    console.log('do day')
+  async profileDetail(user: CurrentUserType): Promise<Return> {
     const userExist = await this.prisma.user.findUnique({
       where: {
         id: user.id
@@ -36,30 +35,30 @@ export class UserService {
 
     if (!userExist) throw new NotFoundException('Người dùng không tồn tại')
 
-    return userExist
+    return {
+      msg: 'Lấy thông tin người thành công',
+      result: userExist
+    }
   }
 
-  async updateProfile(user: CurrentUserType, body: UpdateUserProfileType): Promise<Return> {
-    const { birthday, email, full_name, address, status } = body
+  async userUpdateProfile(user: CurrentUserType, body: UpdateUserProfileType): Promise<Return> {
+    const { birthday, email, full_name, address } = body
 
-    console.log('id', user)
-
-    // const updatedUser = await this.prisma.user.update({
-    //   where: {
-    //     id: user.id
-    //   },
-    //   data: {
-    //     birthday,
-    //     email,
-    //     full_name,
-    //     address,
-    //     status
-    //   }
-    // })
+    const updatedUser = await this.prisma.user.update({
+      where: {
+        id: user.id
+      },
+      data: {
+        birthday,
+        email,
+        full_name,
+        address
+      }
+    })
 
     return {
       msg: 'Cập nhật thành công',
-      result: undefined
+      result: updatedUser
     }
   }
 }

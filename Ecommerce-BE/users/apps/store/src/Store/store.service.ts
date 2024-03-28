@@ -3,11 +3,10 @@ import { BadRequestException, Injectable } from '@nestjs/common'
 import { Role } from 'common/enums/role.enum'
 import { Status } from 'common/enums/status.enum'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
+import { Return } from 'common/types/result.type'
 import { v4 as uuidv4 } from 'uuid'
 import { CreateStoreDTO } from './dtos/create-store.dto'
-import { Return } from 'common/types/result.type'
 import { UpdateStoreDTO } from './dtos/update-store.dto'
-import { isUndefined, omitBy } from 'lodash'
 
 @Injectable()
 export class StoreService {
@@ -39,7 +38,7 @@ export class StoreService {
           image: file_name,
           name,
           location,
-          status: Status.ACCESS,
+          status: Status.ACTIVE,
           createdBy: id,
           description
         }
@@ -49,7 +48,7 @@ export class StoreService {
         data: {
           id: uuidv4(),
           role: Role.STORE_OWNER,
-          status: Status.ACCESS,
+          status: Status.ACTIVE,
           createdBy: id,
           storeId: createdStore.id
         }
@@ -100,5 +99,17 @@ export class StoreService {
       msg: 'Cập nhật cửa hàng thành công',
       result: updatedStore
     }
+  }
+
+  async checkStoreExist(storesId: string[]) {
+    return await Promise.all(
+      storesId.map((storeId) =>
+        this.prisma.store.findUnique({
+          where: {
+            id: storeId
+          }
+        })
+      )
+    )
   }
 }

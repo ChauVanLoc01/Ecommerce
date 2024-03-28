@@ -3,11 +3,20 @@ import { LoaderFunction } from 'react-router-dom'
 import { productFetching } from 'src/apis/product'
 import { ProductListQuery } from 'src/types/product.type'
 import { isUndefined, omitBy } from 'lodash'
+import { endProductDetailFetching, startProductDetailFetching } from 'src/constants/event'
 
 const queryClient = new QueryClient()
 
 export const productDetailLoader: LoaderFunction = async ({ params }) => {
     const productId = params.productId?.split('-0-')[1]
+
+    window.dispatchEvent(
+        new CustomEvent(startProductDetailFetching, {
+            detail: {
+                productDetail: productId
+            }
+        })
+    )
 
     const productDetail = await queryClient.fetchQuery({
         queryKey: ['productDetail', productId],
@@ -18,6 +27,14 @@ export const productDetailLoader: LoaderFunction = async ({ params }) => {
         queryKey: ['relativedProducts', productDetail.data.result.category],
         queryFn: () => productFetching.productList({ category: productDetail.data.result.category, sold: 'desc' })
     })
+
+    window.dispatchEvent(
+        new CustomEvent(endProductDetailFetching, {
+            detail: {
+                productDetail: productId
+            }
+        })
+    )
 
     return [productDetail.data.result, relativedProducts.data.result]
 }

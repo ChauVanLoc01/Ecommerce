@@ -3,8 +3,13 @@ import { useState } from 'react'
 import { PiEyeLight, PiEyeSlashLight } from 'react-icons/pi'
 
 import InputIcon from '../InputIcon'
+import { UseFormRegisterReturn } from 'react-hook-form'
 
-const InputPassword = () => {
+type InputPasswordProps = {
+    register?: UseFormRegisterReturn<any>
+}
+
+const InputPassword = ({ register }: InputPasswordProps) => {
     const [hidden, setHidden] = useState<boolean>(true)
 
     const handleToggle = () => setHidden(!hidden)
@@ -18,6 +23,7 @@ const InputPassword = () => {
             }
             direct='right'
             type={hidden ? 'password' : 'text'}
+            register={register}
         />
     )
 }

@@ -15,7 +15,6 @@ import Password from 'src/components/Password'
 import { route } from 'src/constants/route'
 import { RegisterBody } from 'src/types/auth.type'
 import { RegisterSchemaType, register_schema } from 'src/utils/auth.schema'
-import { ls } from 'src/utils/localStorage'
 
 const Register = () => {
     const navigate = useNavigate()
@@ -33,14 +32,10 @@ const Register = () => {
 
     const { mutate, isSuccess, isPending } = useMutation({
         mutationFn: (body: RegisterBody) => authFetching.register(body),
-        onSuccess: (data) => {
-            const { user, access_token, refresh_token } = data.data.result
-            ls.setItem('user', JSON.stringify(user))
-            ls.setItem('access_token', access_token)
-            ls.setItem('refresh_token', refresh_token)
-            redirectRef.current = setTimeout(() => navigate(route.root), 4000)
+        onSuccess: () => {
+            redirectRef.current = setTimeout(() => navigate(route.root), 3000)
             toast.success('Đăng kí thành công', {
-                description: 'Chuyển đến trang chủ trong 4s kế tiếp',
+                description: 'Chuyển đến trang chủ trong 3s kế tiếp',
                 action: {
                     label: 'Trang chủ',
                     onClick: () => {

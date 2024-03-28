@@ -1,12 +1,14 @@
+import { useIsFetching } from '@tanstack/react-query'
 import classNames from 'classnames'
 import { motion } from 'framer-motion'
-import { useContext } from 'react'
+import { useContext, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import Button from 'src/components/Button'
 import Image from 'src/components/Image'
 import Stars from 'src/components/Stars'
+import { endProductDetailFetching, startProductDetailFetching } from 'src/constants/event'
 import { AppContext } from 'src/contexts/AppContext'
 import { Product } from 'src/types/product.type'
 import { convertCurrentcy, removeSpecialCharacter } from 'src/utils/utils.ts'
@@ -20,6 +22,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
     const { name, image, priceAfter, priceBefore, id } = product
 
     const { setProducts, products } = useContext(AppContext)
+    const [isFetching, setIsFetching] = useState<boolean>(false)
 
     const handleAddToCart = () => {
         toast.info('Thêm sản phẩm thành công')
@@ -32,6 +35,18 @@ const ProductCard = ({ product }: ProductCardProps) => {
         }
     }
 
+    window.addEventListener(startProductDetailFetching, (e: any) => {
+        if (e.detail.productDetail === product.id) {
+            setIsFetching(true)
+        }
+    })
+
+    window.addEventListener(endProductDetailFetching, (e: any) => {
+        if (e.detail.productDetail === product.id) {
+            setIsFetching(false)
+        }
+    })
+
     return (
         <motion.article
             className='rounded-12 border border-border/30 bg-[#FFFFFF] hover:shadow-md overflow-hidden'
@@ -40,14 +55,20 @@ const ProductCard = ({ product }: ProductCardProps) => {
             animate={{ opacity: 1, transition: { duration: 0.8, ease: 'backInOut' } }}
             exit={{ opacity: 0 }}
         >
-            <Link to={`/${removeSpecialCharacter(name)}-0-${id}`} className='p-[16px] pb-0 inline-block'>
-                {
-                    <Image
-                        src={image}
-                        alt='product-img'
-                        className='object-cover overflow-hidden rounded-12 h-[295px] max-h-[295px]'
-                    />
-                }
+            <Link to={`/${removeSpecialCharacter(name)}-0-${id}`} className='p-[16px] pb-0 inline-block relative'>
+                <Image
+                    src={image}
+                    alt='product-img'
+                    className='object-cover overflow-hidden rounded-12 h-[295px] max-h-[295px]'
+                    overlay={isFetching}
+                />
+                <div
+                    className={classNames('absolute inset-0 flex justify-center items-center', {
+                        '!hidden': !isFetching
+                    })}
+                >
+                    <div className='spinner2' />
+                </div>
             </Link>
             <div className='p-[16px] space-y-4'>
                 <div className='space-y-1'>

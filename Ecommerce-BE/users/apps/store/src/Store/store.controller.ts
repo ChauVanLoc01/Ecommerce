@@ -11,15 +11,18 @@ import {
   UseGuards,
   UseInterceptors
 } from '@nestjs/common'
-import { StoreService } from './store.service'
-import { JwtGuard } from 'common/guards/jwt.guard'
+import { MessagePattern, Payload } from '@nestjs/microservices'
+import { FileInterceptor } from '@nestjs/platform-express'
+import { checkStoreExist } from 'common/constants/event.constant'
 import { CurrentUser } from 'common/decorators/current_user.decorator'
-import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
+import { Public } from 'common/decorators/public.decorator'
 import { Roles } from 'common/decorators/roles.decorator'
 import { Role } from 'common/enums/role.enum'
+import { JwtGuard } from 'common/guards/jwt.guard'
+import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
 import { CreateStoreDTO } from './dtos/create-store.dto'
-import { FileInterceptor } from '@nestjs/platform-express'
 import { UpdateStoreDTO } from './dtos/update-store.dto'
+import { StoreService } from './store.service'
 
 @UseGuards(JwtGuard)
 @Controller('store')
@@ -73,5 +76,11 @@ export class StoreController {
     file: Express.Multer.File
   ) {
     return this.storeService.updateStore(user, body, file?.filename)
+  }
+
+  @MessagePattern(checkStoreExist)
+  @Public()
+  checkStoreExist(@Payload() payload: string[]) {
+    return this.storeService.checkStoreExist(payload)
   }
 }

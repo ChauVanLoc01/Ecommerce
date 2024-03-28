@@ -22,11 +22,6 @@ export class UpdateUserProfileDTO {
   @IsEmail()
   @IsOptional()
   email?: string
-
-  @ApiPropertyOptional()
-  @IsString()
-  @IsOptional()
-  status?: string
 }
 
 export type UpdateUserProfileType = InstanceType<typeof UpdateUserProfileDTO>

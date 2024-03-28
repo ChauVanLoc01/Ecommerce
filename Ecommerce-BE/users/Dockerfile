@@ -1,6 +1,6 @@
 FROM node:18-alpine
 
-EXPOSE 3002
+EXPOSE 3001
 
 WORKDIR /app
 
@@ -12,4 +12,4 @@ COPY . .
 
 RUN yarn prisma generate
 
-CMD [ "yarn", "product" ]
+CMD [ "yarn", "user" ]

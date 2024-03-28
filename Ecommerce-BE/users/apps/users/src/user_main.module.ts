@@ -1,15 +1,15 @@
-import { Module } from '@nestjs/common'
-import { EmployeeModule } from './employees/employee.module'
-import { AuthModule } from './auths/auth.module'
-import { UserModule } from './users/user.module'
 import { ConfigModule, PrismaModule } from '@app/common'
-import { BullModule } from '@nestjs/bull'
-import { ConfigService } from '@nestjs/config'
 import { MailerModule } from '@nestjs-modules/mailer'
+import { BullModule } from '@nestjs/bull'
 import { CacheModule } from '@nestjs/cache-manager'
+import { Module } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
+import { JwtModule } from '@nestjs/jwt'
 import * as redisStore from 'cache-manager-redis-store'
-import { JwtGuard } from 'common/guards/jwt.guard'
-import { JwtService } from '@nestjs/jwt'
+import { AuthModule } from './auths/auth.module'
+import { EmployeeModule } from './employees/employee.module'
+import { UserModule } from './users/user.module'
+import { DeliveryModule } from './delivery/delivery.module'
 
 @Module({
   imports: [
@@ -47,9 +47,11 @@ import { JwtService } from '@nestjs/jwt'
     ConfigModule,
     PrismaModule,
     AuthModule,
+    DeliveryModule,
     EmployeeModule,
-    UserModule
+    UserModule,
+    JwtModule
   ],
-  providers: [JwtService]
+  providers: []
 })
 export class UserMainModule {}

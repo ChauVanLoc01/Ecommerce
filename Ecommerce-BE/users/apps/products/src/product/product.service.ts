@@ -1,22 +1,22 @@
 import { PrismaService } from '@app/common/prisma/prisma.service'
+import { InjectQueue } from '@nestjs/bull'
+import { CACHE_MANAGER } from '@nestjs/cache-manager'
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
 import { ClientProxy } from '@nestjs/microservices'
-import { Return } from 'common/types/result.type'
-import { CreateProductType } from './dtos/create-product.dto'
-import { UpdateProductType } from './dtos/update-product.dto'
-import { v4 as uuidv4 } from 'uuid'
+import { Prisma } from '@prisma/client'
+import { Queue } from 'bull'
+import { Cache } from 'cache-manager'
+import { BackgroundName } from 'common/constants/background-job.constant'
 import { Status } from 'common/enums/status.enum'
 import { CurrentStoreType } from 'common/types/current.type'
-import { SearchProductService } from './search-product.service'
+import { Return } from 'common/types/result.type'
+import { castArray, isNull, isUndefined, omitBy } from 'lodash'
+import { v4 as uuidv4 } from 'uuid'
+import { CreateProductType } from './dtos/create-product.dto'
 import { QueryProductType } from './dtos/query-product.dto'
-import { ConfigService } from '@nestjs/config'
-import { InjectQueue } from '@nestjs/bull'
-import { BackgroundAction, BackgroundName } from 'common/constants/background-job.constant'
-import { Queue } from 'bull'
-import { CACHE_MANAGER } from '@nestjs/cache-manager'
-import { Cache } from 'cache-manager'
-import { OrderParameter } from 'common/types/order-parameter.type'
-import { omitBy, isUndefined, pickBy, omit } from 'lodash'
+import { UpdateProductType } from './dtos/update-product.dto'
+import { SearchProductService } from './search-product.service'
 
 @Injectable()
 export class ProductService {
@@ -197,18 +197,73 @@ export class ProductService {
     }
   }
 
-  async updateQuantityProducts(data: OrderParameter[]) {
-    return await Promise.all(
-      data.map(async (parameter) => {
-        return await this.prisma.product.update({
-          where: {
-            id: parameter.productId
-          },
-          data: {
-            currentQuantity: parameter.quantity
+  async updateQuantityProducts(
+    data: { storeId: string; note?: string; orders: { productId: string; quantity: number }[] }[]
+  ) {
+    try {
+      const convertData: { storeId: string; productId: string; quantity: number }[] = data.reduce(
+        (acu, e) => {
+          return [
+            ...acu,
+            ...e.orders.map((order) => {
+              return {
+                storeId: e.storeId,
+                productId: order.productId,
+                quantity: order.quantity
+              }
+            })
+          ]
+        },
+        []
+      )
+
+      const productsExist = await Promise.all(
+        convertData.map((e) => {
+          return this.prisma.product.findUnique({
+            where: {
+              id: e.productId,
+              storeId: e.storeId
+            }
+          })
+        })
+      )
+
+      if (castArray(omitBy(productsExist, isNull)).length !== productsExist.length) {
+        throw new BadRequestException('Sản phẩm không tồn tại trong cửa hàng')
+        // return 'Sản phẩm không tồn tại trong cửa hàng'
+      }
+
+      const result = await this.prisma.$transaction(async (tx) => {
+        const updatedProduct = await Promise.all(
+          convertData.map((e) => {
+            return tx.product.update({
+              where: {
+                id: e.productId
+              },
+              data: {
+                currentQuantity: {
+                  decrement: e.quantity
+                }
+              }
+            })
+          })
+        )
+
+        updatedProduct.forEach((e) => {
+          if (e.currentQuantity < 0) {
+            throw new Error('Số lượng sản phẩm không đủ')
           }
         })
+
+        return updatedProduct
       })
-    )
+
+      return result
+    } catch (err) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError) {
+        throw new BadRequestException('Số lượng sản phẩm không đủ')
+      }
+      throw new BadRequestException(err.message)
+    }
   }
 }

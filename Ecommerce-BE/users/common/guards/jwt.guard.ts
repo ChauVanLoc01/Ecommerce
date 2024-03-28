@@ -1,4 +1,10 @@
-import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common'
+import {
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+  Injectable,
+  UnauthorizedException
+} from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { Reflector } from '@nestjs/core'
 import { JwtService } from '@nestjs/jwt'
@@ -46,14 +52,14 @@ export class JwtGuard implements CanActivate {
       ])
 
       if (roles && !roles.includes(role)) {
-        throw new UnauthorizedException('Người dùng không có quyền truy cập')
+        throw new ForbiddenException('Không có quyền truy cập tài nguyên')
       }
 
       request['user'] = payload
 
       return true
     } catch (err) {
-      throw new UnauthorizedException('Token không hợp lệ')
+      throw new UnauthorizedException(`Token không hợp lệ`)
     }
   }
 

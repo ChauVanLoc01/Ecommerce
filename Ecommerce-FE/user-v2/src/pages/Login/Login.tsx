@@ -7,6 +7,8 @@ import { toast } from 'sonner'
 
 import { yupResolver } from '@hookform/resolvers/yup'
 import axios from 'axios'
+import classNames from 'classnames'
+import { useRef } from 'react'
 import Button from 'src/components/Button'
 import Image from 'src/components/Image'
 import Input from 'src/components/Input'
@@ -15,9 +17,6 @@ import { route } from 'src/constants/route'
 import { LoginBody } from 'src/types/auth.type'
 import { Reject } from 'src/types/return.type'
 import { login_schema } from 'src/utils/auth.schema'
-import { useRef } from 'react'
-import { ls } from 'src/utils/localStorage'
-import classNames from 'classnames'
 
 const Login = () => {
     const navigate = useNavigate()
@@ -35,14 +34,12 @@ const Login = () => {
 
     const { mutate, isSuccess, isPending } = useMutation({
         mutationFn: (body: LoginBody) => authFetching.login(body),
-        onSuccess: (data) => {
-            const { user, access_token, refresh_token } = data.data.result
-            ls.setItem('user', JSON.stringify(user))
-            ls.setItem('access_token', access_token)
-            ls.setItem('refresh_token', refresh_token)
-            redirectRef.current = setTimeout(() => navigate(route.root), 4000)
+        onSuccess: () => {
+            redirectRef.current = setTimeout(() => {
+                navigate(route.root)
+            }, 3000)
             toast.success('Đăng nhập thành công', {
-                description: 'Chuyển đến trang chủ trong 4s kế tiếp',
+                description: 'Chuyển đến trang chủ trong 3s kế tiếp',
                 action: {
                     label: 'Trang chủ',
                     onClick: () => {

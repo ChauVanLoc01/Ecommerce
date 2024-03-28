@@ -7,12 +7,15 @@ const defaultValueContext: AppContextType = {
     profile: ls.getItem('profile') ? (JSON.parse(ls.getItem('profile') as string) as LoginResponse) : undefined,
     setProfile: () => {},
     products: ls.getItem('products') ? (JSON.parse(ls.getItem('products') as string) as ProductContext[]) : [],
-    setProducts: () => {}
+    setProducts: () => {},
+    previousPage: '/',
+    setPreviousPage: () => {}
 }
 
 export const AppContext = createContext<AppContextType>(defaultValueContext)
 
 const ContextWrap = ({ children }: { children: ReactNode }) => {
+    const [previousPage, setPreviousPage] = useState<string>('/')
     const [profile, setProfile] = useState<AppContextType['profile']>(defaultValueContext.profile)
     const [products, setProducts] = useState<AppContextType['products']>(defaultValueContext.products)
 
@@ -22,7 +25,9 @@ const ContextWrap = ({ children }: { children: ReactNode }) => {
                 profile,
                 setProfile,
                 products,
-                setProducts
+                setProducts,
+                previousPage,
+                setPreviousPage
             }}
         >
             {children}
