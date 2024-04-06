@@ -9,6 +9,7 @@ import { HiOutlineInformationCircle } from 'react-icons/hi2'
 import { MdOutlinePayment } from 'react-icons/md'
 import { PiDotsThreeOutlineVerticalDuotone } from 'react-icons/pi'
 import { SlLock } from 'react-icons/sl'
+import { TbTruckDelivery } from 'react-icons/tb'
 import { NavLink } from 'react-router-dom'
 
 import { route } from 'src/constants/route'
@@ -42,19 +43,10 @@ const CardProfile = ({ rootClassName }: CardProps) => {
                         className='group-hover:opacity-0 transition-all duration-100 ease-linear rounded-full'
                     />
                     <span className='opacity-0 absolute inset-0 flex justify-center items-center bg-white group-hover:opacity-100 transition-all duration-100 ease-linear rounded-full delay-100'>
-                        <AiOutlineCloudUpload
-                            size={30}
-                            className='w-full hful text-blue-600'
-                        />
+                        <AiOutlineCloudUpload size={30} className='w-full hful text-blue-600' />
                     </span>
                 </button>
-                <input
-                    type='file'
-                    ref={fileRef}
-                    name=''
-                    id=''
-                    className='hidden'
-                />
+                <input type='file' ref={fileRef} name='' id='' className='hidden' />
                 <h4 className='font-semibold'>Stebin Ben</h4>
                 <p>Admin</p>
                 <article className='flex items-center justify-center gap-x-2'>
@@ -88,14 +80,11 @@ const CardProfile = ({ rootClassName }: CardProps) => {
                     to={`/${route.profile}`}
                     end
                     className={({ isActive }) =>
-                        classNames(
-                            'py-12 flex items-center space-x-[7px] justify-start px-4 relative z-10',
-                            {
-                                'after:content-[""] after:block after:absolute after:inset-0 after:rounded-8 after:bg-blue-100 text-blue-500 bg-transparent after:-z-10':
-                                    isActive,
-                                'text-gray-500': !isActive
-                            }
-                        )
+                        classNames('py-12 flex items-center space-x-[7px] justify-start px-4 relative z-10', {
+                            'after:content-[""] after:block after:absolute after:inset-0 after:rounded-8 after:bg-blue-100 text-blue-500 bg-transparent after:-z-10':
+                                isActive,
+                            'text-gray-500': !isActive
+                        })
                     }
                 >
                     <HiOutlineInformationCircle />
@@ -105,14 +94,11 @@ const CardProfile = ({ rootClassName }: CardProps) => {
                     to={`/${route.profile}/${route.order}`}
                     end
                     className={({ isActive }) =>
-                        classNames(
-                            'py-12 flex items-center space-x-[7px] justify-start px-4 relative z-10',
-                            {
-                                'after:content-[""] after:block after:absolute after:inset-0 after:rounded-8 after:bg-blue-100 text-blue-500 bg-transparent after:-z-10':
-                                    isActive,
-                                'text-gray-500': !isActive
-                            }
-                        )
+                        classNames('py-12 flex items-center space-x-[7px] justify-start px-4 relative z-10', {
+                            'after:content-[""] after:block after:absolute after:inset-0 after:rounded-8 after:bg-blue-100 text-blue-500 bg-transparent after:-z-10':
+                                isActive,
+                            'text-gray-500': !isActive
+                        })
                     }
                 >
                     <BsBoxSeam />
@@ -121,30 +107,37 @@ const CardProfile = ({ rootClassName }: CardProps) => {
                 <NavLink
                     to={`/${route.profile}/${route.changePassword}`}
                     className={({ isActive }) =>
-                        classNames(
-                            'py-12 flex items-center space-x-[7px] justify-start px-4 relative z-10',
-                            {
-                                'after:content-[""] after:block after:absolute after:inset-0 after:rounded-8 after:bg-blue-100 text-blue-500 bg-transparent after:-z-10':
-                                    isActive,
-                                'text-gray-500': !isActive
-                            }
-                        )
+                        classNames('py-12 flex items-center space-x-[7px] justify-start px-4 relative z-10', {
+                            'after:content-[""] after:block after:absolute after:inset-0 after:rounded-8 after:bg-blue-100 text-blue-500 bg-transparent after:-z-10':
+                                isActive,
+                            'text-gray-500': !isActive
+                        })
                     }
                 >
                     <SlLock />
                     <span>Thay Đổi Mật Khẩu</span>
                 </NavLink>
                 <NavLink
+                    to={`/${route.profile}/${route.address}`}
+                    className={({ isActive }) =>
+                        classNames('py-12 flex items-center space-x-[7px] justify-start px-4 relative z-10', {
+                            'after:content-[""] after:block after:absolute after:inset-0 after:rounded-8 after:bg-blue-100 text-blue-500 bg-transparent after:-z-10':
+                                isActive,
+                            'text-gray-500': !isActive
+                        })
+                    }
+                >
+                    <TbTruckDelivery />
+                    <span>Địa chỉ giao hàng</span>
+                </NavLink>
+                <NavLink
                     to={`/${route.profile}/${route.payment}`}
                     className={({ isActive }) =>
-                        classNames(
-                            'py-12 flex items-center space-x-[7px] justify-start px-4 relative z-10',
-                            {
-                                'after:content-[""] after:block after:absolute after:inset-0 after:rounded-8 after:bg-blue-100 text-blue-500 bg-transparent after:-z-10':
-                                    isActive,
-                                'text-gray-500': !isActive
-                            }
-                        )
+                        classNames('py-12 flex items-center space-x-[7px] justify-start px-4 relative z-10', {
+                            'after:content-[""] after:block after:absolute after:inset-0 after:rounded-8 after:bg-blue-100 text-blue-500 bg-transparent after:-z-10':
+                                isActive,
+                            'text-gray-500': !isActive
+                        })
                     }
                 >
                     <MdOutlinePayment />
@@ -152,10 +145,7 @@ const CardProfile = ({ rootClassName }: CardProps) => {
                 </NavLink>
             </section>
             <button className='absolute -top-6 right-2 p-8 rounded-8 bg-text_2/[0.05] hover:bg-text_2/[0.15]'>
-                <PiDotsThreeOutlineVerticalDuotone
-                    color='rgb(91, 107, 121, 0.85)'
-                    className='rotate-90'
-                />
+                <PiDotsThreeOutlineVerticalDuotone color='rgb(91, 107, 121, 0.85)' className='rotate-90' />
             </button>
         </div>
     )

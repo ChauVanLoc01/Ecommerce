@@ -28,7 +28,7 @@ export class DeliveryService {
       const hasPrimaryDelivery = await this.prisma.deliveryInformation.findFirst({
         where: {
           userId: user.id,
-          isPrimary: 1
+          isPrimary
         }
       })
 
@@ -38,7 +38,7 @@ export class DeliveryService {
             id: hasPrimaryDelivery.id
           },
           data: {
-            isPrimary: 0
+            isPrimary: false
           }
         })
       }
@@ -47,7 +47,7 @@ export class DeliveryService {
     const createdDelivery = await this.prisma.deliveryInformation.create({
       data: {
         ...rest,
-        isPrimary: isPrimary ? 1 : 0,
+        isPrimary,
         userId: user.id,
         id: uuidv4()
       }
@@ -60,7 +60,7 @@ export class DeliveryService {
   }
 
   async updateDelivery(user: CurrentUserType, body: UpdateDeliveryDTO): Promise<Return> {
-    const { id, ...rest } = body
+    const { id, isPrimary, ...rest } = body
     const deliveryExist = await this.prisma.deliveryInformation.findUnique({
       where: {
         id
@@ -79,13 +79,15 @@ export class DeliveryService {
         },
         data: {
           ...rest,
-          isPrimary: rest.isPrimary ? 1 : 0
+          isPrimary
         }
       })
     }
   }
 
   async deleteDelivery(user: CurrentUserType, id: string): Promise<Return> {
+    console.log('user', user);
+    console.log('id', id);
     const deliveryExist = await this.prisma.deliveryInformation.findUnique({
       where: {
         id,
@@ -105,7 +107,7 @@ export class DeliveryService {
 
     return {
       msg: 'Xóa thông tin vận chuyển thành công',
-      result: undefined
+      result: {}
     }
   }
 

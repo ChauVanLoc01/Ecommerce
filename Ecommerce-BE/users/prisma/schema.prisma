@@ -35,6 +35,20 @@ model Category {
   Voucher     Voucher[]
 }
 
+model DeliveryInformation {
+  id        String    @id @db.VarChar(100)
+  full_name String    @db.VarChar(100)
+  phone     String    @db.VarChar(12)
+  address   String    @db.VarChar(500)
+  isPrimary Boolean   @default(false)
+  userId    String    @db.VarChar(50)
+  createdAt DateTime? @db.Timestamp(0)
+  User      User      @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "DeliveryInformation_ibfk_1")
+  Order     Order[]
+
+  @@index([userId], map: "userId")
+}
+
 model Order {
   id                    String              @id @db.VarChar(50)
   userId                String              @db.VarChar(50)
@@ -55,10 +69,10 @@ model Order {
   Payment               Payment[]
   ProductOrder          ProductOrder[]
 
+  @@index([deliveryInformationId], map: "deliveryInformationId")
+  @@index([storeId], map: "storeId")
   @@index([userId], map: "userId")
   @@index([voucherId], map: "voucherId")
-  @@index([storeId], map: "storeId")
-  @@index([deliveryInformationId], map: "deliveryInformationId")
 }
 
 model Payment {
@@ -225,20 +239,6 @@ model Voucher {
   Store           Store     @relation(fields: [storeId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Voucher_ibfk_1")
   Category        Category? @relation(fields: [categoryType], references: [shortname], onDelete: NoAction, onUpdate: NoAction, map: "Voucher_ibfk_2")
 
-  @@index([storeId], map: "storeId")
   @@index([categoryType], map: "categoryType")
-}
-
-model DeliveryInformation {
-  id        String    @id @db.VarChar(100)
-  full_name String    @db.VarChar(100)
-  phone     String    @db.VarChar(12)
-  address   String    @db.VarChar(500)
-  isPrimary Int?      @default(0)
-  userId    String    @db.VarChar(50)
-  createdAt DateTime? @db.Timestamp(0)
-  User      User      @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "DeliveryInformation_ibfk_1")
-  Order     Order[]
-
-  @@index([userId], map: "userId")
+  @@index([storeId], map: "storeId")
 }

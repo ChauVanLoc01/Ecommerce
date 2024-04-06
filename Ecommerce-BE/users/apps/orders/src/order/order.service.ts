@@ -170,11 +170,7 @@ export class OrderService {
         this.storeClient.send<Store[], string[]>(checkStoreExist, stores)
       )
 
-      const convertStoreExist = isStoresExist.filter((e) => {
-        if (e) {
-          return e
-        }
-      })
+      const convertStoreExist = isStoresExist.filter((e) => e)
 
       if (stores.length !== convertStoreExist.length) {
         throw new BadRequestException('Lỗi cửa hàng không tồn tại')
@@ -184,7 +180,9 @@ export class OrderService {
         this.productClient.send(updateQuantityProducts, orderParameters)
       )
 
-      console.log('updatedProduct err', updatedProducts.message);
+      if (typeof updatedProducts === 'string') {
+        throw new BadRequestException(updatedProducts)
+      }
 
       const result = await Promise.all(
         orderParameters.map((parameter) =>
@@ -230,20 +228,14 @@ export class OrderService {
           })
         )
       )
-
-      console.log('here2');
-
       return {
         msg: 'Tạo đơn hàng thành công',
         result
       }
     } catch (err) {
-      console.log('err', err)
       if (err instanceof Prisma.PrismaClientKnownRequestError) {
-        console.log('inside');
-        throw new BadRequestException('Có lỗi trong quá trình tạo đơn hàng')
+        throw new BadRequestException('Đã có lỗi trong quá trình tạo đơn hàng')
       }
-      console.log('outside');
       throw new BadRequestException(err.message)
     }
   }

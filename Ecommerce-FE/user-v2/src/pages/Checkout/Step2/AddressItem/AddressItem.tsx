@@ -1,11 +1,12 @@
 import classNames from 'classnames'
+import { Delivery } from 'src/types/delivery.type'
 
 type AddressItemProps = {
-    isPrimary?: boolean
+    delivery: Delivery
     isChecked?: boolean
 }
 
-const AddressItem = ({ isPrimary, isChecked }: AddressItemProps) => {
+const AddressItem = ({ delivery, isChecked }: AddressItemProps) => {
     return (
         <section
             className={classNames(
@@ -16,17 +17,15 @@ const AddressItem = ({ isPrimary, isChecked }: AddressItemProps) => {
             )}
         >
             <div className='space-y-2'>
-                <h3 className='font-semibold'>Chau Van Loc</h3>
-                <p className='text-gray-400 text-[13px]'>
-                    2D Phung Van Cung, Phu Nhuan, Tp.HCM
-                </p>
+                <h3 className='font-semibold'>{delivery.full_name}</h3>
+                <p className='text-gray-400 text-[13px]'>{delivery.address}</p>
             </div>
-            <div className='text-gray-400 text-[13px]'>0346128692</div>
+            <div className='text-gray-400 text-[13px]'>{delivery.phone}</div>
             <span
                 className={classNames(
                     'px-2 py-1 rounded-12 border border-blue-500 text-blue-500 bg-blue-100 text-[10px] tracking-wider absolute -top-1 right-2',
                     {
-                        hidden: !isPrimary
+                        hidden: !delivery.isPrimary
                     }
                 )}
             >

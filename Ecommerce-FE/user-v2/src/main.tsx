@@ -12,11 +12,11 @@ import routes from './routes/main.route'
 import { Toaster } from 'src/components/Shadcn/sonner'
 import ContextWrap from './contexts/AppContext'
 
-const queryClient = new QueryClient()
+const client = new QueryClient()
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
-    <ContextWrap>
-        <QueryClientProvider client={queryClient}>
+    <QueryClientProvider client={client}>
+        <ContextWrap>
             <AnimatePresence mode='popLayout'>
                 <RouterProvider router={routes} />
                 <Toaster
@@ -37,6 +37,6 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
                 />
             </AnimatePresence>
             <ReactQueryDevtools initialIsOpen={false} />
-        </QueryClientProvider>
-    </ContextWrap>
+        </ContextWrap>
+    </QueryClientProvider>
 )

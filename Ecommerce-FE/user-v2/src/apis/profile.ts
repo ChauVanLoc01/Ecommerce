@@ -3,8 +3,9 @@ import { ChangePasswordResponse, ProfileResponse } from 'src/types/profile.type'
 import { Return } from 'src/types/return.type'
 import { ChangePasswordSchemaType, ProfileSchemaType } from 'src/utils/profile.schema'
 import { method } from './method'
+import { Delivery, DeliveryBody } from 'src/types/delivery.type'
 
-const { PUT, GET } = method(user)
+const { PUT, GET, POST, DELETE } = method(user)
 
 export const profileFetching = {
     getProfile: () => {
@@ -18,5 +19,11 @@ export const profileFetching = {
             'authentication/change-password',
             body
         )
-    }
+    },
+    getDeliveries: () => GET<Return<Delivery[]>>('delivery'),
+    createDelivery: (body: DeliveryBody) => POST<Return<Delivery>, DeliveryBody>('delivery', body),
+    updateDelivery: (body: DeliveryBody & { id: string }) => {
+        return PUT<Return<Delivery>, DeliveryBody & { id: string }>('delivery', body)
+    },
+    deleteDelivery: (id: string) => DELETE<Return<{}>>(`delivery/${id}`)
 }

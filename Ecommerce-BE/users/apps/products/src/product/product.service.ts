@@ -228,9 +228,10 @@ export class ProductService {
         })
       )
 
-      if (castArray(omitBy(productsExist, isNull)).length !== productsExist.length) {
-        throw new BadRequestException('Sản phẩm không tồn tại trong cửa hàng')
-        // return 'Sản phẩm không tồn tại trong cửa hàng'
+      const productExistConvert = productsExist.filter((e) => e)
+
+      if (productExistConvert.length < convertData.length) {
+        throw new Error('Sản phẩm không tồn tại trong cửa hàng')
       }
 
       const result = await this.prisma.$transaction(async (tx) => {
@@ -260,10 +261,7 @@ export class ProductService {
 
       return result
     } catch (err) {
-      if (err instanceof Prisma.PrismaClientKnownRequestError) {
-        throw new BadRequestException('Số lượng sản phẩm không đủ')
-      }
-      throw new BadRequestException(err.message)
+      return err.message
     }
   }
 }

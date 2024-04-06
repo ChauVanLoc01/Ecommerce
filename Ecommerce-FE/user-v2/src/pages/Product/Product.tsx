@@ -17,19 +17,23 @@ import MaybeULike from './MaybeULike'
 import Review from './Review'
 
 const Product = () => {
-    const { setProducts, products } = useContext(AppContext)
+    const { setProducts, products, profile } = useContext(AppContext)
     const [quantity, setQuantity] = useState<number>(1)
     const [productDetail, relativedProducts] = useLoaderData() as [ProductDetailResponse, ProductListResponse]
     const navigate = useNavigate()
 
     const handleAddToCart = (checked: boolean) => () => {
-        toast.info('Thêm sản phẩm thành công')
-        const index = products.findIndex((p) => p.id === productDetail.id)
-        if (index !== -1) {
-            products[index].buy += quantity
-            setProducts(products)
+        if (!profile) {
+            toast.error('Cần đăng nhập trước khi thực hiện mua hàng')
         } else {
-            setProducts((repo) => [...repo, { ...productDetail, buy: quantity, checked: checked ?? false }])
+            toast.info('Thêm sản phẩm thành công')
+            const index = products.findIndex((p) => p.id === productDetail.id)
+            if (index !== -1) {
+                products[index].buy += quantity
+                setProducts(products)
+            } else {
+                setProducts((repo) => [...repo, { ...productDetail, buy: quantity, checked: checked ?? false }])
+            }
         }
     }
 

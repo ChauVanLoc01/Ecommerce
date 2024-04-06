@@ -1,14 +1,18 @@
 import loadable from '@loadable/component'
+import { QueryClient } from '@tanstack/react-query'
 import { useContext } from 'react'
 import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom'
 
 import { route } from 'src/constants/route'
 import { AppContext } from 'src/contexts/AppContext'
 import MainLayout from 'src/layouts/MainLayout'
+import { deliveryLoader } from 'src/loaders/delivery.loader'
 import { productDetailLoader, productListLoader } from 'src/loaders/product.loader'
 import { profileLoader } from 'src/loaders/profile.loader'
 import Checkout from 'src/pages/Checkout'
+import NotFound from 'src/pages/NotFound'
 import Profile from 'src/pages/Profile'
+import Address from 'src/pages/Profile/LayoutProfile/Address'
 import ChangePassword from 'src/pages/Profile/LayoutProfile/ChangePassword'
 import Order from 'src/pages/Profile/LayoutProfile/Order'
 import Payment from 'src/pages/Profile/LayoutProfile/Payment'
@@ -35,6 +39,8 @@ const RejectRoute = () => {
     const { profile } = useContext(AppContext)
     return profile ? <Navigate to={route.root} /> : <Outlet />
 }
+
+const queryClient = new QueryClient()
 
 const routes = createBrowserRouter([
     {
@@ -87,6 +93,11 @@ const routes = createBrowserRouter([
                             {
                                 path: route.payment,
                                 element: <Payment />
+                            },
+                            {
+                                path: route.address,
+                                element: <Address />,
+                                loader: deliveryLoader
                             }
                         ]
                     },
@@ -97,6 +108,10 @@ const routes = createBrowserRouter([
                 ]
             }
         ]
+    },
+    {
+        path: '*',
+        element: <NotFound />
     }
 ])
 

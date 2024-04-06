@@ -8,5 +8,6 @@ export const route = {
     order: 'order',
     changePassword: 'change-password',
     payment: 'payment',
-    checkout: 'checkout'
+    checkout: 'checkout',
+    address: 'address'
 }
