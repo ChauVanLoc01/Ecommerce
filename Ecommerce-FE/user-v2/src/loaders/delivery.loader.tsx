@@ -1,8 +1,7 @@
-import { QueryClient } from '@tanstack/react-query'
 import { profileFetching } from 'src/apis/profile'
+import { queryClient } from 'src/routes/main.route'
 
 export const deliveryLoader = async () => {
-    const queryClient = new QueryClient()
     const deliveries = await queryClient.fetchQuery({
         queryKey: ['delivery'],
         queryFn: profileFetching.getDeliveries,

@@ -1,7 +1,6 @@
 import { yupResolver } from '@hookform/resolvers/yup'
 import { motion } from 'framer-motion'
 import { useForm } from 'react-hook-form'
-import { useLoaderData } from 'react-router-dom'
 
 import Button from 'src/components/Button'
 import Input from 'src/components/Input'
@@ -9,13 +8,15 @@ import { Label } from 'src/components/Shadcn/label'
 import { RadioGroup, RadioGroupItem } from 'src/components/Shadcn/radio-group'
 import useQueryParams from 'src/hooks/useQueryParams'
 import { CategoryListResponse } from 'src/types/category.type'
-import { Product, ProductListQuery } from 'src/types/product.type'
+import { ProductListQuery } from 'src/types/product.type'
 import { price_schema } from 'src/utils/price.schema'
 
-const Filter = () => {
-    const [queryParams, setQueryParams] = useQueryParams<Partial<Record<keyof ProductListQuery, string>>>()
+type FilterProps = {
+    data: CategoryListResponse
+}
 
-    const [_, data] = useLoaderData() as [Product[], CategoryListResponse]
+const Filter = ({ data }: FilterProps) => {
+    const [queryParams, setQueryParams] = useQueryParams<Partial<Record<keyof ProductListQuery, string>>>()
 
     const { register } = useForm({
         resolver: yupResolver(price_schema)

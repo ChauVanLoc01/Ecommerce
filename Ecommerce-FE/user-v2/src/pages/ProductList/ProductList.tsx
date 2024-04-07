@@ -6,12 +6,14 @@ import Dropdown from 'src/components/Dropdown'
 import InputIcon from 'src/components/InputIcon'
 import Pagination from 'src/components/Pagination'
 
-import { useQuery } from '@tanstack/react-query'
 import { isUndefined, omitBy } from 'lodash'
 import { useEffect } from 'react'
+import { useLoaderData } from 'react-router-dom'
 import { productFetching } from 'src/apis/product'
 import useQueryParams from 'src/hooks/useQueryParams'
-import { ProductListQuery } from 'src/types/product.type'
+import { queryClient } from 'src/routes/main.route'
+import { CategoryListResponse } from 'src/types/category.type'
+import { ProductListQuery, ProductListResponse } from 'src/types/product.type'
 import FlashSale from './FlashSale'
 import ProductCard from './ProductCard'
 
@@ -20,23 +22,22 @@ const Filter = loadable(() => import('./Filter'))
 const ProductList = () => {
     const [queryParams] = useQueryParams<Partial<Record<keyof ProductListQuery, string>>>()
 
-    const { data, refetch } = useQuery({
-        queryKey: ['productList'],
-        queryFn: () =>
-            productFetching.productList(
-                omitBy(
-                    {
-                        ...queryParams,
-                        page: Number(queryParams?.page) || undefined
-                    },
-                    isUndefined
-                ) as ProductListQuery
-            ),
-        enabled: false
-    })
+    const [productListReponse, categoryResponse] = useLoaderData() as [ProductListResponse, CategoryListResponse]
 
     useEffect(() => {
-        refetch({ cancelRefetch: true })
+        queryClient.prefetchQuery({
+            queryKey: ['productList'],
+            queryFn: () =>
+                productFetching.productList(
+                    omitBy(
+                        {
+                            ...queryParams,
+                            page: Number(queryParams?.page) || undefined
+                        },
+                        isUndefined
+                    ) as ProductListQuery
+                )
+        })
     }, [JSON.stringify(queryParams)])
 
     return (
@@ -60,7 +61,7 @@ const ProductList = () => {
             <FlashSale />
             <div className='flex gap-x-5'>
                 <section className='basis-1/5 flex-shrink-0'>
-                    <Filter />
+                    <Filter data={categoryResponse} />
                 </section>
                 <section className='grow space-y-3 mb-10'>
                     <div className='p-[16px] bg-[#FFFFFF] rounded-12 border border-border/30 flex justify-between'>
@@ -82,11 +83,11 @@ const ProductList = () => {
                     </div>
                     <div className='space-y-8'>
                         <div className='grid grid-cols-3 gap-3'>
-                            {data?.data.result.data.map((product) => (
+                            {productListReponse.data.map((product) => (
                                 <ProductCard key={product.id} product={product} />
                             ))}
                         </div>
-                        <Pagination pageSize={data?.data.result.query.page_size || 10} />
+                        <Pagination pageSize={productListReponse.query.page_size || 10} />
                     </div>
                 </section>
             </div>

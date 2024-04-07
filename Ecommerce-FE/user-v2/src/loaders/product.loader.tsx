@@ -3,10 +3,10 @@ import { isUndefined, omitBy } from 'lodash'
 import { LoaderFunction } from 'react-router-dom'
 import { productFetching } from 'src/apis/product'
 import { endProductDetailFetching, startProductDetailFetching } from 'src/constants/event'
+import { queryClient } from 'src/routes/main.route'
 import { ProductListQuery } from 'src/types/product.type'
 
 export const productDetailLoader: LoaderFunction = async ({ params }) => {
-    const queryClient = new QueryClient()
     const productId = params.productId?.split('-0-')[1]
 
     window.dispatchEvent(
@@ -19,12 +19,15 @@ export const productDetailLoader: LoaderFunction = async ({ params }) => {
 
     const productDetail = await queryClient.fetchQuery({
         queryKey: ['productDetail', productId],
-        queryFn: () => productFetching.productDetail(productId as string)
+        queryFn: () => productFetching.productDetail(productId as string),
+        staleTime: 1000 * 60 * 2,
+        gcTime: 1000 * 60 * 50
     })
 
     const relativedProducts = await queryClient.fetchQuery({
         queryKey: ['relativedProducts', productDetail.data.result.category],
-        queryFn: () => productFetching.productList({ category: productDetail.data.result.category, sold: 'desc' })
+        queryFn: () => productFetching.productList({ category: productDetail.data.result.category, sold: 'desc' }),
+        staleTime: 1000 * 60 * 2
     })
 
     window.dispatchEvent(
@@ -39,7 +42,6 @@ export const productDetailLoader: LoaderFunction = async ({ params }) => {
 }
 
 export const productListLoader: LoaderFunction = async ({ request }) => {
-    const queryClient = new QueryClient()
     const queryParams = new URL(request.url).searchParams as Partial<Record<keyof ProductListQuery, string>>
 
     const productList = await queryClient.fetchQuery({
@@ -53,15 +55,15 @@ export const productListLoader: LoaderFunction = async ({ request }) => {
                     },
                     isUndefined
                 ) as ProductListQuery
-            )
+            ),
+        staleTime: 1000 * 60 * 2
     })
 
     const categories = await queryClient.fetchQuery({
         queryKey: ['categories'],
         queryFn: () => productFetching.categoryList(),
-        staleTime: Infinity,
-        gcTime: Infinity
+        staleTime: Infinity
     })
 
-    return [productList.data.result.data, categories.data.result]
+    return [productList.data.result, categories.data.result]
 }

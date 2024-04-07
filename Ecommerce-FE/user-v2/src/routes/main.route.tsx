@@ -40,7 +40,7 @@ const RejectRoute = () => {
     return profile ? <Navigate to={route.root} /> : <Outlet />
 }
 
-const queryClient = new QueryClient()
+export const queryClient = new QueryClient()
 
 const routes = createBrowserRouter([
     {
