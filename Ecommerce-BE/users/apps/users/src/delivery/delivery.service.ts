@@ -71,6 +71,24 @@ export class DeliveryService {
       throw new NotFoundException('Không tìm thấy thông tin vận chuyển')
     }
 
+    if (isPrimary) {
+      const deliveryHasPrimary = await this.prisma.deliveryInformation.findFirst({
+        where: {
+          isPrimary: true
+        }
+      })
+      if (deliveryHasPrimary) {
+        await this.prisma.deliveryInformation.update({
+          where: {
+            id: deliveryHasPrimary.id
+          },
+          data: {
+            isPrimary: false
+          }
+        })
+      }
+    }
+
     return {
       msg: 'Cập nhật thông tin vận chuyển thành công',
       result: await this.prisma.deliveryInformation.update({
@@ -86,8 +104,8 @@ export class DeliveryService {
   }
 
   async deleteDelivery(user: CurrentUserType, id: string): Promise<Return> {
-    console.log('user', user);
-    console.log('id', id);
+    console.log('user', user)
+    console.log('id', id)
     const deliveryExist = await this.prisma.deliveryInformation.findUnique({
       where: {
         id,

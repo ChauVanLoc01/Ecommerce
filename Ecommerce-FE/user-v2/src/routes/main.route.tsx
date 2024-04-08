@@ -103,7 +103,8 @@ const routes = createBrowserRouter([
                     },
                     {
                         path: route.checkout,
-                        element: <Checkout />
+                        element: <Checkout />,
+                        loader: deliveryLoader
                     }
                 ]
             }

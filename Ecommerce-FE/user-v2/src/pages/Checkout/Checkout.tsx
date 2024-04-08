@@ -6,7 +6,9 @@ import { motion } from 'framer-motion'
 import Button from 'src/components/Button'
 import Input from 'src/components/Input'
 
+import { useLoaderData } from 'react-router-dom'
 import { AppContext } from 'src/contexts/AppContext'
+import { Delivery } from 'src/types/delivery.type'
 import Step1 from './Step1'
 import Step2 from './Step2'
 import Step3 from './Step3'
@@ -14,6 +16,7 @@ import Step3 from './Step3'
 const Checkout = () => {
     const { products } = useContext(AppContext)
     const [step, setStep] = useState<number>(1)
+    const [deliveries] = useLoaderData() as [Delivery[]]
 
     const lastStep = useRef<number>(1)
 
@@ -93,7 +96,7 @@ const Checkout = () => {
                             {
                                 {
                                     1: <Step1 />,
-                                    2: <Step2 />,
+                                    2: <Step2 deliveries={deliveries} />,
                                     3: <Step3 />
                                 }[step]
                             }

@@ -22,8 +22,8 @@ export const profileFetching = {
     },
     getDeliveries: () => GET<Return<Delivery[]>>('delivery'),
     createDelivery: (body: DeliveryBody) => POST<Return<Delivery>, DeliveryBody>('delivery', body),
-    updateDelivery: (body: DeliveryBody & { id: string }) => {
-        return PUT<Return<Delivery>, DeliveryBody & { id: string }>('delivery', body)
+    updateDelivery: (body: Partial<DeliveryBody & { id: string }>) => {
+        return PUT<Return<Delivery>, Partial<DeliveryBody & { id: string }>>('delivery', body)
     },
     deleteDelivery: (id: string) => DELETE<Return<{}>>(`delivery/${id}`)
 }

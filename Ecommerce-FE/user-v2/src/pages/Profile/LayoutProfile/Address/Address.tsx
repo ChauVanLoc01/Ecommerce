@@ -18,15 +18,20 @@ import {
 } from 'src/components/Shadcn/dialog'
 import { Textarea } from 'src/components/Shadcn/textarea'
 import AddressItem from 'src/pages/Checkout/Step2/AddressItem'
-import { Delivery, DeliveryBody } from 'src/types/delivery.type'
+import { DeliveryBody } from 'src/types/delivery.type'
 import { delivery_schema, DeliverySchemaType } from 'src/utils/delivery.schema'
 import LayoutProfile from '../LayoutProfile'
-import { useLoaderData } from 'react-router-dom'
 
 const Address = () => {
     const [open, setOpen] = useState<boolean>(false)
     const [primary, setPrimary] = useState<boolean>(false)
-    const [deliveries] = useLoaderData() as [Delivery[]]
+    const deliveries = useQuery({
+        queryKey: ['delivery'],
+        queryFn: profileFetching.getDeliveries,
+        staleTime: Infinity,
+        gcTime: Infinity,
+        enabled: false
+    })
     const {
         register,
         formState: {
@@ -44,6 +49,7 @@ const Address = () => {
         onSuccess: () => {
             toast.info('Tạo thành công thông tin vận chuyển')
             reset()
+            deliveries.refetch()
             setOpen(false)
         },
         onError: () => {
@@ -51,10 +57,33 @@ const Address = () => {
         }
     })
 
+    const updateDelivery = useMutation({
+        mutationFn: (body: Partial<DeliveryBody & { id: string }>) => profileFetching.updateDelivery(body),
+        onSuccess: () => {
+            toast.info('Cập nhật thành công')
+            deliveries.refetch()
+        }
+    })
+
+    const deleteDelivery = useMutation({
+        mutationFn: (deliveryId: string) => profileFetching.deleteDelivery(deliveryId),
+        onSuccess: () => {
+            toast.success('Xóa thông tin vận chuyển thành công')
+            deliveries.refetch()
+        },
+        onError: () => {
+            toast.error('Đã có lỗi xảy ra')
+        }
+    })
+
     const handleResetForm = () => reset()
 
     const onSubmit: SubmitHandler<DeliverySchemaType> = (data) =>
         createDeliveryQuery.mutate({ ...data, isPrimary: primary })
+
+    const handleDeleteAddress = (addressId: string) => () => deleteDelivery.mutate(addressId)
+
+    const handleSetDefault = (addressId: string) => () => updateDelivery.mutate({ id: addressId, isPrimary: true })
 
     return (
         <LayoutProfile title='Địa chỉ nhận hàng'>
@@ -133,8 +162,13 @@ const Address = () => {
                 </Dialog>
             </div>
             <div className='grid grid-cols-3 gap-4 mt-4'>
-                {deliveries.map((delivery) => (
-                    <AddressItem delivery={delivery} />
+                {deliveries.data?.data.result.map((delivery) => (
+                    <AddressItem
+                        handleDeleteAddress={handleDeleteAddress}
+                        handleSetDefault={handleSetDefault}
+                        delivery={delivery}
+                        isDropdown
+                    />
                 ))}
             </div>
         </LayoutProfile>

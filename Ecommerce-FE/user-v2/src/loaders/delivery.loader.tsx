@@ -5,7 +5,8 @@ export const deliveryLoader = async () => {
     const deliveries = await queryClient.fetchQuery({
         queryKey: ['delivery'],
         queryFn: profileFetching.getDeliveries,
-        gcTime: 2000
+        staleTime: Infinity,
+        gcTime: Infinity
     })
     return [deliveries.data.result]
 }
