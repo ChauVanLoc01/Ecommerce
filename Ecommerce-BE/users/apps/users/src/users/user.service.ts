@@ -1,17 +1,10 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
 import { PrismaService } from '@app/common/prisma/prisma.service'
-import { RegisterDTO } from '../dtos/register.dto'
-import { AuthService } from '../auths/auth.service'
-import { CurrentUserType } from 'common/types/current.type'
-import { Response } from 'express'
-import { Return } from 'common/types/result.type'
-import { Role } from 'common/enums/role.enum'
-import { Status } from 'common/enums/status.enum'
-import { v4 as uuidv4 } from 'uuid'
+import { Injectable, NotFoundException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { UpdateUserProfileType } from '../dtos/update_user_profile.dto'
-import { User } from '@prisma/client'
+import { CurrentUserType } from 'common/types/current.type'
+import { Return } from 'common/types/result.type'
 import { QueryAllUserProfileType } from '../dtos/all_user.dto'
+import { UpdateUserProfileType } from '../dtos/update_user_profile.dto'
 
 @Injectable()
 export class UserService {
@@ -59,6 +52,31 @@ export class UserService {
     return {
       msg: 'Cập nhật thành công',
       result: updatedUser
+    }
+  }
+
+  async updateStoreRole(userId: string, storeRoleId: string) {
+    try {
+      const accountExist = await this.prisma.account.findFirst({
+        where: {
+          userId
+        }
+      })
+
+      if (!accountExist) {
+        throw new Error('Tài khoản không tồn tại')
+      }
+
+      return await this.prisma.account.update({
+        where: {
+          username: accountExist.username
+        },
+        data: {
+          storeRoleId
+        }
+      })
+    } catch (error) {
+      return error.message
     }
   }
 }

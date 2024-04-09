@@ -35,22 +35,8 @@ export class StoreController {
   registerStore(
     @CurrentUser() user: CurrentUserType,
     @Body() body: CreateStoreDTO,
-    @UploadedFile(
-      new ParseFilePipe({
-        validators: [
-          new FileTypeValidator({ fileType: 'image/*' }),
-          new MaxFileSizeValidator({ maxSize: 5000000 })
-        ],
-        exceptionFactory(error) {
-          throw new BadRequestException(
-            'File tải lên phải có kiểu image/* và dung lượng maxmimum 5MB'
-          )
-        }
-      })
-    )
-    file: Express.Multer.File
   ) {
-    return this.storeService.registerStore(user, body, file.filename)
+    return this.storeService.registerStore(user, body)
   }
 
   @UseInterceptors(FileInterceptor('image'))

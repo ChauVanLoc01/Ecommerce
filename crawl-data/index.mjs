@@ -13968,7 +13968,7 @@ const products = [
   ...bachhoaonline,
 ];
 
-const users = Array(20)
+var users = Array(10)
   .fill(0)
   .map((_, i) => {
     return {
@@ -13980,49 +13980,64 @@ const users = Array(20)
     };
   });
 
-const stores = Array(users.length - 3)
-  .fill(0)
-  .map((_, i) => {
-    return {
-      id: uuidv4(),
-      image: `Store Image ${i}`,
-      name: `Store ${i}`,
-      createdBy: users[i].id,
-      status: 'ACTIVE',
-    };
-  });
+users = [
+  ...users,
+  {
+    id: uuidv4(),
+    email: 'locchau.220401@gmail.com',
+    full_name: 'Chau Van Loc',
+    role: 'STORE_OWNER',
+    status: 'ACTIVE',
+  },
+];
+
+const stores = users.map((user, i) => {
+  return {
+    id: uuidv4(),
+    image:
+      'https://i.pinimg.com/564x/59/7a/de/597ade7f979fdb7c06df948d599862bb.jpg',
+    name: `Store ${i}`,
+    createdBy: user.id,
+    status: 'ACTIVE',
+  };
+});
+
+const storeRole = stores.map((store) => {
+  return {
+    id: uuidv4(),
+    storeId: store.id,
+    status: 'ACTIVE',
+    role: 'STORE_OWNER',
+    createdBy: store.createdBy,
+  };
+});
+
+const accounts = users.map((user, idx) => {
+  return {
+    username: `user${idx}`,
+    password: '$2a$10$eDwCyXLUOR79AQPEJv0IKu05r4IQVvElkHJNbn5bdCBS/SDK6mSYK',
+    userId: user.id,
+    storeRoleId: storeRole[idx].id,
+  };
+});
 
 const insertDataIntoMyDB = async () => {
-  const vanlocuser = uuidv4();
+  await Promise.all(users.map((user) => prisma.user.create({ data: user })));
 
-  await prisma.user.create({
-    data: {
-      id: vanlocuser,
-      email: 'chauvanloc.tg@gmail.com',
-      full_name: 'Chau Van Loc',
-      role: 'ADMIN',
-      status: 'ACTIVE',
-    },
-  });
+  await Promise.all(
+    stores.map((store) => prisma.store.create({ data: store }))
+  );
 
-  await prisma.account.create({
-    data: {
-      username: 'vanloc',
-      password: '123123',
-      userId: vanlocuser,
-    },
-  });
+  await Promise.all(
+    storeRole.map((store) => prisma.storeRole.create({ data: store }))
+  );
 
-  await prisma.user.createMany({
-    data: users,
-  });
+  await Promise.all(
+    accounts.map((account) => prisma.account.create({ data: account }))
+  );
 
   await prisma.category.createMany({
     data: categorys,
-  });
-
-  await prisma.store.createMany({
-    data: stores,
   });
 
   const storeList = await prisma.store.findMany();

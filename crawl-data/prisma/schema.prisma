@@ -36,28 +36,29 @@ model Category {
 }
 
 model Order {
-  id              String         @id @db.VarChar(50)
-  userId          String         @db.VarChar(50)
-  storeId         String         @db.VarChar(50)
-  address         String         @db.Text
-  total           Float          @db.Float
-  discount        Float?         @db.Float
-  score           Int?
-  pay             Float          @db.Float
-  transactionType Int
-  voucherId       String?        @db.VarChar(50)
-  status          Int
-  createdAt       DateTime?      @default(now()) @db.Timestamp(0)
-  updatedAt       DateTime?      @db.Timestamp(0)
-  User            User           @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Order_ibfk_1")
-  Voucher         Voucher?       @relation(fields: [voucherId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Order_ibfk_2")
-  Store           Store          @relation(fields: [storeId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Order_ibfk_3")
-  Payment         Payment[]
-  ProductOrder    ProductOrder[]
+  id                    String              @id @db.VarChar(50)
+  userId                String              @db.VarChar(50)
+  storeId               String              @db.VarChar(50)
+  total                 Float               @db.Float
+  discount              Float?              @db.Float
+  pay                   Float               @db.Float
+  note                  String?             @db.VarChar(200)
+  voucherId             String?             @db.VarChar(50)
+  deliveryInformationId String              @db.VarChar(100)
+  status                String              @db.Char(20)
+  createdAt             DateTime?           @default(now()) @db.Timestamp(0)
+  updatedAt             DateTime?           @db.Timestamp(0)
+  User                  User                @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Order_ibfk_1")
+  Voucher               Voucher?            @relation(fields: [voucherId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Order_ibfk_2")
+  Store                 Store               @relation(fields: [storeId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Order_ibfk_3")
+  DeliveryInformation   DeliveryInformation @relation(fields: [deliveryInformationId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Order_ibfk_4")
+  Payment               Payment[]
+  ProductOrder          ProductOrder[]
 
   @@index([userId], map: "userId")
   @@index([voucherId], map: "voucherId")
   @@index([storeId], map: "storeId")
+  @@index([deliveryInformationId], map: "deliveryInformationId")
 }
 
 model Payment {
@@ -81,7 +82,7 @@ model Product {
   priceAfter                   Float?         @db.Float
   initQuantity                 Int
   currentQuantity              Int
-  sold                         Int
+  sold                         Int            @default(0)
   description                  String?        @db.Text
   status                       String         @db.VarChar(20)
   category                     String?        @db.VarChar(50)
@@ -114,10 +115,9 @@ model ProductOrder {
   id          String  @id @db.VarChar(50)
   productId   String  @db.VarChar(50)
   quantity    Int
-  priceBefore Float   @db.Float
-  priceAfter  Float?  @db.Float
+  priceBefore Float?  @db.Float
+  priceAfter  Float   @db.Float
   orderId     String  @db.VarChar(50)
-  note        String? @db.VarChar(255)
   Product     Product @relation(fields: [productId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "ProductOrder_ibfk_1")
   Order       Order   @relation(fields: [orderId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "ProductOrder_ibfk_2")
 
@@ -167,27 +167,28 @@ model StoreRole {
 }
 
 model User {
-  id                                  String      @id @db.VarChar(50)
-  full_name                           String      @db.VarChar(100)
-  birthday                            DateTime?   @db.Timestamp(0)
-  email                               String      @db.VarChar(255)
-  address                             String?     @db.Text
-  rankId                              String?     @db.VarChar(50)
-  role                                String      @db.VarChar(20)
-  status                              String      @db.VarChar(10)
-  createdAt                           DateTime?   @default(now()) @db.Timestamp(0)
-  updatedAt                           DateTime?   @db.Timestamp(0)
-  Account_Account_userIdToUser        Account[]   @relation("Account_userIdToUser")
-  Account_Account_createdByToUser     Account[]   @relation("Account_createdByToUser")
-  Account_Account_updatedByToUser     Account[]   @relation("Account_updatedByToUser")
+  id                                  String                @id @db.VarChar(50)
+  full_name                           String                @db.VarChar(100)
+  birthday                            DateTime?             @db.Timestamp(0)
+  email                               String                @db.VarChar(255)
+  address                             String?               @db.Text
+  rankId                              String?               @db.VarChar(50)
+  role                                String                @db.VarChar(20)
+  status                              String                @db.VarChar(10)
+  createdAt                           DateTime?             @default(now()) @db.Timestamp(0)
+  updatedAt                           DateTime?             @db.Timestamp(0)
+  Account_Account_userIdToUser        Account[]             @relation("Account_userIdToUser")
+  Account_Account_createdByToUser     Account[]             @relation("Account_createdByToUser")
+  Account_Account_updatedByToUser     Account[]             @relation("Account_updatedByToUser")
+  DeliveryInformation                 DeliveryInformation[]
   Order                               Order[]
-  Product_Product_createdByToUser     Product[]   @relation("Product_createdByToUser")
-  Product_Product_updatedByToUser     Product[]   @relation("Product_updatedByToUser")
-  Product_Product_deletedByToUser     Product[]   @relation("Product_deletedByToUser")
-  Store_Store_createdByToUser         Store[]     @relation("Store_createdByToUser")
-  Store_Store_updatedByToUser         Store[]     @relation("Store_updatedByToUser")
-  StoreRole_StoreRole_createdByToUser StoreRole[] @relation("StoreRole_createdByToUser")
-  StoreRole_StoreRole_updatedByToUser StoreRole[] @relation("StoreRole_updatedByToUser")
+  Product_Product_createdByToUser     Product[]             @relation("Product_createdByToUser")
+  Product_Product_updatedByToUser     Product[]             @relation("Product_updatedByToUser")
+  Product_Product_deletedByToUser     Product[]             @relation("Product_deletedByToUser")
+  Store_Store_createdByToUser         Store[]               @relation("Store_createdByToUser")
+  Store_Store_updatedByToUser         Store[]               @relation("Store_updatedByToUser")
+  StoreRole_StoreRole_createdByToUser StoreRole[]           @relation("StoreRole_createdByToUser")
+  StoreRole_StoreRole_updatedByToUser StoreRole[]           @relation("StoreRole_updatedByToUser")
 }
 
 model UserScore {
@@ -226,4 +227,18 @@ model Voucher {
 
   @@index([storeId], map: "storeId")
   @@index([categoryType], map: "categoryType")
+}
+
+model DeliveryInformation {
+  id        String    @id @db.VarChar(100)
+  full_name String    @db.VarChar(100)
+  phone     String    @db.VarChar(12)
+  address   String    @db.VarChar(500)
+  isPrimary Boolean   @default(false)
+  userId    String    @db.VarChar(50)
+  createdAt DateTime? @db.Timestamp(0)
+  User      User      @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "DeliveryInformation_ibfk_1")
+  Order     Order[]
+
+  @@index([userId], map: "userId")
 }
