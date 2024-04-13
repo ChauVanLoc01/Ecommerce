@@ -27,14 +27,7 @@ const Profile = () => {
             className='flex items-start gap-x-25'
         >
             <CardProfile rootClassName='basis-1/5' />
-            <SimpleBar
-                style={{
-                    width: '100%',
-                    maxHeight: 'calc(100vh - 130px)'
-                }}
-            >
-                <Outlet />
-            </SimpleBar>
+            <Outlet />
         </motion.section>
     )
 }

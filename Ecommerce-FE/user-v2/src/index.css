@@ -96,3 +96,21 @@ body {
         transform: rotate(1turn);
     }
 }
+
+tbody {
+    display: block;
+    height: 50px;
+    overflow: auto;
+}
+
+thead,
+tbody tr {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+    /* even columns width , fix width of table too*/
+}
+
+td {
+    text-align: left;
+}

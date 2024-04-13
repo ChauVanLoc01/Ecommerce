@@ -59,7 +59,8 @@ export class JwtGuard implements CanActivate {
 
       return true
     } catch (err) {
-      throw new UnauthorizedException(`Token không hợp lệ`)
+      console.log(err);
+      throw new UnauthorizedException(err.message)
     }
   }
 

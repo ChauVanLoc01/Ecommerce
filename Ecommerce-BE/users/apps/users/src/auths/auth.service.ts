@@ -1,25 +1,25 @@
-import { BadRequestException, Inject, Injectable, UnauthorizedException } from '@nestjs/common'
-import * as bcrypt from 'bcryptjs'
-import { JwtService } from '@nestjs/jwt'
-import { User, Account } from '@prisma/client'
 import { PrismaService } from '@app/common/prisma/prisma.service'
+import { InjectQueue } from '@nestjs/bull'
+import { CACHE_MANAGER } from '@nestjs/cache-manager'
+import { BadRequestException, ForbiddenException, Inject, Injectable, InternalServerErrorException, UnauthorizedException } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
+import { JwtService } from '@nestjs/jwt'
+import { Account, User } from '@prisma/client'
+import * as bcrypt from 'bcryptjs'
+import { Queue } from 'bull'
+import { Cache } from 'cache-manager'
+import { BackgroundAction, BackgroundName } from 'common/constants/background-job.constant'
 import { Role } from 'common/enums/role.enum'
 import { Status } from 'common/enums/status.enum'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
 import { Return } from 'common/types/result.type'
-import { RegisterDTO } from '../dtos/register.dto'
-import { Response } from 'express'
-import { ConfigService } from '@nestjs/config'
+import { omit } from 'lodash'
 import { v4 as uuidv4 } from 'uuid'
 import { ChangePasswordType } from '../dtos/change_password.dto'
-import { SendOtpType } from '../dtos/sendOTP.dto'
-import { CACHE_MANAGER } from '@nestjs/cache-manager'
-import { InjectQueue } from '@nestjs/bull'
-import { Queue } from 'bull'
-import { BackgroundAction, BackgroundName } from 'common/constants/background-job.constant'
-import { EmailInfor, PasswordData, ResetPasswordType } from '../workers/mail.worker'
+import { RegisterDTO } from '../dtos/register.dto'
 import { ResetPasswordType as ResetPasswordDTOType } from '../dtos/reset_password.dto'
-import { Cache } from 'cache-manager'
+import { SendOtpType } from '../dtos/sendOTP.dto'
+import { EmailInfor, PasswordData, ResetPasswordType } from '../workers/mail.worker'
 
 @Injectable()
 export class AuthService {
@@ -53,10 +53,13 @@ export class AuthService {
     return bcrypt.compare(password, hash)
   }
 
-  async verify(username: string, password: string): Promise<Account> {
-    const accountExist = await this.prisma.account.findUnique({
+  async verify(username: string, password: string): Promise<Account & {storeRole: string}> {
+    const {StoreRole, ...accountExist} = await this.prisma.account.findUnique({
       where: {
         username
+      },
+      include: {
+        StoreRole: true
       }
     })
 
@@ -69,7 +72,10 @@ export class AuthService {
     if (!isTruePassword) {
       throw new UnauthorizedException('Mật khẩu không đúng')
     }
-    return accountExist
+    return {
+      ...accountExist,
+      storeRole: StoreRole.role || undefined
+    }
   }
 
   async validateUser(username: string, password: string): Promise<User & { storeRoleId: string }> {
@@ -85,18 +91,22 @@ export class AuthService {
       throw new UnauthorizedException('Tài khoản đã bị khóa')
     }
 
-    if (userExist.role === Role.EMPLOYEE) {
+    if ([Role.EMPLOYEE, Role.ADMIN].includes(userExist.role as any)) {
       throw new UnauthorizedException('Tài khoản không được phép mua hàng')
     }
 
     return {
       ...userExist,
-      storeRoleId
+      storeRoleId,
     }
   }
 
   async validateStore(username: string, password: string): Promise<CurrentStoreType> {
     const accountExist = await this.verify(username, password)
+
+    if (!accountExist.storeRoleId) {
+      throw new ForbiddenException('Không có quyền truy cập tài nguyên')
+    }
 
     const { storeId, role } = await this.prisma.storeRole.findUnique({
       where: {
@@ -105,7 +115,7 @@ export class AuthService {
     })
 
     if (!storeId) {
-      throw new UnauthorizedException('Tài khoản quản lý không tồn tại')
+      throw new ForbiddenException('Không có quyền truy cập tài nguyên')
     }
 
     const [{ id: userId }, store] = await Promise.all([
@@ -132,7 +142,7 @@ export class AuthService {
     }
   }
 
-  async userLogin(user: CurrentUserType, response: Response): Promise<Return> {
+  async userLogin(user: CurrentUserType): Promise<Return> {
     const [access_token, refresh_token] = await Promise.all([
       this.createAccessToken(user),
       this.createRefreshToken(user)
@@ -164,7 +174,7 @@ export class AuthService {
     })
 
     if (accountExist) {
-      throw new BadRequestException('User name đã tồn tại')
+      throw new BadRequestException('Tài khoản đã tồn tại')
     }
 
     const [{ createdAt, status, ...rest }, { storeRoleId }] = await this.prisma.$transaction(
@@ -195,7 +205,7 @@ export class AuthService {
     const current_user = {
       id: rest.id,
       role: rest.role,
-      storeRoleId
+      storeRoleId,
     } as CurrentUserType
 
     const [access_token, refresh_token] = await Promise.all([
@@ -225,7 +235,7 @@ export class AuthService {
     }
   }
 
-  async storeLogin(user: CurrentStoreType, response: Response): Promise<Return> {
+  async storeLogin(user: CurrentStoreType): Promise<Return> {
     const [access_token, refresh_token] = await Promise.all([
       this.createAccessToken(user),
       this.createRefreshToken(user)
@@ -248,8 +258,63 @@ export class AuthService {
       msg: 'Đăng nhập cửa hàng thành công',
       result: {
         user: user_profile,
-        store
+        store,
+        access_token,
+        refresh_token
       }
+    }
+  }
+
+  async employeeRegister(currentStore: CurrentStoreType, body: RegisterDTO): Promise<Return> {
+    const {email, full_name, password, username} = body
+    try {
+      const [createdUser, createdStoreRole, createdAccount] = await this.prisma.$transaction(async (tx) => {
+        const userId = uuidv4()
+        const storeRoleId = uuidv4()
+
+        const [createdUser, createdStoreRole, createdAccount] = await Promise.all([
+          tx.user.create({
+            data: {
+              email,
+              full_name,
+              id: userId,
+              role: Role.EMPLOYEE,
+              status: Status.ACTIVE,
+            }
+          }),
+          tx.storeRole.create({
+            data: {
+              id: storeRoleId,
+              storeId: currentStore.storeId,
+              status: Status.ACTIVE,
+              role: Role.EMPLOYEE,
+              createdBy: currentStore.userId
+            }
+          }),
+          tx.account.create({
+            data: {
+              username,
+              password,
+              userId: userId,
+              storeRoleId: storeRoleId,
+              createdBy: currentStore.userId
+            }
+          })
+        ])
+
+        return [createdUser, createdStoreRole, createdAccount]
+      })
+
+      return {
+        msg: 'Tạo tài khoản thành công',
+        result: {
+          user: createdUser,
+          storeRole: createdStoreRole,
+          account: omit(createdAccount, ['password'])
+        }
+      }
+    } catch (error) {
+      throw new InternalServerErrorException('Lỗi BE')
     }
   }
 
