@@ -1,5 +1,4 @@
 import { Outlet } from 'react-router-dom'
-import SimpleBar from 'simplebar-react'
 
 import { motion } from 'framer-motion'
 import { useContext, useEffect } from 'react'

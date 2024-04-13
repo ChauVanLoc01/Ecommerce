@@ -1,9 +1,9 @@
 import * as yup from 'yup'
 
 export const profile_schema = yup.object({
-    full_name: yup.string().max(50, 'Tối đa 50 kí tự').required('Không được để trống'),
-    email: yup.string().email('Email không đúng định dạng').required('Không được để trống'),
-    address: yup.string().max(200, 'Tối đa 50 kí tự').required('Không được để trống')
+    full_name: yup.string().max(50, 'Tối đa 50 kí tự').optional(),
+    email: yup.string().email('Email không đúng định dạng').optional(),
+    address: yup.string().max(200, 'Tối đa 50 kí tự').optional()
 })
 
 export const change_password_schema = yup.object({
