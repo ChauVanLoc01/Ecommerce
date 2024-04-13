@@ -11,15 +11,18 @@ import {
   UseGuards,
   UseInterceptors
 } from '@nestjs/common'
-import { StoreService } from './store.service'
-import { JwtGuard } from 'common/guards/jwt.guard'
+import { MessagePattern, Payload } from '@nestjs/microservices'
+import { FileInterceptor } from '@nestjs/platform-express'
+import { checkStoreExist } from 'common/constants/event.constant'
 import { CurrentUser } from 'common/decorators/current_user.decorator'
-import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
+import { Public } from 'common/decorators/public.decorator'
 import { Roles } from 'common/decorators/roles.decorator'
 import { Role } from 'common/enums/role.enum'
+import { JwtGuard } from 'common/guards/jwt.guard'
+import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
 import { CreateStoreDTO } from './dtos/create-store.dto'
-import { FileInterceptor } from '@nestjs/platform-express'
 import { UpdateStoreDTO } from './dtos/update-store.dto'
+import { StoreService } from './store.service'
 
 @UseGuards(JwtGuard)
 @Controller('store')
@@ -32,22 +35,8 @@ export class StoreController {
   registerStore(
     @CurrentUser() user: CurrentUserType,
     @Body() body: CreateStoreDTO,
-    @UploadedFile(
-      new ParseFilePipe({
-        validators: [
-          new FileTypeValidator({ fileType: 'image/*' }),
-          new MaxFileSizeValidator({ maxSize: 5000000 })
-        ],
-        exceptionFactory(error) {
-          throw new BadRequestException(
-            'File tải lên phải có kiểu image/* và dung lượng maxmimum 5MB'
-          )
-        }
-      })
-    )
-    file: Express.Multer.File
   ) {
-    return this.storeService.registerStore(user, body, file.filename)
+    return this.storeService.registerStore(user, body)
   }
 
   @UseInterceptors(FileInterceptor('image'))
@@ -73,5 +62,11 @@ export class StoreController {
     file: Express.Multer.File
   ) {
     return this.storeService.updateStore(user, body, file?.filename)
+  }
+
+  @MessagePattern(checkStoreExist)
+  @Public()
+  checkStoreExist(@Payload() payload: string[]) {
+    return this.storeService.checkStoreExist(payload)
   }
 }

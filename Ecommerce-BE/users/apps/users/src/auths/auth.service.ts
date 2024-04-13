@@ -1,34 +1,25 @@
-import {
-  BadRequestException,
-  Inject,
-  Injectable,
-  UnauthorizedException
-} from '@nestjs/common'
-import * as bcrypt from 'bcryptjs'
-import { JwtService } from '@nestjs/jwt'
-import { User, Account } from '@prisma/client'
 import { PrismaService } from '@app/common/prisma/prisma.service'
+import { InjectQueue } from '@nestjs/bull'
+import { CACHE_MANAGER } from '@nestjs/cache-manager'
+import { BadRequestException, ForbiddenException, Inject, Injectable, InternalServerErrorException, UnauthorizedException } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
+import { JwtService } from '@nestjs/jwt'
+import { Account, User } from '@prisma/client'
+import * as bcrypt from 'bcryptjs'
+import { Queue } from 'bull'
+import { Cache } from 'cache-manager'
+import { BackgroundAction, BackgroundName } from 'common/constants/background-job.constant'
 import { Role } from 'common/enums/role.enum'
 import { Status } from 'common/enums/status.enum'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
 import { Return } from 'common/types/result.type'
-import { RegisterDTO } from '../dtos/register.dto'
-import { Response } from 'express'
-import { ConfigService } from '@nestjs/config'
+import { omit } from 'lodash'
 import { v4 as uuidv4 } from 'uuid'
 import { ChangePasswordType } from '../dtos/change_password.dto'
-import { SendOtpType } from '../dtos/sendOTP.dto'
-import { CACHE_MANAGER } from '@nestjs/cache-manager'
-import { InjectQueue } from '@nestjs/bull'
-import { Queue } from 'bull'
-import { QueueAction, QueueName } from 'common/constants/queue.constant'
-import {
-  EmailInfor,
-  PasswordData,
-  ResetPasswordType
-} from '../workers/mail.worker'
+import { RegisterDTO } from '../dtos/register.dto'
 import { ResetPasswordType as ResetPasswordDTOType } from '../dtos/reset_password.dto'
-import { Cache } from 'cache-manager'
+import { SendOtpType } from '../dtos/sendOTP.dto'
+import { EmailInfor, PasswordData, ResetPasswordType } from '../workers/mail.worker'
 
 @Injectable()
 export class AuthService {
@@ -36,7 +27,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
-    @InjectQueue(QueueName.mail) private sendMailQueue: Queue,
+    @InjectQueue(BackgroundName.mail) private sendMailQueue: Queue,
     @Inject(CACHE_MANAGER) private cacheManager: Cache
   ) {}
 
@@ -47,9 +38,7 @@ export class AuthService {
     })
   }
 
-  createRefreshToken(
-    data: CurrentUserType | CurrentStoreType
-  ): Promise<string> {
+  createRefreshToken(data: CurrentUserType | CurrentStoreType): Promise<string> {
     return this.jwtService.signAsync(data, {
       secret: this.configService.get<string>('app.refresh_token_secret_key'),
       expiresIn: this.configService.get<number>('app.refresh_token_expire_time')
@@ -64,34 +53,18 @@ export class AuthService {
     return bcrypt.compare(password, hash)
   }
 
-  setToken(access_token: string, refresh_token: string, response: Response) {
-    response.cookie('Authorization', `Bearer ${access_token}`, {
-      httpOnly: true,
-      secure: true,
-      maxAge: this.configService.get<number>('app.access_token_expire_time')
-    })
-    response.cookie('RefreshToken', `Bearer ${refresh_token}`, {
-      httpOnly: true,
-      secure: true,
-      maxAge: this.configService.get<number>('app.refresh_token_expire_time')
-    })
-  }
-
   async verify(username: string, password: string): Promise<Account> {
     const accountExist = await this.prisma.account.findUnique({
       where: {
         username
-      }
+      },
     })
 
     if (!accountExist) {
       throw new UnauthorizedException('Tài khoản không tồn tại')
     }
 
-    const isTruePassword = await this.comparePassword(
-      password,
-      accountExist.password
-    )
+    const isTruePassword = await this.comparePassword(password, accountExist.password)
 
     if (!isTruePassword) {
       throw new UnauthorizedException('Mật khẩu không đúng')
@@ -99,10 +72,7 @@ export class AuthService {
     return accountExist
   }
 
-  async validateUser(
-    username: string,
-    password: string
-  ): Promise<User & { storeRoleId: string }> {
+  async validateUser(username: string, password: string): Promise<User & { storeRoleId: string }> {
     const { userId, storeRoleId } = await this.verify(username, password)
 
     const userExist = await this.prisma.user.findUnique({
@@ -115,21 +85,22 @@ export class AuthService {
       throw new UnauthorizedException('Tài khoản đã bị khóa')
     }
 
-    if (userExist.role === Role.EMPLOYEE) {
+    if ([Role.EMPLOYEE, Role.ADMIN].includes(userExist.role as any)) {
       throw new UnauthorizedException('Tài khoản không được phép mua hàng')
     }
 
     return {
       ...userExist,
-      storeRoleId
+      storeRoleId,
     }
   }
 
-  async validateStore(
-    username: string,
-    password: string
-  ): Promise<CurrentStoreType> {
+  async validateStore(username: string, password: string): Promise<CurrentStoreType> {
     const accountExist = await this.verify(username, password)
+
+    if (!accountExist.storeRoleId) {
+      throw new ForbiddenException('Không có quyền truy cập tài nguyên')
+    }
 
     const { storeId, role } = await this.prisma.storeRole.findUnique({
       where: {
@@ -138,7 +109,7 @@ export class AuthService {
     })
 
     if (!storeId) {
-      throw new UnauthorizedException('Tài khoản quản lý không tồn tại')
+      throw new ForbiddenException('Không có quyền truy cập tài nguyên')
     }
 
     const [{ id: userId }, store] = await Promise.all([
@@ -165,15 +136,13 @@ export class AuthService {
     }
   }
 
-  async userLogin(user: CurrentUserType, response: Response): Promise<Return> {
+  async userLogin(user: CurrentUserType): Promise<Return> {
     const [access_token, refresh_token] = await Promise.all([
       this.createAccessToken(user),
       this.createRefreshToken(user)
     ])
 
-    this.setToken(access_token, refresh_token, response)
-
-    const { createdAt, status, ...rest } = await this.prisma.user.findUnique({
+    const userExist = await this.prisma.user.findUnique({
       where: {
         id: user.id
       }
@@ -182,17 +151,15 @@ export class AuthService {
     return {
       msg: 'Đăng nhập thành công',
       result: {
-        ...rest,
-        storeRoleId: user.storeRoleId
+        user: userExist,
+        access_token: `Bearer ${access_token}`,
+        refresh_token: `Bearer ${refresh_token}`
       }
     }
   }
 
-  async userRegister(
-    registerDto: RegisterDTO,
-    response: Response
-  ): Promise<Return> {
-    const { email, password, username, full_name, address } = registerDto
+  async userRegister(registerDto: RegisterDTO): Promise<Return> {
+    const { email, password, username, full_name } = registerDto
 
     const accountExist = await this.prisma.account.findUnique({
       where: {
@@ -204,34 +171,35 @@ export class AuthService {
       throw new BadRequestException('User name đã tồn tại')
     }
 
-    const [{ createdAt, status, ...rest }, { storeRoleId }] =
-      await this.prisma.$transaction(async (tx) => {
-        const user = await tx.user.create({
-          data: {
-            id: uuidv4(),
-            email,
-            role: Role.USER,
-            status: Status.ACCESS,
-            full_name,
-            address
-          }
-        })
-
-        const account = await tx.account.create({
-          data: {
-            username,
-            password: await this.hashPassword(password),
-            userId: user.id
-          }
-        })
-
-        return [user, account]
-      })
+    const [{ createdAt, status, ...rest }, { storeRoleId }] = await this.prisma.$transaction(
+      async (tx) => {
+        const userId = uuidv4()
+        const [userCreated, accountCreated] = await Promise.all([
+          tx.user.create({
+            data: {
+              id: userId,
+              email,
+              role: Role.USER,
+              status: Status.ACTIVE,
+              full_name,
+            }
+          }),
+          tx.account.create({
+            data: {
+              username,
+              password: await this.hashPassword(password),
+              userId: userId
+            }
+          })
+        ])
+        return [userCreated, accountCreated]
+      }
+    )
 
     const current_user = {
       id: rest.id,
       role: rest.role,
-      storeRoleId
+      storeRoleId,
     } as CurrentUserType
 
     const [access_token, refresh_token] = await Promise.all([
@@ -239,10 +207,8 @@ export class AuthService {
       this.createRefreshToken(current_user)
     ])
 
-    await this.setToken(access_token, refresh_token, response)
-
     this.sendMailQueue.add(
-      QueueAction.register,
+      BackgroundAction.register,
       {
         to: email,
         subject: 'Chúc mừng bạn đã đăng kí tài khoản thành công',
@@ -256,22 +222,18 @@ export class AuthService {
     return {
       msg: 'Đăng kí tài khoản thành công',
       result: {
-        ...rest,
-        storeRoleId
+        user: rest,
+        access_token: `Bearer ${access_token}`,
+        refresh_token: `Bearer ${refresh_token}`
       }
     }
   }
 
-  async storeLogin(
-    user: CurrentStoreType,
-    response: Response
-  ): Promise<Return> {
+  async storeLogin(user: CurrentStoreType): Promise<Return> {
     const [access_token, refresh_token] = await Promise.all([
       this.createAccessToken(user),
       this.createRefreshToken(user)
     ])
-
-    this.setToken(access_token, refresh_token, response)
 
     const [user_profile, store] = await Promise.all([
       this.prisma.user.findUnique({
@@ -290,15 +252,78 @@ export class AuthService {
       msg: 'Đăng nhập cửa hàng thành công',
       result: {
         user: user_profile,
-        store
+        store,
+        access_token: `Beaer ${access_token}`,
+        refresh_token: `Beaer ${refresh_token}`
       }
     }
   }
 
-  async changePassword(
-    user: CurrentUserType,
-    body: ChangePasswordType
-  ): Promise<Return> {
+  async employeeRegister(currentStore: CurrentStoreType, body: RegisterDTO): Promise<Return> {
+    try {
+      const {email, full_name, password, username} = body
+
+      const accountExist = await this.prisma.account.findUnique({
+        where: {
+          username
+        }
+      })
+
+      if (accountExist) {
+        throw new BadRequestException('User name đã tồn tại')
+      }
+
+      const [createdUser, createdStoreRole, createdAccount] = await this.prisma.$transaction(async (tx) => {
+        const userId = uuidv4()
+        const storeRoleId = uuidv4()
+
+        const [createdUser, createdStoreRole, createdAccount] = await Promise.all([
+          tx.user.create({
+            data: {
+              email,
+              full_name,
+              id: userId,
+              role: Role.EMPLOYEE,
+              status: Status.ACTIVE,
+            }
+          }),
+          tx.storeRole.create({
+            data: {
+              id: storeRoleId,
+              storeId: currentStore.storeId,
+              status: Status.ACTIVE,
+              role: Role.EMPLOYEE,
+              createdBy: currentStore.userId
+            }
+          }),
+          tx.account.create({
+            data: {
+              username,
+              password: await this.hashPassword(password),
+              userId: userId,
+              storeRoleId: storeRoleId,
+              createdBy: currentStore.userId
+            }
+          })
+        ])
+
+        return [createdUser, createdStoreRole, createdAccount]
+      })
+
+      return {
+        msg: 'Tạo tài khoản thành công',
+        result: {
+          user: createdUser,
+          storeRole: createdStoreRole,
+          account: omit(createdAccount, ['password'])
+        }
+      }
+    } catch (error) {
+      throw new BadRequestException(error.message)
+    }
+  }
+
+  async changePassword(user: CurrentUserType, body: ChangePasswordType): Promise<Return> {
     const { current_password, new_password } = body
 
     if (current_password === new_password) {
@@ -313,9 +338,7 @@ export class AuthService {
 
     if (!accountExist) throw new BadRequestException('Tải khoản không tồn tại')
 
-    if (
-      !(await this.comparePassword(current_password, accountExist.password))
-    ) {
+    if (!(await this.comparePassword(current_password, accountExist.password))) {
       throw new BadRequestException('Mật khẩu hiện tại không đúng')
     }
 
@@ -358,7 +381,7 @@ export class AuthService {
       to: email
     }
 
-    this.sendMailQueue.add(QueueAction.forgetPassword, {
+    this.sendMailQueue.add(BackgroundAction.forgetPassword, {
       code,
       username: userExist.Account_Account_userIdToUser[0].username,
       new_password,
@@ -372,8 +395,9 @@ export class AuthService {
   }
 
   async resetPassword({ code }: ResetPasswordDTOType): Promise<Return> {
-    const { username, new_password }: PasswordData =
-      await this.cacheManager.get(`${code}_RESET_PASSWORD`)
+    const { username, new_password }: PasswordData = await this.cacheManager.get(
+      `${code}_RESET_PASSWORD`
+    )
 
     if (!code) {
       throw new BadRequestException('Mã xác nhận không đúng hoặc đã hết hạn')

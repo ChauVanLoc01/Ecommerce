@@ -13968,78 +13968,76 @@ const products = [
   ...bachhoaonline,
 ];
 
-const users = Array(20)
+var users = Array(10)
   .fill(0)
   .map((_, i) => {
     return {
       id: uuidv4(),
       email: `a${i}@gmail.com`,
       full_name: `User ${i}`,
-      role: 1,
-      status: 0,
+      role: 'STORE_OWNER',
+      status: 'ACTIVE',
     };
   });
 
-const stores = Array(users.length - 3)
-  .fill(0)
-  .map((_, i) => {
-    return {
-      id: uuidv4(),
-      image: `Store Image ${i}`,
-      name: `Store ${i}`,
-      createdBy: users[i].id,
-      status: 0,
-    };
-  });
+users = [
+  ...users,
+  {
+    id: uuidv4(),
+    email: 'locchau.220401@gmail.com',
+    full_name: 'Chau Van Loc',
+    role: 'STORE_OWNER',
+    status: 'ACTIVE',
+  },
+];
+
+const stores = users.map((user, i) => {
+  return {
+    id: uuidv4(),
+    image:
+      'https://i.pinimg.com/564x/59/7a/de/597ade7f979fdb7c06df948d599862bb.jpg',
+    name: `Store ${i}`,
+    createdBy: user.id,
+    status: 'ACTIVE',
+  };
+});
+
+const storeRole = stores.map((store) => {
+  return {
+    id: uuidv4(),
+    storeId: store.id,
+    status: 'ACTIVE',
+    role: 'STORE_OWNER',
+    createdBy: store.createdBy,
+  };
+});
+
+const accounts = users.map((user, idx) => {
+  return {
+    username: `user${idx}`,
+    password: '$2a$10$eDwCyXLUOR79AQPEJv0IKu05r4IQVvElkHJNbn5bdCBS/SDK6mSYK',
+    userId: user.id,
+    storeRoleId: storeRole[idx].id,
+  };
+});
 
 const insertDataIntoMyDB = async () => {
-  const vanlocuser = uuidv4();
-  const tanlocuser = uuidv4();
+  await Promise.all(users.map((user) => prisma.user.create({ data: user })));
 
-  await prisma.user.createMany({
-    data: [
-      {
-        id: vanlocuser,
-        email: 'chauvanloc.tg@gmail.com',
-        full_name: 'Chau Van Loc',
-        role: 3,
-        status: 0,
-      },
-      {
-        id: tanlocuser,
-        email: 'erwin.cao01@gmail.com',
-        full_name: 'Cao Huy Tan Loc',
-        role: 3,
-        status: 0,
-      },
-    ],
-  });
+  await Promise.all(
+    stores.map((store) => prisma.store.create({ data: store }))
+  );
 
-  await prisma.account.createMany({
-    data: [
-      {
-        username: 'vanloc',
-        password: '123123',
-        userId: vanlocuser,
-      },
-      {
-        username: 'tanloc',
-        password: '123123',
-        userId: tanlocuser,
-      },
-    ],
-  });
+  await Promise.all(
+    storeRole.map((store) => prisma.storeRole.create({ data: store }))
+  );
 
-  await prisma.user.createMany({
-    data: users,
-  });
+  await Promise.all(
+    accounts.map((account) => prisma.account.create({ data: account }))
+  );
 
   await prisma.category.createMany({
     data: categorys,
-  });
-
-  await prisma.store.createMany({
-    data: stores,
   });
 
   const storeList = await prisma.store.findMany();
@@ -14054,17 +14052,18 @@ const insertDataIntoMyDB = async () => {
         name: product.name,
         initQuantity,
         currentQuantity: rest,
-        status: 0,
-        priceBefore: product.priceAfter
-          ? Number(product.priceAfter.replace('.', '').replace('₫', ''))
-          : 0,
-        priceAfter: product.priceBefore
+        status: 'ACTIVE',
+        priceBefore: product.priceBefore
           ? Number(product.priceBefore.replace('.', '').replace('₫', ''))
           : 0,
+        priceAfter: Number(
+          product.priceAfter.replace('.', '').replace('₫', '')
+        ),
         storeId: storeRandom.id,
         createdBy: storeRandom.createdBy,
         image: product.image,
         category: product.category,
+        sold: initQuantity - rest,
       };
     }
     return undefined;

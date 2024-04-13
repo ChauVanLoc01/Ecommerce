@@ -1,3 +1,3 @@
-import Profile from './Profile'
+import loadable from '@loadable/component'
 
-export default Profile
+export const Profile = loadable(() => import('./Profile'))

@@ -1,6 +1,7 @@
 import {
   CanActivate,
   ExecutionContext,
+  ForbiddenException,
   Injectable,
   UnauthorizedException
 } from '@nestjs/common'
@@ -21,41 +22,46 @@ export class JwtGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest()
+    try {
+      const request = context.switchToHttp().getRequest()
 
-    const isPublic = this.reflector.getAllAndOverride<boolean>(PUBLIC_KEY, [
-      context.getHandler(),
-      context.getClass()
-    ])
+      const isPublic = this.reflector.getAllAndOverride<boolean>(PUBLIC_KEY, [
+        context.getHandler(),
+        context.getClass()
+      ])
 
-    if (isPublic) {
+      if (isPublic) {
+        return true
+      }
+
+      const token = this.extractTokenFromHeader(request)
+
+      if (!token) {
+        throw new UnauthorizedException('Token không tồn tại')
+      }
+
+      const payload: CurrentUserType = await this.jwtService.verifyAsync(token, {
+        secret: this.configService.get<string>('app.access_token_secret_key')
+      })
+
+      const { role } = payload
+
+      const roles = this.reflector.getAllAndOverride<string[]>(ROLES_KEY, [
+        context.getHandler(),
+        context.getClass()
+      ])
+
+      if (roles && !roles.includes(role)) {
+        throw new ForbiddenException('Không có quyền truy cập tài nguyên')
+      }
+
+      request['user'] = payload
+
       return true
+    } catch (err) {
+      console.log(err);
+      throw new UnauthorizedException(err.message)
     }
-
-    const token = this.extractTokenFromHeader(request)
-
-    if (!token) {
-      throw new UnauthorizedException('Token không tồn tại')
-    }
-
-    const payload: CurrentUserType = await this.jwtService.verifyAsync(token, {
-      secret: this.configService.get<string>('app.access_token_secret_key')
-    })
-
-    const { role } = payload
-
-    const roles = this.reflector.getAllAndOverride<number[]>(ROLES_KEY, [
-      context.getHandler(),
-      context.getClass()
-    ])
-
-    if (roles && !roles.includes(role)) {
-      throw new UnauthorizedException('Người dùng không có quyền truy cập')
-    }
-
-    request['user'] = payload
-
-    return true
   }
 
   private extractTokenFromHeader(request: Request): string | undefined {

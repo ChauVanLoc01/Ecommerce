@@ -4,9 +4,7 @@ import {
   Controller,
   Delete,
   FileTypeValidator,
-  FileValidator,
   Get,
-  Inject,
   MaxFileSizeValidator,
   Param,
   ParseFilePipe,
@@ -17,21 +15,20 @@ import {
   UseGuards,
   UseInterceptors
 } from '@nestjs/common'
-import { ClientProxy } from '@nestjs/microservices'
-import { ProductService } from './product.service'
+import { MessagePattern, Payload } from '@nestjs/microservices'
+import { FileInterceptor } from '@nestjs/platform-express'
+import { updateQuantityProducts } from 'common/constants/event.constant'
+import { CurrentUser } from 'common/decorators/current_user.decorator'
+import { Public } from 'common/decorators/public.decorator'
 import { Roles } from 'common/decorators/roles.decorator'
 import { Role } from 'common/enums/role.enum'
 import { JwtGuard } from 'common/guards/jwt.guard'
-import { Public } from 'common/decorators/public.decorator'
-import { CurrentUser } from 'common/decorators/current_user.decorator'
-import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
-import { FileInterceptor } from '@nestjs/platform-express'
+import { CurrentStoreType } from 'common/types/current.type'
 import { CreateProductDTO } from './dtos/create-product.dto'
-import { UpdateProductDTO } from './dtos/update-product.dto'
-import { SearchProductService } from './search-product.service'
-import { ElasticSearchProductDTO } from './dtos/elasticsearch-product.dto'
-import { QueryAllUserProfileDTO } from 'apps/users/src/dtos/all_user.dto'
 import { QueryProductDTO } from './dtos/query-product.dto'
+import { UpdateProductDTO } from './dtos/update-product.dto'
+import { ProductService } from './product.service'
+import { SearchProductService } from './search-product.service'
 
 @UseGuards(JwtGuard)
 @Controller('product')
@@ -105,20 +102,21 @@ export class ProductController {
     )
     file?: Express.Multer.File
   ) {
-    return this.productsService.updateProduct(
-      user,
-      productId,
-      body,
-      file.filename
-    )
+    return this.productsService.updateProduct(user, productId, body, file.filename)
   }
 
   @Roles(Role.STORE_OWNER)
   @Delete(':productId')
-  deleteProduct(
-    @CurrentUser() user: CurrentStoreType,
-    @Param('productId') productId: string
-  ) {
+  deleteProduct(@CurrentUser() user: CurrentStoreType, @Param('productId') productId: string) {
     return this.productsService.deleteProduct(user, productId)
+  }
+
+  @Public()
+  @MessagePattern(updateQuantityProducts)
+  updateQuantiyProducts(
+    @Payload()
+    data: { storeId: string; note?: string; orders: { productId: string; quantity: number }[] }[]
+  ) {
+    return this.productsService.updateQuantityProducts(data)
   }
 }

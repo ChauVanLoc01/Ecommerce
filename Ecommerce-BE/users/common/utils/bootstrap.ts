@@ -3,21 +3,25 @@ import { ConfigService } from '@nestjs/config'
 import { NestFactory } from '@nestjs/core'
 import { MicroserviceOptions, Transport } from '@nestjs/microservices'
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
-import * as cookieParser from 'cookie-parser'
 import { ValidationError } from 'class-validator'
-import { RabbitmqEnv } from '@app/common/config/data_configs/rabbitmq.config'
+import * as cookieParser from 'cookie-parser'
 
 export async function bootstrap(mainModule: any) {
   try {
     const app = await NestFactory.create(mainModule)
+    console.log('1')
 
     const configService = app.get(ConfigService)
+    console.log('2')
+
+    console.log('uri', configService.get<string>('rabbitmq.uri'))
+    console.log('queue_name', configService.get<string>('rabbitmq.queue_name'))
 
     app.connectMicroservice<MicroserviceOptions>({
       transport: Transport.RMQ,
       options: {
-        urls: [configService.get<string>(RabbitmqEnv.uri)],
-        queue: configService.get<string>(RabbitmqEnv.queue_name),
+        urls: [configService.get<string>('rabbitmq.uri')],
+        queue: configService.get<string>('rabbitmq.queue_name'),
         queueOptions: {
           durable: true
         }
@@ -46,10 +50,7 @@ export async function bootstrap(mainModule: any) {
         exceptionFactory(errors: ValidationError[]) {
           const messages = Object.fromEntries(
             errors.map((err) => {
-              return [err.property, Object.values(err.constraints)] as [
-                string,
-                string[]
-              ]
+              return [err.property, Object.values(err.constraints)] as [string, string[]]
             })
           )
           throw new BadRequestException({
@@ -71,11 +72,7 @@ export async function bootstrap(mainModule: any) {
       )} with ${configService.get<string>('rabbitmq.queue_name')}`
     )
 
-    console.log(
-      `App running at endpoint: http://localhost:${configService.get(
-        'app.port'
-      )}`
-    )
+    console.log(`App running at endpoint: http://localhost:${configService.get('app.port')}`)
   } catch (err) {
     console.log('Error:::', err.message)
   }

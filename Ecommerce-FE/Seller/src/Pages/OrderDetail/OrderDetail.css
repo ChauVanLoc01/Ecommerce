@@ -1,0 +1,9 @@
+#order-detail .ant-table-content {
+  border: 1px solid rgb(229 231 235);
+  border-radius: 4px;
+}
+
+#order-detail thead tr th {
+  background-color: #fff;
+  border-radius: 2px;
+}

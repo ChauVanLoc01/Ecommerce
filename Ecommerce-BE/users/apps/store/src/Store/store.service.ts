@@ -1,26 +1,32 @@
 import { PrismaService } from '@app/common/prisma/prisma.service'
-import { BadRequestException, Injectable } from '@nestjs/common'
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  InternalServerErrorException
+} from '@nestjs/common'
+import { ClientProxy } from '@nestjs/microservices'
+import { updateStoreRoleId } from 'common/constants/event.constant'
 import { Role } from 'common/enums/role.enum'
 import { Status } from 'common/enums/status.enum'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
+import { Return } from 'common/types/result.type'
+import { firstValueFrom } from 'rxjs'
 import { v4 as uuidv4 } from 'uuid'
 import { CreateStoreDTO } from './dtos/create-store.dto'
-import { Return } from 'common/types/result.type'
 import { UpdateStoreDTO } from './dtos/update-store.dto'
-import { isUndefined, omitBy } from 'lodash'
 
 @Injectable()
 export class StoreService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject('USER_SERVICE') private userClient: ClientProxy
+  ) {}
 
-  async registerStore(
-    user: CurrentUserType,
-    body: CreateStoreDTO,
-    file_name: string
-  ): Promise<Return> {
+  async registerStore(user: CurrentUserType, body: CreateStoreDTO): Promise<Return> {
     const { id } = user
 
-    const { name, description, location } = body
+    const { name, description, location, image } = body
 
     const accountExist = await this.prisma.account.findFirst({
       where: {
@@ -29,45 +35,52 @@ export class StoreService {
     })
 
     if (accountExist.storeRoleId) {
-      throw new BadRequestException('Mỗi người dùng có tối đa 1 cửa hàng')
+      throw new BadRequestException('Tối đa 1 cửa hàng cho 1 tài khoản')
     }
 
-    const createdStore = await this.prisma.$transaction(async (tx) => {
+    const [createdStore, createdStoreRole] = await this.prisma.$transaction(async (tx) => {
       const createdStore = await tx.store.create({
         data: {
           id: uuidv4(),
-          image: file_name,
+          image,
           name,
           location,
-          status: Status.ACCESS,
+          status: Status.ACTIVE,
           createdBy: id,
           description
         }
       })
-
       const createdStoreRole = await tx.storeRole.create({
         data: {
           id: uuidv4(),
           role: Role.STORE_OWNER,
-          status: Status.ACCESS,
+          status: Status.ACTIVE,
           createdBy: id,
           storeId: createdStore.id
         }
       })
-
-      await tx.account.update({
-        where: {
-          username: accountExist.username
-        },
-        data: {
-          storeRoleId: createdStoreRole.id,
-          updatedAt: new Date().toISOString(),
-          updatedBy: id
-        }
-      })
-
-      return createdStore
+      return [createdStore, createdStoreRole]
     })
+
+    const resultUpdatedStoreRoleId = await firstValueFrom(
+      this.userClient.send(updateStoreRoleId, { userId: id, storeRoleId: createdStoreRole.id })
+    )
+
+    if (typeof resultUpdatedStoreRoleId === 'string') {
+      await Promise.all([
+        this.prisma.store.delete({
+          where: {
+            id: createdStore.id
+          }
+        }),
+        this.prisma.storeRole.delete({
+          where: {
+            id: createdStoreRole.id
+          }
+        })
+      ])
+      throw new InternalServerErrorException(resultUpdatedStoreRoleId)
+    }
 
     return {
       msg: 'Tạo cửa hàng thành công',
@@ -100,5 +113,17 @@ export class StoreService {
       msg: 'Cập nhật cửa hàng thành công',
       result: updatedStore
     }
+  }
+
+  async checkStoreExist(storesId: string[]) {
+    return await Promise.all(
+      storesId.map((storeId) =>
+        this.prisma.store.findUnique({
+          where: {
+            id: storeId
+          }
+        })
+      )
+    )
   }
 }

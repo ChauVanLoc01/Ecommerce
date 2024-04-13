@@ -1,28 +1,25 @@
 import {
   Body,
   Controller,
+  Get,
   Post,
   Put,
-  Res,
-  UseGuards,
-  Get,
-  Param
+  UseGuards
 } from '@nestjs/common'
+import { ApiBearerAuth, ApiResponse, ApiTags } from '@nestjs/swagger'
 import { CurrentUser } from 'common/decorators/current_user.decorator'
+import { Roles } from 'common/decorators/roles.decorator'
+import { Role } from 'common/enums/role.enum'
+import { JwtGuard } from 'common/guards/jwt.guard'
+import { StoreGuard } from 'common/guards/store.guard'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
+import { LocalUserGuard } from '../../../../common/guards/local.guard'
+import { ChangePasswordDTO } from '../dtos/change_password.dto'
 import { LoginDTO } from '../dtos/login.dto'
 import { RegisterDTO } from '../dtos/register.dto'
-import { AuthService } from './auth.service'
-import { LocalUserGuard } from '../../../../common/guards/local.guard'
-import { Response } from 'express'
-import { JwtGuard } from 'common/guards/jwt.guard'
-import { ChangePasswordDTO } from '../dtos/change_password.dto'
-import { SendOtpDTO } from '../dtos/sendOTP.dto'
-import { ApiBearerAuth, ApiResponse, ApiTags } from '@nestjs/swagger'
-import { StoreStrategy } from 'common/strategys/store.stategy'
 import { ResetPasswordDTO } from '../dtos/reset_password.dto'
-import { StoreGuard } from 'common/guards/store.guard'
-import { Public } from 'common/decorators/public.decorator'
+import { SendOtpDTO } from '../dtos/sendOTP.dto'
+import { AuthService } from './auth.service'
 
 @ApiTags('authentication')
 @Controller('authentication')
@@ -30,23 +27,22 @@ export class AuthController {
   constructor(private authService: AuthService) {}
 
   @ApiResponse({ status: 200 })
+  @Roles(Role.USER)
   @UseGuards(LocalUserGuard)
   @Post('user-login')
   userLogin(
     @CurrentUser() user: CurrentUserType,
     @Body() _: LoginDTO,
-    @Res({ passthrough: true }) response: Response
   ) {
-    return this.authService.userLogin(user, response)
+    return this.authService.userLogin(user)
   }
 
   @ApiResponse({ status: 201 })
   @Post('user-register')
   userRegister(
     @Body() registerDTO: RegisterDTO,
-    @Res({ passthrough: true }) response: Response
   ) {
-    return this.authService.userRegister(registerDTO, response)
+    return this.authService.userRegister(registerDTO)
   }
 
   @UseGuards(StoreGuard)
@@ -54,9 +50,18 @@ export class AuthController {
   storeLogin(
     @CurrentUser() user: CurrentStoreType,
     @Body() _: LoginDTO,
-    @Res({ passthrough: true }) response: Response
   ) {
-    return this.authService.storeLogin(user, response)
+    return this.authService.storeLogin(user)
+  }
+
+  @UseGuards(JwtGuard)
+  @Roles(Role.STORE_OWNER)
+  @Post('employee-register')
+  employeeRegister(
+    @CurrentUser() store: CurrentStoreType,
+    @Body() body: RegisterDTO,
+  ) {
+    return this.authService.employeeRegister(store, body)
   }
 
   @UseGuards(JwtGuard)

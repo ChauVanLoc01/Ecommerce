@@ -1,22 +1,19 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
-import { IsNotEmpty, IsOptional, IsString } from 'class-validator'
+import { IsNotEmpty, IsOptional, IsString, IsUrl } from 'class-validator'
 
 export class CreateStoreDTO {
-  @ApiProperty({
-    type: 'string',
-    format: 'binary'
-  })
-  image: Express.Multer.File
-
   @ApiProperty()
   @IsString()
   @IsNotEmpty()
   name: string
 
+  @IsUrl()
+  @IsNotEmpty()
+  image: string
+
   @ApiPropertyOptional()
   @IsString()
-  @IsOptional()
-  location?: string
+  location: string
 
   @ApiPropertyOptional()
   @IsString()

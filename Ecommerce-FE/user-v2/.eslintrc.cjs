@@ -1,0 +1,74 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
+const path = require('path')
+
+module.exports = {
+    extends: [
+        'eslint:recommended',
+        'plugin:react/recommended',
+        'plugin:react-hooks/recommended',
+        'plugin:import/recommended',
+        'plugin:import/typescript',
+        'plugin:jsx-a11y/recommended',
+        'plugin:@typescript-eslint/recommended',
+        'eslint-config-prettier',
+        'prettier',
+        'plugin:@tanstack/eslint-plugin-query/recommended'
+    ],
+    plugins: ['prettier', '@tanstack/query'],
+    settings: {
+        react: {
+            // Nói eslint-plugin-react tự động biết version của React.
+            version: 'detect'
+        },
+        // Nói ESLint cách xử lý các import
+        'import/resolver': {
+            node: {
+                paths: [path.resolve(__dirname, '')],
+                extensions: ['.js', '.jsx', '.ts', '.tsx']
+            }
+        }
+    },
+    env: {
+        node: true
+    },
+    rules: {
+        'react/react-in-jsx-scope': 'off',
+        'react/jsx-no-target-blank': 'warn',
+        'prettier/prettier': [
+            'warn',
+            {
+                arrowParens: 'always',
+                semi: false,
+                trailingComma: 'none',
+                tabWidth: 4,
+                endOfLine: 'auto',
+                useTabs: false,
+                singleQuote: true,
+                printWidth: 80,
+                jsxSingleQuote: true
+            }
+        ],
+        'import/order': [
+            'error',
+            {
+                groups: ['builtin', 'external', 'internal'],
+                pathGroups: [
+                    {
+                        pattern: 'react',
+                        group: 'external',
+                        position: 'before'
+                    }
+                ],
+                pathGroupsExcludedImportTypes: ['react'],
+                'newlines-between': 'always',
+                alphabetize: {
+                    order: 'asc',
+                    caseInsensitive: true
+                }
+            }
+        ],
+        '@tanstack/query/exhaustive-deps': 'error',
+        '@tanstack/query/no-rest-destructuring': 'warn',
+        '@tanstack/query/stable-query-client': 'error'
+    }
+}

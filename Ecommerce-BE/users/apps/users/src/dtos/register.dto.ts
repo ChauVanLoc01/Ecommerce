@@ -9,11 +9,6 @@ export class RegisterDTO {
 
   @ApiProperty()
   @IsString()
-  @IsNotEmpty()
-  address: string
-
-  @ApiProperty()
-  @IsString()
   @MaxLength(50)
   @IsNotEmpty()
   full_name: string

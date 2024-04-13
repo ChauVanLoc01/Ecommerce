@@ -1,13 +1,15 @@
-import { Module } from '@nestjs/common'
-import { EmployeeModule } from './employees/employee.module'
-import { AuthModule } from './auths/auth.module'
-import { UserModule } from './users/user.module'
 import { ConfigModule, PrismaModule } from '@app/common'
-import { BullModule } from '@nestjs/bull'
-import { ConfigService } from '@nestjs/config'
 import { MailerModule } from '@nestjs-modules/mailer'
+import { BullModule } from '@nestjs/bull'
 import { CacheModule } from '@nestjs/cache-manager'
-import * as redisStore from 'cache-manager-redis-store';
+import { Module } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
+import { JwtModule } from '@nestjs/jwt'
+import * as redisStore from 'cache-manager-redis-store'
+import { AuthModule } from './auths/auth.module'
+import { EmployeeModule } from './employees/employee.module'
+import { UserModule } from './users/user.module'
+import { DeliveryModule } from './delivery/delivery.module'
 
 @Module({
   imports: [
@@ -19,8 +21,8 @@ import * as redisStore from 'cache-manager-redis-store';
         isGlobal: true,
         store: redisStore,
         host: configService.get<string>('bullqueue.host'),
-        port: configService.get<number>('bullqueue.port'),
-      }),
+        port: configService.get<number>('bullqueue.port')
+      })
     }),
     MailerModule.forRootAsync({
       imports: [ConfigModule],
@@ -28,9 +30,9 @@ import * as redisStore from 'cache-manager-redis-store';
       useFactory: async (configService: ConfigService) => ({
         transport: configService.get<string>('bullqueue.mail_transport'),
         defaults: {
-          from: configService.get<string>('bullqueue.my_mail'),
-        },
-      }),
+          from: configService.get<string>('bullqueue.my_mail')
+        }
+      })
     }),
     BullModule.forRootAsync({
       imports: [ConfigModule],
@@ -40,13 +42,16 @@ import * as redisStore from 'cache-manager-redis-store';
           host: configService.get('bullqueue.host'),
           port: configService.get('bullqueue.port')
         }
-      }),
+      })
     }),
     ConfigModule,
     PrismaModule,
     AuthModule,
+    DeliveryModule,
     EmployeeModule,
-    UserModule
-  ]
+    UserModule,
+    JwtModule
+  ],
+  providers: []
 })
 export class UserMainModule {}

@@ -1,11 +1,6 @@
-export enum QueueAction {
-  sendMail = 'sendMail',
-  register = 'register',
-  forgetPassword = 'forgotPassword',
-  addToCache = 'addToCache'
-}
-
 export enum QueueName {
-  mail = 'sendMail',
-  product = 'product'
+  user = 'user_queue',
+  product = 'product_queue',
+  order = 'order_queue',
+  store = 'store_queue'
 }

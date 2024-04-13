@@ -1,0 +1,98 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Kaisei+Tokumin:wght@400;500;700;800&family=Libre+Franklin:ital,wght@0,300;0,400;0,500;0,600;0,700;1,200;1,300;1,400;1,500;1,600;1,700&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Roboto+Slab:wght@300;400;500;600;700&family=Rubik:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600;1,700&family=Source+Code+Pro:ital,wght@0,200..900;1,200..900&display=swap');
+
+*:before,
+*:after {
+    box-sizing: border-box;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    font-family: "Rubik", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-style: normal;
+}
+
+img,
+picture,
+svg,
+video {
+    display: block;
+    max-width: 100%;
+}
+
+input,
+select,
+textarea {
+    background-color: transparent;
+    outline: none;
+}
+
+button {
+    cursor: pointer;
+    outline: none;
+}
+
+body {
+    min-height: 100vh;
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 1;
+}
+
+
+.simplebar-track.simplebar-vertical .simplebar-scrollbar:before {
+    background-color: #595959;
+}
+
+.spinner {
+    width: 6px;
+    height: 6px;
+    animation: spinner-z355kx 1s infinite linear;
+    border-radius: 11.2px;
+    box-shadow: 28px 0px 0 0 #ffffff, 17.4px 21.8px 0 0 #ffffff, -6.2px 27.2px 0 0 #ffffff, -25.2px 12px 0 0 #ffffff, -25.2px -12px 0 0 #ffffff, -6.2px -27.2px 0 0 #ffffff, 17.4px -21.8px 0 0 #ffffff;
+}
+
+@keyframes spinner-z355kx {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.spinner2 {
+    width: 40px;
+    height: 40px;
+    display: grid;
+    border-radius: 50%;
+    -webkit-mask: radial-gradient(farthest-side, #0000 40%, #000000 41%);
+    background: linear-gradient(0deg, rgba(0, 0, 0, 0.5) 50%, rgba(0, 0, 0, 1) 0) center/3.2px 100%,
+        linear-gradient(90deg, rgba(0, 0, 0, 0.25) 50%, rgba(0, 0, 0, 0.75) 0) center/100% 3.2px;
+    background-repeat: no-repeat;
+    animation: spinner2-d3o0rx 1s infinite steps(12);
+}
+
+.spinner2::before,
+.spinner2::after {
+    content: "";
+    grid-area: 1/1;
+    border-radius: 50%;
+    background: inherit;
+    opacity: 0.915;
+    transform: rotate(30deg);
+}
+
+.spinner2::after {
+    opacity: 0.83;
+    transform: rotate(60deg);
+}
+
+@keyframes spinner2-d3o0rx {
+    100% {
+        transform: rotate(1turn);
+    }
+}
