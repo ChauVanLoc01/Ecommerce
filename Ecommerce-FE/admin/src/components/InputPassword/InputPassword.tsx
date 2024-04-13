@@ -1,15 +1,19 @@
 import { IconButton, TextField } from '@radix-ui/themes'
 import { useState } from 'react'
 
-const InputPassword = () => {
+type InputPasswordProps = {
+    field: any
+}
+
+const InputPassword = ({ field }: InputPasswordProps) => {
     const [hidden, setHidden] = useState<boolean>(true)
 
     const handleTogglePassword = () => setHidden(!hidden)
 
     return (
-        <TextField.Root size='3' type={hidden ? 'password' : 'text'}>
+        <TextField.Root {...field} size='3' type={hidden ? 'password' : 'text'}>
             <TextField.Slot side='right'>
-                <IconButton variant='ghost' color='gray' onClick={handleTogglePassword}>
+                <IconButton variant='ghost' color='gray' onClick={handleTogglePassword} type='button'>
                     {hidden ? (
                         <svg width='15' height='15' viewBox='0 0 15 15' fill='none' xmlns='http://www.w3.org/2000/svg'>
                             <path

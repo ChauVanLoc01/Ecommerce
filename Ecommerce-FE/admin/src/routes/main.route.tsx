@@ -1,4 +1,5 @@
 import loadable from '@loadable/component'
+import { QueryClient } from '@tanstack/react-query'
 import { createBrowserRouter } from 'react-router-dom'
 
 import { route } from 'src/constants/route'
@@ -9,6 +10,8 @@ const Analytic = loadable(() => import('src/pages/Analytic'))
 const Profile = loadable(() => import('src/pages/Profile'))
 const Password = loadable(() => import('src/pages/Profile/LayoutProfile/Password'))
 const PersonalInformation = loadable(() => import('src/pages/Profile/LayoutProfile/PersonalInformation'))
+
+export const queryClient = new QueryClient()
 
 const routes = createBrowserRouter([
     {

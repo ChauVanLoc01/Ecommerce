@@ -1,14 +1,8 @@
-import { Button, Checkbox, Flex, SegmentedControl, Text, TextField } from '@radix-ui/themes'
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Flex, Heading } from '@radix-ui/themes'
 
-import InputPassword from 'src/components/InputPassword'
 import Login from './Login'
-import Register from './Register'
 
 const Auth = () => {
-    const [auth, setAuth] = useState<'login' | 'register'>('login')
-
     return (
         <div className='flex items-center justify-center bg-[#F3F4F7] w-full h-screen relative'>
             <div className='inset-0 blur-xl absolute -z-10' />
@@ -22,18 +16,10 @@ const Auth = () => {
                 </section>
                 <section className='space-y-4'>
                     <Flex justify='center'>
-                        <SegmentedControl.Root
-                            value={auth}
-                            onValueChange={(value) => setAuth(value as any)}
-                            size='3'
-                            variant='surface'
-                        >
-                            <SegmentedControl.Item value='login'>Đăng Nhập</SegmentedControl.Item>
-                            <SegmentedControl.Item value='register'>Đăng Ký</SegmentedControl.Item>
-                        </SegmentedControl.Root>
+                        <Heading as='h4'>Đăng Nhập</Heading>
                     </Flex>
                 </section>
-                {auth === 'login' ? <Login /> : <Register />}
+                <Login />
             </div>
         </div>
     )

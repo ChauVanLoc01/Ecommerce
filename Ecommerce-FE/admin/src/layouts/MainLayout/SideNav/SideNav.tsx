@@ -1,6 +1,6 @@
 import { BiHomeHeart } from 'react-icons/bi'
-
 import Select from 'src/components/Select'
+
 import { route } from 'src/constants/route'
 
 const SideNav = () => {

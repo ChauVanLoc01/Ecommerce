@@ -5,7 +5,6 @@ import { motion } from 'framer-motion'
 import { IoMdArrowDropdown } from 'react-icons/io'
 import { LuDot } from 'react-icons/lu'
 import { NavLink } from 'react-router-dom'
-
 import Button from '../Button'
 
 type SelectProps = {
@@ -40,12 +39,9 @@ const Select = ({ icon, parentData, childrenData }: SelectProps) => {
                     )
                 }
                 onClick={() => setIsOpen((preState) => !preState)}
-                rootClassNames={classNames(
-                    'w-full justify-between pl-[20px] text-text_2',
-                    {
-                        'bg-blue/[0.08] !text-blue hover:bg-blue/20': isOpen
-                    }
-                )}
+                rootClassNames={classNames('w-full justify-between pl-[20px] text-text_2', {
+                    'bg-blue/[0.08] !text-blue hover:bg-blue/20': isOpen
+                })}
             />
             {childrenData && (
                 <motion.ul
@@ -91,12 +87,9 @@ const Select = ({ icon, parentData, childrenData }: SelectProps) => {
                                         iconLeft={<LuDot />}
                                         text={children.title}
                                         type='text'
-                                        rootClassNames={classNames(
-                                            'text-text_2 pl-[20px]',
-                                            {
-                                                'text-blue': isActive
-                                            }
-                                        )}
+                                        rootClassNames={classNames('text-text_2 pl-[20px]', {
+                                            'text-blue': isActive
+                                        })}
                                     />
                                 )}
                             </NavLink>
