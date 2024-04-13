@@ -53,14 +53,11 @@ export class AuthService {
     return bcrypt.compare(password, hash)
   }
 
-  async verify(username: string, password: string): Promise<Account & {storeRole: string}> {
-    const {StoreRole, ...accountExist} = await this.prisma.account.findUnique({
+  async verify(username: string, password: string): Promise<Account> {
+    const accountExist = await this.prisma.account.findUnique({
       where: {
         username
       },
-      include: {
-        StoreRole: true
-      }
     })
 
     if (!accountExist) {
@@ -72,10 +69,7 @@ export class AuthService {
     if (!isTruePassword) {
       throw new UnauthorizedException('Mật khẩu không đúng')
     }
-    return {
-      ...accountExist,
-      storeRole: StoreRole.role || undefined
-    }
+    return accountExist
   }
 
   async validateUser(username: string, password: string): Promise<User & { storeRoleId: string }> {
@@ -174,7 +168,7 @@ export class AuthService {
     })
 
     if (accountExist) {
-      throw new BadRequestException('Tài khoản đã tồn tại')
+      throw new BadRequestException('User name đã tồn tại')
     }
 
     const [{ createdAt, status, ...rest }, { storeRoleId }] = await this.prisma.$transaction(
@@ -259,15 +253,26 @@ export class AuthService {
       result: {
         user: user_profile,
         store,
-        access_token,
-        refresh_token
+        access_token: `Beaer ${access_token}`,
+        refresh_token: `Beaer ${refresh_token}`
       }
     }
   }
 
   async employeeRegister(currentStore: CurrentStoreType, body: RegisterDTO): Promise<Return> {
-    const {email, full_name, password, username} = body
     try {
+      const {email, full_name, password, username} = body
+
+      const accountExist = await this.prisma.account.findUnique({
+        where: {
+          username
+        }
+      })
+
+      if (accountExist) {
+        throw new BadRequestException('User name đã tồn tại')
+      }
+
       const [createdUser, createdStoreRole, createdAccount] = await this.prisma.$transaction(async (tx) => {
         const userId = uuidv4()
         const storeRoleId = uuidv4()
@@ -294,7 +299,7 @@ export class AuthService {
           tx.account.create({
             data: {
               username,
-              password,
+              password: await this.hashPassword(password),
               userId: userId,
               storeRoleId: storeRoleId,
               createdBy: currentStore.userId
@@ -314,7 +319,7 @@ export class AuthService {
         }
       }
     } catch (error) {
-      throw new InternalServerErrorException('Lỗi BE')
+      throw new BadRequestException(error.message)
     }
   }
 

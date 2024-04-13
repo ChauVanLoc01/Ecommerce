@@ -9,10 +9,10 @@ const { PUT, GET, POST, DELETE } = method(user)
 
 export const profileFetching = {
     getProfile: () => {
-        return GET<Return<ProfileResponse>>('profile')
+        return GET<Return<ProfileResponse>>('profile/user-profile')
     },
     updateProfile: (body: ProfileSchemaType) => {
-        return PUT<Return<ProfileResponse>, ProfileSchemaType>('profile', body)
+        return PUT<Return<ProfileResponse>, ProfileSchemaType>('profile/user-profile', body)
     },
     changePassword: (body: Omit<ChangePasswordSchemaType, 'confirm_new_password'>) => {
         return PUT<Return<ChangePasswordResponse>, Omit<ChangePasswordSchemaType, 'confirm_new_password'>>(

@@ -8,8 +8,11 @@ import { CurrentUserType } from 'common/types/current.type'
 import { CreateDeliveryDTO } from '../dtos/create_delivery.dto'
 import { UpdateDeliveryDTO } from '../dtos/update_delivery.dto'
 import { DeliveryService } from './delivery.service'
+import { Roles } from 'common/decorators/roles.decorator'
+import { Role } from 'common/enums/role.enum'
 
 @Controller('delivery')
+@Roles(Role.USER, Role.STORE_OWNER)
 @UseGuards(JwtGuard)
 export class DeliveryController {
   constructor(private readonly deliveryService: DeliveryService) {}

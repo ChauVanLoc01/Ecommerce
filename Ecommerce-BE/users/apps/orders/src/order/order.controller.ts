@@ -31,13 +31,13 @@ export class OrderController {
 
   // Store management
 
-  @Roles(Role.EMPLOYEE, Role.STORE_OWNER, Role.ADMIN)
+  @Roles(Role.STORE_OWNER, Role.ADMIN)
   @Get('store-order')
   getAllOrderByStore(@CurrentUser() user: CurrentStoreType, @Query() query: QueryOrderDTO) {
     return this.ordersService.getAllOrderByStore(user, query)
   }
 
-  @Roles(Role.EMPLOYEE, Role.STORE_OWNER, Role.ADMIN)
+  @Roles(Role.STORE_OWNER, Role.ADMIN)
   @Get('store-order/:orderId')
   getOrderDetailByStore(@CurrentUser() user: CurrentStoreType, @Param('orderId') orderId: string) {
     return this.ordersService.getOrderDetailByStore(user, orderId)

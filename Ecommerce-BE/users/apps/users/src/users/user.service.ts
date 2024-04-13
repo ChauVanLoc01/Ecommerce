@@ -1,7 +1,7 @@
 import { PrismaService } from '@app/common/prisma/prisma.service'
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { CurrentUserType } from 'common/types/current.type'
+import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
 import { Return } from 'common/types/result.type'
 import { QueryAllUserProfileType } from '../dtos/all_user.dto'
 import { UpdateUserProfileType } from '../dtos/update_user_profile.dto'
@@ -34,12 +34,50 @@ export class UserService {
     }
   }
 
+  async profileStoreDetail(user: CurrentStoreType): Promise<Return> {
+    const profileExist = await this.prisma.user.findUnique({
+      where: {
+        id: user.userId
+      }
+    })
+
+    if (!profileExist) {
+      throw new BadRequestException('User không tồn tại')
+    }
+
+    return {
+      msg: 'Lấy thông tin thành cônng',
+      result: profileExist
+    }
+  }
+
   async userUpdateProfile(user: CurrentUserType, body: UpdateUserProfileType): Promise<Return> {
     const { birthday, email, full_name, address } = body
 
     const updatedUser = await this.prisma.user.update({
       where: {
         id: user.id
+      },
+      data: {
+        birthday,
+        email,
+        full_name,
+        address
+      }
+    })
+
+    return {
+      msg: 'Cập nhật thành công',
+      result: updatedUser
+    }
+  }
+
+  async userStoreUpdateProfile(user: CurrentStoreType, body: UpdateUserProfileType): Promise<Return> {
+    const { birthday, email, full_name, address } = body
+
+    const updatedUser = await this.prisma.user.update({
+      where: {
+        id: user.userId
       },
       data: {
         birthday,

@@ -5,7 +5,7 @@ import { CurrentUser } from 'common/decorators/current_user.decorator'
 import { Roles } from 'common/decorators/roles.decorator'
 import { Role } from 'common/enums/role.enum'
 import { JwtGuard } from 'common/guards/jwt.guard'
-import { CurrentUserType } from 'common/types/current.type'
+import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
 import { QueryAllUserProfileDTO } from '../dtos/all_user.dto'
 import { UpdateUserProfileDTO } from '../dtos/update_user_profile.dto'
 import { UserService } from './user.service'
@@ -22,16 +22,30 @@ export class UserController {
 
   @Roles(Role.USER)
   @UseGuards(JwtGuard)
-  @Get()
+  @Get('user-profile')
   profileDetail(@CurrentUser() user: CurrentUserType) {
     return this.userService.profileDetail(user)
   }
 
+  @Roles(Role.EMPLOYEE, Role.STORE_OWNER)
+  @UseGuards(JwtGuard)
+  @Get('store-profile')
+  profileDetailStore(@CurrentUser() user: CurrentStoreType) {
+    return this.userService.profileStoreDetail(user)
+  }
+
   @Roles(Role.USER)
   @UseGuards(JwtGuard)
-  @Put()
+  @Put('user-profile')
   userUpdateProfile(@CurrentUser() user: CurrentUserType, @Body() body: UpdateUserProfileDTO) {
     return this.userService.userUpdateProfile(user, body)
+  }
+
+  @Roles(Role.STORE_OWNER, Role.EMPLOYEE)
+  @UseGuards(JwtGuard)
+  @Put('store-profile')
+  userStoreUpdateProfile(@CurrentUser() user: CurrentStoreType, @Body() body: UpdateUserProfileDTO) {
+    return this.userService.userStoreUpdateProfile(user, body)
   }
 
   @MessagePattern(updateStoreRoleId)
