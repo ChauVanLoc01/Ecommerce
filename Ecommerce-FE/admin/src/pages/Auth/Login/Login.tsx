@@ -29,6 +29,9 @@ const Login = () => {
         mutationFn: (body: LoginSchemaType) => AuthAPI.login(body),
         onSuccess: (data) => {
             ls.setItem('profile', JSON.stringify(data.data.result))
+            redirectRef.current = setTimeout(() => {
+                navigate(route.root)
+            }, 3000)
             toast.info('Đăng nhập thành công', {
                 description: 'Chuyển đến trang chủ trong 3s kế tiếp',
                 action: {
