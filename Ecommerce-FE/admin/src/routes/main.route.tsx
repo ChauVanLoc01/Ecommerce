@@ -4,7 +4,10 @@ import { createBrowserRouter } from 'react-router-dom'
 
 import { route } from 'src/constants/route'
 import Login from 'src/pages/Auth'
+import Employee from 'src/pages/Employee'
+import Order from 'src/pages/Order'
 import Product from 'src/pages/Product'
+import Store from 'src/pages/Store'
 
 const MainLayout = loadable(() => import('src/layouts/MainLayout'))
 const Analytic = loadable(() => import('src/pages/Analytic'))
@@ -20,7 +23,7 @@ const routes = createBrowserRouter([
         element: <MainLayout />,
         children: [
             {
-                index: true,
+                path: route.analytic,
                 element: <Analytic />
             },
             {
@@ -38,10 +41,16 @@ const routes = createBrowserRouter([
                 ]
             },
             {
-                path: route.store
+                path: route.store,
+                element: <Store />
             },
             {
-                path: route.order
+                path: route.order,
+                element: <Order />
+            },
+            {
+                path: route.employee,
+                element: <Employee />
             },
             {
                 path: route.product,

@@ -4,16 +4,15 @@ import classNames from 'classnames'
 import { motion } from 'framer-motion'
 import { IoMdArrowDropdown } from 'react-icons/io'
 import { LuDot } from 'react-icons/lu'
-import { NavLink, resolvePath, useLocation } from 'react-router-dom'
-import Button from '../Button'
+import { matchPath, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { cn } from 'src/utils/utils'
-import { route } from 'src/constants/route'
+import Button from '../Button'
 
 type SelectProps = {
     icon?: ReactNode
     parentData: {
         title: string
-        path: string
+        path?: string
     }
     childrenData?: {
         title: string
@@ -24,34 +23,65 @@ type SelectProps = {
 const Select = ({ icon, parentData, childrenData }: SelectProps) => {
     const [isOpen, setIsOpen] = useState<boolean>(false)
     const location = useLocation()
+    const navigate = useNavigate()
 
     return (
         <section className='space-y-2'>
-            <NavLink to={parentData.path}>
-                {({ isActive }) => (
-                    <Button
-                        type='text'
-                        iconLeft={icon}
-                        text={parentData.title}
-                        iconRight={
-                            childrenData && (
-                                <IoMdArrowDropdown
-                                    size={22}
-                                    className={classNames('ease-in-out duration-300', {
-                                        '-rotate-180': isOpen
-                                    })}
-                                />
+            {!childrenData ? (
+                <NavLink to={parentData.path as string}>
+                    {({ isActive }) => (
+                        <Button
+                            type='text'
+                            iconLeft={icon}
+                            text={parentData.title}
+                            iconRight={
+                                childrenData && (
+                                    <IoMdArrowDropdown
+                                        size={22}
+                                        className={classNames('ease-in-out duration-300', {
+                                            '-rotate-180': isOpen
+                                        })}
+                                    />
+                                )
+                            }
+                            rootClassNames={classNames('w-full justify-between pl-[20px] text-text_2', {
+                                'bg-blue/[0.08] !text-blue hover:bg-blue/20': isActive
+                            })}
+                        />
+                    )}
+                </NavLink>
+            ) : (
+                <Button
+                    type='text'
+                    iconLeft={icon}
+                    text={parentData.title}
+                    iconRight={
+                        childrenData && (
+                            <IoMdArrowDropdown
+                                size={22}
+                                className={classNames('ease-in-out duration-300', {
+                                    '-rotate-180': isOpen
+                                })}
+                            />
+                        )
+                    }
+                    onClick={() => {
+                        setIsOpen(!isOpen)
+                        navigate(childrenData[0].path)
+                    }}
+                    rootClassNames={classNames('w-full justify-between pl-[20px] text-text_2', {
+                        'bg-blue/[0.08] !text-blue hover:bg-blue/20': childrenData.some((data) =>
+                            matchPath(
+                                {
+                                    path: data.path,
+                                    end: false
+                                },
+                                location.pathname
                             )
-                        }
-                        onClick={() => setIsOpen((preState) => !preState)}
-                        rootClassNames={classNames('w-full justify-between pl-[20px] text-text_2', {
-                            'bg-blue/[0.08] !text-blue hover:bg-blue/20': childrenData
-                                ? childrenData.map((data) => data.path).includes(location.pathname)
-                                : isActive
-                        })}
-                    />
-                )}
-            </NavLink>
+                        )
+                    })}
+                />
+            )}
             {childrenData && (
                 <motion.ul
                     initial={false}

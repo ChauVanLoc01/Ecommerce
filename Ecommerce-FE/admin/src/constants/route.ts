@@ -8,5 +8,6 @@ export const route = {
     changePassword: 'change-password',
     permission: 'permission',
     setting: 'setting',
-    analytic: 'analytic'
+    analytic: 'analytic',
+    employee: 'employee'
 }
