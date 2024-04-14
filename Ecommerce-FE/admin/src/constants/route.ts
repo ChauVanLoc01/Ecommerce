@@ -6,5 +6,7 @@ export const route = {
     product: 'product',
     profile: 'profile',
     changePassword: 'change-password',
+    permission: 'permission',
+    setting: 'setting',
     analytic: 'analytic'
 }

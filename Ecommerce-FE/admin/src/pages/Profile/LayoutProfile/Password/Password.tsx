@@ -1,4 +1,6 @@
+import InputPassword from 'src/components/InputPassword'
 import LayoutProfile from '..'
+import { Button, Flex } from '@radix-ui/themes'
 
 const Password = () => {
     return (
@@ -7,14 +9,22 @@ const Password = () => {
                 <div className='basis-1/2 space-y-5'>
                     <section className='space-y-2'>
                         <h4>Mật khẩu cũ:</h4>
+                        <InputPassword />
                     </section>
                     <section className='space-y-2'>
                         <h4>Mật khẩu mới:</h4>
+                        <InputPassword />
                     </section>
                     <section className='space-y-2'>
                         <h4>Nhập lại mật khẩu:</h4>
+                        <InputPassword />
                     </section>
-                    <section className='flex items-center justify-end gap-x-3'></section>
+                    <Flex justify='end' gap='4'>
+                        <Button size='3' color='red' type='reset' variant='surface'>
+                            Hủy
+                        </Button>
+                        <Button size='3'>Thay đổi</Button>
+                    </Flex>
                 </div>
                 <div className='basis-1/2 space-y-2'>
                     <h3 className='text-xl font-semibold'>Mật khẩu phải chứa:</h3>

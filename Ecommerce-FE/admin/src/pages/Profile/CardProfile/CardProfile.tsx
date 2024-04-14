@@ -10,7 +10,9 @@ import { MdPeopleOutline } from 'react-icons/md'
 import { PiDotsThreeOutlineVerticalDuotone } from 'react-icons/pi'
 import { SlLock } from 'react-icons/sl'
 
+import { resolvePath, useLocation, useNavigate } from 'react-router-dom'
 import Button from 'src/components/Button'
+import { route } from 'src/constants/route'
 
 type CardProps = {
     rootClassName?: string
@@ -18,6 +20,8 @@ type CardProps = {
 
 const CardProfile = ({ rootClassName }: CardProps) => {
     const fileRef = useRef<HTMLInputElement>(null)
+    const navigate = useNavigate()
+    const location = useLocation()
 
     const handleOpenFile = () => {
         fileRef.current?.click()
@@ -41,19 +45,10 @@ const CardProfile = ({ rootClassName }: CardProps) => {
                         className='group-hover:opacity-0 transition-all duration-100 ease-linear rounded-full'
                     />
                     <span className='opacity-0 absolute inset-0 flex justify-center items-center bg-white group-hover:opacity-100 transition-all duration-100 ease-linear rounded-full delay-100'>
-                        <AiOutlineCloudUpload
-                            size={30}
-                            className='w-full hful text-blue'
-                        />
+                        <AiOutlineCloudUpload size={30} className='w-full hful text-blue' />
                     </span>
                 </button>
-                <input
-                    type='file'
-                    ref={fileRef}
-                    name=''
-                    id=''
-                    className='hidden'
-                />
+                <input type='file' ref={fileRef} name='' id='' className='hidden' />
                 <h4 className='font-semibold'>Stebin Ben</h4>
                 <p>Admin</p>
                 <article className='flex items-center justify-center gap-x-2'>
@@ -87,32 +82,41 @@ const CardProfile = ({ rootClassName }: CardProps) => {
                     iconLeft={<HiOutlineInformationCircle />}
                     text='Thông Tin Cửa Hàng'
                     type='outline'
-                    rootClassNames='!text-text_2 hover:bg-blue/20 hover:!text-blue w-full'
+                    rootClassNames={classNames('text-gray-500 hover:bg-blue/20 hover:!text-blue w-full', {
+                        'bg-blue/20 !text-blue': location.pathname === resolvePath(route.profile, route.root).pathname
+                    })}
+                    onClick={() => navigate(`/${route.profile}`)}
                 />
                 <Button
                     iconLeft={<SlLock />}
                     text='Thay Đổi Mật Khẩu'
                     type='outline'
-                    rootClassNames='!text-text_2 hover:bg-blue/20 hover:!text-blue w-full'
+                    rootClassNames={classNames('text-gray-500 hover:bg-blue/20 hover:!text-blue w-full', {
+                        'bg-blue/20 !text-blue': location.pathname === `/${route.profile}/${route.changePassword}`
+                    })}
+                    onClick={() => navigate(route.changePassword)}
                 />
                 <Button
                     iconLeft={<MdPeopleOutline />}
                     text='Quản Lý Phân Quyền'
                     type='outline'
-                    rootClassNames='!text-text_2 hover:bg-blue/20 hover:!text-blue w-full'
+                    rootClassNames={classNames('text-gray-500 hover:bg-blue/20 hover:!text-blue w-full', {
+                        'bg-blue/20 !text-blue': location.pathname === `/${route.profile}/${route.permission}`
+                    })}
+                    onClick={() => navigate(route.permission)}
                 />
                 <Button
                     iconLeft={<IoSettingsOutline />}
                     text='Cài Đặt Hệ Thống'
                     type='outline'
-                    rootClassNames='!text-text_2 hover:bg-blue/20 hover:!text-blue w-full'
+                    rootClassNames={classNames('text-gray-500 hover:bg-blue/20 hover:!text-blue w-full', {
+                        'bg-blue/20 !text-blue': location.pathname === `/${route.profile}/${route.setting}`
+                    })}
+                    onClick={() => navigate(route.setting)}
                 />
             </section>
             <button className='absolute -top-6 right-2 p-8 rounded-8 bg-text_2/[0.05] hover:bg-text_2/[0.15]'>
-                <PiDotsThreeOutlineVerticalDuotone
-                    color='rgb(91, 107, 121, 0.85)'
-                    className='rotate-90'
-                />
+                <PiDotsThreeOutlineVerticalDuotone color='rgb(91, 107, 121, 0.85)' className='rotate-90' />
             </button>
         </div>
     )

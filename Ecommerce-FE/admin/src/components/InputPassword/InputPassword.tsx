@@ -2,7 +2,7 @@ import { IconButton, TextField } from '@radix-ui/themes'
 import { useState } from 'react'
 
 type InputPasswordProps = {
-    field: any
+    field?: any
 }
 
 const InputPassword = ({ field }: InputPasswordProps) => {
