@@ -51,7 +51,7 @@ body {
 }
 
 .simplebar-track.simplebar-vertical .simplebar-scrollbar:before {
-    background-image: linear-gradient(blue, orange);
+    background-color: #595959;
 }
 
 .ant-picker.ant-picker-outlined:focus-within {

@@ -1,9 +1,16 @@
-import { Outlet } from 'react-router-dom'
+import { Navigate, Outlet, useNavigate } from 'react-router-dom'
 
 import Header from './Header'
 import SideNav from './SideNav'
+import { useEffect } from 'react'
+import { route } from 'src/constants/route'
 
 const MainLayout = () => {
+    const navigate = useNavigate()
+    useEffect(() => {
+        navigate(route.analytic)
+    }, [])
+
     return (
         <div className='h-screen flex bg-[#F8F9FA]'>
             <SideNav />
