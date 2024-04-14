@@ -21,20 +21,13 @@ const SideNav = () => {
             <section className=''>
                 <Select
                     icon={<BiHomeHeart />}
-                    parentData={{ title: 'Cửa hàng' }}
+                    parentData={{ title: 'Cửa hàng', path: route.root }}
                     childrenData={[
-                        { title: 'Phân tích', path: route.analytic },
-                        { title: 'Quản lý', path: route.profile }
+                        { title: 'Phân tích', path: route.root },
+                        { title: 'Quản lý', path: `/${route.profile}` }
                     ]}
                 />
-                <Select
-                    icon={<BiHomeHeart />}
-                    parentData={{ title: 'Sản phẩm' }}
-                    childrenData={[
-                        { title: 'Phân tích', path: route.analytic },
-                        { title: 'Quản lý', path: route.profile }
-                    ]}
-                />
+                <Select icon={<BiHomeHeart />} parentData={{ title: 'Sản phẩm', path: route.product }} />
             </section>
         </nav>
     )

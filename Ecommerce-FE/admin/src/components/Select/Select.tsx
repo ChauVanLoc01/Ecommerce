@@ -4,14 +4,16 @@ import classNames from 'classnames'
 import { motion } from 'framer-motion'
 import { IoMdArrowDropdown } from 'react-icons/io'
 import { LuDot } from 'react-icons/lu'
-import { NavLink } from 'react-router-dom'
+import { NavLink, resolvePath, useLocation } from 'react-router-dom'
 import Button from '../Button'
+import { cn } from 'src/utils/utils'
+import { route } from 'src/constants/route'
 
 type SelectProps = {
     icon?: ReactNode
     parentData: {
         title: string
-        path?: string
+        path: string
     }
     childrenData?: {
         title: string
@@ -21,28 +23,35 @@ type SelectProps = {
 
 const Select = ({ icon, parentData, childrenData }: SelectProps) => {
     const [isOpen, setIsOpen] = useState<boolean>(false)
+    const location = useLocation()
 
     return (
         <section className='space-y-2'>
-            <Button
-                type='text'
-                iconLeft={icon}
-                text={parentData.title}
-                iconRight={
-                    childrenData && (
-                        <IoMdArrowDropdown
-                            size={22}
-                            className={classNames('ease-in-out duration-300', {
-                                '-rotate-180': isOpen
-                            })}
-                        />
-                    )
-                }
-                onClick={() => setIsOpen((preState) => !preState)}
-                rootClassNames={classNames('w-full justify-between pl-[20px] text-text_2', {
-                    'bg-blue/[0.08] !text-blue hover:bg-blue/20': isOpen
-                })}
-            />
+            <NavLink to={parentData.path}>
+                {({ isActive }) => (
+                    <Button
+                        type='text'
+                        iconLeft={icon}
+                        text={parentData.title}
+                        iconRight={
+                            childrenData && (
+                                <IoMdArrowDropdown
+                                    size={22}
+                                    className={classNames('ease-in-out duration-300', {
+                                        '-rotate-180': isOpen
+                                    })}
+                                />
+                            )
+                        }
+                        onClick={() => setIsOpen((preState) => !preState)}
+                        rootClassNames={classNames('w-full justify-between pl-[20px] text-text_2', {
+                            'bg-blue/[0.08] !text-blue hover:bg-blue/20': childrenData
+                                ? childrenData.map((data) => data.path).includes(location.pathname)
+                                : isActive
+                        })}
+                    />
+                )}
+            </NavLink>
             {childrenData && (
                 <motion.ul
                     initial={false}
@@ -87,8 +96,8 @@ const Select = ({ icon, parentData, childrenData }: SelectProps) => {
                                         iconLeft={<LuDot />}
                                         text={children.title}
                                         type='text'
-                                        rootClassNames={classNames('text-text_2 pl-[20px]', {
-                                            'text-blue': isActive
+                                        rootClassNames={cn('text-text_2 pl-[20px]', {
+                                            'text-blue-500': isActive
                                         })}
                                     />
                                 )}
