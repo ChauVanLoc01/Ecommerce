@@ -175,7 +175,6 @@ export function ProductTable() {
 
     return (
         <div className='w-full text-gray-700'>
-            <div className='flex items-center py-4'></div>
             <div>
                 <Table maxHeight='400px'>
                     <TableHeader className='bg-gray-100 sticky top-0 !text-gray-600'>
@@ -217,16 +216,6 @@ export function ProductTable() {
                         )}
                     </TableBody>
                 </Table>
-            </div>
-            <div className='flex items-center justify-end space-x-2 py-4'>
-                <div className='flex-1 text-sm text-muted-foreground'>
-                    {table.getFilteredSelectedRowModel().rows.length} of {table.getFilteredRowModel().rows.length}{' '}
-                    row(s) selected.
-                </div>
-                <div className='space-x-2'>
-                    <button>Previous</button>
-                    <button>Next</button>
-                </div>
             </div>
         </div>
     )

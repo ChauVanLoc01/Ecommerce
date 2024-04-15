@@ -7,6 +7,7 @@ import { RouterProvider } from 'react-router-dom'
 import 'simplebar-react/dist/simplebar.min.css'
 import { Toaster } from 'sonner'
 import 'src/reset.css'
+import 'src/index.css'
 import routes, { queryClient } from './routes/main.route'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
