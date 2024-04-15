@@ -136,7 +136,7 @@ export const columns: ColumnDef<Payment>[] = [
                             </svg>
                         </Button>
                     </DropdownMenu.Trigger>
-                    <DropdownMenu.Content className='!rounded-6'>
+                    <DropdownMenu.Content className='!rounded-8'>
                         <DropdownMenu.Item>Chi tiết</DropdownMenu.Item>
                         <DropdownMenu.Item color='blue'>Chỉnh sửa</DropdownMenu.Item>
                         <DropdownMenu.Separator />

@@ -30,7 +30,7 @@ const SideNav = () => {
                             ></path>
                         </svg>
                     }
-                    parentData={{ title: 'Tổng Quan' }}
+                    parentData={{ title: 'Tổng Quan', path: `/${route.analytic}` }}
                     childrenData={[
                         { title: 'Phân tích', path: `/${route.analytic}` },
                         { title: 'Quản lý', path: `/${route.profile}` }

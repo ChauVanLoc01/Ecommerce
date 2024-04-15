@@ -1,14 +1,15 @@
-import { Navigate, Outlet, useNavigate } from 'react-router-dom'
+import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 
-import Header from './Header'
-import SideNav from './SideNav'
 import { useEffect } from 'react'
 import { route } from 'src/constants/route'
+import Header from './Header'
+import SideNav from './SideNav'
 
 const MainLayout = () => {
     const navigate = useNavigate()
+    const location = useLocation()
     useEffect(() => {
-        navigate(route.analytic)
+        location.pathname === route.root && navigate(route.analytic)
     }, [])
 
     return (
