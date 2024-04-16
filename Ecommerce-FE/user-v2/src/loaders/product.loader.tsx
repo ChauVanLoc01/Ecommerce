@@ -1,4 +1,3 @@
-import { QueryClient } from '@tanstack/react-query'
 import { isUndefined, omitBy } from 'lodash'
 import { LoaderFunction } from 'react-router-dom'
 import { productFetching } from 'src/apis/product'

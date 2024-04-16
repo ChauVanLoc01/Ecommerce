@@ -4,14 +4,13 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager'
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { ClientProxy } from '@nestjs/microservices'
-import { Prisma } from '@prisma/client'
 import { Queue } from 'bull'
 import { Cache } from 'cache-manager'
 import { BackgroundName } from 'common/constants/background-job.constant'
 import { Status } from 'common/enums/status.enum'
 import { CurrentStoreType } from 'common/types/current.type'
 import { Return } from 'common/types/result.type'
-import { castArray, isNull, isUndefined, omitBy } from 'lodash'
+import { isUndefined, omitBy } from 'lodash'
 import { v4 as uuidv4 } from 'uuid'
 import { CreateProductType } from './dtos/create-product.dto'
 import { QueryProductType } from './dtos/query-product.dto'
@@ -38,7 +37,18 @@ export class ProductService {
   }
 
   async getALlProduct(query: QueryProductType): Promise<Return> {
-    const { category, createdAt, price_max, price_min, sold, price, limit, page } = query
+    const {
+      category,
+      createdAt,
+      price_max,
+      price_min,
+      sold,
+      price,
+      limit,
+      page,
+      max_date,
+      min_date
+    } = query
 
     if (
       Object.keys(
@@ -55,22 +65,18 @@ export class ProductService {
       throw new BadRequestException('Tối đa 1 field order')
     }
 
-    const [productAll, products] = await Promise.all([
+    const [productAllLength, products] = await Promise.all([
+      this.prisma.product.count(),
       this.prisma.product.findMany({
         where: {
           category,
           priceAfter: {
             lte: price_max,
             gte: price_min
-          }
-        }
-      }),
-      this.prisma.product.findMany({
-        where: {
-          category,
-          priceAfter: {
-            lte: price_max,
-            gte: price_min
+          },
+          createdAt: {
+            gte: min_date,
+            lte: max_date
           }
         },
         orderBy: {
@@ -95,7 +101,7 @@ export class ProductService {
             ...query,
             page: page || 1,
             page_size: Math.ceil(
-              productAll.length / (limit || this.configService.get<number>('app.limit_default'))
+              productAllLength / (limit || this.configService.get<number>('app.limit_default'))
             )
           },
           isUndefined

@@ -14,103 +14,120 @@ import {
 } from '@tanstack/react-table'
 import { BiSolidSortAlt } from 'react-icons/bi'
 
-import { Button, DropdownMenu } from '@radix-ui/themes'
+import { Badge, Button, DropdownMenu, Inset } from '@radix-ui/themes'
+import { format } from 'date-fns'
+import { useLoaderData } from 'react-router-dom'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from 'src/components/Table/Table'
+import { ProductStatus } from 'src/constants/product.status'
+import useQueryParams from 'src/hooks/useQueryParams'
+import { Product, ProductQueryAndPagination } from 'src/types/product.type'
+import { convertCurrentcy } from 'src/utils/utils'
 
-const data: Payment[] = [
+export const columns: ColumnDef<Product>[] = [
     {
-        id: 'm5gr84i9',
-        amount: 316,
-        status: 'success',
-        email: 'ken99@yahoo.com'
-    },
-    {
-        id: 'm5gr84i9',
-        amount: 316,
-        status: 'success',
-        email: 'ken99@yahoo.com'
-    },
-    {
-        id: 'm5gr84i9',
-        amount: 316,
-        status: 'success',
-        email: 'ken99@yahoo.com'
-    },
-    {
-        id: '3u1reuv4',
-        amount: 242,
-        status: 'success',
-        email: 'Abe45@gmail.com'
-    },
-    {
-        id: 'derv1ws0',
-        amount: 837,
-        status: 'processing',
-        email: 'Monserrat44@gmail.com'
-    },
-    {
-        id: '5kma53ae',
-        amount: 874,
-        status: 'success',
-        email: 'Silas22@gmail.com'
-    },
-    {
-        id: 'bhqecj4p',
-        amount: 721,
-        status: 'failed',
-        email: 'carmella@hotmail.com'
-    }
-]
-
-export type Payment = {
-    id: string
-    amount: number
-    status: 'pending' | 'processing' | 'success' | 'failed'
-    email: string
-}
-
-export const columns: ColumnDef<Payment>[] = [
-    {
-        accessorKey: 'status',
+        accessorKey: 'image',
         header: () => {
             return (
                 <div className='flex items-center gap-x-2'>
-                    Mã đơn hàng
+                    Hình ảnh
                     <BiSolidSortAlt />
                 </div>
             )
         },
-        cell: ({ row }) => <div className='capitalize'>{row.getValue('status')}</div>
+        cell: ({ row }) => (
+            <Inset clip='padding-box' side='top' pb='current' className='rounded-8 w-14 h-14 object-cover'>
+                <img
+                    src={row.getValue('image')}
+                    alt='Bold typography'
+                    style={{
+                        display: 'block',
+                        objectFit: 'cover',
+                        width: '100%',
+                        height: 140,
+                        backgroundColor: 'var(--gray-5)'
+                    }}
+                />
+            </Inset>
+        )
     },
     {
-        accessorKey: 'email',
+        accessorKey: 'name',
         header: () => {
             return (
                 <div className='flex items-center gap-x-2'>
-                    Thời gian đặt hàng
+                    Tên sản phẩm
                     <BiSolidSortAlt />
                 </div>
             )
         },
-        cell: ({ row }) => <div className='lowercase'>{row.getValue('email')}</div>
+        cell: ({ row }) => <div className='capitalize max-w-40 line-clamp-3'>{row.getValue('name')}</div>
     },
     {
-        accessorKey: 'amount',
+        accessorKey: 'priceBefore',
         header: () => (
             <div className='flex items-center gap-x-2'>
-                Tổng tiền
+                Giá chưa giảm
                 <BiSolidSortAlt />
             </div>
         ),
-        cell: ({ row }) => {
-            const amount = parseFloat(row.getValue('amount'))
-            const formatted = new Intl.NumberFormat('en-US', {
-                style: 'currency',
-                currency: 'USD'
-            }).format(amount)
-
-            return <div className='font-medium'>{formatted}</div>
-        }
+        cell: ({ row }) => <div className='lowercase'>{convertCurrentcy(row.getValue('priceBefore'))}đ</div>
+    },
+    {
+        accessorKey: 'priceAfter',
+        header: () => (
+            <div className='flex items-center gap-x-2'>
+                Giá sau giảm
+                <BiSolidSortAlt />
+            </div>
+        ),
+        cell: ({ row }) => <div className='lowercase'>{convertCurrentcy(row.getValue('priceAfter'))}đ</div>
+    },
+    {
+        accessorKey: 'quantity',
+        header: () => (
+            <div className='flex items-center gap-x-2'>
+                Số lượng
+                <BiSolidSortAlt />
+            </div>
+        ),
+        cell: ({ row }) => <div className='lowercase'>{convertCurrentcy(row.getValue('priceAfter'))}</div>
+    },
+    {
+        accessorKey: 'status',
+        header: () => (
+            <div className='flex items-center gap-x-2'>
+                Trạng thái
+                <BiSolidSortAlt />
+            </div>
+        ),
+        cell: ({ row }) => (
+            <Badge color={ProductStatus[row.getValue('status') as string] as any}>{row.getValue('status')}</Badge>
+        )
+    },
+    {
+        accessorKey: 'category',
+        header: () => (
+            <div className='flex items-center gap-x-2'>
+                Danh muc
+                <BiSolidSortAlt />
+            </div>
+        ),
+        cell: ({ row }) => <div className='lowercase'>{row.getValue('category')}</div>
+    },
+    {
+        accessorKey: 'createdAt',
+        header: () => (
+            <div className='flex items-center gap-x-2'>
+                Thời gian tạo
+                <BiSolidSortAlt />
+            </div>
+        ),
+        cell: ({ row }) => (
+            <div className='lowercase flex flex-col items-center'>
+                <span>{format(row.getValue('createdAt'), 'hh:mm')}</span>
+                <span>{format(row.getValue('createdAt'), 'dd-MM-yyyy')}</span>
+            </div>
+        )
     },
     {
         id: 'actions',
@@ -154,6 +171,9 @@ export function ProductTable() {
     const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
     const [rowSelection, setRowSelection] = React.useState({})
 
+    const [query, _] = useQueryParams<ProductQueryAndPagination>()
+    const [data, { page, page_size }] = useLoaderData() as [Product[], { page: number; page_size: number }]
+
     const table = useReactTable({
         data,
         columns,
@@ -170,7 +190,8 @@ export function ProductTable() {
             columnFilters,
             columnVisibility,
             rowSelection
-        }
+        },
+        rowCount: 21
     })
 
     return (

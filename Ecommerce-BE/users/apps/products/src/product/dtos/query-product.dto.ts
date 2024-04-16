@@ -44,6 +44,14 @@ export class QueryProductDTO extends PaginationDTO {
   @GreaterThanPrice('price_min')
   @IsOptional()
   price_max?: number
+
+  @IsDateString()
+  @IsOptional()
+  min_date?: string
+
+  @IsDateString()
+  @IsOptional()
+  max_date?: string
 }
 
 export type QueryProductType = InstanceType<typeof QueryProductDTO>

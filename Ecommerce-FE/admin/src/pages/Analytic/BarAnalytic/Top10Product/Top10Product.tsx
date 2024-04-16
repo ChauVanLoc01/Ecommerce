@@ -1,9 +1,10 @@
 import { Flex, Text } from '@radix-ui/themes'
-import { useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Bar, BarChart, LabelList, Rectangle, Tooltip, XAxis, YAxis } from 'recharts'
 
 const Top10Product = () => {
     const widthRef = useRef<null | HTMLDivElement>(null)
+    const [width, setWidth] = useState<number>(0)
     const data = [
         {
             name: 'Iphone 15',
@@ -41,6 +42,14 @@ const Top10Product = () => {
             pv: 3456
         }
     ]
+
+    useEffect(() => {
+        if (widthRef.current) {
+            setWidth(widthRef.current.clientWidth - 48)
+        }
+    }, [widthRef.current])
+    
+
     return (
         <div className='bg-white p-[16px] rounded-8 border-border/20 border shadow-sm space-y-3' ref={widthRef}>
             <Flex justify={'between'} align={'center'}>
@@ -49,7 +58,7 @@ const Top10Product = () => {
                 </Text>
             </Flex>
             <BarChart
-                width={widthRef.current ? widthRef.current.clientWidth - 48 : 464}
+                width={width}
                 height={300}
                 data={data}
                 className='flex-shrink-0 basis-2/3'

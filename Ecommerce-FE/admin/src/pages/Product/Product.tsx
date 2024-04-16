@@ -1,7 +1,7 @@
-import { Box, Button, Flex, Grid, IconButton, Select, Text, TextField } from '@radix-ui/themes'
+import { Flex, IconButton, Select, Text, TextField } from '@radix-ui/themes'
+import { DatePickerWithRange } from 'src/components/Shadcn/dateRange'
 import LayoutProfile from '../Profile/LayoutProfile'
 import ProductTable from './ProductTable'
-import { DatePickerWithRange } from 'src/components/Shadcn/dateRange'
 
 const Product = () => {
     return (
@@ -31,13 +31,26 @@ const Product = () => {
                             </TextField.Slot>
                         </TextField.Root>
                         <Flex direction='column' width='180px'>
-                            <Select.Root size='3' defaultValue='all'>
+                            <Select.Root size='3' defaultValue='sold_asc'>
                                 <Select.Trigger />
                                 <Select.Content position='popper'>
-                                    <Select.Item value='all'>Tất cả</Select.Item>
-                                    <Select.Item value='cancel'>Đã hủy</Select.Item>
-                                    <Select.Item value='success'>Thành công</Select.Item>
-                                    <Select.Item value='waiting'>Chờ xác nhận</Select.Item>
+                                    <Select.Group>
+                                        <Select.Label>Thời gian</Select.Label>
+                                        <Select.Item value='createdAt_asc'>Cũ nhất</Select.Item>
+                                        <Select.Item value='createdAt_desc'>Mới nhất</Select.Item>
+                                    </Select.Group>
+                                    <Select.Separator />
+                                    <Select.Group>
+                                        <Select.Label>Đã bán</Select.Label>
+                                        <Select.Item value='sold_asc'>Bán chạy nhất</Select.Item>
+                                        <Select.Item value='sold_desc'>Bán ít nhất</Select.Item>
+                                    </Select.Group>
+                                    <Select.Separator />
+                                    <Select.Group>
+                                        <Select.Label>Giá bán</Select.Label>
+                                        <Select.Item value='price_asc'>Giá tăng dần</Select.Item>
+                                        <Select.Item value='sold_desc'>Bán giảm dần</Select.Item>
+                                    </Select.Group>
                                 </Select.Content>
                             </Select.Root>
                         </Flex>

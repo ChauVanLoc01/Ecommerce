@@ -1,79 +1,110 @@
 import { Text } from '@radix-ui/themes'
-import { useRef } from 'react'
-import { Pie, PieChart } from 'recharts'
+import { useEffect, useRef, useState } from 'react'
+import { Cell, Pie, PieChart, Tooltip } from 'recharts'
+
+const COLORS = [
+    '#1ABC9C',
+    '#3498DB',
+    '#E74C3C',
+    '#F39C12',
+    '#9B59B6',
+    '#2ECC71',
+    '#34495E',
+    '#E67E22',
+    '#2980B9',
+    '#ECF0F1'
+]
 
 const ProductRate = () => {
     const widthRef = useRef<null | HTMLDivElement>(null)
-    const data01 = [
+    const [width, setWidth] = useState<number>(0)
+
+    const data = [
         {
-            name: 'Group A',
-            value: 400
-        },
-        {
-            name: 'Group B',
-            value: 300
-        },
-        {
-            name: 'Group C',
-            value: 300
-        },
-        {
-            name: 'Group D',
-            value: 200
-        },
-        {
-            name: 'Group E',
-            value: 278
-        },
-        {
-            name: 'Group F',
-            value: 189
-        }
-    ]
-    const data02 = [
-        {
-            name: 'Group A',
+            name: 'IPhone 15',
             value: 2400
         },
         {
-            name: 'Group B',
+            name: 'Acer nitro 5',
             value: 4567
         },
         {
-            name: 'Group C',
+            name: 'Macbook',
             value: 1398
         },
         {
-            name: 'Group D',
+            name: 'Samsung',
             value: 9800
         },
         {
-            name: 'Group E',
+            name: 'Cake',
             value: 3908
         },
         {
-            name: 'Group F',
+            name: 'Thiết bị điện tử',
             value: 4800
         }
     ]
+
+    useEffect(() => {
+        if (widthRef.current) {
+            setWidth(widthRef.current.clientWidth - 48)
+        }
+    }, [widthRef.current])
+
     return (
         <div className='bg-white p-[16px] rounded-8 border-border/20 border shadow-sm space-y-4' ref={widthRef}>
             <Text weight={'medium'} size={'4'}>
                 Tỉ lệ sản phẩm bán chạy
             </Text>
-            <PieChart width={widthRef.current ? widthRef.current.offsetWidth - 32 : 300} height={250}>
-                <Pie data={data01} dataKey='value' nameKey='name' cx='50%' cy='50%' outerRadius={50} fill='#8884d8' />
+            <PieChart width={width} height={250}>
+                <Tooltip />
                 <Pie
-                    data={data02}
-                    dataKey='value'
-                    nameKey='name'
+                    data={data}
                     cx='50%'
                     cy='50%'
-                    innerRadius={60}
-                    outerRadius={80}
-                    fill='#82ca9d'
-                    label
-                />
+                    outerRadius={70}
+                    fill='#1677ff'
+                    dataKey='value'
+                    label={({ cx, cy, midAngle, innerRadius, outerRadius, percent, index }) => {
+                        const RADIAN = Math.PI / 180
+                        const radius = 25 + innerRadius + (outerRadius - innerRadius)
+                        const x = cx + radius * Math.cos(-midAngle * RADIAN)
+                        const y = cy + radius * Math.sin(-midAngle * RADIAN)
+
+                        const radius2 = innerRadius + (outerRadius - innerRadius) * 0.5
+                        const x2 = cx + radius2 * Math.cos(-midAngle * RADIAN)
+                        const y2 = cy + radius2 * Math.sin(-midAngle * RADIAN)
+
+                        return (
+                            <>
+                                <text
+                                    x={x2}
+                                    y={y2}
+                                    fill='white'
+                                    textAnchor={x2 > cx ? 'start' : 'end'}
+                                    dominantBaseline='central'
+                                >
+                                    {`${(percent * 100).toFixed(0)}%`}
+                                </text>
+                                <text
+                                    x={x}
+                                    y={y}
+                                    fill={COLORS[index % COLORS.length]}
+                                    textAnchor={x > cx ? 'start' : 'end'}
+                                    dominantBaseline='central'
+                                >
+                                    {data[index].name}
+                                </text>
+                            </>
+                        )
+                    }}
+                    labelLine
+                >
+                    {data.map((_, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                </Pie>
             </PieChart>
         </div>
     )

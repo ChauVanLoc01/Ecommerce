@@ -1,9 +1,10 @@
 import { Text } from '@radix-ui/themes'
-import { useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { CartesianGrid, Legend, Line, LineChart, Tooltip, XAxis, YAxis } from 'recharts'
 
 const ProductView = () => {
     const widthRef = useRef<null | HTMLDivElement>(null)
+    const [width, setWidth] = useState<number>(0)
     const data = [
         {
             name: 'Page A',
@@ -48,13 +49,18 @@ const ProductView = () => {
             amt: 2100
         }
     ]
+    useEffect(() => {
+        if (widthRef.current) {
+            setWidth(widthRef.current.clientWidth - 48)
+        }
+    }, [widthRef.current])
     return (
         <div className='bg-white p-[16px] rounded-8 border-border/20 border shadow-sm space-y-4' ref={widthRef}>
             <Text weight={'medium'} size={'4'}>
                 Lượt xem sản phẩm
             </Text>
             <LineChart
-                width={widthRef.current ? widthRef.current.offsetWidth - 32 : 340}
+                width={width}
                 height={250}
                 data={data}
                 margin={{ top: 5, right: 30, left: 20, bottom: 5 }}

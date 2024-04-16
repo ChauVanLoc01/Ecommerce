@@ -3,6 +3,7 @@ import { QueryClient } from '@tanstack/react-query'
 import { createBrowserRouter } from 'react-router-dom'
 
 import { route } from 'src/constants/route'
+import { productLoader } from 'src/loader/product.loader'
 import Login from 'src/pages/Auth'
 import Employee from 'src/pages/Employee'
 import Order from 'src/pages/Order'
@@ -54,7 +55,8 @@ const routes = createBrowserRouter([
             },
             {
                 path: route.product,
-                element: <Product />
+                element: <Product />,
+                loader: productLoader
             }
         ]
     },
