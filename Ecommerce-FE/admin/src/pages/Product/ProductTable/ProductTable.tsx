@@ -14,7 +14,7 @@ import {
 } from '@tanstack/react-table'
 import { BiSolidSortAlt } from 'react-icons/bi'
 
-import { Badge, Button, DropdownMenu, Inset } from '@radix-ui/themes'
+import { Badge, ContextMenu, Inset, Tooltip } from '@radix-ui/themes'
 import { format } from 'date-fns'
 import { useLoaderData } from 'react-router-dom'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from 'src/components/Table/Table'
@@ -35,7 +35,7 @@ export const columns: ColumnDef<Product>[] = [
             )
         },
         cell: ({ row }) => (
-            <Inset clip='padding-box' side='top' pb='current' className='rounded-8 w-14 h-14 object-cover'>
+            <Inset clip='padding-box' side='top' pb='current' className='rounded-8 w-16 h-16 object-cover'>
                 <img
                     src={row.getValue('image')}
                     alt='Bold typography'
@@ -54,13 +54,17 @@ export const columns: ColumnDef<Product>[] = [
         accessorKey: 'name',
         header: () => {
             return (
-                <div className='flex items-center gap-x-2'>
+                <div className='flex items-center gap-x-2 max-w-48'>
                     Tên sản phẩm
                     <BiSolidSortAlt />
                 </div>
             )
         },
-        cell: ({ row }) => <div className='capitalize max-w-40 line-clamp-3'>{row.getValue('name')}</div>
+        cell: ({ row }) => (
+            <Tooltip content={row.getValue('name')}>
+                <div className='capitalize line-clamp-3 max-w-48'>{row.getValue('name')}</div>
+            </Tooltip>
+        )
     },
     {
         accessorKey: 'priceBefore',
@@ -107,12 +111,12 @@ export const columns: ColumnDef<Product>[] = [
     {
         accessorKey: 'category',
         header: () => (
-            <div className='flex items-center gap-x-2'>
+            <div className='flex items-center gap-x-2 max-w-15'>
                 Danh muc
                 <BiSolidSortAlt />
             </div>
         ),
-        cell: ({ row }) => <div className='lowercase'>{row.getValue('category')}</div>
+        cell: ({ row }) => <div className='lowercase max-w-15'>{row.getValue('category')}</div>
     },
     {
         accessorKey: 'createdAt',
@@ -128,40 +132,6 @@ export const columns: ColumnDef<Product>[] = [
                 <span>{format(row.getValue('createdAt'), 'dd-MM-yyyy')}</span>
             </div>
         )
-    },
-    {
-        id: 'actions',
-        enableHiding: false,
-        cell: () => {
-            return (
-                <DropdownMenu.Root>
-                    <DropdownMenu.Trigger>
-                        <Button variant='ghost' color='gray'>
-                            <svg
-                                width='15'
-                                height='15'
-                                viewBox='0 0 15 15'
-                                fill='none'
-                                xmlns='http://www.w3.org/2000/svg'
-                            >
-                                <path
-                                    d='M8.625 2.5C8.625 3.12132 8.12132 3.625 7.5 3.625C6.87868 3.625 6.375 3.12132 6.375 2.5C6.375 1.87868 6.87868 1.375 7.5 1.375C8.12132 1.375 8.625 1.87868 8.625 2.5ZM8.625 7.5C8.625 8.12132 8.12132 8.625 7.5 8.625C6.87868 8.625 6.375 8.12132 6.375 7.5C6.375 6.87868 6.87868 6.375 7.5 6.375C8.12132 6.375 8.625 6.87868 8.625 7.5ZM7.5 13.625C8.12132 13.625 8.625 13.1213 8.625 12.5C8.625 11.8787 8.12132 11.375 7.5 11.375C6.87868 11.375 6.375 11.8787 6.375 12.5C6.375 13.1213 6.87868 13.625 7.5 13.625Z'
-                                    fill='currentColor'
-                                    fill-rule='evenodd'
-                                    clip-rule='evenodd'
-                                ></path>
-                            </svg>
-                        </Button>
-                    </DropdownMenu.Trigger>
-                    <DropdownMenu.Content className='!rounded-8'>
-                        <DropdownMenu.Item>Chi tiết</DropdownMenu.Item>
-                        <DropdownMenu.Item color='blue'>Chỉnh sửa</DropdownMenu.Item>
-                        <DropdownMenu.Separator />
-                        <DropdownMenu.Item color='red'>Delete</DropdownMenu.Item>
-                    </DropdownMenu.Content>
-                </DropdownMenu.Root>
-            )
-        }
     }
 ]
 
@@ -191,13 +161,14 @@ export function ProductTable() {
             columnVisibility,
             rowSelection
         },
-        rowCount: 21
+        rowCount: 21,
+        manualPagination: true
     })
 
     return (
         <div className='w-full text-gray-700'>
             <div>
-                <Table maxHeight='400px'>
+                <Table maxHeight='550px' className='w-[1500px]'>
                     <TableHeader className='bg-gray-100 sticky top-0 !text-gray-600'>
                         {table.getHeaderGroups().map((headerGroup) => (
                             <TableRow key={headerGroup.id}>
@@ -222,9 +193,18 @@ export function ProductTable() {
                                     data-state={row.getIsSelected() && 'selected'}
                                 >
                                     {row.getVisibleCells().map((cell) => (
-                                        <TableCell key={cell.id}>
-                                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                        </TableCell>
+                                        <ContextMenu.Root>
+                                            <ContextMenu.Trigger>
+                                                <TableCell key={cell.id}>
+                                                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                                </TableCell>
+                                            </ContextMenu.Trigger>
+                                            <ContextMenu.Content className='rounded-8'>
+                                                <ContextMenu.Item color='red'>Xóa</ContextMenu.Item>
+                                                <ContextMenu.Item>Chi tiết</ContextMenu.Item>
+                                                <ContextMenu.Item color='cyan'>Chỉnh sửa</ContextMenu.Item>
+                                            </ContextMenu.Content>
+                                        </ContextMenu.Root>
                                     ))}
                                 </TableRow>
                             ))
