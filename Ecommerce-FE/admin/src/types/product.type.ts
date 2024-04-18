@@ -12,6 +12,7 @@ export type ProductQuery = Partial<{
     price_max: number
     min_date: string
     max_date: string
+    status: string
 }>
 
 export type ProductQueryAndPagination = ProductQuery & Pagination
@@ -53,3 +54,11 @@ export type ProductAnalyticResponse = Return<{
     block: number
     deleted: number
 }>
+
+export type Category = {
+    shortname: string
+    name: string
+    description?: string
+}
+
+export type CategoryResponse = Return<Category[]>

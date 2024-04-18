@@ -133,7 +133,8 @@ export class ProductService {
       limit,
       page,
       max_date,
-      min_date
+      min_date,
+      status
     } = query
 
     if (
@@ -156,6 +157,7 @@ export class ProductService {
         where: {
           storeId: store.storeId,
           category,
+          status,
           priceAfter: {
             lte: price_max,
             gte: price_min
@@ -170,6 +172,7 @@ export class ProductService {
         where: {
           storeId: store.storeId,
           category,
+          status,
           priceAfter: {
             lte: price_max,
             gte: price_min

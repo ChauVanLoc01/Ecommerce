@@ -12,6 +12,13 @@ export class QueryProductDTO extends PaginationDTO {
   category?: string
 
   @ApiPropertyOptional({
+    enum: ['ACTIVE', 'BLOCK']
+  })
+  @IsEnum(['ACTIVE', 'BLOCK'])
+  @IsOptional()
+  status?: 'ACTIVE' | 'BLOCK'
+
+  @ApiPropertyOptional({
     enum: ['asc', 'desc']
   })
   @IsEnum(['asc', 'desc'])

@@ -7,7 +7,7 @@ import { useLoaderData } from 'react-router-dom'
 import { ProductApi } from 'src/apis/product.api'
 import { DatePickerWithRange } from 'src/components/Shadcn/dateRange'
 import { Order } from 'src/types/pagination.type'
-import { ProductAnalyticResponse, ProductQueryAndPagination } from 'src/types/product.type'
+import { Category, ProductAnalyticResponse, ProductQueryAndPagination } from 'src/types/product.type'
 import { convertCurrentcy } from 'src/utils/utils'
 import LayoutProfile from '../Profile/LayoutProfile'
 import ProductTable from './ProductTable'
@@ -18,7 +18,7 @@ const Product = () => {
     const [date, setDate] = useState<DateRange | undefined>(undefined)
     const [page, setPage] = useState<number>(1)
 
-    const [analytics] = useLoaderData() as [ProductAnalyticResponse]
+    const [analytics, categories] = useLoaderData() as [ProductAnalyticResponse, Category[]]
 
     const { refetch, data } = useQuery({
         queryKey: ['productList', JSON.stringify(query)],
@@ -114,6 +114,24 @@ const Product = () => {
         })
     }
 
+    const handleCategoryChange = (value: string) => {
+        setQuery((pre) => {
+            return {
+                ...pre,
+                category: value
+            }
+        })
+    }
+
+    const handleStatus = (value: string) => {
+        setQuery((pre) => {
+            return {
+                ...pre,
+                status: value
+            }
+        })
+    }
+
     useEffect(() => {
         if (data) {
             setPage(data.data.result.query.page)
@@ -186,7 +204,7 @@ const Product = () => {
                             </TextField.Slot>
                         </TextField.Root>
                         <Flex direction='column' width='120px'>
-                            <Select.Root size='3' defaultValue='ACTIVE' onValueChange={handleSelectChange}>
+                            <Select.Root size='3' defaultValue='ACTIVE' onValueChange={handleStatus}>
                                 <Select.Trigger />
                                 <Select.Content position='popper'>
                                     <Select.Group>
@@ -194,6 +212,16 @@ const Product = () => {
                                         <Select.Item value='ACTIVE'>ACTIVE</Select.Item>
                                         <Select.Item value='BLOCK'>BLOCK</Select.Item>
                                     </Select.Group>
+                                </Select.Content>
+                            </Select.Root>
+                        </Flex>
+                        <Flex direction='column' width='150px'>
+                            <Select.Root size='3' onValueChange={handleCategoryChange}>
+                                <Select.Trigger placeholder='Danh mục' />
+                                <Select.Content position='popper'>
+                                    {categories.map((category) => (
+                                        <Select.Item value={category.shortname}>{category.name}</Select.Item>
+                                    ))}
                                 </Select.Content>
                             </Select.Root>
                         </Flex>

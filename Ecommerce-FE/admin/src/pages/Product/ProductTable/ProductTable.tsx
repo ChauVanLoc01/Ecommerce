@@ -29,129 +29,15 @@ import {
     TextField,
     Tooltip
 } from '@radix-ui/themes'
+import { AxiosResponse } from 'axios'
 import { format } from 'date-fns'
 import { CopyIcon } from 'lucide-react'
 import { useState } from 'react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from 'src/components/Table/Table'
 import { ProductStatus } from 'src/constants/product.status'
-import { Product, ProductListResponse } from 'src/types/product.type'
+import { queryClient } from 'src/routes/main.route'
+import { Category, CategoryResponse, Product, ProductListResponse } from 'src/types/product.type'
 import { convertCurrentcy } from 'src/utils/utils'
-
-export const columns: ColumnDef<Product>[] = [
-    {
-        accessorKey: 'image',
-        header: () => {
-            return (
-                <div className='flex items-center gap-x-2'>
-                    Hình ảnh
-                    <BiSolidSortAlt />
-                </div>
-            )
-        },
-        cell: ({ row }) => (
-            <Inset clip='padding-box' side='top' pb='current' className='rounded-8 w-16 h-16 object-cover'>
-                <img
-                    src={row.getValue('image')}
-                    alt='Bold typography'
-                    style={{
-                        display: 'block',
-                        objectFit: 'cover',
-                        width: '100%',
-                        height: 140,
-                        backgroundColor: 'var(--gray-5)'
-                    }}
-                />
-            </Inset>
-        )
-    },
-    {
-        accessorKey: 'name',
-        header: () => {
-            return (
-                <div className='flex items-center gap-x-2 max-w-48'>
-                    Tên sản phẩm
-                    <BiSolidSortAlt />
-                </div>
-            )
-        },
-        cell: ({ row }) => (
-            <Tooltip content={row.getValue('name')}>
-                <div className='capitalize line-clamp-2 max-w-48'>{row.getValue('name')}</div>
-            </Tooltip>
-        )
-    },
-    {
-        accessorKey: 'priceBefore',
-        header: () => (
-            <div className='flex items-center gap-x-2'>
-                Giá chưa giảm
-                <BiSolidSortAlt />
-            </div>
-        ),
-        cell: ({ row }) => (
-            <Text color='blue'>
-                {row.getValue('priceBefore') ? `${convertCurrentcy(row.getValue('priceBefore'))}đ` : ''}
-            </Text>
-        )
-    },
-    {
-        accessorKey: 'priceAfter',
-        header: () => (
-            <div className='flex items-center gap-x-2'>
-                Giá sau giảm
-                <BiSolidSortAlt />
-            </div>
-        ),
-        cell: ({ row }) => <Text color='red'>{convertCurrentcy(row.getValue('priceAfter'))}</Text>
-    },
-    {
-        accessorKey: 'currentQuantity',
-        header: () => (
-            <div className='flex items-center gap-x-2'>
-                Số lượng
-                <BiSolidSortAlt />
-            </div>
-        ),
-        cell: ({ row }) => <Text>{convertCurrentcy(row.getValue('currentQuantity'))}</Text>
-    },
-    {
-        accessorKey: 'status',
-        header: () => (
-            <div className='flex items-center gap-x-2'>
-                Trạng thái
-                <BiSolidSortAlt />
-            </div>
-        ),
-        cell: ({ row }) => (
-            <Badge color={ProductStatus[row.getValue('status') as string] as any}>{row.getValue('status')}</Badge>
-        )
-    },
-    {
-        accessorKey: 'category',
-        header: () => (
-            <div className='flex items-center gap-x-2 max-w-15'>
-                Danh muc
-                <BiSolidSortAlt />
-            </div>
-        ),
-        cell: ({ row }) => <div className='lowercase max-w-15'>{row.getValue('category')}</div>
-    },
-    {
-        accessorKey: 'createdAt',
-        header: () => (
-            <div className='flex items-center gap-x-2'>
-                Thời gian tạo
-                <BiSolidSortAlt />
-            </div>
-        ),
-        cell: ({ row }) => (
-            <div className='lowercase flex flex-col items-center'>
-                <span>{format(row.getValue('createdAt'), 'hh:mm')}</span>
-                <span>{format(row.getValue('createdAt'), 'dd-MM-yyyy')}</span>
-            </div>
-        )
-    }
-]
 
 type ProductTableProps = {
     data: ProductListResponse
@@ -162,6 +48,130 @@ export function ProductTable({ data }: ProductTableProps) {
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
     const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
     const [rowSelection, setRowSelection] = useState({})
+
+    const categoriesResponse = queryClient.getQueryData(['categories']) as AxiosResponse<CategoryResponse>
+
+    const categories: { [key: string]: Category } = categoriesResponse.data.result.reduce((acum, category) => {
+        return { ...acum, [category.shortname]: category }
+    }, {})
+
+    const columns: ColumnDef<Product>[] = [
+        {
+            accessorKey: 'image',
+            header: () => {
+                return (
+                    <div className='flex items-center gap-x-2'>
+                        Hình ảnh
+                        <BiSolidSortAlt />
+                    </div>
+                )
+            },
+            cell: ({ row }) => (
+                <Inset clip='padding-box' side='top' pb='current' className='rounded-8 w-16 h-16 object-cover'>
+                    <img
+                        src={row.getValue('image')}
+                        alt='Bold typography'
+                        style={{
+                            display: 'block',
+                            objectFit: 'cover',
+                            width: '100%',
+                            height: 140,
+                            backgroundColor: 'var(--gray-5)'
+                        }}
+                    />
+                </Inset>
+            )
+        },
+        {
+            accessorKey: 'name',
+            header: () => {
+                return (
+                    <div className='flex items-center gap-x-2 max-w-48'>
+                        Tên sản phẩm
+                        <BiSolidSortAlt />
+                    </div>
+                )
+            },
+            cell: ({ row }) => (
+                <Tooltip content={row.getValue('name')}>
+                    <div className='capitalize line-clamp-2 max-w-48'>{row.getValue('name')}</div>
+                </Tooltip>
+            )
+        },
+        {
+            accessorKey: 'priceBefore',
+            header: () => (
+                <div className='flex items-center gap-x-2'>
+                    Giá chưa giảm
+                    <BiSolidSortAlt />
+                </div>
+            ),
+            cell: ({ row }) => (
+                <Text color='blue'>
+                    {row.getValue('priceBefore') ? `${convertCurrentcy(row.getValue('priceBefore'))}đ` : ''}
+                </Text>
+            )
+        },
+        {
+            accessorKey: 'priceAfter',
+            header: () => (
+                <div className='flex items-center gap-x-2'>
+                    Giá sau giảm
+                    <BiSolidSortAlt />
+                </div>
+            ),
+            cell: ({ row }) => <Text color='red'>{convertCurrentcy(row.getValue('priceAfter'))}</Text>
+        },
+        {
+            accessorKey: 'currentQuantity',
+            header: () => (
+                <div className='flex items-center gap-x-2'>
+                    Số lượng
+                    <BiSolidSortAlt />
+                </div>
+            ),
+            cell: ({ row }) => <Text>{convertCurrentcy(row.getValue('currentQuantity'))}</Text>
+        },
+        {
+            accessorKey: 'status',
+            header: () => (
+                <div className='flex items-center gap-x-2'>
+                    Trạng thái
+                    <BiSolidSortAlt />
+                </div>
+            ),
+            cell: ({ row }) => (
+                <Badge color={ProductStatus[row.getValue('status') as string] as any}>{row.getValue('status')}</Badge>
+            )
+        },
+        {
+            accessorKey: 'category',
+            header: () => (
+                <div className='flex items-center gap-x-2 max-w-15'>
+                    Danh muc
+                    <BiSolidSortAlt />
+                </div>
+            ),
+            cell: ({ row }) => (
+                <div className='lowercase max-w-15'>{categories[row.getValue('category') as string].name}</div>
+            )
+        },
+        {
+            accessorKey: 'createdAt',
+            header: () => (
+                <div className='flex items-center gap-x-2'>
+                    Thời gian tạo
+                    <BiSolidSortAlt />
+                </div>
+            ),
+            cell: ({ row }) => (
+                <div className='lowercase flex flex-col items-center'>
+                    <span>{format(row.getValue('createdAt'), 'hh:mm')}</span>
+                    <span>{format(row.getValue('createdAt'), 'dd-MM-yyyy')}</span>
+                </div>
+            )
+        }
+    ]
 
     const table = useReactTable({
         data: data.result.data,
@@ -183,8 +193,6 @@ export function ProductTable({ data }: ProductTableProps) {
         rowCount: data.result.query.limit,
         manualPagination: true
     })
-
-    console.log('table.getRowModel().rows', table.getRowModel().rows)
 
     return (
         <div className='w-full text-gray-700'>
@@ -309,7 +317,7 @@ export function ProductTable({ data }: ProductTableProps) {
                                                                         Danh mục
                                                                     </DataList.Label>
                                                                     <DataList.Value>
-                                                                        {row.original.category}
+                                                                        {categories[row.original.category].name}
                                                                     </DataList.Value>
                                                                 </DataList.Item>
                                                                 <DataList.Item>
@@ -382,8 +390,10 @@ export function ProductTable({ data }: ProductTableProps) {
                                                             Chỉnh sửa
                                                         </ContextMenu.Item>
                                                     </Dialog.Trigger>
-                                                    <Dialog.Content maxWidth='800px' className='rounded-8 space-y-5'>
-                                                        <Dialog.Title>Cập nhật thông tin sản phẩm</Dialog.Title>
+                                                    <Dialog.Content maxWidth='800px' className='rounded-8'>
+                                                        <Dialog.Title className='mb-7'>
+                                                            Cập nhật thông tin sản phẩm
+                                                        </Dialog.Title>
                                                         <Flex gapX={'5'}>
                                                             <Avatar
                                                                 src={row.original.image}
@@ -455,7 +465,7 @@ export function ProductTable({ data }: ProductTableProps) {
                                                                         Danh mục
                                                                     </DataList.Label>
                                                                     <DataList.Value>
-                                                                        {row.original.category}
+                                                                        {categories[row.original.category].name}
                                                                     </DataList.Value>
                                                                 </DataList.Item>
                                                                 <DataList.Item>
