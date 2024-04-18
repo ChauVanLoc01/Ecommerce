@@ -1,5 +1,3 @@
-import * as React from 'react'
-
 import {
     ColumnDef,
     ColumnFiltersState,
@@ -14,8 +12,26 @@ import {
 } from '@tanstack/react-table'
 import { BiSolidSortAlt } from 'react-icons/bi'
 
-import { Badge, ContextMenu, Inset, Text, Tooltip } from '@radix-ui/themes'
+import {
+    Avatar,
+    Badge,
+    Button,
+    Code,
+    ContextMenu,
+    DataList,
+    Dialog,
+    Flex,
+    IconButton,
+    Inset,
+    Select,
+    Text,
+    TextArea,
+    TextField,
+    Tooltip
+} from '@radix-ui/themes'
 import { format } from 'date-fns'
+import { CopyIcon } from 'lucide-react'
+import { useState } from 'react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from 'src/components/Table/Table'
 import { ProductStatus } from 'src/constants/product.status'
 import { Product, ProductListResponse } from 'src/types/product.type'
@@ -142,10 +158,10 @@ type ProductTableProps = {
 }
 
 export function ProductTable({ data }: ProductTableProps) {
-    const [sorting, setSorting] = React.useState<SortingState>([])
-    const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
-    const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
-    const [rowSelection, setRowSelection] = React.useState({})
+    const [sorting, setSorting] = useState<SortingState>([])
+    const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+    const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
+    const [rowSelection, setRowSelection] = useState({})
 
     const table = useReactTable({
         data: data.result.data,
@@ -167,6 +183,8 @@ export function ProductTable({ data }: ProductTableProps) {
         rowCount: data.result.query.limit,
         manualPagination: true
     })
+
+    console.log('table.getRowModel().rows', table.getRowModel().rows)
 
     return (
         <div className='w-full text-gray-700'>
@@ -203,9 +221,327 @@ export function ProductTable({ data }: ProductTableProps) {
                                                 </TableCell>
                                             </ContextMenu.Trigger>
                                             <ContextMenu.Content className='rounded-8'>
-                                                <ContextMenu.Item color='red'>Xóa</ContextMenu.Item>
-                                                <ContextMenu.Item>Chi tiết</ContextMenu.Item>
-                                                <ContextMenu.Item color='cyan'>Chỉnh sửa</ContextMenu.Item>
+                                                <Dialog.Root>
+                                                    <Dialog.Trigger>
+                                                        <ContextMenu.Item
+                                                            className='hover:bg-red hover:text-white text-gray-600'
+                                                            onSelect={(e) => e.preventDefault()}
+                                                        >
+                                                            Xóa
+                                                        </ContextMenu.Item>
+                                                    </Dialog.Trigger>
+                                                    <Dialog.Content maxWidth='450px' className='rounded-8'>
+                                                        <Dialog.Title>Xác nhận xóa sản phẩm</Dialog.Title>
+                                                        <Dialog.Description size='2' mb='4'>
+                                                            Sản phẩm sẽ không thật sự xóa. Bạn vẫn có thể khôi phục lại
+                                                            sản phẩm này
+                                                        </Dialog.Description>
+                                                        <Flex gapX='3' justify='end'>
+                                                            <Dialog.Close>
+                                                                <Button variant='outline' color='red'>
+                                                                    Hủy
+                                                                </Button>
+                                                            </Dialog.Close>
+                                                            <Button color='blue'>Xác nhận</Button>
+                                                        </Flex>
+                                                    </Dialog.Content>
+                                                </Dialog.Root>
+                                                <Dialog.Root>
+                                                    <Dialog.Trigger>
+                                                        <ContextMenu.Item
+                                                            className='hover:bg-blue hover:text-white text-gray-600'
+                                                            onSelect={(e) => e.preventDefault()}
+                                                        >
+                                                            Chi tiết
+                                                        </ContextMenu.Item>
+                                                    </Dialog.Trigger>
+                                                    <Dialog.Content maxWidth='800px' className='rounded-8 space-y-5'>
+                                                        <Dialog.Title>Thông tin chi tiết sản phẩm</Dialog.Title>
+                                                        <Flex gapX={'5'}>
+                                                            <Avatar
+                                                                src={row.original.image}
+                                                                fallback={'IMG'}
+                                                                size={'9'}
+                                                                radius='small'
+                                                            />
+                                                            <DataList.Root>
+                                                                <DataList.Item align='start'>
+                                                                    <DataList.Label minWidth='95px'>
+                                                                        Tên sản phẩm
+                                                                    </DataList.Label>
+                                                                    <DataList.Value>{row.original.name}</DataList.Value>
+                                                                </DataList.Item>
+                                                                <DataList.Item>
+                                                                    <DataList.Label minWidth='95px'>
+                                                                        Mã sản phẩm
+                                                                    </DataList.Label>
+                                                                    <DataList.Value>
+                                                                        <Flex align='center' gap='2'>
+                                                                            <Code
+                                                                                variant='ghost'
+                                                                                className='line-clamp-1'
+                                                                            >
+                                                                                {row.original.id}
+                                                                            </Code>
+                                                                            <IconButton
+                                                                                size='1'
+                                                                                aria-label='Copy value'
+                                                                                color='gray'
+                                                                                variant='ghost'
+                                                                            >
+                                                                                <CopyIcon />
+                                                                            </IconButton>
+                                                                        </Flex>
+                                                                    </DataList.Value>
+                                                                </DataList.Item>
+                                                                <DataList.Item>
+                                                                    <DataList.Label minWidth='95px'>
+                                                                        Trạng thái
+                                                                    </DataList.Label>
+                                                                    <DataList.Value>
+                                                                        <Badge color='green' size={'3'}>
+                                                                            {row.original.status}
+                                                                        </Badge>
+                                                                    </DataList.Value>
+                                                                </DataList.Item>
+                                                                <DataList.Item>
+                                                                    <DataList.Label minWidth='95px'>
+                                                                        Danh mục
+                                                                    </DataList.Label>
+                                                                    <DataList.Value>
+                                                                        {row.original.category}
+                                                                    </DataList.Value>
+                                                                </DataList.Item>
+                                                                <DataList.Item>
+                                                                    <DataList.Label minWidth='95px'>
+                                                                        Giá hiện tại
+                                                                    </DataList.Label>
+                                                                    <DataList.Value>
+                                                                        {convertCurrentcy(row.original.priceAfter)}đ
+                                                                    </DataList.Value>
+                                                                </DataList.Item>
+                                                                <DataList.Item>
+                                                                    <DataList.Label minWidth='95px'>
+                                                                        Giá trước đó
+                                                                    </DataList.Label>
+                                                                    <DataList.Value>
+                                                                        {convertCurrentcy(row.original.priceBefore)}đ
+                                                                    </DataList.Value>
+                                                                </DataList.Item>
+                                                                <DataList.Item>
+                                                                    <DataList.Label minWidth='95px'>
+                                                                        Số lượng còn lại
+                                                                    </DataList.Label>
+                                                                    <DataList.Value>
+                                                                        {convertCurrentcy(row.original.currentQuantity)}
+                                                                    </DataList.Value>
+                                                                </DataList.Item>
+                                                                <DataList.Item>
+                                                                    <DataList.Label minWidth='95px'>
+                                                                        Số lượng đã bán
+                                                                    </DataList.Label>
+                                                                    <DataList.Value>
+                                                                        {convertCurrentcy(row.original.sold)}
+                                                                    </DataList.Value>
+                                                                </DataList.Item>
+                                                                <DataList.Item>
+                                                                    <DataList.Label minWidth='95px'>
+                                                                        Số lượng ban đầu
+                                                                    </DataList.Label>
+                                                                    <DataList.Value>
+                                                                        {convertCurrentcy(row.original.initQuantity)}
+                                                                    </DataList.Value>
+                                                                </DataList.Item>
+                                                                <DataList.Item>
+                                                                    <DataList.Label minWidth='95px'>
+                                                                        Số sao đánh giá
+                                                                    </DataList.Label>
+                                                                    <DataList.Value>{row.original.rate}</DataList.Value>
+                                                                </DataList.Item>
+                                                                <DataList.Item>
+                                                                    <DataList.Label minWidth='95px'>
+                                                                        Thời gian tạo
+                                                                    </DataList.Label>
+                                                                    <DataList.Value>
+                                                                        {format(
+                                                                            row.original.createdAt,
+                                                                            'hh:mm - dd/LL/y'
+                                                                        )}
+                                                                    </DataList.Value>
+                                                                </DataList.Item>
+                                                            </DataList.Root>
+                                                        </Flex>
+                                                    </Dialog.Content>
+                                                </Dialog.Root>
+                                                <Dialog.Root>
+                                                    <Dialog.Trigger>
+                                                        <ContextMenu.Item
+                                                            className='hover:bg-orange-500 hover:text-white text-gray-600'
+                                                            onSelect={(e) => e.preventDefault()}
+                                                        >
+                                                            Chỉnh sửa
+                                                        </ContextMenu.Item>
+                                                    </Dialog.Trigger>
+                                                    <Dialog.Content maxWidth='800px' className='rounded-8 space-y-5'>
+                                                        <Dialog.Title>Cập nhật thông tin sản phẩm</Dialog.Title>
+                                                        <Flex gapX={'5'}>
+                                                            <Avatar
+                                                                src={row.original.image}
+                                                                fallback={'IMG'}
+                                                                size={'9'}
+                                                                radius='small'
+                                                            />
+                                                            <DataList.Root>
+                                                                <DataList.Item align='start'>
+                                                                    <DataList.Label minWidth='95px'>
+                                                                        Tên sản phẩm
+                                                                    </DataList.Label>
+                                                                    <DataList.Value>
+                                                                        <TextArea className='flex-grow'>
+                                                                            {row.original.name}
+                                                                        </TextArea>
+                                                                    </DataList.Value>
+                                                                </DataList.Item>
+                                                                <DataList.Item>
+                                                                    <DataList.Label minWidth='95px'>
+                                                                        Mã sản phẩm
+                                                                    </DataList.Label>
+                                                                    <DataList.Value>
+                                                                        <Flex align='center' gap='2'>
+                                                                            <Code
+                                                                                variant='ghost'
+                                                                                className='line-clamp-1'
+                                                                            >
+                                                                                {row.original.id}
+                                                                            </Code>
+                                                                            <IconButton
+                                                                                size='1'
+                                                                                aria-label='Copy value'
+                                                                                color='gray'
+                                                                                variant='ghost'
+                                                                            >
+                                                                                <CopyIcon />
+                                                                            </IconButton>
+                                                                        </Flex>
+                                                                    </DataList.Value>
+                                                                </DataList.Item>
+                                                                <DataList.Item>
+                                                                    <DataList.Label minWidth='95px'>
+                                                                        Trạng thái
+                                                                    </DataList.Label>
+                                                                    <DataList.Value>
+                                                                        <Flex direction='column' width='140px'>
+                                                                            <Select.Root
+                                                                                defaultValue={row.original.status}
+                                                                            >
+                                                                                <Select.Trigger />
+                                                                                <Select.Content
+                                                                                    position='popper'
+                                                                                    className='rounded-6'
+                                                                                >
+                                                                                    <Select.Item value='ACTIVE'>
+                                                                                        ACTIVE
+                                                                                    </Select.Item>
+                                                                                    <Select.Item value='BLOCK'>
+                                                                                        BLOCK
+                                                                                    </Select.Item>
+                                                                                </Select.Content>
+                                                                            </Select.Root>
+                                                                        </Flex>
+                                                                    </DataList.Value>
+                                                                </DataList.Item>
+                                                                <DataList.Item>
+                                                                    <DataList.Label minWidth='95px'>
+                                                                        Danh mục
+                                                                    </DataList.Label>
+                                                                    <DataList.Value>
+                                                                        {row.original.category}
+                                                                    </DataList.Value>
+                                                                </DataList.Item>
+                                                                <DataList.Item>
+                                                                    <DataList.Label minWidth='95px'>
+                                                                        Giá hiện tại
+                                                                    </DataList.Label>
+                                                                    <DataList.Value>
+                                                                        <TextField.Root
+                                                                            type='number'
+                                                                            defaultValue={row.original.priceAfter}
+                                                                        />
+                                                                    </DataList.Value>
+                                                                </DataList.Item>
+                                                                <DataList.Item>
+                                                                    <DataList.Label minWidth='95px'>
+                                                                        Giá trước đó
+                                                                    </DataList.Label>
+                                                                    <DataList.Value>
+                                                                        <TextField.Root
+                                                                            type='number'
+                                                                            defaultValue={row.original.priceBefore}
+                                                                        />
+                                                                    </DataList.Value>
+                                                                </DataList.Item>
+                                                                <DataList.Item>
+                                                                    <DataList.Label minWidth='95px'>
+                                                                        Số lượng còn lại
+                                                                    </DataList.Label>
+                                                                    <DataList.Value>
+                                                                        <TextField.Root
+                                                                            type='number'
+                                                                            defaultValue={row.original.currentQuantity}
+                                                                        />
+                                                                    </DataList.Value>
+                                                                </DataList.Item>
+                                                                <DataList.Item>
+                                                                    <DataList.Label minWidth='95px'>
+                                                                        Số lượng đã bán
+                                                                    </DataList.Label>
+                                                                    <DataList.Value>
+                                                                        <TextField.Root
+                                                                            type='number'
+                                                                            defaultValue={row.original.sold}
+                                                                        />
+                                                                    </DataList.Value>
+                                                                </DataList.Item>
+                                                                <DataList.Item>
+                                                                    <DataList.Label minWidth='95px'>
+                                                                        Số lượng ban đầu
+                                                                    </DataList.Label>
+                                                                    <DataList.Value>
+                                                                        <TextField.Root
+                                                                            type='number'
+                                                                            defaultValue={row.original.initQuantity}
+                                                                        />
+                                                                    </DataList.Value>
+                                                                </DataList.Item>
+                                                                <DataList.Item>
+                                                                    <DataList.Label minWidth='95px'>
+                                                                        Số sao đánh giá
+                                                                    </DataList.Label>
+                                                                    <DataList.Value>{row.original.rate}</DataList.Value>
+                                                                </DataList.Item>
+                                                                <DataList.Item>
+                                                                    <DataList.Label minWidth='95px'>
+                                                                        Thời gian tạo
+                                                                    </DataList.Label>
+                                                                    <DataList.Value>
+                                                                        {format(
+                                                                            row.original.createdAt,
+                                                                            'hh:mm - dd/LL/y'
+                                                                        )}
+                                                                    </DataList.Value>
+                                                                </DataList.Item>
+                                                            </DataList.Root>
+                                                        </Flex>
+                                                        <Flex justify={'end'} gapX={'3'}>
+                                                            <Dialog.Close>
+                                                                <Button variant='outline' color='red'>
+                                                                    Hủy
+                                                                </Button>
+                                                            </Dialog.Close>
+                                                            <Button color='blue'>Thay đổi</Button>
+                                                        </Flex>
+                                                    </Dialog.Content>
+                                                </Dialog.Root>
                                             </ContextMenu.Content>
                                         </ContextMenu.Root>
                                     ))}

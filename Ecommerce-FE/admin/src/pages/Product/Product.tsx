@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { isUndefined, omitBy } from 'lodash'
 import { useEffect, useState } from 'react'
 import { DateRange } from 'react-day-picker'
+import { useLoaderData } from 'react-router-dom'
 import { ProductApi } from 'src/apis/product.api'
 import { DatePickerWithRange } from 'src/components/Shadcn/dateRange'
 import { Order } from 'src/types/pagination.type'
@@ -10,17 +11,14 @@ import { ProductAnalyticResponse, ProductQueryAndPagination } from 'src/types/pr
 import { convertCurrentcy } from 'src/utils/utils'
 import LayoutProfile from '../Profile/LayoutProfile'
 import ProductTable from './ProductTable'
-import { useLoaderData } from 'react-router-dom'
 
 const Product = () => {
-    const [query, setQuery] = useState<ProductQueryAndPagination>({})
+    const [query, setQuery] = useState<ProductQueryAndPagination>({ limit: import.meta.env.VITE_LIMIT })
     const [range, setRange] = useState<number[]>([0, 0])
     const [date, setDate] = useState<DateRange | undefined>(undefined)
     const [page, setPage] = useState<number>(1)
 
     const [analytics] = useLoaderData() as [ProductAnalyticResponse]
-
-    console.log('anylytics', analytics)
 
     const { refetch, data } = useQuery({
         queryKey: ['productList', JSON.stringify(query)],
@@ -187,6 +185,18 @@ const Product = () => {
                                 </svg>
                             </TextField.Slot>
                         </TextField.Root>
+                        <Flex direction='column' width='120px'>
+                            <Select.Root size='3' defaultValue='ACTIVE' onValueChange={handleSelectChange}>
+                                <Select.Trigger />
+                                <Select.Content position='popper'>
+                                    <Select.Group>
+                                        <Select.Label>Trạng thái</Select.Label>
+                                        <Select.Item value='ACTIVE'>ACTIVE</Select.Item>
+                                        <Select.Item value='BLOCK'>BLOCK</Select.Item>
+                                    </Select.Group>
+                                </Select.Content>
+                            </Select.Root>
+                        </Flex>
                         <Flex direction='column' width='180px'>
                             <Select.Root size='3' onValueChange={handleSelectChange}>
                                 <Select.Trigger placeholder='Sắp xếp' />

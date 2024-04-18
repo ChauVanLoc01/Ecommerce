@@ -1,5 +1,5 @@
 import { yupResolver } from '@hookform/resolvers/yup'
-import { Button, Checkbox, Flex, Text, TextField } from '@radix-ui/themes'
+import { Button, Checkbox, Flex, Spinner, Text, TextField } from '@radix-ui/themes'
 import { useMutation } from '@tanstack/react-query'
 import classNames from 'classnames'
 import { useRef } from 'react'
@@ -25,7 +25,7 @@ const Login = () => {
         resolver: yupResolver(login_schema)
     })
 
-    const { mutate } = useMutation({
+    const { mutate, isPending } = useMutation({
         mutationFn: (body: LoginSchemaType) => AuthAPI.login(body),
         onSuccess: (data) => {
             ls.setItem('profile', JSON.stringify(data.data.result))
@@ -118,6 +118,7 @@ const Login = () => {
                 </Link>
             </section>
             <Button className='!w-full' size='3'>
+                {isPending && <Spinner />}
                 Đăng Nhập
             </Button>
         </form>

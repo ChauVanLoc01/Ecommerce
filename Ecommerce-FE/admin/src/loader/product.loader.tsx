@@ -4,7 +4,7 @@ import { queryClient } from 'src/routes/main.route'
 
 export const productLoader: LoaderFunction = async () => {
     const a = await queryClient.fetchQuery({
-        queryKey: ['productList', JSON.stringify({})],
+        queryKey: ['productList', JSON.stringify({ limit: import.meta.env.VITE_LIMIT })],
         queryFn: () => ProductApi.getAllProduct({ limit: import.meta.env.VITE_LIMIT }),
         staleTime: 1000 * 60 * 2
     })
