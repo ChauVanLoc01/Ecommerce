@@ -109,6 +109,7 @@ model Product {
   storeId                      String         @db.VarChar(50)
   voucherId                    String?        @db.VarChar(50)
   rate                         Float          @default(0)
+  isDelete                     Boolean?        @default(false)
   Category                     Category?      @relation(fields: [category], references: [shortname], onDelete: NoAction, onUpdate: NoAction, map: "Product_ibfk_1")
   User_Product_createdByToUser User           @relation("Product_createdByToUser", fields: [createdBy], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Product_ibfk_2")
   User_Product_updatedByToUser User?          @relation("Product_updatedByToUser", fields: [updatedBy], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Product_ibfk_3")

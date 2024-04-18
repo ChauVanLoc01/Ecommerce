@@ -14,7 +14,7 @@ import {
 } from '@tanstack/react-table'
 import { BiSolidSortAlt } from 'react-icons/bi'
 
-import { Badge, ContextMenu, Flex, Grid, Inset, Text, Tooltip } from '@radix-ui/themes'
+import { Badge, ContextMenu, Inset, Text, Tooltip } from '@radix-ui/themes'
 import { format } from 'date-fns'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from 'src/components/Table/Table'
 import { ProductStatus } from 'src/constants/product.status'
@@ -60,7 +60,7 @@ export const columns: ColumnDef<Product>[] = [
         },
         cell: ({ row }) => (
             <Tooltip content={row.getValue('name')}>
-                <div className='capitalize line-clamp-3 max-w-48'>{row.getValue('name')}</div>
+                <div className='capitalize line-clamp-2 max-w-48'>{row.getValue('name')}</div>
             </Tooltip>
         )
     },

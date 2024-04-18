@@ -1,4 +1,4 @@
-import { Button, Flex, IconButton, Popover, Select, Slider, Text, TextField } from '@radix-ui/themes'
+import { Button, Flex, IconButton, Kbd, Popover, Select, Slider, Text, TextField } from '@radix-ui/themes'
 import { useQuery } from '@tanstack/react-query'
 import { isUndefined, omitBy } from 'lodash'
 import { useEffect, useState } from 'react'
@@ -6,16 +6,21 @@ import { DateRange } from 'react-day-picker'
 import { ProductApi } from 'src/apis/product.api'
 import { DatePickerWithRange } from 'src/components/Shadcn/dateRange'
 import { Order } from 'src/types/pagination.type'
-import { ProductQueryAndPagination } from 'src/types/product.type'
+import { ProductAnalyticResponse, ProductQueryAndPagination } from 'src/types/product.type'
 import { convertCurrentcy } from 'src/utils/utils'
 import LayoutProfile from '../Profile/LayoutProfile'
 import ProductTable from './ProductTable'
+import { useLoaderData } from 'react-router-dom'
 
 const Product = () => {
     const [query, setQuery] = useState<ProductQueryAndPagination>({})
     const [range, setRange] = useState<number[]>([0, 0])
     const [date, setDate] = useState<DateRange | undefined>(undefined)
     const [page, setPage] = useState<number>(1)
+
+    const [analytics] = useLoaderData() as [ProductAnalyticResponse]
+
+    console.log('anylytics', analytics)
 
     const { refetch, data } = useQuery({
         queryKey: ['productList', JSON.stringify(query)],
@@ -136,9 +141,32 @@ const Product = () => {
     return (
         <LayoutProfile title='Quản lý sản phẩm'>
             <div className='bg-white rounded-8 border-border/30 space-y-4'>
-                <Text weight='medium' size={'4'}>
-                    5/10 Nhân viên
-                </Text>
+                <Flex gapX={'6'}>
+                    <Flex gapX={'2'} align={'center'}>
+                        <Text size={'4'}>Tổng sản phẩm:</Text>
+                        <Kbd size={'4'} className='rounded-6 font-medium !text-green-500'>
+                            {analytics.result.all}
+                        </Kbd>
+                    </Flex>
+                    <Flex gapX={'2'} align={'center'}>
+                        <Text size={'4'}>Đang bán:</Text>
+                        <Kbd size={'4'} className='rounded-6 font-medium !text-blue'>
+                            {analytics.result.active}
+                        </Kbd>
+                    </Flex>
+                    <Flex gapX={'2'} align={'center'}>
+                        <Text size={'4'}>Đã ẩn:</Text>
+                        <Kbd size={'4'} className='rounded-6 font-medium !text-yellow-500'>
+                            {analytics.result.block}
+                        </Kbd>
+                    </Flex>
+                    <Flex gapX={'2'} align={'center'}>
+                        <Text size={'4'}>Đã xóa:</Text>
+                        <Kbd size={'4'} className='rounded-6 font-medium !text-red'>
+                            {analytics.result.deleted}
+                        </Kbd>
+                    </Flex>
+                </Flex>
                 <Flex justify='between' width='100%'>
                     <Flex gap={'3'}>
                         <TextField.Root placeholder='Tìm kiếm sản phẩm...' size='3'>

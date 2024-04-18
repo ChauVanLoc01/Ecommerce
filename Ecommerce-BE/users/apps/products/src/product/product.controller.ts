@@ -44,16 +44,28 @@ export class ProductController {
     return this.productsService.searchProduct(search)
   }
 
-  @Public()
-  @Get()
-  getAll(@Query() query: QueryProductDTO) {
-    return this.productsService.getALlProduct(query)
+  @Roles(Role.EMPLOYEE, Role.STORE_OWNER)
+  @Get('analytic')
+  analyticsProduct(@CurrentUser() store: CurrentStoreType) {
+    return this.productsService.analyticsProduct(store)
+  }
+
+  @Roles(Role.EMPLOYEE, Role.STORE_OWNER)
+  @Get('product-store')
+  getAllForStore(@CurrentUser() store: CurrentStoreType, @Query() query: QueryProductDTO) {
+    return this.productsService.getALlProductForStore(store, query)
   }
 
   @Public()
   @Get(':productId')
   getProductDetail(@Param('productId') productId: string) {
     return this.productsService.getProductDetail(productId)
+  }
+
+  @Public()
+  @Get()
+  getAllForUser(@Query() query: QueryProductDTO) {
+    return this.productsService.getALlProductForUser(query)
   }
 
   @UseInterceptors(FileInterceptor('image'))

@@ -36,7 +36,7 @@ export class ProductService {
     return result
   }
 
-  async getALlProduct(query: QueryProductType): Promise<Return> {
+  async getALlProductForUser(query: QueryProductType): Promise<Return> {
     const {
       category,
       createdAt,
@@ -66,9 +66,109 @@ export class ProductService {
     }
 
     const [productAllLength, products] = await Promise.all([
-      this.prisma.product.count(),
+      this.prisma.product.count({
+        where: {
+          category,
+          priceAfter: {
+            lte: price_max,
+            gte: price_min
+          },
+          createdAt: {
+            gte: min_date,
+            lte: max_date
+          }
+        }
+      }),
       this.prisma.product.findMany({
         where: {
+          category,
+          priceAfter: {
+            lte: price_max,
+            gte: price_min
+          },
+          createdAt: {
+            gte: min_date,
+            lte: max_date
+          }
+        },
+        orderBy: {
+          createdAt,
+          sold,
+          priceAfter: price
+        },
+        take: limit || this.configService.get<number>('app.limit_default'),
+        skip:
+          page && page > 0
+            ? (page - 1) * (limit || this.configService.get<number>('app.limit_default'))
+            : 0
+      })
+    ])
+
+    return {
+      msg: 'Lấy danh sách sản phẩm thành công',
+      result: {
+        data: products,
+        query: omitBy(
+          {
+            ...query,
+            page: page || 1,
+            page_size: Math.ceil(
+              productAllLength / (limit || this.configService.get<number>('app.limit_default'))
+            )
+          },
+          isUndefined
+        )
+      }
+    }
+  }
+
+  async getALlProductForStore(store: CurrentStoreType, query: QueryProductType): Promise<Return> {
+    const {
+      category,
+      createdAt,
+      price_max,
+      price_min,
+      sold,
+      price,
+      limit,
+      page,
+      max_date,
+      min_date
+    } = query
+
+    if (
+      Object.keys(
+        omitBy(
+          {
+            createdAt,
+            sold,
+            price
+          },
+          isUndefined
+        )
+      ).length > 1
+    ) {
+      throw new BadRequestException('Tối đa 1 field order')
+    }
+
+    const [productAllLength, products] = await Promise.all([
+      this.prisma.product.count({
+        where: {
+          storeId: store.storeId,
+          category,
+          priceAfter: {
+            lte: price_max,
+            gte: price_min
+          },
+          createdAt: {
+            gte: min_date,
+            lte: max_date
+          }
+        }
+      }),
+      this.prisma.product.findMany({
+        where: {
+          storeId: store.storeId,
           category,
           priceAfter: {
             lte: price_max,
@@ -123,6 +223,46 @@ export class ProductService {
     return {
       msg: 'Lấy thông tin chi tiết sản phẩm thành công',
       result: productExist
+    }
+  }
+
+  async analyticsProduct(store: CurrentStoreType): Promise<Return> {
+    const [all, active, block, deleted] = await Promise.all([
+      this.prisma.product.count({
+        where: {
+          storeId: store.storeId
+        }
+      }),
+      this.prisma.product.count({
+        where: {
+          isDelete: false,
+          status: 'ACTIVE',
+          storeId: store.storeId
+        }
+      }),
+      this.prisma.product.count({
+        where: {
+          isDelete: false,
+          status: 'BLOCK',
+          storeId: store.storeId
+        }
+      }),
+      this.prisma.product.count({
+        where: {
+          isDelete: true,
+          storeId: store.storeId
+        }
+      })
+    ])
+
+    return {
+      msg: 'Lấy thông tin thành công',
+      result: {
+        all,
+        active,
+        block,
+        deleted
+      }
     }
   }
 

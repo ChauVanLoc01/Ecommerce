@@ -46,3 +46,10 @@ export type ProductListResponse = Return<{
         page_size: number
     }
 }>
+
+export type ProductAnalyticResponse = Return<{
+    all: number
+    active: number
+    block: number
+    deleted: number
+}>

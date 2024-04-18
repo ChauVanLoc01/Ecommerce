@@ -1,7 +1,13 @@
 import { PrismaService } from '@app/common/prisma/prisma.service'
 import { InjectQueue } from '@nestjs/bull'
 import { CACHE_MANAGER } from '@nestjs/cache-manager'
-import { BadRequestException, ForbiddenException, Inject, Injectable, InternalServerErrorException, UnauthorizedException } from '@nestjs/common'
+import {
+  BadRequestException,
+  ForbiddenException,
+  Inject,
+  Injectable,
+  UnauthorizedException
+} from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import { Account, User } from '@prisma/client'
@@ -57,7 +63,7 @@ export class AuthService {
     const accountExist = await this.prisma.account.findUnique({
       where: {
         username
-      },
+      }
     })
 
     if (!accountExist) {
@@ -91,7 +97,7 @@ export class AuthService {
 
     return {
       ...userExist,
-      storeRoleId,
+      storeRoleId
     }
   }
 
@@ -181,7 +187,7 @@ export class AuthService {
               email,
               role: Role.USER,
               status: Status.ACTIVE,
-              full_name,
+              full_name
             }
           }),
           tx.account.create({
@@ -199,7 +205,7 @@ export class AuthService {
     const current_user = {
       id: rest.id,
       role: rest.role,
-      storeRoleId,
+      storeRoleId
     } as CurrentUserType
 
     const [access_token, refresh_token] = await Promise.all([
@@ -253,15 +259,15 @@ export class AuthService {
       result: {
         user: user_profile,
         store,
-        access_token: `Beaer ${access_token}`,
-        refresh_token: `Beaer ${refresh_token}`
+        access_token: `Bearer ${access_token}`,
+        refresh_token: `Bearer ${refresh_token}`
       }
     }
   }
 
   async employeeRegister(currentStore: CurrentStoreType, body: RegisterDTO): Promise<Return> {
     try {
-      const {email, full_name, password, username} = body
+      const { email, full_name, password, username } = body
 
       const accountExist = await this.prisma.account.findUnique({
         where: {
@@ -273,42 +279,44 @@ export class AuthService {
         throw new BadRequestException('User name đã tồn tại')
       }
 
-      const [createdUser, createdStoreRole, createdAccount] = await this.prisma.$transaction(async (tx) => {
-        const userId = uuidv4()
-        const storeRoleId = uuidv4()
+      const [createdUser, createdStoreRole, createdAccount] = await this.prisma.$transaction(
+        async (tx) => {
+          const userId = uuidv4()
+          const storeRoleId = uuidv4()
 
-        const [createdUser, createdStoreRole, createdAccount] = await Promise.all([
-          tx.user.create({
-            data: {
-              email,
-              full_name,
-              id: userId,
-              role: Role.EMPLOYEE,
-              status: Status.ACTIVE,
-            }
-          }),
-          tx.storeRole.create({
-            data: {
-              id: storeRoleId,
-              storeId: currentStore.storeId,
-              status: Status.ACTIVE,
-              role: Role.EMPLOYEE,
-              createdBy: currentStore.userId
-            }
-          }),
-          tx.account.create({
-            data: {
-              username,
-              password: await this.hashPassword(password),
-              userId: userId,
-              storeRoleId: storeRoleId,
-              createdBy: currentStore.userId
-            }
-          })
-        ])
+          const [createdUser, createdStoreRole, createdAccount] = await Promise.all([
+            tx.user.create({
+              data: {
+                email,
+                full_name,
+                id: userId,
+                role: Role.EMPLOYEE,
+                status: Status.ACTIVE
+              }
+            }),
+            tx.storeRole.create({
+              data: {
+                id: storeRoleId,
+                storeId: currentStore.storeId,
+                status: Status.ACTIVE,
+                role: Role.EMPLOYEE,
+                createdBy: currentStore.userId
+              }
+            }),
+            tx.account.create({
+              data: {
+                username,
+                password: await this.hashPassword(password),
+                userId: userId,
+                storeRoleId: storeRoleId,
+                createdBy: currentStore.userId
+              }
+            })
+          ])
 
-        return [createdUser, createdStoreRole, createdAccount]
-      })
+          return [createdUser, createdStoreRole, createdAccount]
+        }
+      )
 
       return {
         msg: 'Tạo tài khoản thành công',
