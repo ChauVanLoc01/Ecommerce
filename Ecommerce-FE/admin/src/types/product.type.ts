@@ -5,9 +5,9 @@ type Order = 'asc' | 'desc'
 
 export type ProductQuery = Partial<{
     category: string
-    createdAt: string
+    createdAt: Order
     sold: Order
-    price: number
+    price: Order
     price_min: number
     price_max: number
     min_date: string

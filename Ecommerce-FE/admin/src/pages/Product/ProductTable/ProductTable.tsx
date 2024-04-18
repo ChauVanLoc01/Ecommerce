@@ -14,13 +14,11 @@ import {
 } from '@tanstack/react-table'
 import { BiSolidSortAlt } from 'react-icons/bi'
 
-import { Badge, ContextMenu, Inset, Tooltip } from '@radix-ui/themes'
+import { Badge, ContextMenu, Flex, Grid, Inset, Text, Tooltip } from '@radix-ui/themes'
 import { format } from 'date-fns'
-import { useLoaderData } from 'react-router-dom'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from 'src/components/Table/Table'
 import { ProductStatus } from 'src/constants/product.status'
-import useQueryParams from 'src/hooks/useQueryParams'
-import { Product, ProductQueryAndPagination } from 'src/types/product.type'
+import { Product, ProductListResponse } from 'src/types/product.type'
 import { convertCurrentcy } from 'src/utils/utils'
 
 export const columns: ColumnDef<Product>[] = [
@@ -74,7 +72,11 @@ export const columns: ColumnDef<Product>[] = [
                 <BiSolidSortAlt />
             </div>
         ),
-        cell: ({ row }) => <div className='lowercase'>{convertCurrentcy(row.getValue('priceBefore'))}đ</div>
+        cell: ({ row }) => (
+            <Text color='blue'>
+                {row.getValue('priceBefore') ? `${convertCurrentcy(row.getValue('priceBefore'))}đ` : ''}
+            </Text>
+        )
     },
     {
         accessorKey: 'priceAfter',
@@ -84,17 +86,17 @@ export const columns: ColumnDef<Product>[] = [
                 <BiSolidSortAlt />
             </div>
         ),
-        cell: ({ row }) => <div className='lowercase'>{convertCurrentcy(row.getValue('priceAfter'))}đ</div>
+        cell: ({ row }) => <Text color='red'>{convertCurrentcy(row.getValue('priceAfter'))}</Text>
     },
     {
-        accessorKey: 'quantity',
+        accessorKey: 'currentQuantity',
         header: () => (
             <div className='flex items-center gap-x-2'>
                 Số lượng
                 <BiSolidSortAlt />
             </div>
         ),
-        cell: ({ row }) => <div className='lowercase'>{convertCurrentcy(row.getValue('priceAfter'))}</div>
+        cell: ({ row }) => <Text>{convertCurrentcy(row.getValue('currentQuantity'))}</Text>
     },
     {
         accessorKey: 'status',
@@ -135,17 +137,18 @@ export const columns: ColumnDef<Product>[] = [
     }
 ]
 
-export function ProductTable() {
+type ProductTableProps = {
+    data: ProductListResponse
+}
+
+export function ProductTable({ data }: ProductTableProps) {
     const [sorting, setSorting] = React.useState<SortingState>([])
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
     const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
     const [rowSelection, setRowSelection] = React.useState({})
 
-    const [query, _] = useQueryParams<ProductQueryAndPagination>()
-    const [data, { page, page_size }] = useLoaderData() as [Product[], { page: number; page_size: number }]
-
     const table = useReactTable({
-        data,
+        data: data.result.data,
         columns,
         onSortingChange: setSorting,
         onColumnFiltersChange: setColumnFilters,
@@ -161,7 +164,7 @@ export function ProductTable() {
             columnVisibility,
             rowSelection
         },
-        rowCount: 21,
+        rowCount: data.result.query.limit,
         manualPagination: true
     })
 
@@ -211,7 +214,7 @@ export function ProductTable() {
                         ) : (
                             <TableRow>
                                 <TableCell colSpan={columns.length} className='h-24 text-center'>
-                                    No results.
+                                    Không có sản phẩm
                                 </TableCell>
                             </TableRow>
                         )}

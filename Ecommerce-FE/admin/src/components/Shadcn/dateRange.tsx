@@ -1,7 +1,7 @@
 'use client'
 
 import { Button, Text } from '@radix-ui/themes'
-import { format, sub } from 'date-fns'
+import { format } from 'date-fns'
 import { vi } from 'date-fns/locale'
 import * as React from 'react'
 import { DateRange } from 'react-day-picker'
@@ -9,12 +9,12 @@ import { cn } from 'src/utils/utils'
 import { Calendar } from './calendar'
 import { Popover, PopoverContent, PopoverTrigger } from './popover'
 
-export function DatePickerWithRange({ className }: React.HTMLAttributes<HTMLDivElement>) {
-    const [date, setDate] = React.useState<DateRange | undefined>({
-        from: sub(new Date(), { days: 7 }),
-        to: new Date()
-    })
+export type DatePickerWithRangeProps = {
+    date: DateRange | undefined
+    setDate: React.Dispatch<React.SetStateAction<DateRange | undefined>>
+} & React.HTMLAttributes<HTMLDivElement>
 
+export function DatePickerWithRange({ date, setDate, className }: DatePickerWithRangeProps) {
     return (
         <div className={cn('grid gap-2', className)}>
             <Popover>
@@ -45,7 +45,7 @@ export function DatePickerWithRange({ className }: React.HTMLAttributes<HTMLDivE
                                     format(date.from, 'dd-LL-y')
                                 )
                             ) : (
-                                <span>Pick a date</span>
+                                <span>Bắt đầu - Kết thúc</span>
                             )}
                         </Text>
                         <div className='absolute top-1/2 right-4 -translate-y-1/2'>
