@@ -30,3 +30,16 @@ export type RegisterBody = {
 }
 
 export type RegisterResponse = LoginResponse
+
+export type RegisterStoreResponse = {
+    id: string
+    name: string
+    image: string
+    location: string
+    description?: string
+    status: string
+    createdBy: string
+    updatedBy?: string
+    createdAt: Date
+    updatedAt?: string
+}

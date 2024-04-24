@@ -10,6 +10,7 @@ import { CreateOrderDTO } from '../dtos/create_order.dto'
 import { QueryOrderDTO } from '../dtos/query-order.dto'
 import { UpdateOrderDTO } from '../dtos/update_order.dto'
 import { OrderService } from './order.service'
+import { MessagePattern } from '@nestjs/microservices'
 
 @ApiBearerAuth()
 @UseGuards(JwtGuard)

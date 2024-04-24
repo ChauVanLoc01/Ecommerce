@@ -10,9 +10,31 @@ import { AuthModule } from './auths/auth.module'
 import { EmployeeModule } from './employees/employee.module'
 import { UserModule } from './users/user.module'
 import { DeliveryModule } from './delivery/delivery.module'
+import { ClientsModule, Transport } from '@nestjs/microservices'
+import { QueueName } from 'common/constants/queue.constant'
 
 @Module({
   imports: [
+    ClientsModule.registerAsync({
+      isGlobal: true,
+      clients: [
+        {
+          name: 'STORE_SERVICE',
+          imports: [ConfigModule],
+          useFactory: (configService: ConfigService) => ({
+            transport: Transport.RMQ,
+            options: {
+              urls: [configService.get<string>('rabbitmq.uri')],
+              queue: QueueName.store,
+              queueOptions: {
+                durable: true
+              }
+            }
+          }),
+          inject: [ConfigService]
+        }
+      ]
+    }),
     CacheModule.registerAsync({
       isGlobal: true,
       imports: [ConfigModule],

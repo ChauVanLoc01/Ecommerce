@@ -32,10 +32,7 @@ export class StoreController {
   @UseInterceptors(FileInterceptor('image'))
   @Roles(Role.USER)
   @Post('register')
-  registerStore(
-    @CurrentUser() user: CurrentUserType,
-    @Body() body: CreateStoreDTO,
-  ) {
+  registerStore(@CurrentUser() user: CurrentUserType, @Body() body: CreateStoreDTO) {
     return this.storeService.registerStore(user, body)
   }
 

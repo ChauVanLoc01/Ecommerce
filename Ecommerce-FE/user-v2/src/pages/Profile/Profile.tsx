@@ -25,7 +25,7 @@ const Profile = () => {
             }}
             className='flex items-start gap-x-25'
         >
-            <CardProfile rootClassName='basis-1/5' />
+            <CardProfile rootClassName='flex-shrink-0' />
             <Outlet />
         </motion.section>
     )

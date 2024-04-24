@@ -2,16 +2,14 @@ import { useRef } from 'react'
 
 import classNames from 'classnames'
 import { AiOutlineCloudUpload } from 'react-icons/ai'
-import { BsBoxSeam } from 'react-icons/bs'
 import { FaFacebookSquare, FaGoogle } from 'react-icons/fa'
 import { FaApple } from 'react-icons/fa6'
-import { HiOutlineInformationCircle } from 'react-icons/hi2'
 import { MdOutlinePayment } from 'react-icons/md'
 import { PiDotsThreeOutlineVerticalDuotone } from 'react-icons/pi'
-import { SlLock } from 'react-icons/sl'
 import { TbTruckDelivery } from 'react-icons/tb'
 import { NavLink } from 'react-router-dom'
 
+import { ArchiveIcon, InfoCircledIcon, LockClosedIcon } from '@radix-ui/react-icons'
 import { route } from 'src/constants/route'
 
 type CardProps = {
@@ -80,60 +78,60 @@ const CardProfile = ({ rootClassName }: CardProps) => {
                     to={`/${route.profile}`}
                     end
                     className={({ isActive }) =>
-                        classNames('py-12 flex items-center space-x-[7px] justify-start px-4 relative z-10', {
+                        classNames('py-12 flex items-center space-x-[12px] justify-start px-4 relative z-10', {
                             'after:content-[""] after:block after:absolute after:inset-0 after:rounded-8 after:bg-blue-100 text-blue-500 bg-transparent after:-z-10':
                                 isActive,
                             'text-gray-500': !isActive
                         })
                     }
                 >
-                    <HiOutlineInformationCircle />
+                    <InfoCircledIcon width={20} height={20} />
                     <span>Thông tin cá nhân</span>
                 </NavLink>
                 <NavLink
                     to={`/${route.profile}/${route.order}`}
                     end
                     className={({ isActive }) =>
-                        classNames('py-12 flex items-center space-x-[7px] justify-start px-4 relative z-10', {
+                        classNames('py-12 flex items-center space-x-[12px] justify-start px-4 relative z-10', {
                             'after:content-[""] after:block after:absolute after:inset-0 after:rounded-8 after:bg-blue-100 text-blue-500 bg-transparent after:-z-10':
                                 isActive,
                             'text-gray-500': !isActive
                         })
                     }
                 >
-                    <BsBoxSeam />
+                    <ArchiveIcon width={18} height={18} />
                     <span>Đơn hàng đã mua</span>
                 </NavLink>
                 <NavLink
                     to={`/${route.profile}/${route.changePassword}`}
                     className={({ isActive }) =>
-                        classNames('py-12 flex items-center space-x-[7px] justify-start px-4 relative z-10', {
+                        classNames('py-12 flex items-center space-x-[12px] justify-start px-4 relative z-10', {
                             'after:content-[""] after:block after:absolute after:inset-0 after:rounded-8 after:bg-blue-100 text-blue-500 bg-transparent after:-z-10':
                                 isActive,
                             'text-gray-500': !isActive
                         })
                     }
                 >
-                    <SlLock />
+                    <LockClosedIcon width={20} height={20} />
                     <span>Thay Đổi Mật Khẩu</span>
                 </NavLink>
                 <NavLink
                     to={`/${route.profile}/${route.address}`}
                     className={({ isActive }) =>
-                        classNames('py-12 flex items-center space-x-[7px] justify-start px-4 relative z-10', {
+                        classNames('py-12 flex items-center space-x-[12px] justify-start px-4 relative z-10', {
                             'after:content-[""] after:block after:absolute after:inset-0 after:rounded-8 after:bg-blue-100 text-blue-500 bg-transparent after:-z-10':
                                 isActive,
                             'text-gray-500': !isActive
                         })
                     }
                 >
-                    <TbTruckDelivery />
+                    <TbTruckDelivery size={20} />
                     <span>Địa chỉ giao hàng</span>
                 </NavLink>
                 <NavLink
                     to={`/${route.profile}/${route.payment}`}
                     className={({ isActive }) =>
-                        classNames('py-12 flex items-center space-x-[7px] justify-start px-4 relative z-10', {
+                        classNames('py-12 flex items-center space-x-[12px] justify-start px-4 relative z-10', {
                             'after:content-[""] after:block after:absolute after:inset-0 after:rounded-8 after:bg-blue-100 text-blue-500 bg-transparent after:-z-10':
                                 isActive,
                             'text-gray-500': !isActive

@@ -28,6 +28,7 @@ import { ResetPasswordType as ResetPasswordDTOType } from '../dtos/reset_passwor
 import { ResetPasswordForEmployee } from '../dtos/reset_password_for_employee.dto'
 import { SendOtpType } from '../dtos/sendOTP.dto'
 import { EmailInfor, PasswordData, ResetPasswordType } from '../workers/mail.worker'
+import { ClientProxy } from '@nestjs/microservices'
 
 @Injectable()
 export class AuthService {
@@ -36,7 +37,8 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
     @InjectQueue(BackgroundName.mail) private sendMailQueue: Queue,
-    @Inject(CACHE_MANAGER) private cacheManager: Cache
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+    @Inject('STORE_SERVICE') private storeClient: ClientProxy
   ) {}
 
   createAccessToken(data: CurrentUserType | CurrentStoreType): Promise<string> {
@@ -160,7 +162,10 @@ export class AuthService {
     return {
       msg: 'Đăng nhập thành công',
       result: {
-        user: userExist,
+        user: {
+          ...userExist,
+          storeRoleId: user.storeRoleId
+        },
         access_token: `Bearer ${access_token}`,
         refresh_token: `Bearer ${refresh_token}`
       }
@@ -334,11 +339,14 @@ export class AuthService {
     }
   }
 
-  async resetPasswordForEmployee(store: CurrentStoreType, body: ResetPasswordForEmployee): Promise<Return> {
+  async resetPasswordForEmployee(
+    store: CurrentStoreType,
+    body: ResetPasswordForEmployee
+  ): Promise<Return> {
     const employeeExist = await this.prisma.user.findUnique({
       where: {
         id: body.employeeId,
-        role: Role.EMPLOYEE,
+        role: Role.EMPLOYEE
       }
     })
 

@@ -6,12 +6,14 @@ import { Link, useNavigate } from 'react-router-dom'
 import SimpleBar from 'simplebar-react'
 
 import Button from 'src/components/Button'
+import { Button as RadixButton } from '@radix-ui/themes'
 import Image from 'src/components/Image'
 import Popover from 'src/components/Popover'
 import { exitEvent } from 'src/constants/event'
 import { route } from 'src/constants/route'
 import { AppContext } from 'src/contexts/AppContext'
 import { convertCurrentcy, removeSpecialCharacter } from 'src/utils/utils.ts'
+import RegisterStore from 'src/pages/RegisterStore'
 
 const Header = () => {
     const { products, profile } = useContext(AppContext)
@@ -47,6 +49,7 @@ const Header = () => {
                     hidden: !profile
                 })}
             >
+                <RegisterStore />
                 <Popover
                     referenceChildren={
                         <div className='relative'>
@@ -151,20 +154,20 @@ const Header = () => {
                     floatingChildren={({ setIsOpen }) => (
                         <>
                             <button
-                                className='p-12 rounded-6 hover:bg-gray-200'
+                                className='p-12 text-left rounded-6 hover:bg-gray-200'
                                 onClick={handleNavigate(setIsOpen, `/${route.profile}`)}
                             >
                                 Thông tin cá nhân
                             </button>
                             <button
-                                className='p-12 rounded-6 hover:bg-gray-200'
+                                className='p-12 text-left rounded-6 hover:bg-gray-200'
                                 onClick={handleNavigate(setIsOpen, `/${route.profile}/${route.order}`)}
                             >
                                 Đơn hàng đã mua
                             </button>
                             <button
                                 onClick={handleExit(setIsOpen)}
-                                className='p-12 rounded-6 hover:bg-gray-200 w-full text-left'
+                                className='p-12 text-left rounded-6 hover:bg-gray-200 w-full'
                             >
                                 Đăng xuất
                             </button>
