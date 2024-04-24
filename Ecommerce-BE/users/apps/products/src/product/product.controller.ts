@@ -92,29 +92,14 @@ export class ProductController {
     return this.productsService.createProduct(user, file.filename, body)
   }
 
-  @UseInterceptors(FileInterceptor('image'))
   @Roles(Role.EMPLOYEE, Role.STORE_OWNER)
   @Put(':productId')
   updateProduct(
     @Param('productId') productId: string,
     @CurrentUser() user: CurrentStoreType,
     @Body() body: UpdateProductDTO,
-    @UploadedFile(
-      new ParseFilePipe({
-        validators: [
-          new FileTypeValidator({ fileType: 'image/*' }),
-          new MaxFileSizeValidator({ maxSize: 5000000 })
-        ],
-        exceptionFactory(_) {
-          throw new BadRequestException(
-            'File tải lên phải có kiểu image/* và dung lượng maxmimum 5MB'
-          )
-        }
-      })
-    )
-    file?: Express.Multer.File
   ) {
-    return this.productsService.updateProduct(user, productId, body, file.filename)
+    return this.productsService.updateProduct(user, productId, body)
   }
 
   @Roles(Role.STORE_OWNER)

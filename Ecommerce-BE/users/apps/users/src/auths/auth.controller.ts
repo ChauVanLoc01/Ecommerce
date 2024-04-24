@@ -20,6 +20,7 @@ import { RegisterDTO } from '../dtos/register.dto'
 import { ResetPasswordDTO } from '../dtos/reset_password.dto'
 import { SendOtpDTO } from '../dtos/sendOTP.dto'
 import { AuthService } from './auth.service'
+import { ResetPasswordForEmployee } from '../dtos/reset_password_for_employee.dto'
 
 @ApiTags('authentication')
 @Controller('authentication')
@@ -62,6 +63,13 @@ export class AuthController {
     @Body() body: RegisterDTO,
   ) {
     return this.authService.employeeRegister(store, body)
+  }
+
+  @UseGuards(JwtGuard)
+  @Roles(Role.ADMIN, Role.STORE_OWNER)
+  @Put('employee/reset-password')
+  resetPasswordForEmployee(@CurrentUser() store: CurrentStoreType, @Body() body: ResetPasswordForEmployee) {
+    return this.authService.resetPasswordForEmployee(store, body)
   }
 
   @UseGuards(JwtGuard)

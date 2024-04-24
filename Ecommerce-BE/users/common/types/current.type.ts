@@ -8,5 +8,6 @@ export type CurrentUserType = {
 export type CurrentStoreType = {
   userId: string
   storeId: string
+  storeRoleId: string
   role: string
 }

@@ -18,7 +18,13 @@ const Product = () => {
     const [date, setDate] = useState<DateRange | undefined>(undefined)
     const [page, setPage] = useState<number>(1)
 
-    const [analytics, categories] = useLoaderData() as [ProductAnalyticResponse, Category[]]
+    const [_, categories] = useLoaderData() as [ProductAnalyticResponse, Category[]]
+
+    const { data: analytics, refetch: analyticRefetch } = useQuery({
+        queryKey: ['productAnalytic'],
+        queryFn: ProductApi.productAnalytic,
+        enabled: false
+    })
 
     const { refetch, data } = useQuery({
         queryKey: ['productList', JSON.stringify(query)],
@@ -161,25 +167,19 @@ const Product = () => {
                     <Flex gapX={'2'} align={'center'}>
                         <Text size={'4'}>Tổng sản phẩm:</Text>
                         <Kbd size={'4'} className='rounded-6 font-medium !text-green-500'>
-                            {analytics.result.all}
+                            {analytics?.data.result.all}
                         </Kbd>
                     </Flex>
                     <Flex gapX={'2'} align={'center'}>
                         <Text size={'4'}>Đang bán:</Text>
                         <Kbd size={'4'} className='rounded-6 font-medium !text-blue'>
-                            {analytics.result.active}
-                        </Kbd>
-                    </Flex>
-                    <Flex gapX={'2'} align={'center'}>
-                        <Text size={'4'}>Đã ẩn:</Text>
-                        <Kbd size={'4'} className='rounded-6 font-medium !text-yellow-500'>
-                            {analytics.result.block}
+                            {analytics?.data.result.active}
                         </Kbd>
                     </Flex>
                     <Flex gapX={'2'} align={'center'}>
                         <Text size={'4'}>Đã xóa:</Text>
                         <Kbd size={'4'} className='rounded-6 font-medium !text-red'>
-                            {analytics.result.deleted}
+                            {analytics?.data.result.block}
                         </Kbd>
                     </Flex>
                 </Flex>
@@ -204,8 +204,8 @@ const Product = () => {
                             </TextField.Slot>
                         </TextField.Root>
                         <Flex direction='column' width='120px'>
-                            <Select.Root size='3' defaultValue='ACTIVE' onValueChange={handleStatus}>
-                                <Select.Trigger />
+                            <Select.Root size='3' onValueChange={handleStatus}>
+                                <Select.Trigger placeholder='Status' />
                                 <Select.Content position='popper'>
                                     <Select.Group>
                                         <Select.Label>Trạng thái</Select.Label>
@@ -372,7 +372,7 @@ const Product = () => {
                         </Flex>
                     </Flex>
                 </Flex>
-                {data && <ProductTable data={data.data} />}
+                {data && <ProductTable data={data.data} refetch={refetch} analyticRefetch={analyticRefetch} />}
             </div>
         </LayoutProfile>
     )

@@ -59,15 +59,12 @@ export class JwtGuard implements CanActivate {
 
       return true
     } catch (err) {
-      console.log(err)
       throw new UnauthorizedException(err.message)
     }
   }
 
   private extractTokenFromHeader(request: Request): string | undefined {
     const [type, token] = request.headers.authorization?.split(' ') ?? []
-    console.log('request', request)
-    console.log('authentication', request.headers.authorization)
     return type === 'Bearer' ? token : undefined
   }
 }

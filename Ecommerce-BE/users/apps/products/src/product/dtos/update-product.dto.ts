@@ -1,29 +1,24 @@
 /* eslint-disable prettier/prettier */
-import {
-  IsNotEmpty,
-  IsNumber,
-  IsString,
-  IsOptional,
-  IsEnum
-} from 'class-validator'
-import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger'
+import { ApiPropertyOptional } from '@nestjs/swagger'
+import { Transform } from 'class-transformer'
+import { IsEnum, IsNumber, IsOptional, IsString } from 'class-validator'
+import { GreaterThanPrice } from 'common/decorators/greater-than-price.decorator'
 import { Status } from 'common/enums/status.enum'
 
 export class UpdateProductDTO {
-  @ApiPropertyOptional({
-    required: false,
-    type: 'string',
-    format: 'binary'
-  })
-  image?: Express.Multer.File
-
   @ApiPropertyOptional()
   @IsString()
   @IsOptional()
   name?: string
 
   @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  category?: string
+
+  @ApiPropertyOptional()
   @IsNumber()
+  @GreaterThanPrice('priceAfter')
   @IsOptional()
   priceBefore?: number
 
@@ -35,7 +30,7 @@ export class UpdateProductDTO {
   @ApiPropertyOptional()
   @IsNumber()
   @IsOptional()
-  currentQuantity?: number
+  initQuantity?: number
 
   @ApiPropertyOptional()
   @IsString()

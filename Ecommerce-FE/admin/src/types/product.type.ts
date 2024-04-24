@@ -62,3 +62,13 @@ export type Category = {
 }
 
 export type CategoryResponse = Return<Category[]>
+
+export type UpdateProductBody = Partial<{
+    name: string
+    category: string
+    initQuantity: number
+    priceBefore: number
+    priceAfter: number
+    description: string
+    status: string
+}>

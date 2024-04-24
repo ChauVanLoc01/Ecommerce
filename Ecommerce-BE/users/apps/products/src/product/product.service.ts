@@ -301,26 +301,53 @@ export class ProductService {
   async updateProduct(
     user: CurrentStoreType,
     productId: string,
-    body: UpdateProductType,
-    imageUrl?: string
+    body: UpdateProductType
   ): Promise<Return> {
+    const { storeId } = user
     const productExist = await this.prisma.product.findUnique({
       where: {
-        id: productId
+        id: productId,
+        storeId
       }
     })
 
     if (!productExist) throw new NotFoundException('Sản phẩm không tồn tại')
 
-    const { image, ...rest } = body
+    const { category, description, initQuantity, name, priceAfter, priceBefore, status } = body
+
+    const init = initQuantity ?? 0
 
     return {
       msg: 'Cập nhật sản phẩm thành công',
       result: await this.prisma.product.update({
         where: {
-          id: productId
+          id: productId,
+          storeId
         },
-        data: { ...rest, updatedBy: user.userId, image: imageUrl }
+        data: {
+          category,
+          initQuantity:
+            init > 0
+              ? {
+                  increment: init
+                }
+              : {
+                  decrement: init
+                },
+          currentQuantity:
+            init > 0
+              ? {
+                  increment: init
+                }
+              : {
+                  decrement: init
+                },
+          name,
+          description,
+          priceAfter,
+          priceBefore,
+          status
+        }
       })
     }
   }

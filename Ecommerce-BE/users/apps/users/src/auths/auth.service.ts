@@ -6,6 +6,7 @@ import {
   ForbiddenException,
   Inject,
   Injectable,
+  NotFoundException,
   UnauthorizedException
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
@@ -24,6 +25,7 @@ import { v4 as uuidv4 } from 'uuid'
 import { ChangePasswordType } from '../dtos/change_password.dto'
 import { RegisterDTO } from '../dtos/register.dto'
 import { ResetPasswordType as ResetPasswordDTOType } from '../dtos/reset_password.dto'
+import { ResetPasswordForEmployee } from '../dtos/reset_password_for_employee.dto'
 import { SendOtpType } from '../dtos/sendOTP.dto'
 import { EmailInfor, PasswordData, ResetPasswordType } from '../workers/mail.worker'
 
@@ -108,7 +110,7 @@ export class AuthService {
       throw new ForbiddenException('Không có quyền truy cập tài nguyên')
     }
 
-    const { storeId, role } = await this.prisma.storeRole.findUnique({
+    const { storeId, id, role } = await this.prisma.storeRole.findUnique({
       where: {
         id: accountExist.storeRoleId
       }
@@ -138,7 +140,8 @@ export class AuthService {
     return {
       role,
       storeId,
-      userId
+      userId,
+      storeRoleId: id
     }
   }
 
@@ -328,6 +331,47 @@ export class AuthService {
       }
     } catch (error) {
       throw new BadRequestException(error.message)
+    }
+  }
+
+  async resetPasswordForEmployee(store: CurrentStoreType, body: ResetPasswordForEmployee): Promise<Return> {
+    const employeeExist = await this.prisma.user.findUnique({
+      where: {
+        id: body.employeeId,
+        role: Role.EMPLOYEE,
+      }
+    })
+
+    if (!employeeExist) {
+      throw new NotFoundException('Nhân viên không tồn tại')
+    }
+
+    const accountExist = await this.prisma.account.findFirst({
+      where: {
+        userId: body.employeeId,
+        StoreRole: {
+          storeId: store.storeId
+        }
+      }
+    })
+
+    if (!accountExist) {
+      throw new NotFoundException('Tài khoản không tồn tại')
+    }
+
+    const updatedAccount = await this.prisma.account.update({
+      where: {
+        username: accountExist.username
+      },
+      data: {
+        username: body.username,
+        password: await this.hashPassword(body.password)
+      }
+    })
+
+    return {
+      msg: 'Reset mật khẩu thành công',
+      result: omit(updatedAccount, ['password'])
     }
   }
 
