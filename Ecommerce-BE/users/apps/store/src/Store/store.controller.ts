@@ -7,6 +7,7 @@ import {
   ParseFilePipe,
   Post,
   Put,
+  Request,
   UploadedFile,
   UseGuards,
   UseInterceptors
@@ -20,6 +21,8 @@ import { Roles } from 'common/decorators/roles.decorator'
 import { Role } from 'common/enums/role.enum'
 import { JwtGuard } from 'common/guards/jwt.guard'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
+import multer, { diskStorage } from 'multer'
+import { extname } from 'path'
 import { CreateStoreDTO } from './dtos/create-store.dto'
 import { UpdateStoreDTO } from './dtos/update-store.dto'
 import { StoreService } from './store.service'
@@ -28,6 +31,27 @@ import { StoreService } from './store.service'
 @Controller('store')
 export class StoreController {
   constructor(private readonly storeService: StoreService) {}
+
+  @Post('upload-single-file')
+  @UseInterceptors(FileInterceptor('file'))
+  uploadFile(
+    @UploadedFile(
+      new ParseFilePipe({
+        exceptionFactory(_) {
+          throw new BadRequestException('File phải có kiểu là image/* và tối đa 5MB')
+        },
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 5000000 }),
+          new FileTypeValidator({ fileType: 'image/*' })
+        ],
+        fileIsRequired: true
+      })
+    )
+    file: Express.Multer.File,
+    @Request() req: Express.Request
+  ) {
+    return this.storeService.upload(file, req)
+  }
 
   @UseInterceptors(FileInterceptor('image'))
   @Roles(Role.USER)

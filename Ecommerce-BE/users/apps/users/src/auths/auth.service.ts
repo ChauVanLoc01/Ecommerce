@@ -164,7 +164,7 @@ export class AuthService {
       result: {
         user: {
           ...userExist,
-          storeRoleId: user.storeRoleId
+          storeRoleId: user.storeRoleId ?? undefined
         },
         access_token: `Bearer ${access_token}`,
         refresh_token: `Bearer ${refresh_token}`

@@ -6,14 +6,13 @@ import { Link, useNavigate } from 'react-router-dom'
 import SimpleBar from 'simplebar-react'
 
 import Button from 'src/components/Button'
-import { Button as RadixButton } from '@radix-ui/themes'
 import Image from 'src/components/Image'
 import Popover from 'src/components/Popover'
 import { exitEvent } from 'src/constants/event'
 import { route } from 'src/constants/route'
 import { AppContext } from 'src/contexts/AppContext'
-import { convertCurrentcy, removeSpecialCharacter } from 'src/utils/utils.ts'
 import RegisterStore from 'src/pages/RegisterStore'
+import { convertCurrentcy, removeSpecialCharacter } from 'src/utils/utils.ts'
 
 const Header = () => {
     const { products, profile } = useContext(AppContext)

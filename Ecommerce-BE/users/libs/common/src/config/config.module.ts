@@ -13,6 +13,7 @@ import elasticsearchConfig from './data_configs/elasticsearch.config'
       load: [appConfig, rabbitmqConfig, bullqueueConfig, elasticsearchConfig],
       envFilePath: [
         '.env',
+        '.env.aws',
         '.env.rabbitmq',
         '.env.bullqueue',
         '.env.elasticsearch',

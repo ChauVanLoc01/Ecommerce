@@ -5,7 +5,9 @@ import {
   Injectable,
   InternalServerErrorException
 } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
 import { ClientProxy } from '@nestjs/microservices'
+import { S3 } from 'aws-sdk'
 import { updateStoreRoleId } from 'common/constants/event.constant'
 import { Role } from 'common/enums/role.enum'
 import { Status } from 'common/enums/status.enum'
@@ -19,9 +21,44 @@ import { UpdateStoreDTO } from './dtos/update-store.dto'
 @Injectable()
 export class StoreService {
   constructor(
-    private readonly prisma: PrismaService,
+    readonly config_service: ConfigService,
+    readonly prisma: PrismaService,
     @Inject('USER_SERVICE') private userClient: ClientProxy
   ) {}
+
+  async upload(file: Express.Multer.File, req: Express.Request): Promise<Return> {
+    try {
+      const { originalname } = file
+      const bucketS3 = this.config_service.get('app.aws_s3_bucket_name')
+      const result = await this.uploadS3(req.file.buffer, bucketS3, `${uuidv4()}_${originalname}`)
+
+      return {
+        msg: 'Upload thành công',
+        result: result.Location
+      }
+    } catch (err) {
+      throw new BadRequestException('Lỗi upload file')
+    }
+  }
+
+  async uploadS3(file: Buffer, bucket: string, name: string) {
+    const s3 = this.getS3()
+    return s3
+      .upload({
+        Bucket: bucket,
+        Key: name,
+        Body: file
+      })
+      .promise()
+  }
+
+  getS3() {
+    return new S3({
+      accessKeyId: this.config_service.get('app.aws_access_key_id'),
+      secretAccessKey: this.config_service.get('app.aws_secret_access_key'),
+      region: this.config_service.get('app.aws_s3_region')
+    })
+  }
 
   async registerStore(user: CurrentUserType, body: CreateStoreDTO): Promise<Return> {
     const { id } = user

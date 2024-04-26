@@ -3,6 +3,9 @@ version: '3.8'
 services:
   userService:
     image: chauvanloc/user-api
+    build:
+      context: .
+      dockerfile: user.Dockerfile
     ports:
       - 3001:3001
     volumes:

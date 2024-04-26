@@ -17,6 +17,7 @@ export type LoginResponse = {
         status: Status
         createdAt: string
         updatedAt: string
+        storeRoleId: string | undefined
     }
     access_token: string
     refresh_token: string

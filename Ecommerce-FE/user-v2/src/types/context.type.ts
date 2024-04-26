@@ -1,7 +1,7 @@
 import { LoginResponse } from './auth.type'
 import { Product } from './product.type'
 
-export type ProductContext = Product & { buy: number; checked: boolean }
+export type ProductContext = Product & { buy: number; checked: boolean; storeId: string }
 
 export type AppContext = {
     profile?: LoginResponse
