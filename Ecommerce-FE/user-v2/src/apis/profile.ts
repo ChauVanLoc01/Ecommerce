@@ -1,9 +1,11 @@
+import { AxiosResponse } from 'axios'
 import { user } from 'src/constants/endpoints'
+import { Delivery, DeliveryBody } from 'src/types/delivery.type'
 import { ChangePasswordResponse, ProfileResponse } from 'src/types/profile.type'
 import { Return } from 'src/types/return.type'
 import { ChangePasswordSchemaType, ProfileSchemaType } from 'src/utils/profile.schema'
+import { http } from './http'
 import { method } from './method'
-import { Delivery, DeliveryBody } from 'src/types/delivery.type'
 
 const { PUT, GET, POST, DELETE } = method(user)
 
@@ -11,7 +13,13 @@ export const profileFetching = {
     getProfile: () => {
         return GET<Return<ProfileResponse>>('profile/user-profile')
     },
-    updateProfile: (body: ProfileSchemaType) => {
+    uploadImage: (formData: FormData) => {
+        return http.postForm<Return<string>, AxiosResponse<Return<string>>, FormData>(
+            '/store/store/upload-single-file',
+            formData
+        )
+    },
+    updateProfile: (body: ProfileSchemaType & { image?: string }) => {
         return PUT<Return<ProfileResponse>, ProfileSchemaType>('profile/user-profile', body)
     },
     changePassword: (body: Omit<ChangePasswordSchemaType, 'confirm_new_password'>) => {

@@ -9,11 +9,12 @@ import {
   Put,
   Request,
   UploadedFile,
+  UploadedFiles,
   UseGuards,
   UseInterceptors
 } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
-import { FileInterceptor } from '@nestjs/platform-express'
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express'
 import { checkStoreExist } from 'common/constants/event.constant'
 import { CurrentUser } from 'common/decorators/current_user.decorator'
 import { Public } from 'common/decorators/public.decorator'
@@ -21,8 +22,6 @@ import { Roles } from 'common/decorators/roles.decorator'
 import { Role } from 'common/enums/role.enum'
 import { JwtGuard } from 'common/guards/jwt.guard'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
-import multer, { diskStorage } from 'multer'
-import { extname } from 'path'
 import { CreateStoreDTO } from './dtos/create-store.dto'
 import { UpdateStoreDTO } from './dtos/update-store.dto'
 import { StoreService } from './store.service'
@@ -32,6 +31,7 @@ import { StoreService } from './store.service'
 export class StoreController {
   constructor(private readonly storeService: StoreService) {}
 
+  @Public()
   @Post('upload-single-file')
   @UseInterceptors(FileInterceptor('file'))
   uploadFile(
@@ -51,6 +51,28 @@ export class StoreController {
     @Request() req: Express.Request
   ) {
     return this.storeService.upload(file, req)
+  }
+
+  @Public()
+  @Post('upload-multiple-file')
+  @UseInterceptors(FilesInterceptor('files', 5))
+  uploadMultipleFile(
+    @UploadedFiles(
+      new ParseFilePipe({
+        exceptionFactory(_) {
+          throw new BadRequestException('File phải có kiểu là image/* và tối đa 5MB')
+        },
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 5000000 }),
+          new FileTypeValidator({ fileType: 'image/*' })
+        ],
+        fileIsRequired: true
+      })
+    )
+    files: Array<Express.Multer.File>,
+    @Request() req: Express.Request
+  ) {
+    return this.storeService.uploadMultipleFile(files, req)
   }
 
   @UseInterceptors(FileInterceptor('image'))

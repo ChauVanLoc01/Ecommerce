@@ -5,6 +5,7 @@ import { CurrentStoreType } from 'common/types/current.type'
 import { Return } from 'common/types/result.type'
 import { omit } from 'lodash'
 import { UpdateEmployee } from '../dtos/update_employee.dto'
+import { UpdateUserProfileDTO } from '../dtos/update_user_profile.dto'
 
 @Injectable()
 export class EmployeeService {
@@ -46,40 +47,62 @@ export class EmployeeService {
   }
 
   async updateStatus(store: CurrentStoreType, body: UpdateEmployee): Promise<Return> {
-      const { status, employeeId } = body
-  
-      const employeeExist = await this.prisma.user.findUnique({
+    const { status, employeeId } = body
+
+    const employeeExist = await this.prisma.user.findUnique({
+      where: {
+        id: employeeId
+      }
+    })
+
+    if (!employeeExist) {
+      throw new NotFoundException('Nhân viên không tồn tại')
+    }
+
+    const [updatedUser, _] = await this.prisma.$transaction([
+      this.prisma.user.update({
         where: {
           id: employeeId
+        },
+        data: {
+          status
+        }
+      }),
+      this.prisma.storeRole.update({
+        where: {
+          id: store.storeRoleId
+        },
+        data: {
+          status
         }
       })
-  
-      if (!employeeExist) {
-        throw new NotFoundException('Nhân viên không tồn tại')
+    ])
+
+    return {
+      msg: 'Cập nhật trạng thái nhân viên thành công',
+      result: updatedUser
+    }
+  }
+
+  async employeeUpdateProfile(store: CurrentStoreType, body: UpdateUserProfileDTO) {
+    const { birthday, email, full_name, address, image } = body
+
+    const updatedUser = await this.prisma.user.update({
+      where: {
+        id: store.userId
+      },
+      data: {
+        image,
+        birthday,
+        email,
+        full_name,
+        address
       }
-  
-      const [updatedUser, _] = await this.prisma.$transaction([
-        this.prisma.user.update({
-          where: {
-            id: employeeId
-          },
-          data: {
-            status
-          }
-        }),
-        this.prisma.storeRole.update({
-          where: {
-            id: store.storeRoleId
-          },
-          data: {
-            status
-          }
-        })
-      ])
-  
-      return {
-        msg: 'Cập nhật trạng thái nhân viên thành công',
-        result: updatedUser
-      }
+    })
+
+    return {
+      msg: 'Cập nhật thành công',
+      result: updatedUser
+    }
   }
 }

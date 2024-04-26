@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useContext, useRef, useState } from 'react'
 
 import classNames from 'classnames'
 import { AiOutlineCloudUpload } from 'react-icons/ai'
@@ -10,17 +10,78 @@ import { TbTruckDelivery } from 'react-icons/tb'
 import { NavLink } from 'react-router-dom'
 
 import { ArchiveIcon, InfoCircledIcon, LockClosedIcon } from '@radix-ui/react-icons'
+import { Spinner } from '@radix-ui/themes'
+import { useMutation } from '@tanstack/react-query'
+import { toast } from 'sonner'
+import { profileFetching } from 'src/apis/profile'
 import { route } from 'src/constants/route'
+import { AppContext } from 'src/contexts/AppContext'
+import { LoginResponse } from 'src/types/auth.type'
+import { ls } from 'src/utils/localStorage'
+import { ProfileSchemaType } from 'src/utils/profile.schema'
 
 type CardProps = {
     rootClassName?: string
 }
 
 const CardProfile = ({ rootClassName }: CardProps) => {
+    const { profile, setProfile } = useContext(AppContext)
+    const [imgUrl, setImgUrl] = useState<string>(
+        profile?.user.image ?? 'https://cdn-icons-png.flaticon.com/512/2202/2202112.png'
+    )
     const fileRef = useRef<HTMLInputElement>(null)
+
+    const { mutate: updateProfileMutation, isPending: updateUserProfilePending } = useMutation({
+        mutationFn: (body: ProfileSchemaType & { image?: string }) => profileFetching.updateProfile(body),
+        onSuccess: (e) => {
+            const newProfile = {
+                ...profile,
+                user: {
+                    ...profile?.user,
+                    image: e.data.result.image
+                }
+            } as LoginResponse
+            ls.setItem('profile', JSON.stringify(newProfile))
+            setProfile(newProfile)
+            toast.success('Cập nhật hình ảnh thành công')
+        },
+        onError: () => {
+            toast.error('Lỗi cập nhật hình ảnh')
+            setImgUrl(profile?.user.image ?? 'https://cdn-icons-png.flaticon.com/512/2202/2202112.png')
+        }
+    })
+
+    const { mutate, isPending } = useMutation({
+        mutationFn: profileFetching.uploadImage,
+        onSuccess: (e) => {
+            updateProfileMutation({ image: e.data.result })
+        },
+        onError: () => {
+            toast.error('Lỗi cập nhật hình ảnh')
+            setImgUrl(profile?.user.image ?? 'https://cdn-icons-png.flaticon.com/512/2202/2202112.png')
+        }
+    })
 
     const handleOpenFile = () => {
         fileRef.current?.click()
+    }
+
+    const handleFileChaneg = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files) {
+            if (!e.target.files[0].type.startsWith('image')) {
+                console.log('1')
+                toast.error('File không đúng định dạng Image/*')
+                return
+            }
+            if (e.target.files[0].size > 500000) {
+                toast.error('Dung lượng hình ảnh tối đa 500KB')
+                return
+            }
+            setImgUrl(URL.createObjectURL(e.target.files[0]))
+            const formData = new FormData()
+            formData.append('file', e.target.files[0])
+            mutate(formData)
+        }
     }
 
     return (
@@ -32,19 +93,25 @@ const CardProfile = ({ rootClassName }: CardProps) => {
         >
             <section className='space-y-2 text-center'>
                 <button
-                    className='w-20 h-20 rounded-full border border-dashed border-blue-600 object-cover mx-auto overflow-hidden relative group'
+                    className='w-28 h-28 rounded-full border border-dashed border-blue-600 object-cover mx-auto overflow-hidden relative group'
                     onClick={handleOpenFile}
                 >
                     <img
-                        src='https://cdn-icons-png.flaticon.com/512/2202/2202112.png'
+                        loading='lazy'
+                        src={imgUrl}
                         alt='background'
-                        className='group-hover:opacity-0 transition-all duration-100 ease-linear rounded-full'
+                        className='group-hover:opacity-0 transition-all duration-100 ease-linear rounded-full bg-center'
                     />
                     <span className='opacity-0 absolute inset-0 flex justify-center items-center bg-white group-hover:opacity-100 transition-all duration-100 ease-linear rounded-full delay-100'>
                         <AiOutlineCloudUpload size={30} className='w-full hful text-blue-600' />
                     </span>
+                    {(isPending || updateUserProfilePending) && (
+                        <div className='bg-gray-100 opacity-60 inset-0 absolute flex justify-center items-center'>
+                            <Spinner size={'3'} />
+                        </div>
+                    )}
                 </button>
-                <input type='file' ref={fileRef} name='' id='' className='hidden' />
+                <input type='file' onChange={handleFileChaneg} ref={fileRef} name='' id='' className='hidden' />
                 <h4 className='font-semibold'>Stebin Ben</h4>
                 <p>Admin</p>
                 <article className='flex items-center justify-center gap-x-2'>

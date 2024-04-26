@@ -38,7 +38,6 @@ class Http {
                 ls.setItem('profile', JSON.stringify(data.result))
                 window.dispatchEvent(new CustomEvent(profileEvent))
                 this.access_token = data.result.access_token
-                console.log('access_token', this.access_token)
             }
             return response
         })

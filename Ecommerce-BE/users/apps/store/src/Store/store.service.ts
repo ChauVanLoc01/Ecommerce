@@ -33,8 +33,25 @@ export class StoreService {
       const result = await this.uploadS3(req.file.buffer, bucketS3, `${uuidv4()}_${originalname}`)
 
       return {
-        msg: 'Upload thành công',
+        msg: 'Upload file thành công',
         result: result.Location
+      }
+    } catch (err) {
+      console.log('uploadFileError', err)
+      throw new BadRequestException('Lỗi upload file')
+    }
+  }
+  async uploadMultipleFile(files: Express.Multer.File[], req: Express.Request): Promise<Return> {
+    try {
+      const bucketS3 = this.config_service.get('app.aws_s3_bucket_name')
+      const result = await Promise.all(
+        files.map((file) =>
+          this.uploadS3(file.buffer, bucketS3, `${uuidv4()}_${file.originalname}`)
+        )
+      )
+      return {
+        msg: 'Upload file thành công',
+        result: result.map((e) => e.Location)
       }
     } catch (err) {
       throw new BadRequestException('Lỗi upload file')

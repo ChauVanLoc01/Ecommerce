@@ -6,6 +6,7 @@ import { JwtGuard } from 'common/guards/jwt.guard'
 import { CurrentStoreType } from 'common/types/current.type'
 import { UpdateEmployee } from '../dtos/update_employee.dto'
 import { EmployeeService } from './employee.service'
+import { UpdateUserProfileDTO } from '../dtos/update_user_profile.dto'
 
 @Controller('employee')
 @UseGuards(JwtGuard)
@@ -18,8 +19,15 @@ export class EmployeeController {
     return this.empService.getAll(store)
   }
 
+  @Roles(Role.USER)
+  @UseGuards(JwtGuard)
+  @Put('employee-profile')
+  userUpdateProfile(@CurrentUser() store: CurrentStoreType, @Body() body: UpdateUserProfileDTO) {
+    return this.empService.employeeUpdateProfile(store, body)
+  }
+
   @Roles(Role.ADMIN, Role.STORE_OWNER)
-  @Put()
+  @Put('update-status')
   updateStatus(@CurrentUser() store: CurrentStoreType, @Body() body: UpdateEmployee) {
     return this.empService.updateStatus(store, body)
   }

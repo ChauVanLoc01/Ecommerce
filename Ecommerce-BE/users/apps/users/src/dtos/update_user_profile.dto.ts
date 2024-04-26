@@ -1,7 +1,11 @@
 import { ApiPropertyOptional } from '@nestjs/swagger'
-import { IsEmail, IsISO8601, IsOptional, IsString, MaxLength } from 'class-validator'
+import { IsEmail, IsISO8601, IsOptional, IsString, IsUrl, MaxLength } from 'class-validator'
 
 export class UpdateUserProfileDTO {
+  @IsUrl()
+  @IsOptional()
+  image?: string
+
   @ApiPropertyOptional()
   @IsString()
   @IsOptional()

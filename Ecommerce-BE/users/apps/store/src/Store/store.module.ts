@@ -1,12 +1,10 @@
+import { ConfigModule } from '@app/common'
 import { PrismaService } from '@app/common/prisma/prisma.service'
-import { StoreController } from './store.controller'
-import { StoreService } from './store.service'
 import { Module } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { MulterModule } from '@nestjs/platform-express'
-import multer, { diskStorage } from 'multer'
-import { v4 as uuidv4 } from 'uuid'
-import { ConfigModule } from '@app/common'
+import { StoreController } from './store.controller'
+import { StoreService } from './store.service'
 
 @Module({
   imports: [MulterModule, ConfigModule],

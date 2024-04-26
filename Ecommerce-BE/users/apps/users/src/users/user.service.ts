@@ -52,13 +52,14 @@ export class UserService {
   }
 
   async userUpdateProfile(user: CurrentUserType, body: UpdateUserProfileType): Promise<Return> {
-    const { birthday, email, full_name, address } = body
+    const { birthday, email, full_name, address, image } = body
 
     const updatedUser = await this.prisma.user.update({
       where: {
         id: user.id
       },
       data: {
+        image,
         birthday,
         email,
         full_name,
@@ -72,7 +73,10 @@ export class UserService {
     }
   }
 
-  async userStoreUpdateProfile(user: CurrentStoreType, body: UpdateUserProfileType): Promise<Return> {
+  async userStoreUpdateProfile(
+    user: CurrentStoreType,
+    body: UpdateUserProfileType
+  ): Promise<Return> {
     const { birthday, email, full_name, address } = body
 
     const updatedUser = await this.prisma.user.update({

@@ -1,7 +1,7 @@
 import { Outlet } from 'react-router-dom'
 
 import { motion } from 'framer-motion'
-import { useContext, useEffect } from 'react'
+import { useContext, useEffect, useState } from 'react'
 import { route } from 'src/constants/route'
 import { AppContext } from 'src/contexts/AppContext'
 import CardProfile from './CardProfile'

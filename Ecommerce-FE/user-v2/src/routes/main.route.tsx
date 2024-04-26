@@ -17,7 +17,6 @@ import ChangePassword from 'src/pages/Profile/LayoutProfile/ChangePassword'
 import Order from 'src/pages/Profile/LayoutProfile/Order'
 import Payment from 'src/pages/Profile/LayoutProfile/Payment'
 import PersonalInformation from 'src/pages/Profile/LayoutProfile/PersonalInformation'
-import RegisterStore from 'src/pages/RegisterStore'
 
 const Login = loadable(() => import('src/pages/Login'))
 const Register = loadable(() => import('src/pages/Register'))

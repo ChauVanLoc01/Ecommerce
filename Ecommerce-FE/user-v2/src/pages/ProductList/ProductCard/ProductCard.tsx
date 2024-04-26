@@ -61,6 +61,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
                     alt='product-img'
                     className='object-cover overflow-hidden rounded-12 h-[295px] max-h-[295px]'
                     overlay={isFetching}
+                    loading='lazy'
                 />
                 <div
                     className={classNames('absolute inset-0 flex justify-center items-center', {

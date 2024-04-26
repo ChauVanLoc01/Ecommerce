@@ -44,7 +44,10 @@ export class UserController {
   @Roles(Role.STORE_OWNER, Role.EMPLOYEE)
   @UseGuards(JwtGuard)
   @Put('store-profile')
-  userStoreUpdateProfile(@CurrentUser() user: CurrentStoreType, @Body() body: UpdateUserProfileDTO) {
+  userStoreUpdateProfile(
+    @CurrentUser() user: CurrentStoreType,
+    @Body() body: UpdateUserProfileDTO
+  ) {
     return this.userService.userStoreUpdateProfile(user, body)
   }
 

@@ -4,18 +4,23 @@ import Input from 'src/components/Input'
 import { DevTool } from '@hookform/devtools'
 import { yupResolver } from '@hookform/resolvers/yup'
 import { useMutation } from '@tanstack/react-query'
+import { useContext } from 'react'
 import { SubmitHandler, useForm } from 'react-hook-form'
 import { useLoaderData } from 'react-router-dom'
 import { toast } from 'sonner'
 import { profileFetching } from 'src/apis/profile'
 import { DatePicker } from 'src/components/Shadcn/datepicker'
 import { Textarea } from 'src/components/Shadcn/textarea'
+import { AppContext } from 'src/contexts/AppContext'
+import { LoginResponse } from 'src/types/auth.type'
 import { ProfileResponse } from 'src/types/profile.type'
+import { ls } from 'src/utils/localStorage'
 import { profile_schema, ProfileSchemaType } from 'src/utils/profile.schema'
 import LayoutProfile from '..'
 
 const PersonalInformation = () => {
-    const [profile] = useLoaderData() as [ProfileResponse]
+    const { profile, setProfile } = useContext(AppContext)
+    const [profileDataLoader] = useLoaderData() as [ProfileResponse]
     const {
         register,
         handleSubmit,
@@ -25,16 +30,25 @@ const PersonalInformation = () => {
         }
     } = useForm<ProfileSchemaType>({
         defaultValues: {
-            address: profile.address,
-            email: profile.email,
-            full_name: profile.full_name
+            address: profileDataLoader.address,
+            email: profileDataLoader.email,
+            full_name: profileDataLoader.full_name
         },
         resolver: yupResolver(profile_schema)
     })
 
     const { mutate } = useMutation({
-        mutationFn: (body: ProfileSchemaType) => profileFetching.updateProfile(body),
-        onSuccess: () => {
+        mutationFn: (body: ProfileSchemaType & { image?: string }) => profileFetching.updateProfile(body),
+        onSuccess: (e) => {
+            const newProfile = {
+                ...profile,
+                user: {
+                    storeRoleId: profile?.user.storeRoleId,
+                    ...(e.data.result as any)
+                }
+            } as LoginResponse
+            ls.setItem('profile', JSON.stringify(newProfile))
+            setProfile(newProfile)
             toast.info('Cập nhật thông tin thành công')
         },
         onError: () => {
