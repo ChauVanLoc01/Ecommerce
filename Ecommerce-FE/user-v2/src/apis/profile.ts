@@ -19,7 +19,7 @@ export const profileFetching = {
             formData
         )
     },
-    updateProfile: (body: ProfileSchemaType & { image?: string }) => {
+    updateProfile: (body: ProfileSchemaType & { image?: string; birthday?: string }) => {
         return PUT<Return<ProfileResponse>, ProfileSchemaType>('profile/user-profile', body)
     },
     changePassword: (body: Omit<ChangePasswordSchemaType, 'confirm_new_password'>) => {

@@ -1,10 +1,10 @@
-import Button from 'src/components/Button'
 import Input from 'src/components/Input'
 
 import { DevTool } from '@hookform/devtools'
 import { yupResolver } from '@hookform/resolvers/yup'
+import { Button, Spinner } from '@radix-ui/themes'
 import { useMutation } from '@tanstack/react-query'
-import { useContext } from 'react'
+import { useContext, useState } from 'react'
 import { SubmitHandler, useForm } from 'react-hook-form'
 import { useLoaderData } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -20,6 +20,9 @@ import LayoutProfile from '..'
 
 const PersonalInformation = () => {
     const { profile, setProfile } = useContext(AppContext)
+    const [date, setDate] = useState<Date | undefined>(
+        profile?.user.birthday ? new Date(profile?.user.birthday) : undefined
+    )
     const [profileDataLoader] = useLoaderData() as [ProfileResponse]
     const {
         register,
@@ -37,8 +40,8 @@ const PersonalInformation = () => {
         resolver: yupResolver(profile_schema)
     })
 
-    const { mutate } = useMutation({
-        mutationFn: (body: ProfileSchemaType & { image?: string }) => profileFetching.updateProfile(body),
+    const { mutate, isPending } = useMutation({
+        mutationFn: profileFetching.updateProfile,
         onSuccess: (e) => {
             const newProfile = {
                 ...profile,
@@ -52,11 +55,16 @@ const PersonalInformation = () => {
             toast.info('Cập nhật thông tin thành công')
         },
         onError: () => {
-            toast.error('Đã có lỗi xảy ra')
+            toast.error('Lỗi! Cập nhật thông tin thất bại')
         }
     })
 
-    const onSubmit1: SubmitHandler<ProfileSchemaType> = (e) => mutate(e)
+    const onSubmit1: SubmitHandler<ProfileSchemaType> = (e) => {
+        mutate({
+            ...e,
+            birthday: date ? date.toISOString() : undefined
+        })
+    }
 
     return (
         <LayoutProfile title='Thông tin cá nhân'>
@@ -70,6 +78,14 @@ const PersonalInformation = () => {
                             <Input register={register('full_name')} />
                         </section>
                         <section className='space-y-2'>
+                            <section className='space-y-2'>
+                                <h4>Ngày sinh:</h4>
+                                <DatePicker date={date} setDate={setDate} />
+                            </section>
+                        </section>
+                    </section>
+                    <section className='basis-1/2 space-y-5'>
+                        <section className='space-y-2'>
                             <div className='flex justify-between'>
                                 <h4>Email:</h4> <span className='text-red-600'>{email?.message}</span>
                             </div>
@@ -82,24 +98,15 @@ const PersonalInformation = () => {
                             <Textarea {...register('address')} />
                         </section>
                     </section>
-                    <section className='basis-1/2 space-y-5'>
-                        {/* <section className='space-y-2'>
-                                <h4>Tài khoản:</h4>
-                                <Input />
-                            </section> */}
-                        <section className='space-y-2'>
-                            <h4>Số điện thoại:</h4>
-                            <Input />
-                        </section>
-                        <section className='space-y-2'>
-                            <h4>Ngày sinh:</h4>
-                            <DatePicker />
-                        </section>
-                    </section>
                 </div>
-                <section className='flex items-center justify-end space-x-5 mt-5'>
-                    <Button text='Hủy thay đổi' className='bg-red-600 hover:bg-red-700' />
-                    <Button type='submit' text='Lưu' />
+                <section className='flex items-center justify-end space-x-4 mt-5'>
+                    <Button variant='outline' color='red' type='reset' size={'3'}>
+                        Hủy
+                    </Button>
+                    <Button type='submit' size={'3'}>
+                        {isPending && <Spinner />}
+                        Lưu thay đổi
+                    </Button>
                 </section>
             </form>
             <DevTool control={control} />

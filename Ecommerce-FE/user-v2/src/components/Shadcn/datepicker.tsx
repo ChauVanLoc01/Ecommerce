@@ -10,9 +10,12 @@ import { Calendar } from 'src/components/Shadcn/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from 'src/components/Shadcn/popover'
 import { cn } from 'src/utils/utils.ts'
 
-export function DatePicker() {
-    const [date, setDate] = React.useState<Date>()
+type DatePicker = {
+    date: Date | undefined
+    setDate: React.Dispatch<React.SetStateAction<Date | undefined>>
+}
 
+export function DatePicker({ date, setDate }: DatePicker) {
     return (
         <Popover>
             <PopoverTrigger asChild>
@@ -25,7 +28,7 @@ export function DatePicker() {
                     )}
                 >
                     {date ? (
-                        format(date, 'dd/MM/yyyy', {
+                        format(date, 'dd / MM / yyyy', {
                             locale: vi
                         })
                     ) : (
