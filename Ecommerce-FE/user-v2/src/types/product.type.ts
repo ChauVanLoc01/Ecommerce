@@ -1,4 +1,5 @@
 import { Status } from './auth.type'
+import { Store } from './store.type'
 
 export type Product = {
     id: string
@@ -21,6 +22,7 @@ export type Product = {
     storeId: string
     voucherId: string | null
     rate: number
+    store: Store
 }
 
 export type Order = 'asc' | 'desc'

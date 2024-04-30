@@ -5,11 +5,14 @@ import { RouterProvider } from 'react-router-dom'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 
+import '@radix-ui/themes/layout/components.css'
+import '@radix-ui/themes/layout/tokens.css'
+import '@radix-ui/themes/layout/utilities.css'
 import 'simplebar-react/dist/simplebar.min.css'
 import './index.css'
 import routes, { queryClient } from './routes/main.route'
 
-import { Theme, ThemePanel } from '@radix-ui/themes'
+import { Theme } from '@radix-ui/themes'
 import '@radix-ui/themes/styles.css'
 import { Toaster } from 'src/components/Shadcn/sonner'
 import ContextWrap from './contexts/AppContext'
@@ -23,7 +26,6 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
                 </AnimatePresence>
                 <ReactQueryDevtools initialIsOpen={false} />
             </ContextWrap>
-            <ThemePanel />
         </Theme>
         <Toaster
             richColors

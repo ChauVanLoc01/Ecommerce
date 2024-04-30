@@ -7,10 +7,12 @@ import { ClientProxy } from '@nestjs/microservices'
 import { Queue } from 'bull'
 import { Cache } from 'cache-manager'
 import { BackgroundName } from 'common/constants/background-job.constant'
+import { getStoreDetail } from 'common/constants/event.constant'
 import { Status } from 'common/enums/status.enum'
 import { CurrentStoreType } from 'common/types/current.type'
 import { Return } from 'common/types/result.type'
 import { isUndefined, omitBy } from 'lodash'
+import { firstValueFrom } from 'rxjs'
 import { v4 as uuidv4 } from 'uuid'
 import { CreateProductType } from './dtos/create-product.dto'
 import { QueryProductType } from './dtos/query-product.dto'
@@ -22,6 +24,7 @@ export class ProductService {
   constructor(
     private readonly prisma: PrismaService,
     @Inject('USER_SERVICE') private readonly user_service: ClientProxy,
+    @Inject('STORE_SERVICE') private readonly store_service: ClientProxy,
     private readonly searchService: SearchProductService,
     private readonly configService: ConfigService,
     @InjectQueue(BackgroundName.product) private productBullQueue: Queue,
@@ -104,10 +107,21 @@ export class ProductService {
       })
     ])
 
+    const storeIdList = products.map((product) => product.storeId)
+
+    const storeList = await firstValueFrom(this.store_service.send(getStoreDetail, storeIdList))
+
+    const result = products.map((product) => {
+      return {
+        ...product,
+        store: storeList[product.storeId]
+      }
+    })
+
     return {
       msg: 'Lấy danh sách sản phẩm thành công',
       result: {
-        data: products,
+        data: result,
         query: omitBy(
           {
             ...query,

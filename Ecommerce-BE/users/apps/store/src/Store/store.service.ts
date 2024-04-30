@@ -17,6 +17,7 @@ import { firstValueFrom } from 'rxjs'
 import { v4 as uuidv4 } from 'uuid'
 import { CreateStoreDTO } from './dtos/create-store.dto'
 import { UpdateStoreDTO } from './dtos/update-store.dto'
+import { keyBy } from 'lodash'
 
 @Injectable()
 export class StoreService {
@@ -179,5 +180,18 @@ export class StoreService {
         })
       )
     )
+  }
+
+  async getStoreDetail(storeIds: string[]) {
+    const storeList = await Promise.all(
+      storeIds.map((id) =>
+        this.prisma.store.findUnique({
+          where: {
+            id
+          }
+        })
+      )
+    )
+    return keyBy(storeList, 'id')
   }
 }

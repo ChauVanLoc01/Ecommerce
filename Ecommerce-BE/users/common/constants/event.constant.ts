@@ -7,3 +7,5 @@ export const rollbackUpdateQuantityProducts = 'product::quantity::rollback'
 export const checkStoreExist = 'store::check::exist'
 
 export const updateStoreRoleId = 'user::update::storeroleid'
+
+export const getStoreDetail = 'user::get::store::detail'

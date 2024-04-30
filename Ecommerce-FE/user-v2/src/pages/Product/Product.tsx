@@ -12,6 +12,7 @@ import { toast } from 'sonner'
 import { route } from 'src/constants/route'
 import { AppContext } from 'src/contexts/AppContext'
 import { ProductDetailResponse, ProductListResponse } from 'src/types/product.type'
+import { ls } from 'src/utils/localStorage'
 import { convertCurrentcy } from 'src/utils/utils.ts'
 import MaybeULike from './MaybeULike'
 import Review from './Review'
@@ -26,14 +27,59 @@ const Product = () => {
         if (!profile) {
             toast.error('Cần đăng nhập trước khi thực hiện mua hàng')
         } else {
-            toast.info('Thêm sản phẩm thành công')
-            const index = products.findIndex((p) => p.id === productDetail.id)
-            if (index !== -1) {
-                products[index].buy += quantity
-                setProducts(products)
+            var isNewProductInStoreExist = true
+            var productsTmp = products
+            var storeExist = productsTmp.products[productDetail.storeId]
+            if (!storeExist) {
+                productsTmp = {
+                    length: productsTmp.length + 1,
+                    products: {
+                        ...productsTmp.products,
+                        [productDetail.storeId]: [
+                            {
+                                productId: productDetail.id,
+                                buy: quantity,
+                                name: productDetail.name,
+                                image: productDetail.image,
+                                priceAfter: productDetail.priceAfter,
+                                checked
+                            }
+                        ]
+                    }
+                }
             } else {
-                setProducts((repo) => [...repo, { ...productDetail, buy: quantity, checked: checked ?? false }])
+                storeExist = storeExist.map((productInLS) => {
+                    if (productDetail.id === productInLS.productId) {
+                        isNewProductInStoreExist = false
+                        return {
+                            ...productInLS,
+                            buy: productInLS.buy + quantity
+                        }
+                    }
+                    return productInLS
+                })
+                if (isNewProductInStoreExist)
+                    storeExist.push({
+                        buy: quantity,
+                        productId: productDetail.id,
+                        image: productDetail.image,
+                        name: productDetail.name,
+                        priceAfter: productDetail.priceAfter,
+                        checked
+                    })
+                productsTmp = {
+                    ...productsTmp,
+                    length: isNewProductInStoreExist ? productsTmp.length + 1 : productsTmp.length,
+                    products: {
+                        ...productsTmp.products,
+                        [productDetail.storeId]: storeExist
+                    }
+                }
             }
+            ls.deleteItem('products')
+            ls.setItem('products', JSON.stringify(productsTmp))
+            setProducts(productsTmp)
+            toast.info('Thêm sản phẩm thành công')
         }
     }
 

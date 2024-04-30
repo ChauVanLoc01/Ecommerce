@@ -94,38 +94,42 @@ const Header = () => {
                                 <>
                                     <SimpleBar style={{ maxHeight: 210, paddingRight: 20 }}>
                                         <ul className='space-y-3'>
-                                            {products.map((e) => (
-                                                <li className='flex gap-x-3'>
-                                                    <button
-                                                        className='flex-shrink-0'
-                                                        onClick={handleNavigate(
-                                                            setIsOpen,
-                                                            `/${removeSpecialCharacter(e.name)}-0-${e.id}`
-                                                        )}
-                                                    >
-                                                        <Image
-                                                            src={e.image}
-                                                            alt='cart-img'
-                                                            className='w-12 h-12 rounded-6 shadow-sm flex-shrink-0'
-                                                        />
-                                                    </button>
-                                                    <button
-                                                        onClick={handleNavigate(
-                                                            setIsOpen,
-                                                            `/${removeSpecialCharacter(e.name)}-0-${e.id}`
-                                                        )}
-                                                        className='tracking-wide leading-4 text-left flex flex-col justify-start'
-                                                    >
-                                                        <span className='line-clamp-2'>{e.name}</span>
-                                                        <span className='text-red-500 text-xs'>
-                                                            {convertCurrentcy(e.priceAfter || 0, 0)}đ x {e.buy}
-                                                        </span>
-                                                    </button>
-                                                    <h4 className='ml-auto w-fit text-red-700'>
-                                                        {convertCurrentcy(e.priceAfter * e.buy || 0, 0)}đ
-                                                    </h4>
-                                                </li>
-                                            ))}
+                                            {Object.values(products.products)
+                                                .reduce((acu, item) => {
+                                                    return [...acu, ...item]
+                                                }, [])
+                                                .map((e) => (
+                                                    <li className='flex gap-x-3'>
+                                                        <button
+                                                            className='flex-shrink-0'
+                                                            onClick={handleNavigate(
+                                                                setIsOpen,
+                                                                `/${removeSpecialCharacter(e.name)}-0-${e.productId}`
+                                                            )}
+                                                        >
+                                                            <Image
+                                                                src={e.image}
+                                                                alt='cart-img'
+                                                                className='w-12 h-12 rounded-6 shadow-sm flex-shrink-0'
+                                                            />
+                                                        </button>
+                                                        <button
+                                                            onClick={handleNavigate(
+                                                                setIsOpen,
+                                                                `/${removeSpecialCharacter(e.name)}-0-${e.productId}`
+                                                            )}
+                                                            className='tracking-wide leading-4 text-left flex flex-col justify-start'
+                                                        >
+                                                            <span className='line-clamp-2'>{e.name}</span>
+                                                            <span className='text-red-500 text-xs'>
+                                                                {convertCurrentcy(e.priceAfter || 0, 0)}đ x {e.buy}
+                                                            </span>
+                                                        </button>
+                                                        <h4 className='ml-auto w-fit text-red-700'>
+                                                            {convertCurrentcy(e.priceAfter * e.buy || 0, 0)}đ
+                                                        </h4>
+                                                    </li>
+                                                ))}
                                         </ul>
                                     </SimpleBar>
                                     <div className='text-right'>

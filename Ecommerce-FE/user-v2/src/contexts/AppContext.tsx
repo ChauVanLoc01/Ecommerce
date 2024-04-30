@@ -6,7 +6,9 @@ import { ls } from 'src/utils/localStorage'
 const defaultValueContext: AppContextType = {
     profile: ls.getItem('profile') ? (JSON.parse(ls.getItem('profile') as string) as LoginResponse) : undefined,
     setProfile: () => {},
-    products: ls.getItem('products') ? (JSON.parse(ls.getItem('products') as string) as ProductContext[]) : [],
+    products: ls.getItem('products')
+        ? (JSON.parse(ls.getItem('products') as string) as ProductContext)
+        : { length: 0, products: {} },
     setProducts: () => {},
     previousPage: '/',
     setPreviousPage: () => {}

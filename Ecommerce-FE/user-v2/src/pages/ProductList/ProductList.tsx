@@ -6,12 +6,12 @@ import Dropdown from 'src/components/Dropdown'
 import InputIcon from 'src/components/InputIcon'
 import Pagination from 'src/components/Pagination'
 
+import { useQuery } from '@tanstack/react-query'
 import { isUndefined, omitBy } from 'lodash'
 import { useEffect } from 'react'
 import { useLoaderData } from 'react-router-dom'
 import { productFetching } from 'src/apis/product'
 import useQueryParams from 'src/hooks/useQueryParams'
-import { queryClient } from 'src/routes/main.route'
 import { CategoryListResponse } from 'src/types/category.type'
 import { ProductListQuery, ProductListResponse } from 'src/types/product.type'
 import FlashSale from './FlashSale'
@@ -22,22 +22,37 @@ const Filter = loadable(() => import('./Filter'))
 const ProductList = () => {
     const [queryParams] = useQueryParams<Partial<Record<keyof ProductListQuery, string>>>()
 
-    const [productListReponse, categoryResponse] = useLoaderData() as [ProductListResponse, CategoryListResponse]
+    const [_, categoryResponse] = useLoaderData() as [ProductListResponse, CategoryListResponse]
+    const { data, refetch } = useQuery({
+        queryKey: [
+            'productList',
+            JSON.stringify(
+                omitBy(
+                    {
+                        ...queryParams,
+                        page: Number(queryParams?.page) || undefined
+                    },
+                    isUndefined
+                ) as ProductListQuery
+            )
+        ],
+        queryFn: () =>
+            productFetching.productList(
+                omitBy(
+                    {
+                        ...queryParams,
+                        page: Number(queryParams?.page) || undefined
+                    },
+                    isUndefined
+                ) as ProductListQuery
+            ),
+        enabled: false,
+        staleTime: 1000 * 60 * 2,
+        placeholderData: (previousData) => previousData
+    })
 
     useEffect(() => {
-        queryClient.prefetchQuery({
-            queryKey: ['productList'],
-            queryFn: () =>
-                productFetching.productList(
-                    omitBy(
-                        {
-                            ...queryParams,
-                            page: Number(queryParams?.page) || undefined
-                        },
-                        isUndefined
-                    ) as ProductListQuery
-                )
-        })
+        refetch()
     }, [JSON.stringify(queryParams)])
 
     return (
@@ -83,11 +98,11 @@ const ProductList = () => {
                     </div>
                     <div className='space-y-8'>
                         <div className='grid grid-cols-3 gap-3'>
-                            {productListReponse.data.map((product) => (
+                            {data?.data.result.data.map((product) => (
                                 <ProductCard key={product.id} product={product} />
                             ))}
                         </div>
-                        <Pagination pageSize={productListReponse.query.page_size || 10} />
+                        <Pagination pageSize={data?.data.result.query.page_size || 10} />
                     </div>
                 </section>
             </div>

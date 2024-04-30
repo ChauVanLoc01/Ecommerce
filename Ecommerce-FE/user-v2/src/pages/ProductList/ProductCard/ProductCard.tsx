@@ -1,4 +1,4 @@
-import { useIsFetching } from '@tanstack/react-query'
+import { Avatar, Text } from '@radix-ui/themes'
 import classNames from 'classnames'
 import { motion } from 'framer-motion'
 import { useContext, useState } from 'react'
@@ -11,6 +11,7 @@ import Stars from 'src/components/Stars'
 import { endProductDetailFetching, startProductDetailFetching } from 'src/constants/event'
 import { AppContext } from 'src/contexts/AppContext'
 import { Product } from 'src/types/product.type'
+import { ls } from 'src/utils/localStorage'
 import { convertCurrentcy, removeSpecialCharacter } from 'src/utils/utils.ts'
 
 type ProductCardProps = {
@@ -25,14 +26,59 @@ const ProductCard = ({ product }: ProductCardProps) => {
     const [isFetching, setIsFetching] = useState<boolean>(false)
 
     const handleAddToCart = () => {
-        toast.info('Thêm sản phẩm thành công')
-        const index = products.findIndex((p) => p.id === product.id)
-        if (index !== -1) {
-            products[index].buy += 1
-            setProducts(products)
+        var isNewProductInStoreExist = true
+        var productsTmp = products
+        var storeExist = productsTmp.products[product.storeId]
+        if (!storeExist) {
+            productsTmp = {
+                length: productsTmp.length + 1,
+                products: {
+                    ...productsTmp.products,
+                    [product.storeId]: [
+                        {
+                            productId: product.id,
+                            buy: 1,
+                            name: product.name,
+                            image: product.image,
+                            priceAfter: product.priceAfter,
+                            checked: false
+                        }
+                    ]
+                }
+            }
         } else {
-            setProducts((repo) => [...repo, { ...product, buy: 1, checked: false }])
+            storeExist = storeExist.map((productInLS) => {
+                if (product.id === productInLS.productId) {
+                    isNewProductInStoreExist = false
+                    return {
+                        ...productInLS,
+                        buy: productInLS.buy + 1
+                    }
+                }
+                return productInLS
+            })
+            if (isNewProductInStoreExist)
+                storeExist.push({
+                    buy: 1,
+                    productId: product.id,
+                    image: product.image,
+                    name: product.name,
+                    priceAfter: product.priceAfter,
+                    checked: false
+                })
+            productsTmp = {
+                ...productsTmp,
+                length: isNewProductInStoreExist ? productsTmp.length + 1 : productsTmp.length,
+                products: {
+                    ...productsTmp.products,
+                    [product.storeId]: storeExist
+                }
+            }
         }
+        ls.deleteItem('products')
+        ls.setItem('products', JSON.stringify(productsTmp))
+        setProducts(productsTmp)
+        toast.info('Thêm sản phẩm thành công')
     }
 
     window.addEventListener(startProductDetailFetching, (e: any) => {
@@ -79,7 +125,10 @@ const ProductCard = ({ product }: ProductCardProps) => {
                     >
                         {name}
                     </Link>
-                    <h4 className='tracking-wide'>Cannon</h4>
+                    <Link to={'/'} className='flex items-center space-x-3 cursor-pointer group'>
+                        <Avatar fallback='A' src={product.store.image} radius='full' size={'2'} />
+                        <Text className='group-hover:text-gray-500'>{product.store.name}</Text>
+                    </Link>
                 </div>
                 <div className='flex justify-between items-end'>
                     <div>

@@ -1,17 +1,18 @@
-import { Module } from '@nestjs/common'
 import { ConfigModule, PrismaModule } from '@app/common'
-import { ClientsModule, Transport } from '@nestjs/microservices'
+import { BullModule } from '@nestjs/bull'
+import { Module } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { ProductService } from './product.service'
-import { ProductController } from './product.controller'
-import { MulterModule } from '@nestjs/platform-express'
-import { diskStorage } from 'multer'
-import { v4 as uuidv4 } from 'uuid'
-import { SearchProductService } from './search-product.service'
 import { ElasticsearchModule } from '@nestjs/elasticsearch'
 import { JwtService } from '@nestjs/jwt'
-import { BullModule } from '@nestjs/bull'
+import { ClientsModule, Transport } from '@nestjs/microservices'
+import { MulterModule } from '@nestjs/platform-express'
 import { BackgroundName } from 'common/constants/background-job.constant'
+import { diskStorage } from 'multer'
+import { v4 as uuidv4 } from 'uuid'
+import { ProductController } from './product.controller'
+import { ProductService } from './product.service'
+import { SearchProductService } from './search-product.service'
+import { QueueName } from 'common/constants/queue.constant'
 
 @Module({
   imports: [
@@ -28,7 +29,27 @@ import { BackgroundName } from 'common/constants/background-job.constant'
             transport: Transport.RMQ,
             options: {
               urls: [configService.get<string>('rabbitmq.uri')],
-              queue: configService.get<string>('rabbitmq.user_queue'),
+              queue: QueueName.user,
+              queueOptions: {
+                durable: true
+              }
+            }
+          }),
+          inject: [ConfigService]
+        }
+      ]
+    }),
+    ClientsModule.registerAsync({
+      isGlobal: true,
+      clients: [
+        {
+          name: 'STORE_SERVICE',
+          imports: [ConfigModule],
+          useFactory: (configService: ConfigService) => ({
+            transport: Transport.RMQ,
+            options: {
+              urls: [configService.get<string>('rabbitmq.uri')],
+              queue: QueueName.store,
               queueOptions: {
                 durable: true
               }
@@ -44,10 +65,7 @@ import { BackgroundName } from 'common/constants/background-job.constant'
           callback(null, process.cwd() + '/public/images')
         },
         filename(req, file, callback) {
-          callback(
-            null,
-            `${new Date().toISOString()}-${uuidv4()}-${file.originalname}`
-          )
+          callback(null, `${new Date().toISOString()}-${uuidv4()}-${file.originalname}`)
         }
       })
     }),

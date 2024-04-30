@@ -15,7 +15,7 @@ import {
 } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express'
-import { checkStoreExist } from 'common/constants/event.constant'
+import { checkStoreExist, getStoreDetail } from 'common/constants/event.constant'
 import { CurrentUser } from 'common/decorators/current_user.decorator'
 import { Public } from 'common/decorators/public.decorator'
 import { Roles } from 'common/decorators/roles.decorator'
@@ -111,5 +111,11 @@ export class StoreController {
   @Public()
   checkStoreExist(@Payload() payload: string[]) {
     return this.storeService.checkStoreExist(payload)
+  }
+
+  @MessagePattern(getStoreDetail)
+  @Public()
+  getStoreDetail(@Payload() payload: string[]) {
+    return this.storeService.getStoreDetail(payload)
   }
 }

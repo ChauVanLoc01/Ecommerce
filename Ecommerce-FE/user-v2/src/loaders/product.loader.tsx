@@ -44,7 +44,18 @@ export const productListLoader: LoaderFunction = async ({ request }) => {
     const queryParams = new URL(request.url).searchParams as Partial<Record<keyof ProductListQuery, string>>
 
     const productList = await queryClient.fetchQuery({
-        queryKey: ['productList'],
+        queryKey: [
+            'productList',
+            JSON.stringify(
+                omitBy(
+                    {
+                        ...queryParams,
+                        page: Number(queryParams?.page) || undefined
+                    },
+                    isUndefined
+                ) as ProductListQuery
+            )
+        ],
         queryFn: () =>
             productFetching.productList(
                 omitBy(
