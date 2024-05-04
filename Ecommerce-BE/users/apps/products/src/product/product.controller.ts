@@ -17,7 +17,10 @@ import {
 } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
 import { FileInterceptor } from '@nestjs/platform-express'
-import { updateQuantityProducts } from 'common/constants/event.constant'
+import {
+  getAllProductWithProductOrder,
+  updateQuantityProducts
+} from 'common/constants/event.constant'
 import { CurrentUser } from 'common/decorators/current_user.decorator'
 import { Public } from 'common/decorators/public.decorator'
 import { Roles } from 'common/decorators/roles.decorator'
@@ -50,7 +53,7 @@ export class ProductController {
     return this.productsService.analyticsProduct(store)
   }
 
-  @Roles(Role.EMPLOYEE, Role.STORE_OWNER)
+  @Public()
   @Get('product-store')
   getAllForStore(@CurrentUser() store: CurrentStoreType, @Query() query: QueryProductDTO) {
     return this.productsService.getALlProductForStore(store, query)
@@ -66,6 +69,12 @@ export class ProductController {
   @Get()
   getAllForUser(@Query() query: QueryProductDTO) {
     return this.productsService.getALlProductForUser(query)
+  }
+
+  @Public()
+  @MessagePattern(getAllProductWithProductOrder)
+  getProductByProductOrder(@Payload() payload: string[]) {
+    return this.productsService.getProductByProductOrder(payload)
   }
 
   @UseInterceptors(FileInterceptor('image'))
@@ -97,7 +106,7 @@ export class ProductController {
   updateProduct(
     @Param('productId') productId: string,
     @CurrentUser() user: CurrentStoreType,
-    @Body() body: UpdateProductDTO,
+    @Body() body: UpdateProductDTO
   ) {
     return this.productsService.updateProduct(user, productId, body)
   }

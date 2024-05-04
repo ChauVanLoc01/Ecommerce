@@ -9,3 +9,5 @@ export const checkStoreExist = 'store::check::exist'
 export const updateStoreRoleId = 'user::update::storeroleid'
 
 export const getStoreDetail = 'user::get::store::detail'
+
+export const getAllProductWithProductOrder = 'user::get::product::order'

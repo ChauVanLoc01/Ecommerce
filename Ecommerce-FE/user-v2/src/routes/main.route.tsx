@@ -7,6 +7,7 @@ import { route } from 'src/constants/route'
 import { AppContext } from 'src/contexts/AppContext'
 import MainLayout from 'src/layouts/MainLayout'
 import { deliveryLoader } from 'src/loaders/delivery.loader'
+import { ordersLoader } from 'src/loaders/order.loader'
 import { productDetailLoader, productListLoader } from 'src/loaders/product.loader'
 import { profileLoader } from 'src/loaders/profile.loader'
 import Checkout from 'src/pages/Checkout'
@@ -84,7 +85,8 @@ const routes = createBrowserRouter([
                             },
                             {
                                 path: route.order,
-                                element: <Order />
+                                element: <Order />,
+                                loader: ordersLoader
                             },
                             {
                                 path: route.changePassword,

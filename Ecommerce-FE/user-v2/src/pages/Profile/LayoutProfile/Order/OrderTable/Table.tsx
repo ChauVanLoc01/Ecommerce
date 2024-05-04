@@ -1,21 +1,8 @@
-import * as React from 'react'
-
-import {
-    ColumnDef,
-    ColumnFiltersState,
-    SortingState,
-    VisibilityState,
-    flexRender,
-    getCoreRowModel,
-    getFilteredRowModel,
-    getPaginationRowModel,
-    getSortedRowModel,
-    useReactTable
-} from '@tanstack/react-table'
+import { ColumnDef, flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table'
 import { BiSolidSortAlt } from 'react-icons/bi'
 import { IoSearchOutline } from 'react-icons/io5'
 
-import { Button, DropdownMenu, Flex } from '@radix-ui/themes'
+import { Button, DropdownMenu } from '@radix-ui/themes'
 import InputIcon from 'src/components/InputIcon'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from 'src/components/Shadcn/table'
 
@@ -151,28 +138,10 @@ export const columns: ColumnDef<Payment>[] = [
 ]
 
 export function OrderTable() {
-    const [sorting, setSorting] = React.useState<SortingState>([])
-    const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
-    const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
-    const [rowSelection, setRowSelection] = React.useState({})
-
     const table = useReactTable({
         data,
         columns,
-        onSortingChange: setSorting,
-        onColumnFiltersChange: setColumnFilters,
-        getCoreRowModel: getCoreRowModel(),
-        getPaginationRowModel: getPaginationRowModel(),
-        getSortedRowModel: getSortedRowModel(),
-        getFilteredRowModel: getFilteredRowModel(),
-        onColumnVisibilityChange: setColumnVisibility,
-        onRowSelectionChange: setRowSelection,
-        state: {
-            sorting,
-            columnFilters,
-            columnVisibility,
-            rowSelection
-        }
+        getCoreRowModel: getCoreRowModel()
     })
 
     return (

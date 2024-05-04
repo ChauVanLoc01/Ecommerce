@@ -1,47 +1,257 @@
-import {
-    Tabs,
-    TabsContent,
-    TabsList,
-    TabsTrigger
-} from 'src/components/Shadcn/tabs'
-
-import { OrderTable } from './OrderTable/Table'
+import { ChevronLeftIcon, ChevronRightIcon } from '@radix-ui/react-icons'
+import { Badge, Button, Flex, IconButton, Select, Text, TextField } from '@radix-ui/themes'
+import { useQuery } from '@tanstack/react-query'
+import { ColumnDef } from '@tanstack/react-table'
+import { add, endOfDay, format, startOfDay } from 'date-fns'
+import { isUndefined, omit, omitBy } from 'lodash'
+import { useEffect, useState } from 'react'
+import { DateRange } from 'react-day-picker'
+import { BiSolidSortAlt } from 'react-icons/bi'
+import { OrderFetching } from 'src/apis/order'
+import { DatePickerWithRange } from 'src/components/Shadcn/dateRange'
+import Table from 'src/components/Table'
+import { OrderStatus } from 'src/constants/order-status'
+import { OrderQuery, Order as OrderType } from 'src/types/order.type'
+import { convertCurrentcy } from 'src/utils/utils.ts'
 import LayoutProfile from '../LayoutProfile'
 
 const Order = () => {
+    const [date, setDate] = useState<DateRange | undefined>(undefined)
+    const [query, setQuery] = useState<Partial<OrderQuery>>({ createdAt: 'desc' })
+
+    const columns: ColumnDef<OrderType>[] = [
+        {
+            accessorKey: 'Mã đơn hàng',
+            header: () => {
+                return (
+                    <div className='flex items-center gap-x-2 line-clamp-1 w-28'>
+                        Mã đơn hàng
+                        <BiSolidSortAlt />
+                    </div>
+                )
+            },
+            cell: ({ row }) => <div className='line-clamp-1 w-28'>{row.original.id}</div>
+        },
+        {
+            accessorKey: 'Trạng thái',
+            header: () => {
+                return (
+                    <div className='flex items-center gap-x-2'>
+                        Trạng thái
+                        <BiSolidSortAlt />
+                    </div>
+                )
+            },
+            cell: ({ row }) => (
+                <Badge size={'3'} color={OrderStatus[row.original.status][1] as any}>
+                    {OrderStatus[row.original.status][0]}
+                </Badge>
+            )
+        },
+        {
+            accessorKey: 'Tổng tiền',
+            header: () => {
+                return (
+                    <div className='flex items-center gap-x-2'>
+                        Tổng tiền
+                        <BiSolidSortAlt />
+                    </div>
+                )
+            },
+            cell: ({ row }) => <div className='capitalize'>{convertCurrentcy(row.original.total)}đ</div>
+        },
+        {
+            accessorKey: 'Giảm giá',
+            header: () => {
+                return (
+                    <div className='flex items-center gap-x-2'>
+                        Giảm giá
+                        <BiSolidSortAlt />
+                    </div>
+                )
+            },
+            cell: ({ row }) => <div className='capitalize'>{convertCurrentcy(row.original.discount)}đ</div>
+        },
+        {
+            accessorKey: 'Số tiền cần trả',
+            header: () => {
+                return (
+                    <div className='flex items-center gap-x-2'>
+                        Số tiền cần trả
+                        <BiSolidSortAlt />
+                    </div>
+                )
+            },
+            cell: ({ row }) => <div className='capitalize'>{convertCurrentcy(row.original.pay)}đ</div>
+        },
+        {
+            accessorKey: 'Thời gian tạo',
+            header: () => {
+                return (
+                    <div className='flex items-center gap-x-2'>
+                        Thời gian tạo
+                        <BiSolidSortAlt />
+                    </div>
+                )
+            },
+            cell: ({ row }) => (
+                <Flex align={'center'} justify={'center'} direction={'column'}>
+                    <Text>{format(row.original.createdAt, 'HH:mm')}</Text>
+                    <Text>{format(row.original.createdAt, 'dd/LL/Y')}</Text>
+                </Flex>
+            )
+        }
+    ]
+
+    const { refetch, data } = useQuery({
+        queryKey: ['orders', JSON.stringify(query)],
+        queryFn: () => OrderFetching.getAllOrder(query),
+        enabled: false,
+        placeholderData: (oldData) => oldData
+    })
+
+    const handleSelectChange = (value: string) => {
+        if (value === 'ALL') {
+            setQuery(omit(query, ['status']))
+        } else {
+            setQuery((pre) => {
+                return {
+                    ...pre,
+                    status: value
+                }
+            })
+        }
+    }
+
+    const handleResetFilter = () => {
+        setQuery({ createdAt: 'desc' })
+        setDate(undefined)
+    }
+
+    const handlePreviousPage = () => {
+        if (query.page && query.page > 1) {
+            setQuery((pre) => {
+                return {
+                    ...pre,
+                    page: (pre.page as number) - 1
+                }
+            })
+        }
+    }
+
+    const handleNextPage = () => {
+        if (query.page && query.page < (data?.data.result.query.page_size as number)) {
+            setQuery((pre) => {
+                return {
+                    ...pre,
+                    page: (pre.page as number) + 1
+                }
+            })
+        }
+    }
+
+    useEffect(() => {
+        if (date) {
+            setQuery((pre) => {
+                return omitBy(
+                    {
+                        ...pre,
+                        start_date: date.from ? startOfDay(add(date.from, { days: 0.5 })) : undefined,
+                        end_date: date.to ? endOfDay(add(date.to, { days: 0.5 })) : undefined
+                    },
+                    isUndefined
+                )
+            })
+        }
+    }, [date])
+
+    useEffect(() => {
+        if (Object.keys(query).length > 1) {
+            refetch()
+        }
+    }, [query])
+
+    useEffect(() => {
+        data &&
+            setQuery((pre) => {
+                return {
+                    ...pre,
+                    page: data.data.result.query.page
+                }
+            })
+    }, [JSON.stringify(data)])
+
     return (
         <LayoutProfile title='Đơn hàng của bạn'>
-            <Tabs defaultValue='account' className='rounded-8'>
-                <TabsList className='bg-[#F8F9FA]'>
-                    <TabsTrigger
-                        className='!rounded-8 px-4 py-1.5 data-[state=active]:bg-blue-100 data-[state=active]:text-blue-600'
-                        value='account'
-                    >
-                        Tất cả
-                    </TabsTrigger>
-                    <TabsTrigger
-                        className='!rounded-8 px-4 py-1.5 data-[state=active]:bg-blue-100 data-[state=active]:text-blue-600'
-                        value='password'
-                    >
-                        Thành công
-                    </TabsTrigger>
-                    <TabsTrigger
-                        className='!rounded-8 px-4 py-1.5 data-[state=active]:bg-blue-100 data-[state=active]:text-blue-600'
-                        value='password1'
-                    >
-                        Chờ xác nhận
-                    </TabsTrigger>
-                </TabsList>
-                <TabsContent className='w-full' value='account'>
-                    <OrderTable />
-                </TabsContent>
-                <TabsContent value='password'>
-                    Change your password here.
-                </TabsContent>
-                <TabsContent value='password1'>
-                    Change your password here.
-                </TabsContent>
-            </Tabs>
+            <Flex gapY={'5'} direction={'column'}>
+                <Flex justify={'between'} align={'center'}>
+                    <TextField.Root placeholder='Tìm kiếm sản phẩm...' size='3'>
+                        <TextField.Slot>
+                            <svg
+                                width='17'
+                                height='17'
+                                viewBox='0 0 15 15'
+                                fill='none'
+                                xmlns='http://www.w3.org/2000/svg'
+                            >
+                                <path
+                                    d='M10 6.5C10 8.433 8.433 10 6.5 10C4.567 10 3 8.433 3 6.5C3 4.567 4.567 3 6.5 3C8.433 3 10 4.567 10 6.5ZM9.30884 10.0159C8.53901 10.6318 7.56251 11 6.5 11C4.01472 11 2 8.98528 2 6.5C2 4.01472 4.01472 2 6.5 2C8.98528 2 11 4.01472 11 6.5C11 7.56251 10.6318 8.53901 10.0159 9.30884L12.8536 12.1464C13.0488 12.3417 13.0488 12.6583 12.8536 12.8536C12.6583 13.0488 12.3417 13.0488 12.1464 12.8536L9.30884 10.0159Z'
+                                    fill='currentColor'
+                                    fill-rule='evenodd'
+                                    clip-rule='evenodd'
+                                ></path>
+                            </svg>
+                        </TextField.Slot>
+                    </TextField.Root>
+                    <Flex gapX={'6'}>
+                        <Flex gapX={'2'}>
+                            <Flex maxWidth={'200px'} direction={'column'} flexShrink={'1'}>
+                                <Select.Root
+                                    size={'3'}
+                                    defaultValue='ALL'
+                                    value={query.status ?? 'ALL'}
+                                    onValueChange={handleSelectChange}
+                                >
+                                    <Select.Trigger />
+                                    <Select.Content className='!rounded-8' position='popper'>
+                                        <Select.Group>
+                                            <Select.Label>Trạng thái đơn hàng</Select.Label>
+                                            <Select.Item value='ALL'>Tất cả</Select.Item>
+                                            <Select.Item value='SUCCESS'>Thành công</Select.Item>
+                                            <Select.Item value='CANCEL'>Đã hủy</Select.Item>
+                                            <Select.Item value='WAITING_CONFIRM'>Chờ xác nhận</Select.Item>
+                                            <Select.Item value='SHIPING'>Đang vận chuyển</Select.Item>
+                                        </Select.Group>
+                                    </Select.Content>
+                                </Select.Root>
+                            </Flex>
+                            <DatePickerWithRange date={date} setDate={setDate} />
+                            <Button size={'3'} color='red' onClick={handleResetFilter}>
+                                Reset
+                            </Button>
+                        </Flex>
+                        <Flex align={'baseline'} gapX={'3'}>
+                            <Text size={'4'}>
+                                {data?.data.result.query.page}/{data?.data.result.query.page_size}
+                            </Text>
+                            <Flex gapX={'1'}>
+                                <IconButton size={'3'} variant='soft' color='gray' onClick={handlePreviousPage}>
+                                    <ChevronLeftIcon />
+                                </IconButton>
+                                <IconButton size={'3'} variant='soft' color='gray' onClick={handleNextPage}>
+                                    <ChevronRightIcon />
+                                </IconButton>
+                            </Flex>
+                        </Flex>
+                    </Flex>
+                </Flex>
+                <Table<OrderType>
+                    columns={columns}
+                    data={data?.data.result.data || []}
+                    tableMaxHeight='550px'
+                    className='w-[1200px] max-w-[1200px]'
+                />
+            </Flex>
         </LayoutProfile>
     )
 }

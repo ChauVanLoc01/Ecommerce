@@ -3,11 +3,12 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager'
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { ClientProxy } from '@nestjs/microservices'
-import { Prisma, Store } from '@prisma/client'
+import { Prisma, Product, Store } from '@prisma/client'
 import { Cache } from 'cache-manager'
 import {
   checkDeliveryInformationId,
   checkStoreExist,
+  getAllProductWithProductOrder,
   updateQuantityProducts
 } from 'common/constants/event.constant'
 import { OrderStatus } from 'common/enums/orderStatus.enum'
@@ -18,6 +19,7 @@ import { v4 as uuidv4 } from 'uuid'
 import { CreateOrderType } from '../dtos/create_order.dto'
 import { QueryOrderType } from '../dtos/query-order.dto'
 import { UpdateOrderType } from '../dtos/update_order.dto'
+import { isUndefined, omitBy } from 'lodash'
 
 @Injectable()
 export class OrderService {
@@ -33,41 +35,55 @@ export class OrderService {
   async getAllOrderByUser(user: CurrentUserType, query: QueryOrderType): Promise<Return> {
     const { id } = user
 
-    const { product_name, createdAt, total, start_date, end_date, limit, page } = query
+    const { product_name, createdAt, total, start_date, end_date, limit, page, status } = query
 
-    const orders = await this.prisma.order.findMany({
-      where: {
-        userId: id,
-        createdAt: {
-          lte: end_date,
-          gte: start_date
+    const limitExist = limit | this.configService.get('app.limit_default')
+
+    const [ordersAll, ordersQuery] = await Promise.all([
+      this.prisma.order.findMany({
+        where: {
+          userId: id,
+          createdAt: {
+            lte: end_date,
+            gte: start_date
+          },
+          status
+        }
+      }),
+      this.prisma.order.findMany({
+        where: {
+          userId: id,
+          createdAt: {
+            lte: end_date,
+            gte: start_date
+          },
+          status
         },
-        ProductOrder: {
-          some: {
-            Product: {
-              name: product_name
-            }
-          }
+        orderBy: {
+          createdAt,
+          total
+        },
+        take: limitExist,
+        skip: page && page > 1 ? (page - 1) * limitExist : 0,
+        include: {
+          ProductOrder: true
         }
-      },
-      orderBy: {
-        createdAt,
-        total
-      },
-      take: limit | this.configService.get('app.limit_default'),
-      skip: page && page > 1 ? (page - 1) * limit : 0,
-      include: {
-        ProductOrder: {
-          include: {
-            Product: true
-          }
-        }
-      }
-    })
+      })
+    ])
 
     return {
       msg: 'Lấy dánh sách order thành công',
-      result: orders
+      result: {
+        data: ordersQuery,
+        query: omitBy(
+          {
+            ...query,
+            page: page || 1,
+            page_size: Math.ceil(ordersAll.length / limitExist)
+          },
+          isUndefined
+        )
+      }
     }
   }
 
@@ -76,10 +92,27 @@ export class OrderService {
       where: {
         id: orderId,
         userId: user.id
+      },
+      include: {
+        ProductOrder: true
       }
     })
 
+    const productsInOrder: { [key: string]: Product } = await firstValueFrom(
+      this.productClient.send(
+        getAllProductWithProductOrder,
+        orderExist.ProductOrder.map((productOder) => productOder.productId)
+      )
+    )
+
     if (!orderExist) throw new NotFoundException('Đơn hàng không tồn tại')
+
+    orderExist.ProductOrder.map((productOrder) => {
+      return {
+        ...productsInOrder[productOrder.productId],
+        ...productOrder
+      }
+    })
 
     return {
       msg: 'Lấy thông tin đơn hàng thành công',

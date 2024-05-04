@@ -1,6 +1,7 @@
-import { Badge, Box, DropdownMenu, IconButton } from '@radix-ui/themes'
+import { Badge, Box, Card, DropdownMenu, IconButton } from '@radix-ui/themes'
 import classNames from 'classnames'
 import { Delivery } from 'src/types/delivery.type'
+import { cn } from 'src/utils/utils.ts'
 
 type AddressItemProps = {
     delivery: Delivery
@@ -18,13 +19,10 @@ const AddressItem = ({
     isDropdown = false
 }: AddressItemProps) => {
     return (
-        <section
-            className={classNames(
-                'p-14 rounded-8 border border-border/30 space-y-2 relative cursor-pointer hover:border-blue-400',
-                {
-                    '!border-blue-400 shadow-input bg-blue-50': isChecked
-                }
-            )}
+        <Card
+            className={cn('!rounded-6', {
+                '!border-blue-400 shadow-input bg-blue-50': isChecked
+            })}
         >
             <div className='space-y-2'>
                 <h3 className='font-semibold'>{delivery.full_name}</h3>
@@ -60,7 +58,7 @@ const AddressItem = ({
                                 </svg>
                             </IconButton>
                         </DropdownMenu.Trigger>
-                        <DropdownMenu.Content>
+                        <DropdownMenu.Content className='!rounded-8'>
                             <DropdownMenu.Item color='red' onClick={handleDeleteAddress?.(delivery.id)}>
                                 Xóa
                             </DropdownMenu.Item>
@@ -73,7 +71,7 @@ const AddressItem = ({
                     </DropdownMenu.Root>
                 )}
             </Box>
-        </section>
+        </Card>
     )
 }
 

@@ -2,12 +2,19 @@ import { ApiPropertyOptional } from '@nestjs/swagger'
 import { IsDateString, IsEnum, IsOptional, IsString } from 'class-validator'
 import { GreaterThanDate } from 'common/decorators/greater_than_date.decorator'
 import { PaginationDTO } from 'common/decorators/pagination.dto'
+import { OrderStatus } from 'common/enums/orderStatus.enum'
+import { Status } from 'common/enums/status.enum'
 
 export class QueryOrderDTO extends PaginationDTO {
   @ApiPropertyOptional()
   @IsString()
   @IsOptional()
   product_name?: string
+
+  @ApiPropertyOptional()
+  @IsEnum(OrderStatus)
+  @IsOptional()
+  status?: OrderStatus
 
   @ApiPropertyOptional({
     enum: ['asc', 'desc'],

@@ -11,7 +11,7 @@ import { getStoreDetail } from 'common/constants/event.constant'
 import { Status } from 'common/enums/status.enum'
 import { CurrentStoreType } from 'common/types/current.type'
 import { Return } from 'common/types/result.type'
-import { isUndefined, omitBy } from 'lodash'
+import { isUndefined, keyBy, omitBy } from 'lodash'
 import { firstValueFrom } from 'rxjs'
 import { v4 as uuidv4 } from 'uuid'
 import { CreateProductType } from './dtos/create-product.dto'
@@ -134,6 +134,19 @@ export class ProductService {
         )
       }
     }
+  }
+
+  async getProductByProductOrder(productsId: string[]) {
+    const products = await Promise.all(
+      productsId.map((id) =>
+        this.prisma.product.findUnique({
+          where: {
+            id
+          }
+        })
+      )
+    )
+    return keyBy(products, 'id')
   }
 
   async getALlProductForStore(store: CurrentStoreType, query: QueryProductType): Promise<Return> {

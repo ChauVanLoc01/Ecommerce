@@ -7,7 +7,7 @@ import { cn } from 'src/utils/utils.ts'
 const Table = React.forwardRef<HTMLTableElement, React.HTMLAttributes<HTMLTableElement> & { maxHeight: string }>(
     ({ className, maxHeight, ...props }, ref) => (
         <SimpleBar style={{ maxHeight: maxHeight, height: maxHeight, position: 'relative' }}>
-            <table ref={ref} className={cn('w-full caption-bottom text-sm', className)} {...props} />
+            <table ref={ref} className={cn('caption-bottom text-sm', className)} {...props} />
         </SimpleBar>
     )
 )
@@ -78,4 +78,4 @@ const TableCaption = React.forwardRef<HTMLTableCaptionElement, React.HTMLAttribu
 )
 TableCaption.displayName = 'TableCaption'
 
-export { Table, TableHeader, TableBody, TableFooter, TableHead, TableRow, TableCell, TableCaption }
+export { Table, TableBody, TableCaption, TableCell, TableFooter, TableHead, TableHeader, TableRow }

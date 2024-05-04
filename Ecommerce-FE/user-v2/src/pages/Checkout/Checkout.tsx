@@ -4,13 +4,19 @@ import classNames from 'classnames'
 
 import { motion } from 'framer-motion'
 
-import { Avatar, Button, Spinner, Text, TextField } from '@radix-ui/themes'
+import { AlertDialog, Avatar, Badge, Button, Flex, Spinner, Text, TextField } from '@radix-ui/themes'
 import { useMutation } from '@tanstack/react-query'
+import { ColumnDef } from '@tanstack/react-table'
+import { format } from 'date-fns'
+import { BiSolidSortAlt } from 'react-icons/bi'
 import { useNavigate } from 'react-router-dom'
 import SimpleBar from 'simplebar-react'
 import { toast } from 'sonner'
 import { OrderFetching } from 'src/apis/order'
+import Table from 'src/components/Table'
+import { OrderStatus } from 'src/constants/order-status'
 import { AppContext } from 'src/contexts/AppContext'
+import { Order } from 'src/types/order.type'
 import { ls } from 'src/utils/localStorage'
 import { convertCurrentcy } from 'src/utils/utils.ts'
 import Step1 from './Step1'
@@ -23,33 +29,38 @@ const Checkout = () => {
     const [addressId, setAddressId] = useState<string>('')
     const navigate = useNavigate()
 
-    const { mutate, isPending } = useMutation({
+    const [orderSuccess, setOrderSuccess] = useState<boolean>(false)
+
+    const {
+        mutate,
+        isPending,
+        data: createdOrders
+    } = useMutation({
         mutationFn: OrderFetching.order,
         onSuccess: () => {
-            toast.success('Đặt hàng thành công')
-            setTimeout(() => {
-                var length = 0
-                var productWithoutChecked = Object.keys(products.products).reduce((acum: any, storeId) => {
-                    const tmp = products.products[storeId].filter((e) => !e.checked)
-                    if (tmp.length > 0) {
-                        length += tmp.length
-                        return {
-                            ...acum,
-                            [storeId]: tmp
-                        }
+            setOrderSuccess(true)
+            var length = 0
+            var productWithoutChecked = Object.keys(products.products).reduce((acum: any, storeId) => {
+                const tmp = products.products[storeId].filter((e) => !e.checked)
+                if (tmp.length > 0) {
+                    length += tmp.length
+                    return {
+                        ...acum,
+                        [storeId]: tmp
                     }
-                    return acum
-                }, {})
-                var newProductInLS = {
-                    ...products,
-                    length,
-                    products: productWithoutChecked
                 }
-                setProducts(newProductInLS)
-                ls.deleteItem('products')
-                ls.setItem('products', JSON.stringify(newProductInLS))
-                navigate('/profile/order')
-            }, 1000)
+                return acum
+            }, {})
+            var newProductInLS = {
+                ...products,
+                length,
+                products: productWithoutChecked
+            }
+            setProducts(newProductInLS)
+            ls.deleteItem('products')
+            ls.setItem('products', JSON.stringify(newProductInLS))
+            setStep(1)
+            lastStep.current = 1
         },
         onError: () => {
             toast.error('Lỗi! Đặt hàng không thành công')
@@ -57,6 +68,90 @@ const Checkout = () => {
     })
 
     const lastStep = useRef<number>(1)
+
+    const columns: ColumnDef<Order>[] = [
+        {
+            accessorKey: 'Mã đơn hàng',
+            header: () => {
+                return (
+                    <div className='flex items-center gap-x-2'>
+                        Mã đơn hàng
+                        <BiSolidSortAlt />
+                    </div>
+                )
+            },
+            cell: ({ row }) => <div className='line-clamp-1'>{row.original.id}</div>
+        },
+        {
+            accessorKey: 'Trạng thái',
+            header: () => {
+                return (
+                    <div className='flex items-center gap-x-2'>
+                        Trạng thái
+                        <BiSolidSortAlt />
+                    </div>
+                )
+            },
+            cell: ({ row }) => (
+                <Badge size={'3'} color={OrderStatus[row.original.status][1] as any}>
+                    {OrderStatus[row.original.status][0]}
+                </Badge>
+            )
+        },
+        {
+            accessorKey: 'Tổng tiền',
+            header: () => {
+                return (
+                    <div className='flex items-center gap-x-2'>
+                        Tổng tiền
+                        <BiSolidSortAlt />
+                    </div>
+                )
+            },
+            cell: ({ row }) => <div className='capitalize'>{convertCurrentcy(row.original.total)}đ</div>
+        },
+        {
+            accessorKey: 'Giảm giá',
+            header: () => {
+                return (
+                    <div className='flex items-center gap-x-2'>
+                        Giảm giá
+                        <BiSolidSortAlt />
+                    </div>
+                )
+            },
+            cell: ({ row }) => <div className='capitalize'>{convertCurrentcy(row.original.discount)}đ</div>
+        },
+        {
+            accessorKey: 'Số tiền cần trả',
+            header: () => {
+                return (
+                    <div className='flex items-center gap-x-2'>
+                        Số tiền cần trả
+                        <BiSolidSortAlt />
+                    </div>
+                )
+            },
+            cell: ({ row }) => <div className='capitalize'>{convertCurrentcy(row.original.pay)}đ</div>
+        },
+        {
+            accessorKey: 'Thời gian tạo',
+            header: () => {
+                return (
+                    <div className='flex items-center gap-x-2'>
+                        Thời gian tạo
+                        <BiSolidSortAlt />
+                    </div>
+                )
+            },
+            cell: ({ row }) => (
+                <Flex align={'center'} justify={'center'} direction={'column'}>
+                    <Text>{format(row.original.createdAt, 'HH:mm')}</Text>
+                    <Text>{format(row.original.createdAt, 'dd/LL/Y')}</Text>
+                </Flex>
+            )
+        }
+    ]
 
     const handleOrder = () => {
         const ordersParameter: {
@@ -285,9 +380,29 @@ const Checkout = () => {
                             alt=''
                         />
                     </div>
-                    <Button className='bg-white !text-blue-500 !border-blue-500 hover:!text-white'>Tiếp tục</Button>
+                    <Button variant='soft' size={'3'} onClick={() => navigate('/')}>
+                        Tiếp tục mua hàng
+                    </Button>
                 </div>
             )}
+            <AlertDialog.Root open={orderSuccess} onOpenChange={setOrderSuccess}>
+                <AlertDialog.Content maxWidth={'900px'} className='!rounded-8'>
+                    <AlertDialog.Title>Đặt hàng thành công</AlertDialog.Title>
+                    <AlertDialog.Description size='2'>
+                        <Table columns={columns} data={createdOrders?.data.result ?? []} />
+                    </AlertDialog.Description>
+                    <Flex gap='3' mt='4' justify='end'>
+                        <AlertDialog.Cancel>
+                            <Button color='red' variant='outline'>
+                                Đóng
+                            </Button>
+                        </AlertDialog.Cancel>
+                        <AlertDialog.Action>
+                            <Button color='blue'>Xem chi tiết</Button>
+                        </AlertDialog.Action>
+                    </Flex>
+                </AlertDialog.Content>
+            </AlertDialog.Root>
         </motion.section>
     )
 }

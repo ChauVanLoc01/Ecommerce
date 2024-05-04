@@ -14,8 +14,11 @@ import routes, { queryClient } from './routes/main.route'
 
 import { Theme } from '@radix-ui/themes'
 import '@radix-ui/themes/styles.css'
+import { setDefaultOptions } from 'date-fns'
+import { vi } from 'date-fns/locale'
 import { Toaster } from 'src/components/Shadcn/sonner'
 import ContextWrap from './contexts/AppContext'
+setDefaultOptions({ locale: vi })
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
     <QueryClientProvider client={queryClient}>

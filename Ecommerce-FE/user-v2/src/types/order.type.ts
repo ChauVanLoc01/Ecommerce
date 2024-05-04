@@ -10,7 +10,18 @@ export type OrderBody = {
     deliveryInformationId: string
 }
 
-export type OrderResponse = {
+export type OrderQuery = {
+    product_name?: string
+    status?: string
+    createdAt?: string
+    total?: string
+    start_date?: string
+    end_date?: string
+    limit?: number
+    page?: number
+}
+
+export type Order = {
     id: string
     userId: string
     storeId: string
@@ -23,4 +34,9 @@ export type OrderResponse = {
     status: string
     createdAt: string
     updatedAt?: string
+}
+
+export type OrderResponse = {
+    data: Order[]
+    query: Omit<OrderQuery, 'page'> & { page_size: number; page: number }
 }
