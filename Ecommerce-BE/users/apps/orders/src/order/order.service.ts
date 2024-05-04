@@ -14,12 +14,12 @@ import {
 import { OrderStatus } from 'common/enums/orderStatus.enum'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
 import { Return } from 'common/types/result.type'
+import { isUndefined, omitBy } from 'lodash'
 import { firstValueFrom } from 'rxjs'
 import { v4 as uuidv4 } from 'uuid'
 import { CreateOrderType } from '../dtos/create_order.dto'
 import { QueryOrderType } from '../dtos/query-order.dto'
 import { UpdateOrderType } from '../dtos/update_order.dto'
-import { isUndefined, omitBy } from 'lodash'
 
 @Injectable()
 export class OrderService {
@@ -107,16 +107,24 @@ export class OrderService {
 
     if (!orderExist) throw new NotFoundException('Đơn hàng không tồn tại')
 
-    orderExist.ProductOrder.map((productOrder) => {
-      return {
-        ...productsInOrder[productOrder.productId],
-        ...productOrder
-      }
-    })
+    const convertedProductOrder = await Promise.all(
+      { ...orderExist }.ProductOrder.map((productOrder) => {
+        return Promise.resolve({
+          ...productOrder,
+          name: productsInOrder[productOrder.productId].name,
+          image: productsInOrder[productOrder.productId].image,
+          category: productsInOrder[productOrder.productId].category,
+          currentPriceAfter: productsInOrder[productOrder.productId].currentQuantity
+        })
+      })
+    )
 
     return {
       msg: 'Lấy thông tin đơn hàng thành công',
-      result: orderExist
+      result: {
+        ...orderExist,
+        ProductOrder: convertedProductOrder
+      }
     }
   }
 

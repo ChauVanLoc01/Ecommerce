@@ -1,5 +1,5 @@
-import { ChevronLeftIcon, ChevronRightIcon } from '@radix-ui/react-icons'
-import { Badge, Button, Flex, IconButton, Select, Text, TextField } from '@radix-ui/themes'
+import { ChevronLeftIcon, ChevronRightIcon, Cross2Icon, InfoCircledIcon, Pencil1Icon } from '@radix-ui/react-icons'
+import { AlertDialog, Badge, Button, Flex, IconButton, Select, Text, TextField } from '@radix-ui/themes'
 import { useQuery } from '@tanstack/react-query'
 import { ColumnDef } from '@tanstack/react-table'
 import { add, endOfDay, format, startOfDay } from 'date-fns'
@@ -14,10 +14,16 @@ import { OrderStatus } from 'src/constants/order-status'
 import { OrderQuery, Order as OrderType } from 'src/types/order.type'
 import { convertCurrentcy } from 'src/utils/utils.ts'
 import LayoutProfile from '../LayoutProfile'
+import OrderCancel from './OrderCancel'
+import OrderDetail from './OrderDetail'
+import OrderEdit from './OrderEdit'
 
 const Order = () => {
     const [date, setDate] = useState<DateRange | undefined>(undefined)
     const [query, setQuery] = useState<Partial<OrderQuery>>({ createdAt: 'desc' })
+    const [openDetail, setOpenDetail] = useState<boolean>(false)
+    const [openEdit, setOpenEdit] = useState<boolean>(false)
+    const [openCancel, setOpenCancel] = useState<boolean>(false)
 
     const columns: ColumnDef<OrderType>[] = [
         {
@@ -100,6 +106,22 @@ const Order = () => {
                     <Text>{format(row.original.createdAt, 'dd/LL/Y')}</Text>
                 </Flex>
             )
+        },
+        {
+            accessorKey: ' ',
+            cell: () => (
+                <Flex gapX={'2'} align={'center'}>
+                    <IconButton variant='soft' onClick={() => setOpenDetail(!openDetail)}>
+                        <InfoCircledIcon />
+                    </IconButton>
+                    <IconButton variant='soft' color='orange' onClick={() => setOpenEdit(!openEdit)}>
+                        <Pencil1Icon />
+                    </IconButton>
+                    <IconButton variant='soft' color='red' onClick={() => setOpenCancel(!openCancel)}>
+                        <Cross2Icon />
+                    </IconButton>
+                </Flex>
+            )
         }
     ]
 
@@ -124,8 +146,10 @@ const Order = () => {
     }
 
     const handleResetFilter = () => {
-        setQuery({ createdAt: 'desc' })
-        setDate(undefined)
+        if (Object.keys(query).length > 2) {
+            setQuery({ createdAt: 'desc' })
+            setDate(undefined)
+        }
     }
 
     const handlePreviousPage = () => {
@@ -252,6 +276,31 @@ const Order = () => {
                     className='w-[1200px] max-w-[1200px]'
                 />
             </Flex>
+            <AlertDialog.Root>
+                <AlertDialog.Content maxWidth='700px'>
+                    <AlertDialog.Title>Revoke access</AlertDialog.Title>
+                    <AlertDialog.Description size='2'>
+                        Are you sure? This application will no longer be accessible and any existing sessions will be
+                        expired.
+                    </AlertDialog.Description>
+
+                    <Flex gap='3' mt='4' justify='end'>
+                        <AlertDialog.Cancel>
+                            <Button variant='soft' color='gray'>
+                                Cancel
+                            </Button>
+                        </AlertDialog.Cancel>
+                        <AlertDialog.Action>
+                            <Button variant='solid' color='red'>
+                                Revoke access
+                            </Button>
+                        </AlertDialog.Action>
+                    </Flex>
+                </AlertDialog.Content>
+            </AlertDialog.Root>
+            <OrderDetail isOpen={openDetail} setIsOpen={setOpenDetail} />
+            <OrderEdit isOpen={openEdit} setIsOpen={setOpenEdit} />
+            <OrderCancel isOpen={openCancel} setIsOpen={setOpenCancel} />
         </LayoutProfile>
     )
 }

@@ -6,9 +6,9 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export const convertCurrentcy = (value: number, digit = 0) =>
-    new Intl.NumberFormat('de-DE', {
+    `${new Intl.NumberFormat('de-DE', {
         minimumFractionDigits: digit
-    }).format(value)
+    }).format(value)}đ`
 
 export const convertDigitalNumber = (value: number, digit = 0) =>
     new Intl.NumberFormat('en', {

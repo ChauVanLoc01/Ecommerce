@@ -1,3 +1,5 @@
+import { Product } from './product.type'
+
 export type OrderBody = {
     orderParameters: {
         storeId: string
@@ -36,7 +38,22 @@ export type Order = {
     updatedAt?: string
 }
 
+export type ProductOrder = {
+    id: string
+    productId: string
+    quantity: number
+    priceBefore?: number
+    priceAfter: number
+    orderId: string
+}
+export type ProductOrderWithProduct = ProductOrder &
+    Pick<Product, 'name' | 'image' | 'category'> & { currentPriceAfter: number }
+
 export type OrderResponse = {
     data: Order[]
     query: Omit<OrderQuery, 'page'> & { page_size: number; page: number }
+}
+
+export type OrderDetailResponse = Order & {
+    ProductOrder: ProductOrderWithProduct[]
 }
