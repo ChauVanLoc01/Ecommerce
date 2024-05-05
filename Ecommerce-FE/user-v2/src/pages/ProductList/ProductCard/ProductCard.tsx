@@ -133,13 +133,13 @@ const ProductCard = ({ product }: ProductCardProps) => {
                 <div className='flex justify-between items-end'>
                     <div>
                         <h3 className='space-x-2 text-base'>
-                            <span className='font-semibold'>{convertCurrentcy(priceAfter || 0, 0)}đ</span>
+                            <span className='font-semibold'>{convertCurrentcy(priceAfter || 0, 0)}</span>
                             <span
                                 className={classNames('line-through text-gray-400', {
                                     hidden: !priceBefore
                                 })}
                             >
-                                {convertCurrentcy(priceBefore || 0, 0)}đ
+                                {convertCurrentcy(priceBefore || 0, 0)}
                             </span>
                         </h3>
                         <Stars amount={5} />

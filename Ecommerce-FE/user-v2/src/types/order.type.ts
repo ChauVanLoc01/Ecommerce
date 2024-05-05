@@ -1,3 +1,4 @@
+import { Delivery } from './delivery.type'
 import { Product } from './product.type'
 
 export type OrderBody = {
@@ -56,4 +57,5 @@ export type OrderResponse = {
 
 export type OrderDetailResponse = Order & {
     ProductOrder: ProductOrderWithProduct[]
+    delivery: Delivery
 }

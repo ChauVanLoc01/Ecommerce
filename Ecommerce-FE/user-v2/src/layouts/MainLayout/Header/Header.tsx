@@ -122,11 +122,11 @@ const Header = () => {
                                                         >
                                                             <span className='line-clamp-2'>{e.name}</span>
                                                             <span className='text-red-500 text-xs'>
-                                                                {convertCurrentcy(e.priceAfter || 0, 0)}đ x {e.buy}
+                                                                {convertCurrentcy(e.priceAfter || 0, 0)} x {e.buy}
                                                             </span>
                                                         </button>
                                                         <h4 className='ml-auto w-fit text-red-700'>
-                                                            {convertCurrentcy(e.priceAfter * e.buy || 0, 0)}đ
+                                                            {convertCurrentcy(e.priceAfter * e.buy || 0, 0)}
                                                         </h4>
                                                     </li>
                                                 ))}

@@ -7,7 +7,7 @@ import Stars from 'src/components/Stars'
 import classNames from 'classnames'
 import { motion } from 'framer-motion'
 import { useContext, useState } from 'react'
-import { useLoaderData, useNavigate } from 'react-router-dom'
+import { Link, useLoaderData, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { route } from 'src/constants/route'
 import { AppContext } from 'src/contexts/AppContext'
@@ -16,11 +16,17 @@ import { ls } from 'src/utils/localStorage'
 import { convertCurrentcy } from 'src/utils/utils.ts'
 import MaybeULike from './MaybeULike'
 import Review from './Review'
+import { Avatar, Flex, Text } from '@radix-ui/themes'
+import { Store } from 'src/types/store.type'
 
 const Product = () => {
     const { setProducts, products, profile } = useContext(AppContext)
     const [quantity, setQuantity] = useState<number>(1)
-    const [productDetail, relativedProducts] = useLoaderData() as [ProductDetailResponse, ProductListResponse]
+    const [productDetail, relativedProducts, storeDetail] = useLoaderData() as [
+        ProductDetailResponse,
+        ProductListResponse,
+        Store
+    ]
     const navigate = useNavigate()
 
     const handleAddToCart = (checked: boolean) => () => {
@@ -107,16 +113,21 @@ const Product = () => {
                 <div className='space-y-3'>
                     <Stars amount={3} />
                     <h3 className='font-semibold text-2xl tracking-wider'>{productDetail.name}</h3>
-                    <p className='tracking-wider leading-5'>{productDetail.description}</p>
+                    <Link to={`/store/${storeDetail.id}`} className='inline-block'>
+                        <Flex align={'center'} gapX={'4'}>
+                            <Avatar fallback='A' src={storeDetail.image} />
+                            <Text color='gray'>{storeDetail.name}</Text>
+                        </Flex>
+                    </Link>
                     <InputNumber quantity={quantity} setQuantity={setQuantity} />
                     <div className='space-x-3 text-2xl'>
-                        <span className='text-red-600'>{convertCurrentcy(productDetail.priceAfter || 0, 0)}đ</span>
+                        <span className='text-red-600'>{convertCurrentcy(productDetail.priceAfter || 0, 0)}</span>
                         <span
                             className={classNames('line-through text-gray-400', {
                                 hidden: !productDetail.priceBefore
                             })}
                         >
-                            {convertCurrentcy(productDetail.priceBefore || 0, 0)}đ
+                            {convertCurrentcy(productDetail.priceBefore || 0, 0)}
                         </span>
                     </div>
                     <div className='flex justify-start gap-3'>

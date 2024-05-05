@@ -1,6 +1,7 @@
 import { isUndefined, omitBy } from 'lodash'
 import { LoaderFunction } from 'react-router-dom'
 import { productFetching } from 'src/apis/product'
+import { StoreFetching } from 'src/apis/store'
 import { endProductDetailFetching, startProductDetailFetching } from 'src/constants/event'
 import { queryClient } from 'src/routes/main.route'
 import { ProductListQuery } from 'src/types/product.type'
@@ -23,6 +24,12 @@ export const productDetailLoader: LoaderFunction = async ({ params }) => {
         gcTime: 1000 * 60 * 50
     })
 
+    const storeDetail = await queryClient.fetchQuery({
+        queryKey: ['storeDetail', productDetail.data.result.storeId],
+        queryFn: () => StoreFetching.getStoreDetail(productDetail.data.result.storeId),
+        staleTime: 1000 * 60 * 5
+    })
+
     const relativedProducts = await queryClient.fetchQuery({
         queryKey: ['relativedProducts', productDetail.data.result.category],
         queryFn: () => productFetching.productList({ category: productDetail.data.result.category, sold: 'desc' }),
@@ -37,7 +44,7 @@ export const productDetailLoader: LoaderFunction = async ({ params }) => {
         })
     )
 
-    return [productDetail.data.result, relativedProducts.data.result]
+    return [productDetail.data.result, relativedProducts.data.result, storeDetail.data.result]
 }
 
 export const productListLoader: LoaderFunction = async ({ request }) => {

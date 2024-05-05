@@ -119,7 +119,7 @@ const ProductIncart = ({ product, storeId }: ProductInCartType) => {
                 <h3 className='text-gray-400'>Red</h3>
             </div>
             <div className='flex items-center space-x-4'>
-                <h3 className='font-semibold'> {convertCurrentcy(product.priceAfter || 0, 0)}đ</h3>
+                <h3 className='font-semibold'> {convertCurrentcy(product.priceAfter || 0, 0)}</h3>
                 <InputNumber quantity={quantity} setQuantity={setQuantity} />
                 <AlertDialog.Root>
                     <AlertDialog.Trigger>

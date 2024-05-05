@@ -10,6 +10,7 @@ import { deliveryLoader } from 'src/loaders/delivery.loader'
 import { ordersLoader } from 'src/loaders/order.loader'
 import { productDetailLoader, productListLoader } from 'src/loaders/product.loader'
 import { profileLoader } from 'src/loaders/profile.loader'
+import { storeLoader } from 'src/loaders/store.loader'
 import Checkout from 'src/pages/Checkout'
 import NotFound from 'src/pages/NotFound'
 import Profile from 'src/pages/Profile'
@@ -18,6 +19,7 @@ import ChangePassword from 'src/pages/Profile/LayoutProfile/ChangePassword'
 import Order from 'src/pages/Profile/LayoutProfile/Order'
 import Payment from 'src/pages/Profile/LayoutProfile/Payment'
 import PersonalInformation from 'src/pages/Profile/LayoutProfile/PersonalInformation'
+import Store from 'src/pages/Store'
 
 const Login = loadable(() => import('src/pages/Login'))
 const Register = loadable(() => import('src/pages/Register'))
@@ -65,6 +67,11 @@ const routes = createBrowserRouter([
                 index: true,
                 element: <ProductList />,
                 loader: productListLoader
+            },
+            {
+                path: 'store/:storeId',
+                element: <Store />,
+                loader: storeLoader
             },
             {
                 path: ':productId',

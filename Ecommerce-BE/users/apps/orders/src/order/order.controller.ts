@@ -52,18 +52,12 @@ export class OrderController {
   }
 
   @Roles(Role.USER)
-  @Put(':orderId')
+  @Put('user-order/:orderId')
   updateOrder(
     @Param('orderId') orderId: string,
     @CurrentUser() user: CurrentUserType,
     @Body() body: UpdateOrderDTO
   ) {
     return this.ordersService.updateOrder(user, orderId, body)
-  }
-
-  @Public()
-  @Get('hello')
-  test() {
-    return this.ordersService.test()
   }
 }

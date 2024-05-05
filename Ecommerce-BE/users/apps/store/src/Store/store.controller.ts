@@ -3,7 +3,9 @@ import {
   Body,
   Controller,
   FileTypeValidator,
+  Get,
   MaxFileSizeValidator,
+  Param,
   ParseFilePipe,
   Post,
   Put,
@@ -115,7 +117,12 @@ export class StoreController {
 
   @MessagePattern(getStoreDetail)
   @Public()
-  getStoreDetail(@Payload() payload: string[]) {
-    return this.storeService.getStoreDetail(payload)
+  getStoresDetailWithMP(@Payload() payload: string[]) {
+    return this.storeService.getStoresDetail(payload)
+  }
+
+  @Get(':storeId')
+  getStoreDetail(@Param('storeId') storeId: string) {
+    return this.storeService.getStoreDetail(storeId)
   }
 }

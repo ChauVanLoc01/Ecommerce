@@ -6,7 +6,7 @@ import { cn } from 'src/utils/utils.ts'
 
 const Table = React.forwardRef<HTMLTableElement, React.HTMLAttributes<HTMLTableElement> & { maxHeight: string }>(
     ({ className, maxHeight, ...props }, ref) => (
-        <SimpleBar style={{ maxHeight: maxHeight, height: maxHeight, position: 'relative' }}>
+        <SimpleBar style={{ maxHeight: maxHeight, position: 'relative' }}>
             <table ref={ref} className={cn('caption-bottom text-sm', className)} {...props} />
         </SimpleBar>
     )

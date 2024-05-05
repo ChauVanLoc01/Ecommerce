@@ -27,13 +27,13 @@ const MaybeULike = ({ product }: MaybeULikeProps) => {
                     {product.name}
                 </Link>
                 <div className='space-x-3 text-sm'>
-                    <span className=''>{convertCurrentcy(product.priceAfter || 0, 0)}đ</span>
+                    <span className=''>{convertCurrentcy(product.priceAfter || 0, 0)}</span>
                     <span
                         className={classNames('line-through text-gray-400', {
                             hidden: !product.priceBefore
                         })}
                     >
-                        {convertCurrentcy(product.priceBefore || 0, 0)}đ
+                        {convertCurrentcy(product.priceBefore || 0, 0)}
                     </span>
                 </div>
                 <Stars amount={3} />

@@ -54,9 +54,9 @@ export class ProductController {
   }
 
   @Public()
-  @Get('product-store')
-  getAllForStore(@CurrentUser() store: CurrentStoreType, @Query() query: QueryProductDTO) {
-    return this.productsService.getALlProductForStore(store, query)
+  @Get('product-store/:storeId')
+  getAllForStore(@Param('storeId') storeId: string, @Query() query: QueryProductDTO) {
+    return this.productsService.getALlProductForStore(storeId, query)
   }
 
   @Public()

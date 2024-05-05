@@ -13,11 +13,11 @@ import { Role } from 'common/enums/role.enum'
 import { Status } from 'common/enums/status.enum'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
 import { Return } from 'common/types/result.type'
+import { keyBy } from 'lodash'
 import { firstValueFrom } from 'rxjs'
 import { v4 as uuidv4 } from 'uuid'
 import { CreateStoreDTO } from './dtos/create-store.dto'
 import { UpdateStoreDTO } from './dtos/update-store.dto'
-import { keyBy } from 'lodash'
 
 @Injectable()
 export class StoreService {
@@ -182,7 +182,7 @@ export class StoreService {
     )
   }
 
-  async getStoreDetail(storeIds: string[]) {
+  async getStoresDetail(storeIds: string[]) {
     const storeList = await Promise.all(
       storeIds.map((id) =>
         this.prisma.store.findUnique({
@@ -193,5 +193,16 @@ export class StoreService {
       )
     )
     return keyBy(storeList, 'id')
+  }
+
+  async getStoreDetail(storeId: string): Promise<Return> {
+    return {
+      msg: 'Lấy thông tin cửa hàng thành công',
+      result: await this.prisma.store.findUnique({
+        where: {
+          id: storeId
+        }
+      })
+    }
   }
 }

@@ -6,9 +6,16 @@ type TableProps<T> = {
     columns: ColumnDef<T>[]
     tableMaxHeight?: string
     className?: string
+    onMouseOverInTableRow?: (orderId: string) => () => void
 } & Omit<TableOptions<T>, 'getCoreRowModel'>
 
-const Table = function <T>({ columns, data, className, tableMaxHeight }: TableProps<T>) {
+const Table = function <T extends { id: string }>({
+    columns,
+    data,
+    className,
+    tableMaxHeight,
+    onMouseOverInTableRow
+}: TableProps<T>) {
     const table = useReactTable<T>({
         data,
         columns,
@@ -35,7 +42,12 @@ const Table = function <T>({ columns, data, className, tableMaxHeight }: TablePr
             <TableBody>
                 {table.getRowModel().rows?.length ? (
                     table.getRowModel().rows.map((row) => (
-                        <TableRow className='border-none' key={row.id} data-state={row.getIsSelected() && 'selected'}>
+                        <TableRow
+                            onMouseOver={onMouseOverInTableRow && onMouseOverInTableRow(row.original.id)}
+                            className='border-none'
+                            key={row.id}
+                            data-state={row.getIsSelected() && 'selected'}
+                        >
                             {row.getVisibleCells().map((cell) => (
                                 <TableCell key={cell.id}>
                                     {flexRender(cell.column.columnDef.cell, cell.getContext())}

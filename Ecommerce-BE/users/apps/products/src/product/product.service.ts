@@ -149,7 +149,7 @@ export class ProductService {
     return keyBy(products, 'id')
   }
 
-  async getALlProductForStore(store: CurrentStoreType, query: QueryProductType): Promise<Return> {
+  async getALlProductForStore(storeId: string, query: QueryProductType): Promise<Return> {
     const {
       category,
       createdAt,
@@ -182,7 +182,7 @@ export class ProductService {
     const [productAllLength, products] = await Promise.all([
       this.prisma.product.count({
         where: {
-          storeId: store.storeId,
+          storeId,
           category,
           status,
           priceAfter: {
@@ -197,7 +197,7 @@ export class ProductService {
       }),
       this.prisma.product.findMany({
         where: {
-          storeId: store.storeId,
+          storeId,
           category,
           status,
           priceAfter: {

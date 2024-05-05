@@ -114,8 +114,15 @@ export class OrderService {
           name: productsInOrder[productOrder.productId].name,
           image: productsInOrder[productOrder.productId].image,
           category: productsInOrder[productOrder.productId].category,
-          currentPriceAfter: productsInOrder[productOrder.productId].currentQuantity
+          currentPriceAfter: productsInOrder[productOrder.productId].priceAfter
         })
+      })
+    )
+
+    const delivery = await await firstValueFrom(
+      this.userClient.send(checkDeliveryInformationId, {
+        user,
+        deliveryInformationId: orderExist.deliveryInformationId
       })
     )
 
@@ -123,7 +130,8 @@ export class OrderService {
       msg: 'Lấy thông tin đơn hàng thành công',
       result: {
         ...orderExist,
-        ProductOrder: convertedProductOrder
+        ProductOrder: convertedProductOrder,
+        delivery
       }
     }
   }
@@ -194,32 +202,28 @@ export class OrderService {
       const { id } = user
       const { orderParameters, deliveryInformationId, voucherId } = body
 
-      const isDeliveryInformationExist = await firstValueFrom(
-        this.userClient.send(checkDeliveryInformationId, {
-          user,
-          deliveryInformationId
-        })
-      )
+      const stores = orderParameters.map((parameter) => parameter.storeId)
+
+      const [isDeliveryInformationExist, isStoresExist, updatedProducts] = await Promise.all([
+        firstValueFrom(
+          this.userClient.send(checkDeliveryInformationId, {
+            user,
+            deliveryInformationId
+          })
+        ),
+        firstValueFrom(this.storeClient.send<Store[], string[]>(checkStoreExist, stores)),
+        firstValueFrom(this.productClient.send(updateQuantityProducts, orderParameters))
+      ])
 
       if (!isDeliveryInformationExist) {
         throw new NotFoundException('Không tồn tại thông tin vận chuyển')
       }
-
-      const stores = orderParameters.map((parameter) => parameter.storeId)
-
-      const isStoresExist = await firstValueFrom(
-        this.storeClient.send<Store[], string[]>(checkStoreExist, stores)
-      )
 
       const convertStoreExist = isStoresExist.filter((e) => e)
 
       if (stores.length !== convertStoreExist.length) {
         throw new BadRequestException('Lỗi cửa hàng không tồn tại')
       }
-
-      const updatedProducts = await firstValueFrom(
-        this.productClient.send(updateQuantityProducts, orderParameters)
-      )
 
       if (typeof updatedProducts === 'string') {
         throw new BadRequestException(updatedProducts)
@@ -298,7 +302,7 @@ export class OrderService {
     if (!orderExist) throw new NotFoundException('Đơn hàng không tồn tại')
 
     if (orderExist.status === OrderStatus.SUCCESS)
-      throw new BadRequestException('Không thể cập nhật đơn hàng thành công')
+      throw new BadRequestException('Không thể cập nhật đơn hàng đã hoàn tất')
 
     return {
       msg: 'Cập nhật đơn hàng thành công',

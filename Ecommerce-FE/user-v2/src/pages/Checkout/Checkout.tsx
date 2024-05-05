@@ -108,7 +108,7 @@ const Checkout = () => {
                     </div>
                 )
             },
-            cell: ({ row }) => <div className='capitalize'>{convertCurrentcy(row.original.total)}đ</div>
+            cell: ({ row }) => <div className='capitalize'>{convertCurrentcy(row.original.total)}</div>
         },
         {
             accessorKey: 'Giảm giá',
@@ -120,7 +120,7 @@ const Checkout = () => {
                     </div>
                 )
             },
-            cell: ({ row }) => <div className='capitalize'>{convertCurrentcy(row.original.discount)}đ</div>
+            cell: ({ row }) => <div className='capitalize'>{convertCurrentcy(row.original.discount)}</div>
         },
         {
             accessorKey: 'Số tiền cần trả',
@@ -132,7 +132,7 @@ const Checkout = () => {
                     </div>
                 )
             },
-            cell: ({ row }) => <div className='capitalize'>{convertCurrentcy(row.original.pay)}đ</div>
+            cell: ({ row }) => <div className='capitalize'>{convertCurrentcy(row.original.pay)}</div>
         },
         {
             accessorKey: 'Thời gian tạo',
@@ -317,7 +317,7 @@ const Checkout = () => {
                                                     <div className='flex flex-col items-end'>
                                                         <Text color='red'>x{productChecked.buy}</Text>
                                                         <Text size={'3'}>
-                                                            {convertCurrentcy(productChecked.priceAfter)}đ
+                                                            {convertCurrentcy(productChecked.priceAfter)}
                                                         </Text>
                                                     </div>
                                                 </div>

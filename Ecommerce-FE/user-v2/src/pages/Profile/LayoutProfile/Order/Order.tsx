@@ -1,5 +1,5 @@
 import { ChevronLeftIcon, ChevronRightIcon, Cross2Icon, InfoCircledIcon, Pencil1Icon } from '@radix-ui/react-icons'
-import { AlertDialog, Badge, Button, Flex, IconButton, Select, Text, TextField } from '@radix-ui/themes'
+import { AlertDialog, Badge, Button, Flex, IconButton, Select, Text, TextField, Tooltip } from '@radix-ui/themes'
 import { useQuery } from '@tanstack/react-query'
 import { ColumnDef } from '@tanstack/react-table'
 import { add, endOfDay, format, startOfDay } from 'date-fns'
@@ -24,6 +24,7 @@ const Order = () => {
     const [openDetail, setOpenDetail] = useState<boolean>(false)
     const [openEdit, setOpenEdit] = useState<boolean>(false)
     const [openCancel, setOpenCancel] = useState<boolean>(false)
+    const [orderId, setOrderId] = useState<string>('')
 
     const columns: ColumnDef<OrderType>[] = [
         {
@@ -64,7 +65,7 @@ const Order = () => {
                     </div>
                 )
             },
-            cell: ({ row }) => <div className='capitalize'>{convertCurrentcy(row.original.total)}đ</div>
+            cell: ({ row }) => <div className='capitalize'>{convertCurrentcy(row.original.total)}</div>
         },
         {
             accessorKey: 'Giảm giá',
@@ -76,7 +77,7 @@ const Order = () => {
                     </div>
                 )
             },
-            cell: ({ row }) => <div className='capitalize'>{convertCurrentcy(row.original.discount)}đ</div>
+            cell: ({ row }) => <div className='capitalize'>{convertCurrentcy(row.original.discount)}</div>
         },
         {
             accessorKey: 'Số tiền cần trả',
@@ -88,7 +89,7 @@ const Order = () => {
                     </div>
                 )
             },
-            cell: ({ row }) => <div className='capitalize'>{convertCurrentcy(row.original.pay)}đ</div>
+            cell: ({ row }) => <div className='capitalize'>{convertCurrentcy(row.original.pay)}</div>
         },
         {
             accessorKey: 'Thời gian tạo',
@@ -109,17 +110,39 @@ const Order = () => {
         },
         {
             accessorKey: ' ',
-            cell: () => (
+            cell: ({ row }) => (
                 <Flex gapX={'2'} align={'center'}>
-                    <IconButton variant='soft' onClick={() => setOpenDetail(!openDetail)}>
-                        <InfoCircledIcon />
-                    </IconButton>
-                    <IconButton variant='soft' color='orange' onClick={() => setOpenEdit(!openEdit)}>
-                        <Pencil1Icon />
-                    </IconButton>
-                    <IconButton variant='soft' color='red' onClick={() => setOpenCancel(!openCancel)}>
-                        <Cross2Icon />
-                    </IconButton>
+                    <Tooltip content='Xem chi tiết'>
+                        <IconButton
+                            variant='soft'
+                            onClick={() => setOpenDetail(!openDetail)}
+                            onMouseEnter={handleFetchOrderDetailWhenHovering(row.original.id)}
+                        >
+                            <InfoCircledIcon />
+                        </IconButton>
+                    </Tooltip>
+                    <Tooltip content='Chỉnh sửa'>
+                        <IconButton
+                            variant='soft'
+                            color='orange'
+                            onClick={() => setOpenEdit(!openEdit)}
+                            onMouseEnter={handleFetchOrderDetailWhenHovering(row.original.id)}
+                            disabled={['CANCEL', 'SUCCESS'].includes(row.original.status)}
+                        >
+                            <Pencil1Icon />
+                        </IconButton>
+                    </Tooltip>
+                    <Tooltip content='Hủy đơn'>
+                        <IconButton
+                            variant='soft'
+                            color='red'
+                            onClick={() => setOpenCancel(!openCancel)}
+                            onMouseEnter={handleFetchOrderDetailWhenHovering(row.original.id)}
+                            disabled={['CANCEL', 'SUCCESS'].includes(row.original.status)}
+                        >
+                            <Cross2Icon />
+                        </IconButton>
+                    </Tooltip>
                 </Flex>
             )
         }
@@ -127,9 +150,16 @@ const Order = () => {
 
     const { refetch, data } = useQuery({
         queryKey: ['orders', JSON.stringify(query)],
-        queryFn: () => OrderFetching.getAllOrder(query),
+        queryFn: ({ signal }) => OrderFetching.getAllOrder(query, signal),
         enabled: false,
         placeholderData: (oldData) => oldData
+    })
+
+    const { refetch: orderRefetch, data: orderDetailData } = useQuery({
+        queryKey: ['orderDetail', orderId],
+        queryFn: ({ signal }) => OrderFetching.getOrderDetail(orderId, signal),
+        enabled: false,
+        staleTime: 1000 * 60 * 5
     })
 
     const handleSelectChange = (value: string) => {
@@ -174,6 +204,10 @@ const Order = () => {
         }
     }
 
+    const handleFetchOrderDetailWhenHovering = (orderId: string) => () => {
+        setOrderId(orderId)
+    }
+
     useEffect(() => {
         if (date) {
             setQuery((pre) => {
@@ -204,6 +238,10 @@ const Order = () => {
                 }
             })
     }, [JSON.stringify(data)])
+
+    useEffect(() => {
+        orderId && orderRefetch()
+    }, [orderId])
 
     return (
         <LayoutProfile title='Đơn hàng của bạn'>
@@ -298,9 +336,19 @@ const Order = () => {
                     </Flex>
                 </AlertDialog.Content>
             </AlertDialog.Root>
-            <OrderDetail isOpen={openDetail} setIsOpen={setOpenDetail} />
-            <OrderEdit isOpen={openEdit} setIsOpen={setOpenEdit} />
-            <OrderCancel isOpen={openCancel} setIsOpen={setOpenCancel} />
+            <OrderDetail
+                isOpen={openDetail}
+                setIsOpen={setOpenDetail}
+                data={orderDetailData?.data.result.ProductOrder || []}
+                orderData={orderDetailData?.data.result}
+            />
+            <OrderEdit
+                isOpen={openEdit}
+                setIsOpen={setOpenEdit}
+                data={orderDetailData?.data.result.ProductOrder || []}
+                orderData={orderDetailData?.data.result}
+            />
+            <OrderCancel isOpen={openCancel} setIsOpen={setOpenCancel} orderId={orderId} refetch={refetch} />
         </LayoutProfile>
     )
 }
