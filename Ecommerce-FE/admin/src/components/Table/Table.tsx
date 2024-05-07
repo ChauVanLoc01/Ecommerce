@@ -1,81 +1,66 @@
-/* eslint-disable react/prop-types */
-import * as React from 'react'
-import SimpleBar from 'simplebar-react'
+import { ColumnDef, flexRender, getCoreRowModel, TableOptions, useReactTable } from '@tanstack/react-table'
+import { TableBody, TableCell, TableHead, TableHeader, TableRow, Table as TableShadcn } from './TableShadcn'
 
-import { cn } from 'src/utils/utils.ts'
+type TableProps<T> = {
+  data: T[]
+  columns: ColumnDef<T>[]
+  tableMaxHeight?: string
+  className?: string
+  onMouseOverInTableRow?: (orderId: string) => () => void
+} & Omit<TableOptions<T>, 'getCoreRowModel'>
 
-const Table = React.forwardRef<HTMLTableElement, React.HTMLAttributes<HTMLTableElement> & { maxHeight: string }>(
-    ({ className, maxHeight, ...props }, ref) => (
-        <SimpleBar style={{ maxHeight: maxHeight, height: maxHeight, maxWidth: '100%', position: 'relative' }}>
-            <table ref={ref} className={cn(`caption-bottom text-sm text-gray-600`, className)} {...props} />
-        </SimpleBar>
-    )
-)
-Table.displayName = 'Table'
+const Table = function <T extends { id: string }>({
+  columns,
+  data,
+  className,
+  tableMaxHeight,
+  onMouseOverInTableRow
+}: TableProps<T>) {
+  const table = useReactTable<T>({
+    data,
+    columns,
+    getCoreRowModel: getCoreRowModel()
+  })
 
-const TableHeader = React.forwardRef<HTMLTableSectionElement, React.HTMLAttributes<HTMLTableSectionElement>>(
-    ({ className, ...props }, ref) => <thead ref={ref} className={cn('[&_tr]:border-b', className)} {...props} />
-)
-TableHeader.displayName = 'TableHeader'
+  return (
+    <TableShadcn className={className} maxHeight={tableMaxHeight ?? 'auto'}>
+      <TableHeader className='bg-gray-100 sticky top-0'>
+        {table.getHeaderGroups().map((headerGroup) => (
+          <TableRow key={headerGroup.id}>
+            {headerGroup.headers.map((header) => {
+              return (
+                <TableHead key={header.id}>
+                  {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                </TableHead>
+              )
+            })}
+          </TableRow>
+        ))}
+      </TableHeader>
+      <TableBody>
+        {table.getRowModel().rows?.length ? (
+          table.getRowModel().rows.map((row) => (
+            <TableRow
+              onMouseOver={onMouseOverInTableRow && onMouseOverInTableRow(row.original.id)}
+              className='border-none'
+              key={row.id}
+              data-state={row.getIsSelected() && 'selected'}
+            >
+              {row.getVisibleCells().map((cell) => (
+                <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
+              ))}
+            </TableRow>
+          ))
+        ) : (
+          <TableRow>
+            <TableCell colSpan={columns.length} className='h-24 text-center'>
+              Không có dữ liệu
+            </TableCell>
+          </TableRow>
+        )}
+      </TableBody>
+    </TableShadcn>
+  )
+}
 
-const TableBody = React.forwardRef<HTMLTableSectionElement, React.HTMLAttributes<HTMLTableSectionElement>>(
-    ({ className, ...props }, ref) => (
-        <tbody ref={ref} className={cn('[&_tr:last-child]:border-0 focus-visible:border-none', className)} {...props} />
-    )
-)
-TableBody.displayName = 'TableBody'
-
-const TableFooter = React.forwardRef<HTMLTableSectionElement, React.HTMLAttributes<HTMLTableSectionElement>>(
-    ({ className, ...props }, ref) => (
-        <tfoot
-            ref={ref}
-            className={cn('border-t bg-gray-100/50 font-medium [&>tr]:last:border-b-0', className)}
-            {...props}
-        />
-    )
-)
-TableFooter.displayName = 'TableFooter'
-
-const TableRow = React.forwardRef<HTMLTableRowElement, React.HTMLAttributes<HTMLTableRowElement>>(
-    ({ className, ...props }, ref) => (
-        <tr
-            ref={ref}
-            className={cn(
-                'border-b transition-colors hover:bg-gray-100/50 data-[state=selected]:bg-gray-100',
-                className
-            )}
-            {...props}
-        />
-    )
-)
-TableRow.displayName = 'TableRow'
-
-const TableHead = React.forwardRef<HTMLTableCellElement, React.ThHTMLAttributes<HTMLTableCellElement>>(
-    ({ className, ...props }, ref) => (
-        <th
-            ref={ref}
-            className={cn(
-                'h-12 px-4 text-left align-middle font-medium text-gray-600 [&:has([role=checkbox])]:pr-0',
-                className
-            )}
-            {...props}
-        />
-    )
-)
-TableHead.displayName = 'TableHead'
-
-const TableCell = React.forwardRef<HTMLTableCellElement, React.TdHTMLAttributes<HTMLTableCellElement>>(
-    ({ className, ...props }, ref) => (
-        <td ref={ref} className={cn('p-4 align-middle [&:has([role=checkbox])]:pr-0', className)} {...props} />
-    )
-)
-TableCell.displayName = 'TableCell'
-
-const TableCaption = React.forwardRef<HTMLTableCaptionElement, React.HTMLAttributes<HTMLTableCaptionElement>>(
-    ({ className, ...props }, ref) => (
-        <caption ref={ref} className={cn('mt-4 text-sm text-gray-500', className)} {...props} />
-    )
-)
-TableCaption.displayName = 'TableCaption'
-
-export { Table, TableBody, TableCaption, TableCell, TableFooter, TableHead, TableHeader, TableRow }
+export default Table

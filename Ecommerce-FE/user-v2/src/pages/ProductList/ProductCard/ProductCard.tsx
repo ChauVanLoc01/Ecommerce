@@ -1,29 +1,30 @@
 import { Avatar, Text } from '@radix-ui/themes'
 import classNames from 'classnames'
 import { motion } from 'framer-motion'
-import { useContext, useState } from 'react'
+import { useContext } from 'react'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import Button from 'src/components/Button'
 import Image from 'src/components/Image'
 import Stars from 'src/components/Stars'
-import { endProductDetailFetching, startProductDetailFetching } from 'src/constants/event'
 import { AppContext } from 'src/contexts/AppContext'
+import useLoadingProduct from 'src/hooks/useLoadingProduct'
 import { Product } from 'src/types/product.type'
 import { ls } from 'src/utils/localStorage'
 import { convertCurrentcy, removeSpecialCharacter } from 'src/utils/utils.ts'
 
 type ProductCardProps = {
     product: Product
-    isLoading?: boolean
+    isHiddenStore?: boolean
 }
 
-const ProductCard = ({ product }: ProductCardProps) => {
+const ProductCard = ({ product, isHiddenStore = false }: ProductCardProps) => {
     const { name, image, priceAfter, priceBefore, id } = product
 
     const { setProducts, products } = useContext(AppContext)
-    const [isFetching, setIsFetching] = useState<boolean>(false)
+
+    const [isFetching] = useLoadingProduct(product.id)
 
     const handleAddToCart = () => {
         var isNewProductInStoreExist = true
@@ -81,18 +82,6 @@ const ProductCard = ({ product }: ProductCardProps) => {
         toast.info('Thêm sản phẩm thành công')
     }
 
-    window.addEventListener(startProductDetailFetching, (e: any) => {
-        if (e.detail.productDetail === product.id) {
-            setIsFetching(true)
-        }
-    })
-
-    window.addEventListener(endProductDetailFetching, (e: any) => {
-        if (e.detail.productDetail === product.id) {
-            setIsFetching(false)
-        }
-    })
-
     return (
         <motion.article
             className='rounded-12 border border-border/30 bg-[#FFFFFF] hover:shadow-md overflow-hidden'
@@ -106,7 +95,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
                     src={image}
                     alt='product-img'
                     className='object-cover overflow-hidden rounded-12 h-[295px] max-h-[295px]'
-                    overlay={isFetching}
+                    overlay={isFetching as boolean}
                     loading='lazy'
                 />
                 <div
@@ -125,10 +114,15 @@ const ProductCard = ({ product }: ProductCardProps) => {
                     >
                         {name}
                     </Link>
-                    <Link to={'/'} className='flex items-center space-x-3 cursor-pointer group'>
-                        <Avatar fallback='A' src={product.store.image} radius='full' size={'2'} />
-                        <Text className='group-hover:text-gray-500'>{product.store.name}</Text>
-                    </Link>
+                    {!isHiddenStore && (
+                        <Link
+                            to={`/store/${product.storeId}`}
+                            className='flex items-center space-x-3 cursor-pointer group'
+                        >
+                            <Avatar fallback='A' src={product.store.image} radius='full' size={'2'} />
+                            <Text className='group-hover:text-gray-500'>{product.store.name}</Text>
+                        </Link>
+                    )}
                 </div>
                 <div className='flex justify-between items-end'>
                     <div>

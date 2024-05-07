@@ -1,9 +1,12 @@
 import { Flex, IconButton, Select, Text, TextField } from '@radix-ui/themes'
+import { useState } from 'react'
+import { DateRange } from 'react-day-picker'
 import { DatePickerWithRange } from 'src/components/Shadcn/dateRange'
-import ProductTable from '../Product/ProductTable'
 import LayoutProfile from '../Profile/LayoutProfile'
 
 const Order = () => {
+    const [date, setDate] = useState<DateRange | undefined>(undefined)
+
     return (
         <LayoutProfile title='Quản lý đơn hàng'>
             <div className='bg-white rounded-8 border-border/30 space-y-4'>
@@ -41,7 +44,7 @@ const Order = () => {
                                 </Select.Content>
                             </Select.Root>
                         </Flex>
-                        <DatePickerWithRange />
+                        <DatePickerWithRange date={date} setDate={setDate} />
                     </Flex>
                     <Flex gap={'2'}>
                         <Flex justify={'center'} align={'center'}>
@@ -83,7 +86,6 @@ const Order = () => {
                         </Flex>
                     </Flex>
                 </Flex>
-                <ProductTable />
             </div>
         </LayoutProfile>
     )

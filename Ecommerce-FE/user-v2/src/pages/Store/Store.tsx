@@ -8,7 +8,9 @@ import New from './New'
 import { Product } from 'src/types/product.type'
 
 const Store = () => {
-    const [storeDetail, solds] = useLoaderData() as [StoreType, Product[]]
+    const [storeDetail, solds, news] = useLoaderData() as [StoreType, Product[], Product[]]
+
+    console.log('sold', solds)
 
     return (
         <div className='space-y-5'>
@@ -94,17 +96,17 @@ const Store = () => {
                         </Text>
                     </Tabs.Trigger>
                 </Tabs.List>
-                <Box pt='3'>
+                <Box pt='5'>
                     <Tabs.Content value='home'>
-                        <Home programs={solds} />
+                        <Home programs={news} />
                     </Tabs.Content>
 
                     <Tabs.Content value='sold'>
-                        <Sold />
+                        <Sold products={solds} />
                     </Tabs.Content>
 
                     <Tabs.Content value='new'>
-                        <New />
+                        <New products={news} />
                     </Tabs.Content>
                 </Box>
             </Tabs.Root>

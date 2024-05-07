@@ -1,45 +1,40 @@
 import { Link } from 'react-router-dom'
 
-import Image from 'src/components/Image'
-import {
-    Carousel,
-    CarouselContent,
-    CarouselItem,
-    CarouselNext,
-    CarouselPrevious
-} from 'src/components/Shadcn/carousel'
-import { Progress } from 'src/components/Shadcn/progress'
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from 'src/components/Shadcn/carousel'
 
+import { ArrowRightIcon } from '@radix-ui/react-icons'
+import { Flex } from '@radix-ui/themes'
+import { Product } from 'src/types/product.type'
 import Countdown from './Countdown'
+import ProductFlashSale from './ProductFlashSale'
 
-const FlashSale = () => {
+type FlashSaleProps = {
+    products: Product[]
+    isHiddenMore?: boolean
+}
+
+const FlashSale = ({ products, isHiddenMore = false }: FlashSaleProps) => {
     return (
         <div className='space-y-3'>
-            <div className='flex items-center space-x-3'>
-                <h3 className='font-semibold font-mono text-3xl bg-gradient-to-tr to-[#fcb045] via-[#fd1d1d] from-[#833ab4] bg-clip-text text-transparent'>
-                    Flash Sale
-                </h3>
-                <Countdown targetTime={new Date(2024, 3, 6, 23, 59)} />
-            </div>
+            <Flex justify={'between'} align={'baseline'}>
+                <div className='flex items-center space-x-3'>
+                    <h3 className='font-semibold font-mono text-3xl bg-gradient-to-tr to-[#fcb045] via-[#fd1d1d] from-[#833ab4] bg-clip-text text-transparent'>
+                        Flash Sale
+                    </h3>
+                    <Countdown targetTime={new Date(2024, 3, 6, 23, 59)} />
+                </div>
+                {!isHiddenMore && (
+                    <Link to={'/'} className='flex items-center space-x-1 text-red-500 hover:text-red-600'>
+                        <span>Xem thêm</span>
+                        <ArrowRightIcon width={18} height={18} />
+                    </Link>
+                )}
+            </Flex>
             <Carousel className='w-full'>
                 <CarouselContent className=''>
-                    {Array.from({ length: 12 }).map((_, idx) => (
-                        <CarouselItem key={idx} className='basis-1/5'>
-                            <section className='rounded-12 p-12 bg-[#FFFFFF] space-y-2'>
-                                <Link to={'/aaaa'}>
-                                    <Image
-                                        src='https://ableproadmin.com/react/static/media/prod-5.51c518a97f9ee4861176.png'
-                                        alt='product-flash-sale'
-                                        className='object-cover'
-                                    />
-                                </Link>
-                                <div className='space-y-2'>
-                                    <h3 className='text-red-600 text-sm font-semibold leading-5 text-center'>
-                                        100.000đ
-                                    </h3>
-                                    <Progress value={33} />
-                                </div>
-                            </section>
+                    {products.map((product, idx) => (
+                        <CarouselItem key={idx} className='basis-1/6'>
+                            <ProductFlashSale product={product} />
                         </CarouselItem>
                     ))}
                 </CarouselContent>

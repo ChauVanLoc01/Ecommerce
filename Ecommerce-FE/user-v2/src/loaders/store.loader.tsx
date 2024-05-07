@@ -22,6 +22,16 @@ export const storeLoader: LoaderFunction = async ({ params }) => {
         queryFn: ({ signal }) => productFetching.getAllProductByStore(storeId as string, { sold: 'desc' }, signal),
         staleTime: 1000 * 60 * 3
     })
+    const news = await queryClient.fetchQuery({
+        queryKey: [
+            'productsByStore',
+            JSON.stringify({
+                createdAt: 'desc'
+            })
+        ],
+        queryFn: ({ signal }) => productFetching.getAllProductByStore(storeId as string, { createdAt: 'desc' }, signal),
+        staleTime: 1000 * 60 * 3
+    })
 
-    return [storeDetail.data.result, bestBuy.data.result.data]
+    return [storeDetail.data.result, bestBuy.data.result.data, news.data.result.data]
 }

@@ -4,6 +4,7 @@ import Button from 'src/components/Button'
 import InputNumber from 'src/components/InputNumber'
 import Stars from 'src/components/Stars'
 
+import { Avatar, Flex, Text } from '@radix-ui/themes'
 import classNames from 'classnames'
 import { motion } from 'framer-motion'
 import { useContext, useState } from 'react'
@@ -12,12 +13,11 @@ import { toast } from 'sonner'
 import { route } from 'src/constants/route'
 import { AppContext } from 'src/contexts/AppContext'
 import { ProductDetailResponse, ProductListResponse } from 'src/types/product.type'
+import { Store } from 'src/types/store.type'
 import { ls } from 'src/utils/localStorage'
 import { convertCurrentcy } from 'src/utils/utils.ts'
 import MaybeULike from './MaybeULike'
 import Review from './Review'
-import { Avatar, Flex, Text } from '@radix-ui/themes'
-import { Store } from 'src/types/store.type'
 
 const Product = () => {
     const { setProducts, products, profile } = useContext(AppContext)
