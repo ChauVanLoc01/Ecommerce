@@ -143,41 +143,48 @@ export class OrderService {
 
     const { product_name, createdAt, total, start_date, end_date, limit, page } = query
 
-    const orders = await this.prisma.order.findMany({
-      where: {
-        storeId,
-        createdAt: {
-          lte: end_date,
-          gte: start_date
+    const take = limit | this.configService.get('app.limit_default')
+
+    const [length, orders] = await Promise.all([
+      this.prisma.order.count({
+        where: {
+          storeId,
+          createdAt: {
+            lte: end_date,
+            gte: start_date
+          }
+        }
+      }),
+      this.prisma.order.findMany({
+        where: {
+          storeId,
+          createdAt: {
+            lte: end_date,
+            gte: start_date
+          }
         },
-        ProductOrder: {
-          some: {
-            Product: {
-              name: {
-                contains: product_name
-              }
-            }
-          }
-        }
-      },
-      orderBy: {
-        createdAt,
-        total
-      },
-      take: limit | this.configService.get('app.limit_default'),
-      skip: page && page > 1 ? (page - 1) * limit : 0,
-      include: {
-        ProductOrder: {
-          include: {
-            Product: true
-          }
-        }
-      }
-    })
+        orderBy: {
+          createdAt,
+          total
+        },
+        take,
+        skip: page && page > 1 ? (page - 1) * take : 0
+      })
+    ])
 
     return {
       msg: 'Lấy dánh sách order thành công',
-      result: orders
+      result: {
+        data: orders,
+        query: omitBy(
+          {
+            ...query,
+            page: page || 1,
+            page_size: Math.ceil(length / take)
+          },
+          isUndefined
+        )
+      }
     }
   }
 

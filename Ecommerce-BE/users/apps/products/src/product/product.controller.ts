@@ -59,6 +59,12 @@ export class ProductController {
     return this.productsService.getALlProductForStore(storeId, query)
   }
 
+  @Roles(Role.EMPLOYEE, Role.ADMIN, Role.STORE_OWNER)
+  @Get('product-order/:orderId')
+  getAllProductOrderByOrderId(@Param('orderId') orderId: string) {
+    return this.productsService.getAllProductOrderByOrderId(orderId)
+  }
+
   @Public()
   @Get(':productId')
   getProductDetail(@Param('productId') productId: string) {

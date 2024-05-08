@@ -72,3 +72,14 @@ export type UpdateProductBody = Partial<{
     description: string
     status: string
 }>
+
+export type ProductOrder = {
+    id: string
+    productId: string
+    quantity: number
+    priceBefore?: number
+    priceAfter: number
+    orderId: string
+}
+
+export type ProductOrderReponse = Return<(ProductOrder & { Product: Product })[]>

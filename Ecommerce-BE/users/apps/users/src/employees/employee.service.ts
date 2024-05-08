@@ -1,15 +1,20 @@
 import { PrismaService } from '@app/common/prisma/prisma.service'
 import { Injectable, NotFoundException } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
 import { Role } from 'common/enums/role.enum'
 import { CurrentStoreType } from 'common/types/current.type'
 import { Return } from 'common/types/result.type'
-import { omit } from 'lodash'
+import { isUndefined, omitBy } from 'lodash'
+import { EmployeeQueryDTO } from '../dtos/employee_query.dto'
 import { UpdateEmployee } from '../dtos/update_employee.dto'
 import { UpdateUserProfileDTO } from '../dtos/update_user_profile.dto'
 
 @Injectable()
 export class EmployeeService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly configService: ConfigService
+  ) {}
 
   async profileDetail(userId: string) {
     return await this.prisma.user.findUnique({
@@ -19,30 +24,56 @@ export class EmployeeService {
     })
   }
 
-  async getAll(store: CurrentStoreType): Promise<Return> {
-    const employees = await this.prisma.account.findMany({
-      where: {
-        StoreRole: {
-          storeId: store.storeId,
-          role: Role.EMPLOYEE
+  async getAll(store: CurrentStoreType, query: EmployeeQueryDTO): Promise<Return> {
+    const { createdAt, end_date, limit, page, start_date, status } = query
+    const take = limit | this.configService.get('app.limit_default')
+
+    const [length, employees] = await Promise.all([
+      this.prisma.account.count({
+        where: {
+          StoreRole: {
+            storeId: store.storeId,
+            role: Role.EMPLOYEE
+          }
         }
-      },
-      include: {
-        User_Account_userIdToUser: true,
-        StoreRole: true
-      }
-    })
+      }),
+      this.prisma.account.findMany({
+        where: {
+          StoreRole: {
+            storeId: store.storeId,
+            role: Role.EMPLOYEE,
+            status
+          },
+          createdAt: {
+            gte: start_date,
+            lte: end_date
+          }
+        },
+        orderBy: {
+          createdAt
+        },
+        include: {
+          StoreRole: true,
+          User_Account_userIdToUser: true
+        },
+        take,
+        skip: page && page > 1 ? (page - 1) * take : 0
+      })
+    ])
 
     return {
       msg: 'Lấy danh sách nhân viên thành công',
-      result: employees.map((emp) => {
-        const { StoreRole, User_Account_userIdToUser, ...rest } = emp
-        return {
-          account: omit(rest, ['password']),
-          profile: User_Account_userIdToUser,
-          storeRole: StoreRole
-        }
-      })
+      result: {
+        data: employees,
+        query: omitBy(
+          {
+            ...query,
+            page: page || 1,
+            page_size: Math.ceil(length / take)
+          },
+          isUndefined
+        )
+      }
     }
   }
 

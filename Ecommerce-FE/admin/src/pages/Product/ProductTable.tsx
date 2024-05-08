@@ -1,6 +1,8 @@
-import { Badge, Inset, Text, Tooltip } from '@radix-ui/themes'
+import { Cross2Icon, InfoCircledIcon, Pencil1Icon } from '@radix-ui/react-icons'
+import { Badge, Flex, IconButton, Inset, Text, Tooltip } from '@radix-ui/themes'
 import { ColumnDef } from '@tanstack/react-table'
-import { format } from 'date-fns'
+import { format, formatDistance } from 'date-fns'
+import { vi } from 'date-fns/locale'
 import { BiSolidSortAlt } from 'react-icons/bi'
 import Table from 'src/components/Table'
 import { ProductStatus } from 'src/constants/product.status'
@@ -66,7 +68,7 @@ const ProductTable = ({ data, categories }: ProductTableProps) => {
             ),
             cell: ({ row }) => (
                 <Text color='blue'>
-                    {row.getValue('priceBefore') ? `${convertCurrentcy(row.getValue('priceBefore'))}đ` : ''}
+                    {row.getValue('priceBefore') ? `${convertCurrentcy(row.getValue('priceBefore'))}` : ''}
                 </Text>
             )
         },
@@ -88,7 +90,7 @@ const ProductTable = ({ data, categories }: ProductTableProps) => {
                     <BiSolidSortAlt />
                 </div>
             ),
-            cell: ({ row }) => <Text>{convertCurrentcy(row.getValue('currentQuantity'))}</Text>
+            cell: ({ row }) => <Text>{convertCurrentcy(row.getValue('currentQuantity'), false)}</Text>
         },
         {
             accessorKey: 'status',
@@ -122,14 +124,49 @@ const ProductTable = ({ data, categories }: ProductTableProps) => {
             ),
             cell: ({ row }) => (
                 <div className='lowercase flex flex-col items-center'>
-                    <span>{format(row.getValue('createdAt'), 'hh:mm')}</span>
-                    <span>{format(row.getValue('createdAt'), 'dd-MM-yyyy')}</span>
+                    <span className='italic text-gray-400 text-[14px]'>
+                        {formatDistance(row.original.createdAt, new Date().toISOString(), {
+                            addSuffix: true,
+                            locale: vi
+                        })}
+                    </span>
+                    <span>{format(row.original.createdAt, 'hh:mm dd-MM-yyyy')}</span>
                 </div>
+            )
+        },
+        {
+            accessorKey: ' ',
+            cell: ({ row }) => (
+                <Flex gapX={'2'} align={'center'}>
+                    <Tooltip content='Xem chi tiết'>
+                        <IconButton variant='soft'>
+                            <InfoCircledIcon />
+                        </IconButton>
+                    </Tooltip>
+                    <Tooltip content='Chỉnh sửa'>
+                        <IconButton
+                            variant='soft'
+                            color='orange'
+                            disabled={['CANCEL', 'SUCCESS'].includes(row.original.status)}
+                        >
+                            <Pencil1Icon />
+                        </IconButton>
+                    </Tooltip>
+                    <Tooltip content='Hủy đơn'>
+                        <IconButton
+                            variant='soft'
+                            color='red'
+                            disabled={['CANCEL', 'SUCCESS'].includes(row.original.status)}
+                        >
+                            <Cross2Icon />
+                        </IconButton>
+                    </Tooltip>
+                </Flex>
             )
         }
     ]
 
-    return <Table<Product> columns={columns} data={data} className='!w-[1500px]' tableMaxHeight='600px' />
+    return <Table<Product> columns={columns} data={data} className='!w-[1700px]' tableMaxHeight='600px' />
 }
 
 export default ProductTable

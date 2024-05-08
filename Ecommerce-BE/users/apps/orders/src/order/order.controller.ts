@@ -31,7 +31,7 @@ export class OrderController {
 
   // Store management
 
-  @Roles(Role.STORE_OWNER, Role.ADMIN)
+  @Roles(Role.STORE_OWNER, Role.ADMIN, Role.EMPLOYEE)
   @Get('store-order')
   getAllOrderByStore(@CurrentUser() user: CurrentStoreType, @Query() query: QueryOrderDTO) {
     return this.ordersService.getAllOrderByStore(user, query)

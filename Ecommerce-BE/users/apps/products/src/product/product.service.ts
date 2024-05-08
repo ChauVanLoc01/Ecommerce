@@ -240,6 +240,20 @@ export class ProductService {
     }
   }
 
+  async getAllProductOrderByOrderId(orderId: string): Promise<Return> {
+    return {
+      msg: 'ok',
+      result: await this.prisma.productOrder.findMany({
+        where: {
+          orderId
+        },
+        include: {
+          Product: true
+        }
+      })
+    }
+  }
+
   async getProductDetail(productId: string): Promise<Return> {
     const productExist = await this.prisma.product.findUnique({
       where: {

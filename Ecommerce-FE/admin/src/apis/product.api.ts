@@ -4,6 +4,7 @@ import {
     Product,
     ProductAnalyticResponse,
     ProductListResponse,
+    ProductOrderReponse,
     ProductQueryAndPagination,
     UpdateProductBody
 } from 'src/types/product.type'
@@ -26,5 +27,8 @@ export const ProductApi = {
     },
     productAnalytic: () => {
         return http.get<ProductAnalyticResponse>('product/product/analytic')
+    },
+    getProductOrderByOrderId: (orderId: string) => {
+        return http.get<ProductOrderReponse>(`product/product/product-order/${orderId}`)
     }
 }

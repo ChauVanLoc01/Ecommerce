@@ -2,10 +2,12 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 
 import { useEffect } from 'react'
 import { route } from 'src/constants/route'
+import useLoadingFetching from 'src/hooks/useLoadingFetching'
 import Header from './Header'
 import SideNav from './SideNav'
 
 const MainLayout = () => {
+    const [loadingFetching] = useLoadingFetching()
     const navigate = useNavigate()
     const location = useLocation()
     useEffect(() => {
@@ -13,13 +15,20 @@ const MainLayout = () => {
     }, [])
 
     return (
-        <div className='h-screen flex bg-[#F8F9FA]'>
-            <SideNav />
-            <main className='px-48 py-8 basis-5/6'>
-                <Header />
-                <Outlet />
-            </main>
-        </div>
+        <>
+            <div className='h-screen flex bg-[#F8F9FA]'>
+                <SideNav />
+                <main className='px-48 py-8 basis-5/6'>
+                    <Header />
+                    <Outlet />
+                </main>
+            </div>
+            {loadingFetching && (
+                <div className='fixed inset-0 flex justify-center items-center z-50 bg-slate-500/10'>
+                    <div className='loader' />
+                </div>
+            )}
+        </>
     )
 }
 

@@ -75,3 +75,57 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* HTML: <div class="loader"></div> */
+.loader {
+  --_g1: no-repeat radial-gradient(farthest-side, #f5222d 90%, rgb(100 116 139 / 0));
+  --_g2: no-repeat radial-gradient(farthest-side, #1677ff 90%, rgb(100 116 139 / 0));
+  --_g3: no-repeat radial-gradient(farthest-side, #389e0d 90%, rgb(100 116 139 / 0));
+  --_g4: no-repeat radial-gradient(farthest-side, #ffec3d 90%, rgb(100 116 139 / 0));
+  height: 30px;
+  aspect-ratio: 2.5;
+  background: var(--_g1), var(--_g2), var(--_g3), var(--_g4);
+  background-size: 20% 50%;
+  animation: l44 1s infinite linear alternate;
+}
+
+@keyframes l44 {
+
+  0%,
+  5% {
+    background-position: calc(0*100%/3) 50%, calc(1*100%/3) 50%, calc(2*100%/3) 50%, calc(3*100%/3) 50%
+  }
+
+  12.5% {
+    background-position: calc(0*100%/3) 0, calc(1*100%/3) 50%, calc(2*100%/3) 50%, calc(3*100%/3) 50%
+  }
+
+  25% {
+    background-position: calc(0*100%/3) 0, calc(1*100%/3) 0, calc(2*100%/3) 50%, calc(3*100%/3) 50%
+  }
+
+  37.5% {
+    background-position: calc(0*100%/3) 100%, calc(1*100%/3) 0, calc(2*100%/3) 0, calc(3*100%/3) 50%
+  }
+
+  50% {
+    background-position: calc(0*100%/3) 100%, calc(1*100%/3) 100%, calc(2*100%/3) 0, calc(3*100%/3) 0
+  }
+
+  62.5% {
+    background-position: calc(0*100%/3) 50%, calc(1*100%/3) 100%, calc(2*100%/3) 100%, calc(3*100%/3) 0
+  }
+
+  75% {
+    background-position: calc(0*100%/3) 50%, calc(1*100%/3) 50%, calc(2*100%/3) 100%, calc(3*100%/3) 100%
+  }
+
+  87.5% {
+    background-position: calc(0*100%/3) 50%, calc(1*100%/3) 50%, calc(2*100%/3) 50%, calc(3*100%/3) 100%
+  }
+
+  95%,
+  100% {
+    background-position: calc(0*100%/3) 50%, calc(1*100%/3) 50%, calc(2*100%/3) 50%, calc(3*100%/3) 50%
+  }
+}

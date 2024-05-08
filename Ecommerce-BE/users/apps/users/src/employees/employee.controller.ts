@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Put, UseGuards } from '@nestjs/common'
+import { Body, Controller, Get, Post, Put, Query, UseGuards } from '@nestjs/common'
 import { CurrentUser } from 'common/decorators/current_user.decorator'
 import { Roles } from 'common/decorators/roles.decorator'
 import { Role } from 'common/enums/role.enum'
@@ -7,6 +7,7 @@ import { CurrentStoreType } from 'common/types/current.type'
 import { UpdateEmployee } from '../dtos/update_employee.dto'
 import { EmployeeService } from './employee.service'
 import { UpdateUserProfileDTO } from '../dtos/update_user_profile.dto'
+import { EmployeeQueryDTO } from '../dtos/employee_query.dto'
 
 @Controller('employee')
 @UseGuards(JwtGuard)
@@ -15,8 +16,8 @@ export class EmployeeController {
 
   @Roles(Role.STORE_OWNER, Role.ADMIN)
   @Get()
-  getAllEmployee(@CurrentUser() store: CurrentStoreType) {
-    return this.empService.getAll(store)
+  getAllEmployee(@CurrentUser() store: CurrentStoreType, @Query() query: EmployeeQueryDTO) {
+    return this.empService.getAll(store, query)
   }
 
   @Roles(Role.USER)

@@ -91,6 +91,8 @@ const ProductFilter = ({ categories, setQuery }: ProductFilterProps) => {
         })
     }
 
+    const handleClearFilter = () => {}
+
     return (
         <Popover.Root>
             <Popover.Trigger>
@@ -166,10 +168,10 @@ const ProductFilter = ({ categories, setQuery }: ProductFilterProps) => {
                                 />
                                 <Flex gapX={'4'} justify={'end'}>
                                     <Flex gap={'2'} align={'center'}>
-                                        Min: <Text color='red'>{convertCurrentcy(range[0])}đ</Text>
+                                        Min: <Text color='red'>{convertCurrentcy(range[0])}</Text>
                                     </Flex>
                                     <Flex gap={'2'} align={'center'}>
-                                        Min: <Text color='blue'>{convertCurrentcy(range[1])}đ</Text>
+                                        Min: <Text color='blue'>{convertCurrentcy(range[1])}</Text>
                                     </Flex>
                                     <Button onClick={handleQueryProductByPrice}>Tìm kiếm</Button>
                                 </Flex>
@@ -185,6 +187,12 @@ const ProductFilter = ({ categories, setQuery }: ProductFilterProps) => {
                                 </Select.Content>
                             </Select.Root>
                         </Flex>
+                    </Flex>
+                    <Flex justify={'end'} gapX={'4'}>
+                        <Button variant='soft' size={'2'} color='red' onClick={handleClearFilter}>
+                            Xóa tất cả
+                        </Button>
+                        <Button>Tìm kiếm</Button>
                     </Flex>
                 </Flex>
             </Popover.Content>

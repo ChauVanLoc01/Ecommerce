@@ -11,7 +11,7 @@ const LayoutProfile = ({ title, children, rightNode }: LayoutProfileProps) => {
     return (
         <div className='grow rounded-8 border border-border/30 bg-[#FFFFFF]'>
             <section className='border-b border-border/30 font-semibold p-20'>
-                <Flex justify={'between'}>
+                <Flex justify={'between'} align={'center'}>
                     <Text weight={'medium'} size={'4'}>
                         {title}
                     </Text>
