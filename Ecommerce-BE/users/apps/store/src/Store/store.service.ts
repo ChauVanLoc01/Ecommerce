@@ -93,28 +93,31 @@ export class StoreService {
       throw new BadRequestException('Tối đa 1 cửa hàng cho 1 tài khoản')
     }
 
+    const [createdStoreId, createdStoreRoleId] = [uuidv4(), uuidv4()]
+
     const [createdStore, createdStoreRole] = await this.prisma.$transaction(async (tx) => {
-      const createdStore = await tx.store.create({
-        data: {
-          id: uuidv4(),
-          image,
-          name,
-          location,
-          status: Status.ACTIVE,
-          createdBy: id,
-          description
-        }
-      })
-      const createdStoreRole = await tx.storeRole.create({
-        data: {
-          id: uuidv4(),
-          role: Role.STORE_OWNER,
-          status: Status.ACTIVE,
-          createdBy: id,
-          storeId: createdStore.id
-        }
-      })
-      return [createdStore, createdStoreRole]
+      return await Promise.all([
+        tx.store.create({
+          data: {
+            id: createdStoreId,
+            image,
+            name,
+            location,
+            status: Status.ACTIVE,
+            createdBy: id,
+            description
+          }
+        }),
+        tx.storeRole.create({
+          data: {
+            id: createdStoreRoleId,
+            role: Role.STORE_OWNER,
+            status: Status.ACTIVE,
+            createdBy: id,
+            storeId: createdStoreId
+          }
+        })
+      ])
     })
 
     const resultUpdatedStoreRoleId = await firstValueFrom(

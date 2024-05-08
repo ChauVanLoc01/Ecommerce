@@ -8,6 +8,7 @@ import { UpdateEmployee } from '../dtos/update_employee.dto'
 import { EmployeeService } from './employee.service'
 import { UpdateUserProfileDTO } from '../dtos/update_user_profile.dto'
 import { EmployeeQueryDTO } from '../dtos/employee_query.dto'
+import { CreateEmployee } from '../dtos/employee.dto'
 
 @Controller('employee')
 @UseGuards(JwtGuard)
@@ -18,6 +19,12 @@ export class EmployeeController {
   @Get()
   getAllEmployee(@CurrentUser() store: CurrentStoreType, @Query() query: EmployeeQueryDTO) {
     return this.empService.getAll(store, query)
+  }
+
+  @Roles(Role.STORE_OWNER)
+  @Post('employee-register')
+  createNewEmployee(@CurrentUser() user: CurrentStoreType, @Body() body: CreateEmployee) {
+    return this.empService.createNewEmployee(user, body)
   }
 
   @Roles(Role.USER)

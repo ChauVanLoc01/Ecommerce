@@ -1,10 +1,14 @@
 import { PrismaService } from '@app/common/prisma/prisma.service'
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { Role } from 'common/enums/role.enum'
+import { Status } from 'common/enums/status.enum'
 import { CurrentStoreType } from 'common/types/current.type'
 import { Return } from 'common/types/result.type'
-import { isUndefined, omitBy } from 'lodash'
+import { isUndefined, omit, omitBy } from 'lodash'
+import { v4 as uuidv4 } from 'uuid'
+import { AuthService } from '../auths/auth.service'
+import { CreateEmployee } from '../dtos/employee.dto'
 import { EmployeeQueryDTO } from '../dtos/employee_query.dto'
 import { UpdateEmployee } from '../dtos/update_employee.dto'
 import { UpdateUserProfileDTO } from '../dtos/update_user_profile.dto'
@@ -13,7 +17,8 @@ import { UpdateUserProfileDTO } from '../dtos/update_user_profile.dto'
 export class EmployeeService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly configService: ConfigService
+    private readonly configService: ConfigService,
+    private readonly authService: AuthService
   ) {}
 
   async profileDetail(userId: string) {
@@ -64,7 +69,12 @@ export class EmployeeService {
     return {
       msg: 'Lấy danh sách nhân viên thành công',
       result: {
-        data: employees,
+        data: await Promise.all(
+          employees.map((emp) => {
+            const { password, ...rest } = emp
+            return Promise.resolve(rest)
+          })
+        ),
         query: omitBy(
           {
             ...query,
@@ -73,6 +83,65 @@ export class EmployeeService {
           },
           isUndefined
         )
+      }
+    }
+  }
+
+  async createNewEmployee(user: CurrentStoreType, body: CreateEmployee): Promise<Return> {
+    const { email, full_name, password, username } = body
+    const { userId, storeId } = user
+    const [empId, empStoreRoleId] = [uuidv4(), uuidv4()]
+
+    const accountExist = await this.prisma.account.findUnique({
+      where: {
+        username
+      }
+    })
+
+    if (accountExist) {
+      throw new BadRequestException('Tài khoản đã tồn tại')
+    }
+
+    const hashPassword = await this.authService.hashPassword(password)
+
+    const [newEmp, newStoreRole, newAccount] = await this.prisma.$transaction(async (tx) => {
+      return await Promise.all([
+        tx.user.create({
+          data: {
+            id: empId,
+            email,
+            full_name,
+            role: Role.EMPLOYEE,
+            status: Status.ACTIVE
+          }
+        }),
+        tx.storeRole.create({
+          data: {
+            id: empStoreRoleId,
+            role: Role.EMPLOYEE,
+            status: Status.ACTIVE,
+            storeId,
+            createdBy: userId
+          }
+        }),
+        tx.account.create({
+          data: {
+            username,
+            password: hashPassword,
+            userId: empId,
+            storeRoleId: empStoreRoleId,
+            createdBy: userId
+          }
+        })
+      ])
+    })
+
+    return {
+      msg: 'Ok',
+      result: {
+        profile: newEmp,
+        account: omit(newAccount, ['password']),
+        storeRole: newStoreRole
       }
     }
   }

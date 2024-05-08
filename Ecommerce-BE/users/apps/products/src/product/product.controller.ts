@@ -54,27 +54,27 @@ export class ProductController {
   }
 
   @Public()
-  @Get('product-store/:storeId')
-  getAllForStore(@Param('storeId') storeId: string, @Query() query: QueryProductDTO) {
-    return this.productsService.getALlProductForStore(storeId, query)
+  @Get('product-store')
+  getAllForStore(@CurrentUser() user: CurrentStoreType, @Query() query: QueryProductDTO) {
+    return this.productsService.getALlProductForStore(user.storeId, query)
   }
 
   @Roles(Role.EMPLOYEE, Role.ADMIN, Role.STORE_OWNER)
-  @Get('product-order/:orderId')
-  getAllProductOrderByOrderId(@Param('orderId') orderId: string) {
-    return this.productsService.getAllProductOrderByOrderId(orderId)
-  }
-
-  @Public()
-  @Get(':productId')
-  getProductDetail(@Param('productId') productId: string) {
-    return this.productsService.getProductDetail(productId)
+  @Get('product-order')
+  getAllProductOrderByOrderId(@CurrentUser() user: CurrentStoreType) {
+    return this.productsService.getAllProductOrderByOrderId(user.storeId)
   }
 
   @Public()
   @Get()
   getAllForUser(@Query() query: QueryProductDTO) {
     return this.productsService.getALlProductForUser(query)
+  }
+
+  @Public()
+  @Get(':productId')
+  getProductDetail(@Param('productId') productId: string) {
+    return this.productsService.getProductDetail(productId)
   }
 
   @Public()

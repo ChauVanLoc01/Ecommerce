@@ -108,7 +108,7 @@ const EmployeeTable = () => {
             },
             cell: ({ row }) => (
                 <div className='text-center'>
-                    <Badge color={UserStatus[row.original.User_Account_userIdToUser.status].color as any}>
+                    <Badge size={'3'} color={UserStatus[row.original.User_Account_userIdToUser.status].color as any}>
                         {UserStatus[row.original.User_Account_userIdToUser.status].lable}
                     </Badge>
                 </div>
@@ -137,11 +137,11 @@ const EmployeeTable = () => {
             )
         },
         {
-            accessorKey: 'Cập nhật lúc',
+            accessorKey: 'Cập nhật',
             header: () => {
                 return (
                     <div className='flex items-center justify-evenly gap-x-2'>
-                        Cập nhật lúc
+                        Cập nhật
                         <BiSolidSortAlt />
                     </div>
                 )
@@ -189,7 +189,7 @@ const EmployeeTable = () => {
         }
     ]
 
-    return <Table<EmployeeList> columns={columns} data={data?.data ?? []} className='min-w-full w-[1200px]' />
+    return <Table<EmployeeList> columns={columns} data={data?.data ?? []} className='min-w-full w-[1700px]' />
 }
 
 export default EmployeeTable

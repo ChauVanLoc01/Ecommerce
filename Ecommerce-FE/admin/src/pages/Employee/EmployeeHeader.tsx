@@ -10,20 +10,30 @@ const EmployeeHeader = () => {
                 <AlertDialog.Trigger>
                     <Button className='bg-blue text-white'>Tạo nhân viên</Button>
                 </AlertDialog.Trigger>
-                <AlertDialog.Content maxWidth='450px' className='!rounded-8'>
+                <AlertDialog.Content maxWidth='550px' className='!rounded-8'>
                     <AlertDialog.Title>Tạo mới nhân viên</AlertDialog.Title>
-                    <Text>Tài khoản</Text>
-                    <Flex>
-                        <div>
-                            <Text>Tên tài khoản</Text>
-                            <TextField.Root />
-                        </div>
-                        <div>
-                            <Text>Mật khẩu</Text>
-                            <TextField.Root />
-                        </div>
+                    <Flex gapY={'3'} direction={'column'}>
+                        <Flex justify={'between'} gapX={'5'}>
+                            <div className='basis-1/2'>
+                                <Text>Họ tên</Text>
+                                <TextField.Root />
+                            </div>
+                            <div className='basis-1/2'>
+                                <Text>Email</Text>
+                                <TextField.Root />
+                            </div>
+                        </Flex>
+                        <Flex justify={'between'} gapX={'5'}>
+                            <div className='basis-1/2'>
+                                <Text>Tên tài khoản</Text>
+                                <TextField.Root />
+                            </div>
+                            <div className='basis-1/2'>
+                                <Text>Mật khẩu</Text>
+                                <TextField.Root />
+                            </div>
+                        </Flex>
                     </Flex>
-
                     <Flex gap='3' mt='4' justify='end'>
                         <AlertDialog.Cancel>
                             <Button variant='outline' color='red'>
