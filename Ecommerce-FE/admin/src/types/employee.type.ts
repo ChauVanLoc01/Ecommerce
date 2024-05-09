@@ -5,6 +5,7 @@ import { Return } from './return.type'
 export type Employee = User
 
 export type EmployeeQuery = {
+    status?: string
     createdAt?: string
     start_date?: string
     end_date?: string
@@ -18,4 +19,10 @@ export type EmployeeList = Account & {
 export type EmployeeListResponse = Return<{
     data: EmployeeList[]
     query: Omit<EmployeeQuery, 'page'> & { page_size: number; page: number }
+}>
+
+export type CreateEmployeeResponse = Return<{
+    profile: User
+    account: Account
+    storeRole: StoreRole
 }>

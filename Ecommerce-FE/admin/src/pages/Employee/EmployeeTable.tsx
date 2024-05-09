@@ -1,23 +1,54 @@
-import { Cross2Icon, InfoCircledIcon, Pencil1Icon } from '@radix-ui/react-icons'
+import { Cross2Icon, InfoCircledIcon, LockOpen2Icon, Pencil1Icon } from '@radix-ui/react-icons'
 import { Badge, Flex, IconButton, Text, Tooltip } from '@radix-ui/themes'
-import { useQuery } from '@tanstack/react-query'
+import { QueryObserverResult, RefetchOptions } from '@tanstack/react-query'
 import { ColumnDef } from '@tanstack/react-table'
 import { format, formatDistance } from 'date-fns'
 import { vi } from 'date-fns/locale'
+import { useState } from 'react'
 import { BiSolidSortAlt } from 'react-icons/bi'
-import { EmployeeApi } from 'src/apis/employee.api'
 import Table from 'src/components/Table'
 import { UserStatus } from 'src/constants/order.status'
-import { EmployeeList } from 'src/types/employee.type'
+import { EmployeeList, EmployeeQuery } from 'src/types/employee.type'
+import EmployeeDelete from './EmployeeDelete'
+import EmployeeDetail from './EmployeeDetail'
+import EmployeeEdit from './EmployeeEdit'
 
-const EmployeeTable = () => {
-    const { data } = useQuery({
-        queryKey: ['employeeList', JSON.stringify({ limit: import.meta.env.VITE_LIMIT })],
-        queryFn: () => EmployeeApi.getAllEmployee({ limit: import.meta.env.VITE_LIMIT }),
-        staleTime: 1000 * 60 * 1,
-        enabled: false,
-        select: (data) => data.data.result
-    })
+type EmployeeTableProps = {
+    data: EmployeeList[]
+    refetch: (options?: RefetchOptions) => Promise<
+        QueryObserverResult<
+            {
+                data: EmployeeList[]
+                query: Omit<EmployeeQuery, 'page'> & {
+                    page_size: number
+                    page: number
+                }
+            },
+            Error
+        >
+    >
+}
+
+const EmployeeTable = ({ data, refetch }: EmployeeTableProps) => {
+    const [detailOpen, setDetailOpen] = useState<boolean>(false)
+    const [editOpen, setEditOpen] = useState<boolean>(false)
+    const [deleteOpen, setDeleteOpen] = useState<boolean>(false)
+    const [choosedEmployee, setChoosedEmployee] = useState<EmployeeList | undefined>(undefined)
+
+    const handleOpenModal = (type: 'detail' | 'edit' | 'delete', employee: EmployeeList) => () => {
+        switch (type) {
+            case 'detail':
+                setDetailOpen(true)
+                break
+            case 'edit':
+                setEditOpen(true)
+                break
+            default:
+                setDeleteOpen(true)
+                break
+        }
+        setChoosedEmployee(employee)
+    }
 
     const columns: ColumnDef<EmployeeList>[] = [
         {
@@ -162,26 +193,32 @@ const EmployeeTable = () => {
             cell: ({ row }) => (
                 <Flex gapX={'2'} align={'center'}>
                     <Tooltip content='Xem chi tiết'>
-                        <IconButton variant='soft'>
+                        <IconButton variant='soft' onClick={handleOpenModal('detail', row.original)}>
                             <InfoCircledIcon />
                         </IconButton>
                     </Tooltip>
                     <Tooltip content='Chỉnh sửa'>
                         <IconButton
                             variant='soft'
+                            onClick={handleOpenModal('edit', row.original)}
                             color='orange'
                             disabled={['CANCEL', 'SUCCESS'].includes(row.original.User_Account_userIdToUser.status)}
                         >
                             <Pencil1Icon />
                         </IconButton>
                     </Tooltip>
-                    <Tooltip content='Hủy đơn'>
+                    <Tooltip content={row.original.User_Account_userIdToUser.status === 'ACTIVE' ? 'Xóa' : 'Mở khóa'}>
                         <IconButton
                             variant='soft'
-                            color='red'
+                            onClick={handleOpenModal('delete', row.original)}
+                            color={row.original.User_Account_userIdToUser.status === 'ACTIVE' ? 'red' : 'green'}
                             disabled={['CANCEL', 'SUCCESS'].includes(row.original.User_Account_userIdToUser.status)}
                         >
-                            <Cross2Icon />
+                            {row.original.User_Account_userIdToUser.status === 'ACTIVE' ? (
+                                <Cross2Icon />
+                            ) : (
+                                <LockOpen2Icon />
+                            )}
                         </IconButton>
                     </Tooltip>
                 </Flex>
@@ -189,7 +226,36 @@ const EmployeeTable = () => {
         }
     ]
 
-    return <Table<EmployeeList> columns={columns} data={data?.data ?? []} className='min-w-full w-[1700px]' />
+    return (
+        <>
+            <Table<EmployeeList>
+                columns={columns}
+                data={data}
+                className='min-w-full w-[1700px]'
+                tableMaxHeight='500px'
+            />
+            {choosedEmployee && (
+                <EmployeeDetail setOpen={setDetailOpen} open={detailOpen} data={choosedEmployee as EmployeeList} />
+            )}
+            {choosedEmployee && (
+                <EmployeeEdit
+                    refetch={refetch}
+                    setOpen={setEditOpen}
+                    open={editOpen}
+                    data={choosedEmployee as EmployeeList}
+                />
+            )}
+            {choosedEmployee && (
+                <EmployeeDelete
+                    employeeId={choosedEmployee?.User_Account_userIdToUser.id}
+                    setOpen={setDeleteOpen}
+                    open={deleteOpen}
+                    refetch={refetch}
+                    status={choosedEmployee.User_Account_userIdToUser.status === 'ACTIVE' ? 'ACTIVE' : 'BLOCK'}
+                />
+            )}
+        </>
+    )
 }
 
 export default EmployeeTable

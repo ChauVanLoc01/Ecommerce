@@ -23,7 +23,7 @@ export const UserStatus: { [key: string]: { lable: string; color: string } } = {
         color: 'blue'
     },
     BLOCK: {
-        lable: 'Bị khóa',
+        lable: 'Đã bị khóa',
         color: 'red'
     }
 }

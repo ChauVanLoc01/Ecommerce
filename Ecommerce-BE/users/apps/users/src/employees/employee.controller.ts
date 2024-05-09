@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Put, Query, UseGuards } from '@nestjs/common'
+import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common'
 import { CurrentUser } from 'common/decorators/current_user.decorator'
 import { Roles } from 'common/decorators/roles.decorator'
 import { Role } from 'common/enums/role.enum'
@@ -9,6 +9,7 @@ import { EmployeeService } from './employee.service'
 import { UpdateUserProfileDTO } from '../dtos/update_user_profile.dto'
 import { EmployeeQueryDTO } from '../dtos/employee_query.dto'
 import { CreateEmployee } from '../dtos/employee.dto'
+import { ChangeStatusEmployee } from '../dtos/change_status_employee.dto'
 
 @Controller('employee')
 @UseGuards(JwtGuard)
@@ -38,5 +39,12 @@ export class EmployeeController {
   @Put('update-status')
   updateStatus(@CurrentUser() store: CurrentStoreType, @Body() body: UpdateEmployee) {
     return this.empService.updateStatus(store, body)
+  }
+
+  @Roles(Role.STORE_OWNER)
+  @UseGuards(JwtGuard)
+  @Delete('employee-profile/:employeeId')
+  deleteEmployee(@Param('employeeId') employeeId: string, @Body() body: ChangeStatusEmployee) {
+    return this.empService.deleteEmployee(employeeId, body)
   }
 }

@@ -469,7 +469,7 @@ export class AuthService {
       },
       data: {
         password: await this.hashPassword(new_password),
-        updatedAt: new Date()
+        updatedAt: new Date().toISOString()
       }
     })
 

@@ -8,6 +8,7 @@ import { Return } from 'common/types/result.type'
 import { isUndefined, omit, omitBy } from 'lodash'
 import { v4 as uuidv4 } from 'uuid'
 import { AuthService } from '../auths/auth.service'
+import { ChangeStatusEmployee } from '../dtos/change_status_employee.dto'
 import { CreateEmployee } from '../dtos/employee.dto'
 import { EmployeeQueryDTO } from '../dtos/employee_query.dto'
 import { UpdateEmployee } from '../dtos/update_employee.dto'
@@ -203,6 +204,43 @@ export class EmployeeService {
     return {
       msg: 'Cập nhật thành công',
       result: updatedUser
+    }
+  }
+
+  async deleteEmployee(employeeId: string, body: ChangeStatusEmployee): Promise<Return> {
+    const { status } = body
+    const accountExist = await this.prisma.account.findFirst({
+      where: {
+        userId: employeeId
+      }
+    })
+
+    if (!accountExist) {
+      throw new NotFoundException('Nhân viên không tồn tại')
+    }
+
+    await Promise.all([
+      this.prisma.user.update({
+        where: {
+          id: employeeId
+        },
+        data: {
+          status
+        }
+      }),
+      this.prisma.storeRole.update({
+        where: {
+          id: accountExist.storeRoleId
+        },
+        data: {
+          status
+        }
+      })
+    ])
+
+    return {
+      msg: 'ok',
+      result: undefined
     }
   }
 }
