@@ -35,6 +35,12 @@ export class EmployeeController {
     return this.empService.employeeUpdateProfile(store, body)
   }
 
+  @Roles(Role.STORE_OWNER, Role.ADMIN)
+  @Get('employee-analytics')
+  analyticsEmployee(@CurrentUser() user: CurrentStoreType) {
+    return this.empService.analyticsEmployee(user)
+  }
+
   @Roles(Role.ADMIN, Role.STORE_OWNER)
   @Put('update-status')
   updateStatus(@CurrentUser() store: CurrentStoreType, @Body() body: UpdateEmployee) {

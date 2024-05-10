@@ -1,4 +1,4 @@
-import { CreateEmployeeResponse, EmployeeListResponse, EmployeeQuery } from 'src/types/employee.type'
+import { AnalyticsEmployee, CreateEmployeeResponse, EmployeeListResponse, EmployeeQuery } from 'src/types/employee.type'
 import { CreateEmployee } from 'src/utils/employee.schema'
 import { http } from './http'
 
@@ -20,5 +20,8 @@ export const EmployeeApi = {
                 status: body.status
             }
         })
+    },
+    employeeAnalytic: () => {
+        return http.get<AnalyticsEmployee>('user/employee/employee-analytics')
     }
 }

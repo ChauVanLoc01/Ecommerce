@@ -1,5 +1,5 @@
 import { yupResolver } from '@hookform/resolvers/yup'
-import { AlertDialog, Button, Flex, Spinner, Text, TextField } from '@radix-ui/themes'
+import { AlertDialog, Button, Flex, Kbd, Spinner, Text, TextField } from '@radix-ui/themes'
 import { QueryObserverResult, RefetchOptions, useMutation } from '@tanstack/react-query'
 import { isAxiosError } from 'axios'
 import { useState } from 'react'
@@ -10,6 +10,7 @@ import { EmployeeList, EmployeeQuery } from 'src/types/employee.type'
 import { CreateEmployee, register_employee_schema } from 'src/utils/employee.schema'
 
 type EmployeeHeaderProps = {
+    analyticsData: { all: number; actives: number; blocks: number }
     refetch: (options?: RefetchOptions) => Promise<
         QueryObserverResult<
             {
@@ -24,7 +25,7 @@ type EmployeeHeaderProps = {
     >
 }
 
-const EmployeeHeader = ({ refetch }: EmployeeHeaderProps) => {
+const EmployeeHeader = ({ refetch, analyticsData: { actives, all, blocks } }: EmployeeHeaderProps) => {
     const [openCreateEmployee, setOpenCreateEmployee] = useState<boolean>(false)
 
     const { control, handleSubmit, setError } = useForm<CreateEmployee>({
@@ -55,7 +56,13 @@ const EmployeeHeader = ({ refetch }: EmployeeHeaderProps) => {
     return (
         <Flex gapX={'5'} align={'center'}>
             <Text weight='medium' size={'4'}>
-                Tổng 1000 nhân viên
+                Tổng: <Kbd>{all}</Kbd> nhân viên
+            </Text>
+            <Text weight='medium' size={'4'}>
+                Đang hoạt động: <Kbd>{actives}</Kbd> nhân viên
+            </Text>
+            <Text weight='medium' size={'4'}>
+                Đã khóa: <Kbd>{blocks}</Kbd> nhân viên
             </Text>
             <AlertDialog.Root open={openCreateEmployee} onOpenChange={setOpenCreateEmployee}>
                 <AlertDialog.Trigger>

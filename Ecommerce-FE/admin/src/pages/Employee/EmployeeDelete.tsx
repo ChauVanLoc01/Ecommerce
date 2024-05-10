@@ -9,6 +9,16 @@ type EmployeeDeleteProps = {
     employeeId: string
     open: boolean
     setOpen: React.Dispatch<React.SetStateAction<boolean>>
+    analyticsRefetch: (options?: RefetchOptions) => Promise<
+        QueryObserverResult<
+            {
+                all: number
+                actives: number
+                blocks: number
+            },
+            Error
+        >
+    >
     refetch: (options?: RefetchOptions) => Promise<
         QueryObserverResult<
             {
@@ -23,7 +33,7 @@ type EmployeeDeleteProps = {
     >
 }
 
-const EmployeeDelete = ({ employeeId, open, setOpen, refetch, status }: EmployeeDeleteProps) => {
+const EmployeeDelete = ({ employeeId, open, setOpen, refetch, status, analyticsRefetch }: EmployeeDeleteProps) => {
     const content: {
         [key: string]: { title: string; description: string; error_message: string; success_message: string }
     } = {
@@ -47,6 +57,7 @@ const EmployeeDelete = ({ employeeId, open, setOpen, refetch, status }: Employee
         mutationFn: EmployeeApi.blockEmployee,
         onSuccess: () => {
             refetch()
+            analyticsRefetch()
             setOpen(false)
             setTimeout(() => {
                 toast.success(content[status].success_message)

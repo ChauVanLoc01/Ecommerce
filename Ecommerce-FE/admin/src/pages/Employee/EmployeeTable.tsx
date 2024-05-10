@@ -15,6 +15,16 @@ import EmployeeEdit from './EmployeeEdit'
 
 type EmployeeTableProps = {
     data: EmployeeList[]
+    analyticsRefetch: (options?: RefetchOptions) => Promise<
+        QueryObserverResult<
+            {
+                all: number
+                actives: number
+                blocks: number
+            },
+            Error
+        >
+    >
     refetch: (options?: RefetchOptions) => Promise<
         QueryObserverResult<
             {
@@ -29,7 +39,7 @@ type EmployeeTableProps = {
     >
 }
 
-const EmployeeTable = ({ data, refetch }: EmployeeTableProps) => {
+const EmployeeTable = ({ data, refetch, analyticsRefetch }: EmployeeTableProps) => {
     const [detailOpen, setDetailOpen] = useState<boolean>(false)
     const [editOpen, setEditOpen] = useState<boolean>(false)
     const [deleteOpen, setDeleteOpen] = useState<boolean>(false)
@@ -247,6 +257,7 @@ const EmployeeTable = ({ data, refetch }: EmployeeTableProps) => {
             )}
             {choosedEmployee && (
                 <EmployeeDelete
+                    analyticsRefetch={analyticsRefetch}
                     employeeId={choosedEmployee?.User_Account_userIdToUser.id}
                     setOpen={setDeleteOpen}
                     open={deleteOpen}

@@ -11,7 +11,6 @@ export const orderLoader: LoaderFunction = async () => {
         queryFn: () => OrderApi.getAllOrder({ limit: import.meta.env.VITE_LIMIT }),
         staleTime: 1000 * 60 * 1
     })
-
     window.dispatchEvent(new Event(loadingFetchingEvent.end))
 
     return []

@@ -26,3 +26,5 @@ export type CreateEmployeeResponse = Return<{
     account: Account
     storeRole: StoreRole
 }>
+
+export type AnalyticsEmployee = Return<{ all: number; actives: number; blocks: number }>

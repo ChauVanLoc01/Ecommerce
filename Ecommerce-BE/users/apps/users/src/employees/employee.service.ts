@@ -243,4 +243,35 @@ export class EmployeeService {
       result: undefined
     }
   }
+
+  async analyticsEmployee(user: CurrentStoreType): Promise<Return> {
+    const [all, actives, blocks] = await Promise.all([
+      this.prisma.storeRole.count({
+        where: {
+          storeId: user.storeId
+        }
+      }),
+      this.prisma.storeRole.count({
+        where: {
+          storeId: user.storeId,
+          status: 'ACTIVE'
+        }
+      }),
+      this.prisma.storeRole.count({
+        where: {
+          storeId: user.storeId,
+          status: 'BLOCK'
+        }
+      })
+    ])
+
+    return {
+      msg: 'ok',
+      result: {
+        all,
+        actives,
+        blocks
+      }
+    }
+  }
 }
