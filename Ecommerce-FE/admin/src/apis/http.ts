@@ -27,7 +27,6 @@ class Http {
     middlewareRequest() {
         this.instance.interceptors.request.use((config) => {
             config.headers.Authorization = this.access_token
-            console.log('config', config)
             return config
         })
     }

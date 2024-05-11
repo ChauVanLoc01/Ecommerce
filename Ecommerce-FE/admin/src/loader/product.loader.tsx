@@ -7,21 +7,21 @@ import { queryClient } from 'src/routes/main.route'
 export const productLoader: LoaderFunction = async () => {
     window.dispatchEvent(new Event(loadingFetchingEvent.start))
 
-    await queryClient.fetchQuery({
-        queryKey: ['productList', JSON.stringify({ limit: import.meta.env.VITE_LIMIT })],
-        queryFn: () => ProductApi.getAllProduct({ limit: import.meta.env.VITE_LIMIT }),
-        staleTime: 1000 * 60 * 1
-    })
-
-    const productAnalytic = await queryClient.fetchQuery({
-        queryKey: ['productAnalytic'],
-        queryFn: ProductApi.productAnalytic
-    })
-
-    var categories = await queryClient.fetchQuery({
-        queryKey: ['categories'],
-        queryFn: ProductApi.getAllCategories
-    })
+    const [_, productAnalytic, categories] = await Promise.all([
+        queryClient.fetchQuery({
+            queryKey: ['productList', JSON.stringify({ limit: import.meta.env.VITE_LIMIT })],
+            queryFn: () => ProductApi.getAllProduct({ limit: import.meta.env.VITE_LIMIT }),
+            staleTime: 1000 * 60 * 1
+        }),
+        queryClient.fetchQuery({
+            queryKey: ['productAnalytic'],
+            queryFn: ProductApi.productAnalytic
+        }),
+        queryClient.fetchQuery({
+            queryKey: ['categories'],
+            queryFn: ProductApi.getAllCategories
+        })
+    ])
 
     window.dispatchEvent(new Event(loadingFetchingEvent.end))
 

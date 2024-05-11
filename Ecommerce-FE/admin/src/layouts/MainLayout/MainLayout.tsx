@@ -24,7 +24,7 @@ const MainLayout = () => {
                 </main>
             </div>
             {loadingFetching && (
-                <div className='fixed inset-0 flex justify-center items-center z-50 bg-slate-500/10'>
+                <div className='fixed inset-0 flex justify-center items-center z-50 bg-black/20'>
                     <div className='loader' />
                 </div>
             )}

@@ -1,4 +1,4 @@
-import { ApiPropertyOptional } from '@nestjs/swagger'
+import { ApiPropertyOptional, PickType } from '@nestjs/swagger'
 import { IsEnum, IsOptional, IsString } from 'class-validator'
 import { OrderStatus } from 'common/enums/orderStatus.enum'
 import { TransactionEnum } from 'common/enums/transaction.enum'
@@ -25,3 +25,5 @@ export class UpdateOrderDTO {
 }
 
 export type UpdateOrderType = InstanceType<typeof UpdateOrderDTO>
+
+export class UpdateStatusOrderDTO extends PickType(UpdateOrderDTO, ['status']) {}

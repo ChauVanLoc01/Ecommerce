@@ -1,5 +1,5 @@
 import { Flex, IconButton, Select, Text, TextField } from '@radix-ui/themes'
-import { addDays, endOfDay, startOfDay } from 'date-fns'
+import { addHours } from 'date-fns'
 import { isUndefined, omitBy } from 'lodash'
 import { useEffect, useState } from 'react'
 import { DateRange } from 'react-day-picker'
@@ -27,7 +27,7 @@ const EmployeeFilter = ({ setQuery, page: pageFromResponse, page_size }: Employe
     const handleNextPage = () => {
         if (page < page_size) {
             setPage(page + 1)
-            setQuery(pre => {
+            setQuery((pre) => {
                 return {
                     ...pre,
                     page: page + 1
@@ -39,7 +39,7 @@ const EmployeeFilter = ({ setQuery, page: pageFromResponse, page_size }: Employe
     const handlePreviousPage = () => {
         if (page > 1) {
             setPage(page - 1)
-            setQuery(pre => {
+            setQuery((pre) => {
                 return {
                     ...pre,
                     page: page - 1
@@ -50,16 +50,18 @@ const EmployeeFilter = ({ setQuery, page: pageFromResponse, page_size }: Employe
 
     useEffect(() => {
         if (date) {
-            setQuery(pre => {
-                return omitBy({
-                    ...pre,
-                    start_date: date.from ? startOfDay(addDays(date.from, 1)).toISOString() : undefined,
-                    end_date: date.to ? endOfDay(addDays(date.to, 0.5)) : undefined
-                }, isUndefined)
+            setQuery((pre) => {
+                return omitBy(
+                    {
+                        ...pre,
+                        start_date: date.from ? addHours(date.from, 7) : undefined,
+                        end_date: date.to ? addHours(date.to, 7) : undefined
+                    },
+                    isUndefined
+                )
             })
         }
     }, [date])
-    
 
     return (
         <Flex justify='between' width='100%'>
@@ -89,7 +91,9 @@ const EmployeeFilter = ({ setQuery, page: pageFromResponse, page_size }: Employe
             </Flex>
             <Flex gap={'3'}>
                 <Flex justify={'center'} align={'center'}>
-                    <Text size={'5'}>{page}/{page_size}</Text>
+                    <Text size={'5'}>
+                        {page}/{page_size}
+                    </Text>
                 </Flex>
                 <Flex gap={'1'}>
                     <IconButton variant='outline' color='gray' size={'3'} onClick={handlePreviousPage}>

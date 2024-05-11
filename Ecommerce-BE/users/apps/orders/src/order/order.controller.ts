@@ -8,7 +8,7 @@ import { JwtGuard } from 'common/guards/jwt.guard'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
 import { CreateOrderDTO } from '../dtos/create_order.dto'
 import { QueryOrderDTO } from '../dtos/query-order.dto'
-import { UpdateOrderDTO } from '../dtos/update_order.dto'
+import { UpdateOrderDTO, UpdateStatusOrderDTO } from '../dtos/update_order.dto'
 import { OrderService } from './order.service'
 
 @ApiBearerAuth()
@@ -41,6 +41,16 @@ export class OrderController {
   @Get('store-order/:orderId')
   getOrderDetailByStore(@CurrentUser() user: CurrentStoreType, @Param('orderId') orderId: string) {
     return this.ordersService.getOrderDetailByStore(user, orderId)
+  }
+
+  @Roles(Role.STORE_OWNER)
+  @Put('store-order/:orderId')
+  updateStatusByStore(
+    @CurrentUser() user: CurrentStoreType,
+    @Param('orderId') orderId: string,
+    @Body() body: UpdateStatusOrderDTO
+  ) {
+    return this.ordersService.updateStatusByStore(user, orderId, body)
   }
 
   // User Order

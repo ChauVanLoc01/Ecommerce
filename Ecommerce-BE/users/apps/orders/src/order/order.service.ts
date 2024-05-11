@@ -19,7 +19,7 @@ import { firstValueFrom } from 'rxjs'
 import { v4 as uuidv4 } from 'uuid'
 import { CreateOrderType } from '../dtos/create_order.dto'
 import { QueryOrderType } from '../dtos/query-order.dto'
-import { UpdateOrderType } from '../dtos/update_order.dto'
+import { UpdateOrderType, UpdateStatusOrderDTO } from '../dtos/update_order.dto'
 
 @Injectable()
 export class OrderService {
@@ -321,6 +321,41 @@ export class OrderService {
           status
         }
       })
+    }
+  }
+
+  async updateStatusByStore(
+    user: CurrentStoreType,
+    orderId: string,
+    body: UpdateStatusOrderDTO
+  ): Promise<Return> {
+    const updatedOrder = await this.prisma.$transaction(async (tx) => {
+      const [orderExist, updatedOrder] = await Promise.all([
+        tx.order.findUnique({
+          where: {
+            id: orderId
+          }
+        }),
+        tx.order.update({
+          where: {
+            id: orderId
+          },
+          data: {
+            status: body.status,
+            updatedAt: new Date().toISOString()
+          }
+        })
+      ])
+
+      if (!orderExist) {
+        throw new Error('Đơn hàng không tồn tại')
+      }
+
+      return updatedOrder
+    })
+    return {
+      msg: 'ok',
+      result: updatedOrder
     }
   }
 

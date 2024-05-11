@@ -166,7 +166,8 @@ export class EmployeeService {
           id: employeeId
         },
         data: {
-          status
+          status,
+          updatedAt: new Date().toISOString()
         }
       }),
       this.prisma.storeRole.update({
@@ -174,7 +175,9 @@ export class EmployeeService {
           id: store.storeRoleId
         },
         data: {
-          status
+          status,
+          updatedAt: new Date().toISOString(),
+          updatedBy: store.userId
         }
       })
     ])
@@ -248,7 +251,8 @@ export class EmployeeService {
     const [all, actives, blocks] = await Promise.all([
       this.prisma.storeRole.count({
         where: {
-          storeId: user.storeId
+          storeId: user.storeId,
+          role: Role.EMPLOYEE
         }
       }),
       this.prisma.storeRole.count({

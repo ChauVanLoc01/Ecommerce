@@ -1,5 +1,4 @@
 import { Avatar, DropdownMenu, IconButton } from '@radix-ui/themes'
-import { motion } from 'framer-motion'
 import { CiBellOn } from 'react-icons/ci'
 import { resolvePath, useNavigate } from 'react-router-dom'
 import { route } from 'src/constants/route'

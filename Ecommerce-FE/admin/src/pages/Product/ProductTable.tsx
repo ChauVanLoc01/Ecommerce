@@ -166,7 +166,7 @@ const ProductTable = ({ data, categories }: ProductTableProps) => {
         }
     ]
 
-    return <Table<Product> columns={columns} data={data} className='!w-[1700px]' tableMaxHeight='600px' />
+    return <Table<Product> columns={columns} data={data} className='!w-[1700px]' tableMaxHeight='500px' />
 }
 
 export default ProductTable
