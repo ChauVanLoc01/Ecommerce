@@ -37,7 +37,13 @@ export class OrderController {
     return this.ordersService.getAllOrderByStore(user, query)
   }
 
-  @Roles(Role.STORE_OWNER, Role.ADMIN)
+  @Roles(Role.STORE_OWNER, Role.ADMIN, Role.EMPLOYEE)
+  @Get('store-order-status/:orderId')
+  getOrderStatusByStore(@CurrentUser() user: CurrentStoreType, @Param('orderId') orderId: string) {
+    return this.ordersService.getOrderStatusByStore(user, orderId)
+  }
+
+  @Roles(Role.EMPLOYEE, Role.STORE_OWNER, Role.ADMIN)
   @Get('store-order/:orderId')
   getOrderDetailByStore(@CurrentUser() user: CurrentStoreType, @Param('orderId') orderId: string) {
     return this.ordersService.getOrderDetailByStore(user, orderId)
@@ -51,6 +57,12 @@ export class OrderController {
     @Body() body: UpdateStatusOrderDTO
   ) {
     return this.ordersService.updateStatusByStore(user, orderId, body)
+  }
+
+  @Roles(Role.ADMIN, Role.EMPLOYEE, Role.STORE_OWNER)
+  @Get('store-order-analytics')
+  analyticOrderStore(@CurrentUser() user: CurrentStoreType) {
+    return this.ordersService.analyticOrderStore(user)
   }
 
   // User Order

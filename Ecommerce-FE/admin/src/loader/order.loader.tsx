@@ -6,11 +6,19 @@ import { queryClient } from 'src/routes/main.route'
 export const orderLoader: LoaderFunction = async () => {
     window.dispatchEvent(new Event(loadingFetchingEvent.start))
 
-    await queryClient.fetchQuery({
-        queryKey: ['orderList', JSON.stringify({ limit: import.meta.env.VITE_LIMIT })],
-        queryFn: () => OrderApi.getAllOrder({ limit: import.meta.env.VITE_LIMIT }),
-        staleTime: 1000 * 60 * 1
-    })
+    await Promise.all([
+        await queryClient.fetchQuery({
+            queryKey: ['orderList', JSON.stringify({ limit: import.meta.env.VITE_LIMIT, createdAt: 'desc' })],
+            queryFn: () => OrderApi.getAllOrder({ limit: import.meta.env.VITE_LIMIT, createdAt: 'desc' }),
+            staleTime: 1000 * 60 * 1
+        }),
+        await queryClient.fetchQuery({
+            queryKey: ['analyticOrderStore'],
+            queryFn: OrderApi.analyticOrderStore,
+            staleTime: 1000 * 60 * 1
+        })
+    ])
+
     window.dispatchEvent(new Event(loadingFetchingEvent.end))
 
     return []

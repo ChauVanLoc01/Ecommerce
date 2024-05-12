@@ -66,6 +66,7 @@ model Order {
   Voucher               Voucher?            @relation(fields: [voucherId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Order_ibfk_2")
   Store                 Store               @relation(fields: [storeId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Order_ibfk_3")
   DeliveryInformation   DeliveryInformation @relation(fields: [deliveryInformationId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Order_ibfk_4")
+  OrderFlow             OrderFlow[]
   Payment               Payment[]
   ProductOrder          ProductOrder[]
 
@@ -198,6 +199,7 @@ model User {
   Account_Account_updatedByToUser     Account[]             @relation("Account_updatedByToUser")
   DeliveryInformation                 DeliveryInformation[]
   Order                               Order[]
+  OrderFlow                           OrderFlow[]
   Product_Product_createdByToUser     Product[]             @relation("Product_createdByToUser")
   Product_Product_updatedByToUser     Product[]             @relation("Product_updatedByToUser")
   Product_Product_deletedByToUser     Product[]             @relation("Product_deletedByToUser")
@@ -243,4 +245,18 @@ model Voucher {
 
   @@index([categoryType], map: "categoryType")
   @@index([storeId], map: "storeId")
+}
+
+model OrderFlow {
+  id        String    @id @db.VarChar(50)
+  status    String    @db.VarChar(20)
+  note      String?   @db.Text
+  createdBy String    @db.VarChar(50)
+  createdAt DateTime? @db.Timestamp(0)
+  orderId   String    @db.VarChar(50)
+  Order     Order     @relation(fields: [orderId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "OrderFlow_ibfk_2")
+  User      User      @relation(fields: [createdBy], references: [id], onUpdate: Restrict, map: "OrderFlow_ibfk_3")
+
+  @@index([orderId], map: "orderId")
+  @@index([createdBy], map: "createdBy")
 }

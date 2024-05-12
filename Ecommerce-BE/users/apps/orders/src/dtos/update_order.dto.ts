@@ -26,4 +26,8 @@ export class UpdateOrderDTO {
 
 export type UpdateOrderType = InstanceType<typeof UpdateOrderDTO>
 
-export class UpdateStatusOrderDTO extends PickType(UpdateOrderDTO, ['status']) {}
+export class UpdateStatusOrderDTO extends PickType(UpdateOrderDTO, ['status']) {
+  @IsString()
+  @IsOptional()
+  note?: string
+}

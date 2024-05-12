@@ -28,3 +28,12 @@ export type OrderListReponse = Return<{
     data: Order[]
     query: Omit<OrderQuery, 'page'> & { page: number; page_size: number }
 }>
+
+export type OrderFlow = {
+    id: string
+    status: string
+    note?: string
+    createdBy: string
+    createdAt: string
+    orderId: string
+}

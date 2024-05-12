@@ -44,6 +44,8 @@ class OrdersParameter {
   orders: Parameter[]
 }
 
+export type OrdersParameterType = InstanceType<typeof OrdersParameter> & { orderId: string }
+
 export class CreateOrderDTO {
   @ApiProperty({
     type: [String]

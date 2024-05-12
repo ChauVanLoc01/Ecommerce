@@ -141,7 +141,7 @@ export class OrderService {
   async getAllOrderByStore(user: CurrentStoreType, query: QueryOrderType): Promise<Return> {
     const { storeId } = user
 
-    const { product_name, createdAt, total, start_date, end_date, limit, page } = query
+    const { product_name, createdAt, total, start_date, end_date, limit, page, status } = query
 
     const take = limit | this.configService.get('app.limit_default')
 
@@ -161,7 +161,8 @@ export class OrderService {
           createdAt: {
             lte: end_date,
             gte: start_date
-          }
+          },
+          status
         },
         orderBy: {
           createdAt,
@@ -211,16 +212,59 @@ export class OrderService {
 
       const stores = orderParameters.map((parameter) => parameter.storeId)
 
-      const [isDeliveryInformationExist, isStoresExist, updatedProducts] = await Promise.all([
-        firstValueFrom(
-          this.userClient.send(checkDeliveryInformationId, {
-            user,
-            deliveryInformationId
-          })
-        ),
-        firstValueFrom(this.storeClient.send<Store[], string[]>(checkStoreExist, stores)),
-        firstValueFrom(this.productClient.send(updateQuantityProducts, orderParameters))
-      ])
+      const [isDeliveryInformationExist, isStoresExist, updatedProducts, ...result] =
+        await Promise.all([
+          firstValueFrom(
+            this.userClient.send(checkDeliveryInformationId, {
+              user,
+              deliveryInformationId
+            })
+          ),
+          firstValueFrom(this.storeClient.send<Store[], string[]>(checkStoreExist, stores)),
+          firstValueFrom(this.productClient.send(updateQuantityProducts, orderParameters)),
+          ...orderParameters.map((parameter) =>
+            this.prisma.order.create({
+              data: {
+                id: uuidv4(),
+                deliveryInformationId,
+                total: parameter.orders.reduce((acu, order) => {
+                  if (order.price_before) {
+                    return acu + order.price_before * order.quantity
+                  }
+                  return acu + order.price_after * order.quantity
+                }, 0),
+                discount: parameter.orders.reduce((acu, order) => {
+                  if (order.price_before) {
+                    return acu + (order.price_before - order.price_after) * order.quantity
+                  }
+                  return acu
+                }, 0),
+                pay: parameter.orders.reduce(
+                  (acu, order) => acu + order.price_after * order.quantity,
+                  0
+                ),
+                status: OrderStatus.WAITING_CONFIRM,
+                storeId: parameter.storeId,
+                note: parameter.note,
+                userId: id,
+                voucherId,
+                ProductOrder: {
+                  createMany: {
+                    data: parameter.orders.map((order) => {
+                      return {
+                        id: uuidv4(),
+                        productId: order.productId,
+                        quantity: order.quantity,
+                        priceBefore: order.price_before,
+                        priceAfter: order.price_after
+                      }
+                    })
+                  }
+                }
+              }
+            })
+          )
+        ])
 
       if (!isDeliveryInformationExist) {
         throw new NotFoundException('Không tồn tại thông tin vận chuyển')
@@ -236,50 +280,20 @@ export class OrderService {
         throw new BadRequestException(updatedProducts)
       }
 
-      const result = await Promise.all(
-        orderParameters.map((parameter) =>
-          this.prisma.order.create({
+      await Promise.all(
+        result.map((e) =>
+          this.prisma.orderFlow.create({
             data: {
               id: uuidv4(),
-              deliveryInformationId,
-              total: parameter.orders.reduce((acu, order) => {
-                if (order.price_before) {
-                  return acu + order.price_before * order.quantity
-                }
-                return acu + order.price_after * order.quantity
-              }, 0),
-              discount: parameter.orders.reduce((acu, order) => {
-                if (order.price_before) {
-                  return acu + (order.price_before - order.price_after) * order.quantity
-                }
-                return acu
-              }, 0),
-              pay: parameter.orders.reduce(
-                (acu, order) => acu + order.price_after * order.quantity,
-                0
-              ),
               status: OrderStatus.WAITING_CONFIRM,
-              storeId: parameter.storeId,
-              note: parameter.note,
-              userId: id,
-              voucherId,
-              ProductOrder: {
-                createMany: {
-                  data: parameter.orders.map((order) => {
-                    return {
-                      id: uuidv4(),
-                      productId: order.productId,
-                      quantity: order.quantity,
-                      priceBefore: order.price_before,
-                      priceAfter: order.price_after
-                    }
-                  })
-                }
-              }
+              createdBy: user.id,
+              orderId: e.id,
+              createdAt: new Date().toISOString()
             }
           })
         )
       )
+
       return {
         msg: 'Tạo đơn hàng thành công',
         result
@@ -329,33 +343,106 @@ export class OrderService {
     orderId: string,
     body: UpdateStatusOrderDTO
   ): Promise<Return> {
-    const updatedOrder = await this.prisma.$transaction(async (tx) => {
-      const [orderExist, updatedOrder] = await Promise.all([
-        tx.order.findUnique({
+    try {
+      const updatedOrder = await this.prisma.$transaction(async (tx) => {
+        const [orderExist, updatedOrder] = await Promise.all([
+          tx.order.findUnique({
+            where: {
+              id: orderId
+            }
+          }),
+          tx.order.update({
+            where: {
+              id: orderId
+            },
+            data: {
+              status: body.status,
+              updatedAt: new Date().toISOString()
+            }
+          }),
+          tx.orderFlow.create({
+            data: {
+              id: uuidv4(),
+              status: body.status,
+              createdBy: user.userId,
+              note: body.note,
+              orderId,
+              createdAt: new Date().toISOString()
+            }
+          })
+        ])
+
+        if (!orderExist) {
+          throw new Error('Đơn hàng không tồn tại')
+        }
+
+        return updatedOrder
+      })
+      return {
+        msg: 'ok',
+        result: updatedOrder
+      }
+    } catch (err) {
+      throw new BadRequestException(err.message)
+    }
+  }
+
+  async getOrderStatusByStore(user: CurrentStoreType, orderId: string): Promise<Return> {
+    try {
+      return {
+        msg: 'ok',
+        result: await this.prisma.orderFlow.findMany({
           where: {
-            id: orderId
-          }
-        }),
-        tx.order.update({
-          where: {
-            id: orderId
-          },
-          data: {
-            status: body.status,
-            updatedAt: new Date().toISOString()
+            orderId
           }
         })
-      ])
-
-      if (!orderExist) {
-        throw new Error('Đơn hàng không tồn tại')
       }
+    } catch (err) {
+      throw new BadRequestException('Đơn hàng không tồn tại')
+    }
+  }
 
-      return updatedOrder
-    })
+  async analyticOrderStore(user: CurrentStoreType): Promise<Return> {
+    const [all, success, waiting_confirm, shipping, cancel] = await Promise.all([
+      this.prisma.order.count({
+        where: {
+          storeId: user.storeId
+        }
+      }),
+      this.prisma.order.count({
+        where: {
+          status: OrderStatus.SUCCESS,
+          storeId: user.storeId
+        }
+      }),
+      this.prisma.order.count({
+        where: {
+          status: OrderStatus.WAITING_CONFIRM,
+          storeId: user.storeId
+        }
+      }),
+      this.prisma.order.count({
+        where: {
+          status: OrderStatus.SHIPING,
+          storeId: user.storeId
+        }
+      }),
+      this.prisma.order.count({
+        where: {
+          status: OrderStatus.CANCEL,
+          storeId: user.storeId
+        }
+      })
+    ])
     return {
       msg: 'ok',
-      result: updatedOrder
+      result: {
+        all,
+        success,
+        waiting_confirm,
+        shipping,
+        cancel
+      }
     }
   }
 

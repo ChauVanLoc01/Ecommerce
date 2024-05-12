@@ -11,3 +11,5 @@ export const updateStoreRoleId = 'user::update::storeroleid'
 export const getStoreDetail = 'user::get::store::detail'
 
 export const getAllProductWithProductOrder = 'user::get::product::order'
+
+export const createProductOrder = 'create::product::order'

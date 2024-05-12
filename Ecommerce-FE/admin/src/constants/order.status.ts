@@ -27,3 +27,10 @@ export const UserStatus: { [key: string]: { lable: string; color: string } } = {
         color: 'red'
     }
 }
+
+export enum OrderStatusWithoutColor {
+    WAITING_CONFIRM = 'WAITING_CONFIRM',
+    SHIPING = 'SHIPING',
+    SUCCESS = 'SUCCESS',
+    CANCEL = 'CANCEL'
+}

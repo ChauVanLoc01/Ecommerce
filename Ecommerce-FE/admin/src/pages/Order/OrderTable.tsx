@@ -1,25 +1,91 @@
-import { Cross2Icon, InfoCircledIcon, Pencil1Icon } from '@radix-ui/react-icons'
+import { CounterClockwiseClockIcon, InfoCircledIcon } from '@radix-ui/react-icons'
 import { Badge, Flex, IconButton, Text, Tooltip } from '@radix-ui/themes'
-import { useQuery } from '@tanstack/react-query'
+import { QueryObserverResult, RefetchOptions, useQuery } from '@tanstack/react-query'
 import { ColumnDef } from '@tanstack/react-table'
-import { format, formatDistance } from 'date-fns'
+import { compareAsc, format, formatDistance } from 'date-fns'
 import { vi } from 'date-fns/locale'
+import { useEffect, useState } from 'react'
 import { BiSolidSortAlt } from 'react-icons/bi'
 import { OrderApi } from 'src/apis/order.api'
 import Table from 'src/components/Table'
 import { OrderStatus } from 'src/constants/order.status'
-import { Order } from 'src/types/order.type'
+import { Order, OrderQuery } from 'src/types/order.type'
 import { convertCurrentcy } from 'src/utils/utils'
+import OrderChangeStatus from './OrderStatus'
 
-const OrderTable = () => {
-    const { data, refetch } = useQuery({
-        queryKey: ['orderList', JSON.stringify({ limit: import.meta.env.VITE_LIMIT })],
-        queryFn: () => OrderApi.getAllOrder({ limit: import.meta.env.VITE_LIMIT }),
-        staleTime: 1000 * 60 * 2,
-        enabled: false,
-        placeholderData: (oldData) => oldData,
-        select: (data) => data.data
+type OrderTableProps = {
+    data: Order[]
+    orderListRefetch: (options?: RefetchOptions) => Promise<
+        QueryObserverResult<
+            {
+                data: Order[]
+                query: Omit<OrderQuery, 'page'> & {
+                    page: number
+                    page_size: number
+                }
+            },
+            Error
+        >
+    >
+    analyticOrderStoreRefetching: (options?: RefetchOptions) => Promise<
+        QueryObserverResult<
+            {
+                all: number
+                success: number
+                waiting_confirm: number
+                shipping: number
+                cancel: number
+            },
+            Error
+        >
+    >
+}
+
+const OrderTable = ({ data, orderListRefetch, analyticOrderStoreRefetching }: OrderTableProps) => {
+    const [openDetail, setOpenDetail] = useState<boolean>(false)
+    const [openChangeStatus, setOpenChangeStatus] = useState<boolean>(false)
+    const [choosedProduct, setChoosedProduct] = useState<string>('')
+
+    const {
+        refetch: orderDetailRefetch,
+        data: orderDetailData,
+        isSuccess: isSuccessFetchingOrderDetail
+    } = useQuery({
+        queryKey: ['orderDetail', choosedProduct],
+        queryFn: () => OrderApi.getOrderDetail(choosedProduct),
+        staleTime: 1000 * 60 * 3,
+        enabled: false
     })
+
+    const { refetch: orderStatusRefetch, data: orderStatusData } = useQuery({
+        queryKey: ['orderStatus', choosedProduct],
+        queryFn: () => OrderApi.getOrderStatus(choosedProduct),
+        staleTime: 1000 * 60 * 3,
+        enabled: false,
+        select: (data) => data.data.result
+    })
+
+    const handleChooseProduct = (type: 'DETAIL' | 'STATUS', id: string) => () => {
+        setChoosedProduct(id)
+        switch (type) {
+            case 'DETAIL':
+                setOpenDetail(true)
+                break
+            default:
+                setOpenChangeStatus(true)
+                break
+        }
+    }
+
+    const handleFetchData = async () => await Promise.all([orderDetailRefetch(), orderStatusRefetch()])
+
+    const handleFetchAll = async () =>
+        await Promise.all([
+            orderListRefetch(),
+            orderDetailRefetch(),
+            orderStatusRefetch(),
+            analyticOrderStoreRefetching()
+        ])
 
     const columns: ColumnDef<Order>[] = [
         {
@@ -148,26 +214,17 @@ const OrderTable = () => {
             cell: ({ row }) => (
                 <Flex gapX={'2'} align={'center'}>
                     <Tooltip content='Xem chi tiết'>
-                        <IconButton variant='soft'>
+                        <IconButton variant='soft' onClick={handleChooseProduct('DETAIL', row.original.id)}>
                             <InfoCircledIcon />
                         </IconButton>
                     </Tooltip>
-                    <Tooltip content='Chỉnh sửa'>
+                    <Tooltip content='Trạng thái đơn hàng'>
                         <IconButton
                             variant='soft'
-                            color='orange'
-                            disabled={['CANCEL', 'SUCCESS'].includes(row.original.status)}
+                            color='yellow'
+                            onClick={handleChooseProduct('STATUS', row.original.id)}
                         >
-                            <Pencil1Icon />
-                        </IconButton>
-                    </Tooltip>
-                    <Tooltip content='Hủy đơn'>
-                        <IconButton
-                            variant='soft'
-                            color='red'
-                            disabled={['CANCEL', 'SUCCESS'].includes(row.original.status)}
-                        >
-                            <Cross2Icon />
+                            <CounterClockwiseClockIcon />
                         </IconButton>
                     </Tooltip>
                 </Flex>
@@ -175,8 +232,24 @@ const OrderTable = () => {
         }
     ]
 
+    useEffect(() => {
+        if (choosedProduct) {
+            handleFetchData()
+        }
+    }, [choosedProduct])
+
     return (
-        <Table<Order> columns={columns} data={data?.result.data ?? []} tableMaxHeight='600px' className='w-[1500px]' />
+        <>
+            <Table<Order> columns={columns} data={data} tableMaxHeight='500px' className='w-[1500px]' />
+            {/* <OrderDetail open={openDetail} setOpen={setOpenDetail} data={orderDetailData ?? []} /> */}
+            <OrderChangeStatus
+                open={openChangeStatus}
+                setOpen={setOpenChangeStatus}
+                handleFetchAll={handleFetchAll as any}
+                orderId={choosedProduct}
+                data={orderStatusData ? orderStatusData?.sort((a, b) => compareAsc(a.createdAt, b.createdAt)) : []}
+            />
+        </>
     )
 }
 

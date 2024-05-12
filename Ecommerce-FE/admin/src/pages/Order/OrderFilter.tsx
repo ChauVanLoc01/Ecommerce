@@ -1,10 +1,48 @@
 import { Flex, IconButton, Select, Text, TextField } from '@radix-ui/themes'
-import { useState } from 'react'
+import { addHours } from 'date-fns'
+import { isUndefined, omit, omitBy } from 'lodash'
+import { useEffect, useState } from 'react'
 import { DateRange } from 'react-day-picker'
 import { DatePickerWithRange } from 'src/components/Shadcn/dateRange'
+import { OrderStatusWithoutColor } from 'src/constants/order.status'
+import { OrderQuery } from 'src/types/order.type'
 
-const OrderFilter = () => {
+type OrderFilterProps = {
+    setQuery: React.Dispatch<React.SetStateAction<OrderQuery>>
+}
+
+const OrderFilter = ({ setQuery }: OrderFilterProps) => {
     const [date, setDate] = useState<DateRange | undefined>(undefined)
+
+    const handleSelectStatus = (value: string) => {
+        if (value !== 'All') {
+            setQuery((pre) => {
+                return {
+                    ...pre,
+                    status: value
+                }
+            })
+        } else {
+            setQuery((pre) => {
+                return omit(pre, ['status'])
+            })
+        }
+    }
+
+    useEffect(() => {
+        if (date) {
+            setQuery((pre) => {
+                return omitBy(
+                    {
+                        ...pre,
+                        start_date: date.from ? addHours(date.from, 7) : undefined,
+                        end_date: date.to ? addHours(date.to, 7) : undefined
+                    } as OrderQuery,
+                    isUndefined
+                )
+            })
+        }
+    }, [date])
 
     return (
         <Flex justify='between' width='100%'>
@@ -22,13 +60,14 @@ const OrderFilter = () => {
                     </TextField.Slot>
                 </TextField.Root>
                 <Flex direction='column' width='180px'>
-                    <Select.Root size='3' defaultValue='all'>
+                    <Select.Root size='3' defaultValue='All' onValueChange={handleSelectStatus}>
                         <Select.Trigger />
                         <Select.Content position='popper'>
-                            <Select.Item value='all'>Tất cả</Select.Item>
-                            <Select.Item value='cancel'>Đã hủy</Select.Item>
-                            <Select.Item value='success'>Thành công</Select.Item>
-                            <Select.Item value='waiting'>Chờ xác nhận</Select.Item>
+                            <Select.Item value='All'>Tất cả</Select.Item>
+                            <Select.Item value={OrderStatusWithoutColor.CANCEL}>Đã hủy</Select.Item>
+                            <Select.Item value={OrderStatusWithoutColor.SUCCESS}>Thành công</Select.Item>
+                            <Select.Item value={OrderStatusWithoutColor.WAITING_CONFIRM}>Chờ xác nhận</Select.Item>
+                            <Select.Item value={OrderStatusWithoutColor.SHIPING}>Đang giao hàng</Select.Item>
                         </Select.Content>
                     </Select.Root>
                 </Flex>

@@ -18,6 +18,7 @@ import {
 import { MessagePattern, Payload } from '@nestjs/microservices'
 import { FileInterceptor } from '@nestjs/platform-express'
 import {
+  createProductOrder,
   getAllProductWithProductOrder,
   updateQuantityProducts
 } from 'common/constants/event.constant'
@@ -130,5 +131,20 @@ export class ProductController {
     data: { storeId: string; note?: string; orders: { productId: string; quantity: number }[] }[]
   ) {
     return this.productsService.updateQuantityProducts(data)
+  }
+
+  @Public()
+  @MessagePattern(createProductOrder)
+  createProductOrder(
+    @Payload()
+    data: {
+      orderId: string
+      productId: string
+      priceAfter: number
+      priceBefore: number
+      quantity: number
+    }[]
+  ) {
+    return this.productsService.createProductOrder(data)
   }
 }

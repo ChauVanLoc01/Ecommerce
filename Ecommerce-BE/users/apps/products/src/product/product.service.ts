@@ -481,4 +481,48 @@ export class ProductService {
       return err.message
     }
   }
+
+  async createProductOrder(
+    data: {
+      orderId: string
+      productId: string
+      priceAfter: number
+      priceBefore: number
+      quantity: number
+    }[]
+  ) {
+    try {
+      const orders = await Promise.all(
+        data.map((e) =>
+          this.prisma.order.findUnique({
+            where: {
+              id: e.orderId
+            }
+          })
+        )
+      )
+
+      console.log('orders', orders)
+
+      const result = await Promise.all(
+        data.map((e) =>
+          this.prisma.productOrder.create({
+            data: {
+              id: uuidv4(),
+              priceAfter: e.priceAfter,
+              priceBefore: e.priceBefore,
+              quantity: e.quantity,
+              orderId: e.orderId,
+              productId: e.productId
+            }
+          })
+        )
+      )
+
+      return result
+    } catch (err) {
+      console.log('errr', err)
+      return 'Lỗi tạo product-order'
+    }
+  }
 }
