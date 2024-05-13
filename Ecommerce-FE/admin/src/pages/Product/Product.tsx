@@ -28,7 +28,7 @@ const Product = () => {
     }, [query])
 
     return (
-        <LayoutProfile title='Quản lý sản phẩm' rightNode={<ProductAnalytics />}>
+        <LayoutProfile title='Quản lý sản phẩm' rightNode={<ProductAnalytics categories={categories} />}>
             <div className='bg-white rounded-8 border-border/30 space-y-4'>
                 <Flex justify='between' width='100%'>
                     <Flex gapX={'4'}>
