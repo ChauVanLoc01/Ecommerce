@@ -43,8 +43,7 @@ const Employee = () => {
             <div className='space-y-5'>
                 <EmployeeFilter
                     setQuery={setQuery}
-                    page={data?.query.page ?? 1}
-                    page_size={data?.query.page_size ?? 1}
+                    pagination={{ page: data?.query.page ?? 0, page_size: data?.query.page_size ?? 0 }}
                 />
                 <EmployeeTable analyticsRefetch={analyticsRefetch} refetch={refetch} data={data?.data ?? []} />
             </div>

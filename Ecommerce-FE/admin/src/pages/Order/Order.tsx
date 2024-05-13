@@ -60,7 +60,10 @@ const Order = () => {
         >
             <div className='space-y-5'>
                 <div className='bg-white rounded-8 border-border/30 space-y-4'>
-                    <OrderFilter setQuery={setQuery} />
+                    <OrderFilter
+                        pagination={{ page: data?.query.page ?? 0, page_size: data?.query.page_size ?? 0 }}
+                        setQuery={setQuery}
+                    />
                 </div>
                 <OrderTable
                     data={data?.data ?? []}
