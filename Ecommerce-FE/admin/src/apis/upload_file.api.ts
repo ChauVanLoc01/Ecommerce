@@ -6,6 +6,6 @@ export const UploadApi = {
         return http.postForm<Return<string>>('/store/store/upload-single-file', formData)
     },
     updateMultipleFile: (formData: FormData) => {
-        return http.post<Return<string[]>>('/store/store/upload-multiple-file', formData)
+        return http.postForm<Return<string[]>>('/store/store/upload-multiple-file', formData)
     }
 }

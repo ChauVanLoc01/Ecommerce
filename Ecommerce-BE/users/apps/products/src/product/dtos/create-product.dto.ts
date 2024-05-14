@@ -1,6 +1,15 @@
 /* eslint-disable prettier/prettier */
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
-import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsUrl, MaxLength } from 'class-validator'
+import {
+  ArrayMinSize,
+  IsArray,
+  IsEnum,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsUrl
+} from 'class-validator'
 import { Status } from 'common/enums/status.enum'
 export class CreateProductDTO {
   @ApiProperty()
@@ -40,9 +49,9 @@ export class CreateProductDTO {
   @IsOptional()
   status: Status.ACTIVE
 
-  @MaxLength(6, {
-    each: true
-  })
+  @IsArray()
+  @IsString({ each: true })
+  @ArrayMinSize(1)
   productImages: string[]
 
   @IsUrl()

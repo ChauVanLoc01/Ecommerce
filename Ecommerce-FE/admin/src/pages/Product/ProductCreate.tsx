@@ -41,18 +41,26 @@ const ProductCreate = ({ categories }: ProductCreateProps) => {
         resolver: yupResolver(create_product_schema)
     })
 
-    const {
-        mutate: uploadMutiFile,
-        isSuccess: IsUploadFileSuccess,
-        data: uploadMultiFileData
-    } = useMutation({
+    const { mutate: uploadMutiFile, isSuccess: IsUploadFileSuccess } = useMutation({
         mutationFn: UploadApi.updateMultipleFile,
+        onSuccess: (result) => {
+            createProductMutate({
+                ...(data as any),
+                productImages: result.data.result,
+                imagePrimary: result.data.result[0]
+            })
+        },
         onError: () => {
             toast.error('Có lỗi trong quá trình upload hình ảnh')
         }
     })
     const { mutate: createProductMutate, isSuccess: isCreateProductSuccess } = useMutation({
         mutationFn: ProductApi.createProduct,
+        onSuccess: () => {
+            setTimeout(() => {
+                setOpenSubmit(false)
+            }, 2500)
+        },
         onError: () => {
             toast.error('Lỗi tạo mới sản phẩm')
         }
@@ -70,28 +78,12 @@ const ProductCreate = ({ categories }: ProductCreateProps) => {
     useEffect(() => {
         if (openSubmit) {
             var formData = new FormData()
-            Object.values(files as any).forEach((file) => formData.append('files', file as any))
+            Object.values(files as any).forEach((file) => {
+                formData.append('files', file as any)
+            })
             uploadMutiFile(formData)
         }
     }, [openSubmit])
-
-    useEffect(() => {
-        if (IsUploadFileSuccess) {
-            createProductMutate({
-                ...(data as any),
-                productImages: uploadMultiFileData.data.result,
-                imagePrimary: uploadMultiFileData.data.result[0]
-            })
-        }
-    }, [IsUploadFileSuccess])
-
-    useEffect(() => {
-        if (isCreateProductSuccess === true) {
-            setTimeout(() => {
-                setOpenSubmit(false)
-            }, 1000)
-        }
-    }, [isCreateProductSuccess])
 
     return (
         <AlertDialog.Root>
