@@ -33,8 +33,10 @@ import { QueryProductDTO } from './dtos/query-product.dto'
 import { UpdateProductDTO } from './dtos/update-product.dto'
 import { ProductService } from './product.service'
 import { SearchProductService } from './search-product.service'
+import { ApiBearerAuth, ApiProperty } from '@nestjs/swagger'
 
 @UseGuards(JwtGuard)
+@ApiBearerAuth()
 @Controller('product')
 export class ProductController {
   constructor(
@@ -72,6 +74,7 @@ export class ProductController {
     return this.productsService.getALlProductForUser(query)
   }
 
+  @ApiProperty({ description: 'Chi tiết sản phẩm' })
   @Public()
   @Get(':productId')
   getProductDetail(@Param('productId') productId: string) {

@@ -1,4 +1,5 @@
-import axios, { AxiosInstance, AxiosResponse } from 'axios'
+import axios, { AxiosError, AxiosInstance, AxiosResponse, isAxiosError } from 'axios'
+import { loginEvent } from 'src/constants/event.constants'
 import { route } from 'src/constants/route'
 import { LoginResponse } from 'src/types/auth.type'
 import { Return } from 'src/types/return.type'
@@ -31,13 +32,25 @@ class Http {
         })
     }
     middlewareResponse() {
-        this.instance.interceptors.response.use((response: AxiosResponse<Return<any>>) => {
-            const { config, status, data } = response
-            if (status === 201 && config.url?.endsWith(route.login)) {
-                this.access_token = data.result.access_token
+        this.instance.interceptors.response.use(
+            (response: AxiosResponse<Return<any>>) => {
+                const { config, status, data } = response
+                if (status === 201 && config.url?.endsWith(route.login)) {
+                    this.access_token = (data.result as LoginResponse).access_token
+                    ls.setItem('profile', JSON.stringify((data.result as LoginResponse).user))
+                    ls.setItem('store', JSON.stringify((data.result as LoginResponse).store))
+                    window.dispatchEvent(new Event(loginEvent))
+                }
+                return response
+            },
+            (error: AxiosError<{ error: string; message: string; statusCode: number }>) => {
+                if (isAxiosError(error)) {
+                    if (error.response?.data.error === 'Unauthorized' && error.response.data.statusCode === 401) {
+                        document.location.href = '/login'
+                    }
+                }
             }
-            return response
-        })
+        )
     }
 }
 

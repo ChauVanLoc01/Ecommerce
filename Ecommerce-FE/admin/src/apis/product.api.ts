@@ -1,4 +1,4 @@
-import { LoginResponse } from 'src/types/auth.type'
+import { User } from 'src/types/auth.type'
 import {
     CategoryResponse,
     Product,
@@ -11,7 +11,7 @@ import {
 import { ls } from 'src/utils/localStorage'
 import { http } from './http'
 
-const storeId = (JSON.parse(ls.getItem('profile') as string) as LoginResponse).store.id
+const storeId = ls.getItem('profile') ? (JSON.parse(ls.getItem('profile') as string) as User).id : undefined
 
 export const ProductApi = {
     getAllCategories: () => {
@@ -22,8 +22,8 @@ export const ProductApi = {
             params: query
         })
     },
-    updateProduct: (input: { productId: string; body: UpdateProductBody }) => {
-        return http.put<Product>(`product/product/${input.productId}`, input.body)
+    updateProduct: (data: { productId: string; body: UpdateProductBody }) => {
+        return http.put<Product>(`product/product/${data.productId}`, data.body)
     },
     productAnalytic: () => {
         return http.get<ProductAnalyticResponse>('product/product/analytic')

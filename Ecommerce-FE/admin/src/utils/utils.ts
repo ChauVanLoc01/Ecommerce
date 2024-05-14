@@ -1,6 +1,5 @@
+import { AxiosResponse, isAxiosError } from 'axios'
 import { type ClassValue, clsx } from 'clsx'
-import { LoaderFunction } from 'react-router-dom'
-import { loadingFetchingEvent } from 'src/constants/event.constants'
 import { twMerge } from 'tailwind-merge'
 
 export function cn(...inputs: ClassValue[]) {
@@ -28,3 +27,9 @@ export const removeSpecialCharacter = (str: string) =>
         .replace(/!|@|%|\^|\*|\(|\)|\+|\=|\<|\>|\?|\/|,|\.|\:|\;|\'|\"|\&|\#|\[|\]|~|\$|_|`|-|{|}|\||\\/g, '')
         .split(' ')
         .join('-')
+
+export const checkAxiosError = (
+    response: unknown
+): response is AxiosResponse<{ error: string; message: string; statusCode: number }> => {
+    return isAxiosError(response)
+}

@@ -6,15 +6,18 @@ import ReactDOM from 'react-dom/client'
 import { RouterProvider } from 'react-router-dom'
 import 'simplebar-react/dist/simplebar.min.css'
 import { Toaster } from 'sonner'
-import 'src/reset.css'
 import 'src/index.css'
+import 'src/reset.css'
+import ContextWrap from './contexts/AppContext'
 import routes, { queryClient } from './routes/main.route'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
     <QueryClientProvider client={queryClient}>
         <AnimatePresence>
             <Theme scaling='110%' radius='large'>
-                <RouterProvider router={routes} />
+                <ContextWrap>
+                    <RouterProvider router={routes} />
+                </ContextWrap>
                 <Toaster
                     richColors
                     position='top-right'

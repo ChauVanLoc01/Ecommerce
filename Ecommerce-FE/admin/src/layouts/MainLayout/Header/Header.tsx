@@ -1,10 +1,16 @@
 import { Avatar, DropdownMenu, IconButton } from '@radix-ui/themes'
 import { CiBellOn } from 'react-icons/ci'
 import { resolvePath, useNavigate } from 'react-router-dom'
+import { exitEvent } from 'src/constants/event.constants'
 import { route } from 'src/constants/route'
 
 const Header = () => {
     const navigate = useNavigate()
+
+    const handleExist = () => {
+        window.dispatchEvent(new Event(exitEvent))
+    }
+
     return (
         <header className='pt-3 pb-5'>
             <section className='flex items-center justify-end space-x-2'>
@@ -26,7 +32,7 @@ const Header = () => {
                         <DropdownMenu.Item onClick={() => navigate(resolvePath(route.profile, route.root).pathname)}>
                             Thông tin cá nhân
                         </DropdownMenu.Item>
-                        <DropdownMenu.Item>Đăng xuất</DropdownMenu.Item>
+                        <DropdownMenu.Item onClick={handleExist}>Đăng xuất</DropdownMenu.Item>
                     </DropdownMenu.Content>
                 </DropdownMenu.Root>
             </section>

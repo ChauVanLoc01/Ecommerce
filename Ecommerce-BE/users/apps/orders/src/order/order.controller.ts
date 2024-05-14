@@ -17,6 +17,7 @@ import { OrderService } from './order.service'
 export class OrderController {
   constructor(private readonly ordersService: OrderService) {}
 
+  @ApiBearerAuth()
   @Roles(Role.USER)
   @Get('user-order')
   getAllOrderByUser(@CurrentUser() user: CurrentUserType, @Query() query: QueryOrderDTO) {
