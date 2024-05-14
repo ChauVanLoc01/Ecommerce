@@ -14022,19 +14022,15 @@ const accounts = users.map((user, idx) => {
 });
 
 const insertDataIntoMyDB = async () => {
-  await Promise.all(users.map((user) => prisma.user.create({ data: user })));
+  await Promise.all([
+    ...users.map((user) => prisma.user.create({ data: user })),
+    ...stores.map((store) => prisma.store.create({ data: store })),
+  ]);
 
-  await Promise.all(
-    stores.map((store) => prisma.store.create({ data: store }))
-  );
-
-  await Promise.all(
-    storeRole.map((store) => prisma.storeRole.create({ data: store }))
-  );
-
-  await Promise.all(
-    accounts.map((account) => prisma.account.create({ data: account }))
-  );
+  await Promise.all([
+    ...storeRole.map((store) => prisma.storeRole.create({ data: store })),
+    ...accounts.map((account) => prisma.account.create({ data: account })),
+  ]);
 
   await prisma.category.createMany({
     data: categorys,
@@ -14042,13 +14038,25 @@ const insertDataIntoMyDB = async () => {
 
   const storeList = await prisma.store.findMany();
 
+  const images = [];
+  var productId;
+
   const convertedProducts = products.map((product) => {
     const initQuantity = Math.floor(Math.random() * 10000) + 1;
     const rest = Math.floor(Math.random() * initQuantity);
     const storeRandom = storeList[Math.floor(Math.random() * storeList.length)];
     if (product.name && product.image) {
-      return {
+      productId = uuidv4();
+      images.push({
         id: uuidv4(),
+        productId,
+        url: product.image,
+        createdAt: new Date(),
+        createdBy: storeRandom.id,
+      });
+
+      return {
+        id: productId,
         name: product.name,
         initQuantity,
         currentQuantity: rest,
@@ -14061,13 +14069,14 @@ const insertDataIntoMyDB = async () => {
         ),
         storeId: storeRandom.id,
         createdBy: storeRandom.createdBy,
-        image: product.image,
         category: product.category,
         sold: initQuantity - rest,
       };
     }
     return undefined;
   });
+
+  await Promise.all(images.map((img) => prisma));
 
   await Promise.all(
     convertedProducts.map(async (product) => {

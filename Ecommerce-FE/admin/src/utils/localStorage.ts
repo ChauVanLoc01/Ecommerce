@@ -1,4 +1,4 @@
-export type key = 'profile' | 'store'
+export type key = 'profile' | 'store' | 'access_token' | 'refresh_token'
 
 export const ls = {
     setItem: (key: key, value: string) => localStorage.setItem(key, value),

@@ -1,5 +1,4 @@
 import axios, { AxiosError, AxiosInstance, AxiosResponse, isAxiosError } from 'axios'
-import { loginEvent } from 'src/constants/event.constants'
 import { route } from 'src/constants/route'
 import { LoginResponse } from 'src/types/auth.type'
 import { Return } from 'src/types/return.type'
@@ -7,9 +6,7 @@ import { ls } from 'src/utils/localStorage'
 
 class Http {
     private instance: AxiosInstance
-    private access_token = ls.getItem('profile')
-        ? (JSON.parse(ls.getItem('profile') as string) as LoginResponse).access_token
-        : undefined
+    private access_token = ls.getItem('access_token')
     constructor() {
         this.instance = axios.create({
             baseURL: import.meta.env.VITE_ENDPOINT,

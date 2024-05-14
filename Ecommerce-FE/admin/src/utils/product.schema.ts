@@ -9,13 +9,13 @@ export const update_product_schema = yup.object({
     initQuantity: yup.number().optional()
 })
 export const create_product_schema = yup.object({
-    name: yup.string(),
+    name: yup.string().required('Bắt buộc'),
     description: yup.string().optional(),
-    priceAfter: yup.number(),
-    priceBefore: yup.number(),
-    initQuantity: yup.number(),
-    status: yup.string(),
-    category: yup.string()
+    priceAfter: yup.number().required('Bắt buộc'),
+    priceBefore: yup.number().required('Bắt buộc'),
+    initQuantity: yup.number().required('Bắt buộc'),
+    status: yup.string().required('Bắt buộc'),
+    category: yup.string().required('Bắt buộc')
 })
 
 export type UpdateProductSchema = yup.InferType<typeof update_product_schema>

@@ -32,6 +32,8 @@ const Login = () => {
             setStore(data.data.result.store)
             ls.setItem('profile', JSON.stringify(data.data.result.user))
             ls.setItem('store', JSON.stringify(data.data.result.store))
+            ls.setItem('access_token', data.data.result.access_token)
+            ls.setItem('refresh_token', data.data.result.refresh_token)
             navigate('/analytic')
             toast.info('Đăng nhập thành công')
         },
