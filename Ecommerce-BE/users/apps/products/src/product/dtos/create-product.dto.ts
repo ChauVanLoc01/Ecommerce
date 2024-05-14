@@ -1,30 +1,22 @@
 /* eslint-disable prettier/prettier */
-import { IsEnum, IsInt, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator'
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
+import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsUrl, MaxLength } from 'class-validator'
 import { Status } from 'common/enums/status.enum'
 export class CreateProductDTO {
-  @ApiProperty({
-    required: true,
-    type: 'string',
-    format: 'binary'
-  })
-  @IsNotEmpty()
-  image: Express.Multer.File
-
   @ApiProperty()
   @IsString()
   @IsNotEmpty()
   name: string
 
   @ApiProperty()
-  @IsNumber()
-  @IsNotEmpty()
-  priceBefore: number
+  @IsInt()
+  @IsOptional()
+  priceBefore?: number
 
   @ApiPropertyOptional()
-  @IsNumber()
-  @IsOptional()
-  priceAfter?: number
+  @IsInt()
+  @IsNotEmpty()
+  priceAfter: number
 
   @ApiProperty()
   @IsInt()
@@ -36,6 +28,10 @@ export class CreateProductDTO {
   @IsOptional()
   description?: string
 
+  @IsString()
+  @IsNotEmpty()
+  category: string
+
   @ApiPropertyOptional({
     required: false,
     default: Status.ACTIVE
@@ -43,6 +39,15 @@ export class CreateProductDTO {
   @IsEnum(Status)
   @IsOptional()
   status: Status.ACTIVE
+
+  @MaxLength(6, {
+    each: true
+  })
+  productImages: string[]
+
+  @IsUrl()
+  @IsNotEmpty()
+  imagePrimary: string
 }
 
 export type CreateProductType = InstanceType<typeof CreateProductDTO>

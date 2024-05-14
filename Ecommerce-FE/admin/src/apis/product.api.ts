@@ -7,13 +7,14 @@ import {
     ProductQueryAndPagination,
     UpdateProductBody
 } from 'src/types/product.type'
+import { CreateProductSchema } from 'src/utils/product.schema'
 import { http } from './http'
 
 export const ProductApi = {
     getAllCategories: () => {
         return http.get<CategoryResponse>('product/category')
     },
-    getAllProduct: (data: {storeId: string, query: ProductQueryAndPagination}) => {
+    getAllProduct: (data: { storeId: string; query: ProductQueryAndPagination }) => {
         return http.get<ProductListResponse>(`product/product/product-store/${data.storeId}`, {
             params: data.query
         })
@@ -26,5 +27,8 @@ export const ProductApi = {
     },
     getProductOrderByOrderId: (orderId: string) => {
         return http.get<ProductOrderReponse>(`product/product/product-order/${orderId}`)
+    },
+    createProduct: (body: CreateProductSchema & { productImages: string[]; imagePrimary: string }) => {
+        return http.post('product/product', body)
     }
 }

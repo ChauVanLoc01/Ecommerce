@@ -57,7 +57,7 @@ export class StoreController {
 
   @Public()
   @Post('upload-multiple-file')
-  @UseInterceptors(FilesInterceptor('files', 5))
+  @UseInterceptors(FilesInterceptor('files', 10))
   uploadMultipleFile(
     @UploadedFiles(
       new ParseFilePipe({

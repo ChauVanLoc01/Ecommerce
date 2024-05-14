@@ -310,32 +310,58 @@ export class ProductService {
     }
   }
 
-  async createProduct(
-    user: CurrentStoreType,
-    imageUrl: string,
-    body: CreateProductType
-  ): Promise<Return> {
+  async createProduct(user: CurrentStoreType, body: CreateProductType): Promise<Return> {
     const { storeId, userId } = user
 
-    const { name, initQuantity, priceAfter, priceBefore, description, status } = body
+    const {
+      name,
+      initQuantity,
+      priceAfter,
+      priceBefore,
+      description,
+      status,
+      category,
+      productImages,
+      imagePrimary
+    } = body
+
+    const createdProduct = await this.prisma.product.create({
+      data: {
+        id: uuidv4(),
+        name,
+        currentQuantity: initQuantity,
+        initQuantity,
+        priceBefore: priceBefore || 0,
+        priceAfter: priceAfter,
+        description,
+        image: imagePrimary,
+        status: status || Status.ACTIVE,
+        storeId,
+        createdBy: userId,
+        category
+      }
+    })
+
+    await Promise.all(
+      productImages.map((img) =>
+        this.prisma.productImage.create({
+          data: {
+            id: uuidv4(),
+            url: img,
+            createdAt: new Date(),
+            createdBy: user.userId,
+            productId: createdProduct.id
+          }
+        })
+      )
+    )
 
     return {
       msg: 'Tạo sản phẩm thành công',
-      result: await this.prisma.product.create({
-        data: {
-          id: uuidv4(),
-          name,
-          currentQuantity: initQuantity,
-          initQuantity,
-          priceBefore,
-          priceAfter: priceAfter | 0,
-          description,
-          image: imageUrl,
-          status: status || Status.ACTIVE,
-          storeId,
-          createdBy: userId
-        }
-      })
+      result: {
+        ...createdProduct,
+        productImages
+      }
     }
   }
 
@@ -523,6 +549,28 @@ export class ProductService {
     } catch (err) {
       console.log('errr', err)
       return 'Lỗi tạo product-order'
+    }
+  }
+
+  async updateData() {
+    const products = await this.prisma.product.findMany()
+
+    await Promise.all(
+      products.map((product) =>
+        this.prisma.productImage.create({
+          data: {
+            id: uuidv4(),
+            url: product.image,
+            productId: product.id,
+            createdAt: new Date(),
+            createdBy: product.createdBy
+          }
+        })
+      )
+    )
+
+    return {
+      msg: 'ok'
     }
   }
 }

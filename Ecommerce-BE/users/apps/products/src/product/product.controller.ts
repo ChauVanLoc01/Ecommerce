@@ -45,6 +45,12 @@ export class ProductController {
   ) {}
 
   @Public()
+  @Get('update-data')
+  updateData() {
+    return this.productsService.updateData()
+  }
+
+  @Public()
   @Get('es-search')
   searchProduct(@Query('search') search: string) {
     return this.productsService.searchProduct(search)
@@ -87,28 +93,10 @@ export class ProductController {
     return this.productsService.getProductByProductOrder(payload)
   }
 
-  @UseInterceptors(FileInterceptor('image'))
   @Roles(Role.EMPLOYEE, Role.STORE_OWNER)
   @Post()
-  createProduct(
-    @UploadedFile(
-      new ParseFilePipe({
-        validators: [
-          new MaxFileSizeValidator({ maxSize: 5000000 }),
-          new FileTypeValidator({ fileType: 'image/*' })
-        ],
-        exceptionFactory(_) {
-          throw new BadRequestException(
-            'File tải lên phải có kiểu image/* và dung lượng maxmimum 5MB'
-          )
-        }
-      })
-    )
-    file: Express.Multer.File,
-    @CurrentUser() user: CurrentStoreType,
-    @Body() body: CreateProductDTO
-  ) {
-    return this.productsService.createProduct(user, file.filename, body)
+  createProduct(@CurrentUser() user: CurrentStoreType, @Body() body: CreateProductDTO) {
+    return this.productsService.createProduct(user, body)
   }
 
   @Roles(Role.EMPLOYEE, Role.STORE_OWNER)

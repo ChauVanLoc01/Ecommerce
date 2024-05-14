@@ -1,8 +1,23 @@
 import { yupResolver } from '@hookform/resolvers/yup'
-import { AlertDialog, Button, DataList, Em, Flex, Select, Text, TextArea, TextField } from '@radix-ui/themes'
-import { useState } from 'react'
+import { CheckIcon } from '@radix-ui/react-icons'
+import {
+    AlertDialog,
+    Button,
+    DataList,
+    Dialog,
+    Flex,
+    Select,
+    Spinner,
+    Text,
+    TextArea,
+    TextField
+} from '@radix-ui/themes'
+import { useMutation } from '@tanstack/react-query'
+import { useEffect, useState } from 'react'
 import { Controller, SubmitHandler, useForm } from 'react-hook-form'
 import { toast } from 'sonner'
+import { ProductApi } from 'src/apis/product.api'
+import { UploadApi } from 'src/apis/upload_file.api'
 import { Carousel, CarouselContent, CarouselNext, CarouselPrevious } from 'src/components/Shadcn/carousel'
 import { Category } from 'src/types/product.type'
 import { create_product_schema, CreateProductSchema } from 'src/utils/product.schema'
@@ -13,7 +28,10 @@ type ProductCreateProps = {
 }
 
 const ProductCreate = ({ categories }: ProductCreateProps) => {
+    const [openSubmit, setOpenSubmit] = useState<boolean>(false)
     const [files, setFiles] = useState<{ [key: string]: File } | undefined>(undefined)
+    const [data, setData] = useState<CreateProductSchema | undefined>(undefined)
+    const [imagePrimary, setImagePrimary] = useState<string | undefined>(undefined)
 
     const {
         handleSubmit,
@@ -23,12 +41,57 @@ const ProductCreate = ({ categories }: ProductCreateProps) => {
         resolver: yupResolver(create_product_schema)
     })
 
+    const {
+        mutate: uploadMutiFile,
+        isSuccess: IsUploadFileSuccess,
+        data: uploadMultiFileData
+    } = useMutation({
+        mutationFn: UploadApi.updateMultipleFile,
+        onError: () => {
+            toast.error('Có lỗi trong quá trình upload hình ảnh')
+        }
+    })
+    const { mutate: createProductMutate, isSuccess: isCreateProductSuccess } = useMutation({
+        mutationFn: ProductApi.createProduct,
+        onError: () => {
+            toast.error('Lỗi tạo mới sản phẩm')
+        }
+    })
+
     const onSubmit: SubmitHandler<CreateProductSchema> = (data) => {
         if (!files || Object.keys(files).length < 3) {
             toast.error('Cần ít nhất 3 hình ảnh của sản phẩm')
             return
         }
+        setOpenSubmit(true)
+        setData(data)
     }
+
+    useEffect(() => {
+        if (openSubmit) {
+            var formData = new FormData()
+            Object.values(files as any).forEach((file) => formData.append('files', file as any))
+            uploadMutiFile(formData)
+        }
+    }, [openSubmit])
+
+    useEffect(() => {
+        if (IsUploadFileSuccess) {
+            createProductMutate({
+                ...(data as any),
+                productImages: uploadMultiFileData.data.result,
+                imagePrimary: uploadMultiFileData.data.result[0]
+            })
+        }
+    }, [IsUploadFileSuccess])
+
+    useEffect(() => {
+        if (isCreateProductSuccess === true) {
+            setTimeout(() => {
+                setOpenSubmit(false)
+            }, 1000)
+        }
+    }, [isCreateProductSuccess])
 
     return (
         <AlertDialog.Root>
@@ -220,9 +283,28 @@ const ProductCreate = ({ categories }: ProductCreateProps) => {
                                 Trở về
                             </Button>
                         </AlertDialog.Cancel>
-                        <Button type='submit' className='bg-blue text-white'>
-                            Tạo mới
-                        </Button>
+                        <Dialog.Root open={openSubmit}>
+                            <Dialog.Trigger>
+                                <Button type='submit' className='bg-blue text-white'>
+                                    Tạo mới
+                                </Button>
+                            </Dialog.Trigger>
+                            <Dialog.Content maxWidth='500px' className='!rounded-8'>
+                                <Dialog.Title>Quá trình tạo sản phẩm đang diễn ra</Dialog.Title>
+                                <Dialog.Description size='2' mb='4'>
+                                    Đừng thực hiện bất kì điều gì trước khi quá trình hoàn tất!
+                                </Dialog.Description>
+                                <Flex direction='column' gapY='4'>
+                                    <Flex gapX={'5'} align={'center'}>
+                                        {IsUploadFileSuccess ? <CheckIcon /> : <Spinner />} Tải hình ảnh lên đám mây
+                                    </Flex>
+                                    <Flex gapX={'5'} align={'center'}>
+                                        {isCreateProductSuccess ? <CheckIcon /> : <Spinner />} Lưu dữ liệu sản phẩm vào
+                                        cơ sở dữ liệu
+                                    </Flex>
+                                </Flex>
+                            </Dialog.Content>
+                        </Dialog.Root>
                     </Flex>
                 </form>
             </AlertDialog.Content>
