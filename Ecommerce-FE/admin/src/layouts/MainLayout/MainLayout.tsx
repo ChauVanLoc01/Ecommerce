@@ -16,7 +16,6 @@ const MainLayout = () => {
     const location = useLocation()
 
     window.addEventListener(exitEvent, () => {
-        console.log('exitEvent')
         setProfile(undefined)
         setStore(undefined)
         ls.clearAll()

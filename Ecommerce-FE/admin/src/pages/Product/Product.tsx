@@ -1,9 +1,11 @@
 import { Flex, TextField } from '@radix-ui/themes'
 import { useQuery } from '@tanstack/react-query'
-import { useEffect, useState } from 'react'
+import { useContext, useEffect, useState } from 'react'
 import { useLoaderData } from 'react-router-dom'
 import { ProductApi } from 'src/apis/product.api'
 import Pagination from 'src/components/Pagination/Pagination'
+import { AppContext } from 'src/contexts/AppContext'
+import { Store } from 'src/types/auth.type'
 import { Category, ProductAnalyticResponse, ProductQueryAndPagination } from 'src/types/product.type'
 import LayoutProfile from '../Profile/LayoutProfile'
 import ProductAnalytics from './ProductAnalytics'
@@ -11,13 +13,14 @@ import ProductFilter from './ProductFilter'
 import ProductTable from './ProductTable'
 
 const Product = () => {
+    const { store } = useContext(AppContext)
     const [query, setQuery] = useState<ProductQueryAndPagination>({ limit: import.meta.env.VITE_LIMIT })
 
     const [_, categories] = useLoaderData() as [ProductAnalyticResponse, { [key: string]: Category }]
 
     const { refetch, data } = useQuery({
         queryKey: ['productList', JSON.stringify(query)],
-        queryFn: () => ProductApi.getAllProduct(query),
+        queryFn: () => ProductApi.getAllProduct({ query, storeId: (store as Store).id }),
         placeholderData: (previousData) => previousData,
         select: (data) => data.data.result,
         enabled: false

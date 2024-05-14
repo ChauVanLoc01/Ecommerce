@@ -1,4 +1,3 @@
-import { User } from 'src/types/auth.type'
 import {
     CategoryResponse,
     Product,
@@ -8,18 +7,15 @@ import {
     ProductQueryAndPagination,
     UpdateProductBody
 } from 'src/types/product.type'
-import { ls } from 'src/utils/localStorage'
 import { http } from './http'
-
-const storeId = ls.getItem('profile') ? (JSON.parse(ls.getItem('profile') as string) as User).id : undefined
 
 export const ProductApi = {
     getAllCategories: () => {
         return http.get<CategoryResponse>('product/category')
     },
-    getAllProduct: (query: ProductQueryAndPagination) => {
-        return http.get<ProductListResponse>(`product/product/product-store/${storeId}`, {
-            params: query
+    getAllProduct: (data: {storeId: string, query: ProductQueryAndPagination}) => {
+        return http.get<ProductListResponse>(`product/product/product-store/${data.storeId}`, {
+            params: data.query
         })
     },
     updateProduct: (data: { productId: string; body: UpdateProductBody }) => {

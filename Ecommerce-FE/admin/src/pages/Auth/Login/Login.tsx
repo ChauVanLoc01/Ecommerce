@@ -2,7 +2,7 @@ import { yupResolver } from '@hookform/resolvers/yup'
 import { Button, Checkbox, Flex, Spinner, Text, TextField } from '@radix-ui/themes'
 import { useMutation } from '@tanstack/react-query'
 import classNames from 'classnames'
-import { useContext, useRef } from 'react'
+import { useContext } from 'react'
 import { Controller, SubmitHandler, useForm } from 'react-hook-form'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -10,10 +10,10 @@ import { AuthAPI } from 'src/apis/auth.api'
 import InputPassword from 'src/components/InputPassword'
 import { AppContext } from 'src/contexts/AppContext'
 import { login_schema, LoginSchemaType } from 'src/utils/auth.schema'
+import { ls } from 'src/utils/localStorage'
 
 const Login = () => {
     const { setProfile, setStore } = useContext(AppContext)
-    const redirectRef = useRef<any>(undefined)
     const navigate = useNavigate()
     const {
         control,
@@ -30,6 +30,8 @@ const Login = () => {
         onSuccess: (data) => {
             setProfile(data.data.result.user)
             setStore(data.data.result.store)
+            ls.setItem('profile', JSON.stringify(data.data.result.user))
+            ls.setItem('store', JSON.stringify(data.data.result.store))
             navigate('/analytic')
             toast.info('Đăng nhập thành công')
         },

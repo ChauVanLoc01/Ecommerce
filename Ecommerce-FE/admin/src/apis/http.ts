@@ -37,9 +37,6 @@ class Http {
                 const { config, status, data } = response
                 if (status === 201 && config.url?.endsWith(route.login)) {
                     this.access_token = (data.result as LoginResponse).access_token
-                    ls.setItem('profile', JSON.stringify((data.result as LoginResponse).user))
-                    ls.setItem('store', JSON.stringify((data.result as LoginResponse).store))
-                    window.dispatchEvent(new Event(loginEvent))
                 }
                 return response
             },
