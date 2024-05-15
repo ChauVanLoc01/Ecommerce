@@ -1,20 +1,14 @@
 import { Flex, Kbd, Text } from '@radix-ui/themes'
-import { useQuery } from '@tanstack/react-query'
-import { ProductApi } from 'src/apis/product.api'
-import { Category } from 'src/types/product.type'
+import { AxiosResponse } from 'axios'
+import { Category, ProductAnalyticResponse } from 'src/types/product.type'
 import ProductCreate from './ProductCreate'
 
 type ProductAnalyticsProps = {
     categories: { [key: string]: Category }
+    analytics: AxiosResponse<ProductAnalyticResponse, any> | undefined
 }
 
-const ProductAnalytics = ({ categories }: ProductAnalyticsProps) => {
-    const { data: analytics } = useQuery({
-        queryKey: ['productAnalytic'],
-        queryFn: ProductApi.productAnalytic,
-        enabled: false
-    })
-
+const ProductAnalytics = ({ categories, analytics }: ProductAnalyticsProps) => {
     return (
         <Flex gapX={'6'}>
             <Flex gapX={'2'} align={'center'}>

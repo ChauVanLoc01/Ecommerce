@@ -12,26 +12,33 @@ import {
     TextArea,
     TextField
 } from '@radix-ui/themes'
-import { useMutation } from '@tanstack/react-query'
+import { QueryObserverResult, RefetchOptions, useMutation } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { Controller, SubmitHandler, useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { ProductApi } from 'src/apis/product.api'
 import { UploadApi } from 'src/apis/upload_file.api'
 import { Carousel, CarouselContent, CarouselNext, CarouselPrevious } from 'src/components/Shadcn/carousel'
-import { Category } from 'src/types/product.type'
+import { Category, Product, ProductAnalyticResponse, ProductQueryAndPagination } from 'src/types/product.type'
 import { create_product_schema, CreateProductSchema } from 'src/utils/product.schema'
 import ProductUploadFile from './ProductUploadFile'
+import { AxiosResponse } from 'axios'
+import { queryClient } from 'src/routes/main.route'
 
 type ProductCreateProps = {
     categories: { [key: string]: Category }
 }
 
 const ProductCreate = ({ categories }: ProductCreateProps) => {
+    const [openCreate, setOpenCreate] = useState<boolean>(false)
     const [openSubmit, setOpenSubmit] = useState<boolean>(false)
     const [files, setFiles] = useState<{ [key: string]: File } | undefined>(undefined)
     const [data, setData] = useState<CreateProductSchema | undefined>(undefined)
     const [imagePrimary, setImagePrimary] = useState<string | undefined>(undefined)
+    const [state, setstate] = useState<{ uploadFile: boolean; createProduct: boolean }>({
+        createProduct: true,
+        uploadFile: true
+    })
 
     const {
         handleSubmit,
@@ -41,7 +48,7 @@ const ProductCreate = ({ categories }: ProductCreateProps) => {
         resolver: yupResolver(create_product_schema)
     })
 
-    const { mutate: uploadMutiFile, isSuccess: IsUploadFileSuccess } = useMutation({
+    const { mutate: uploadMutiFile } = useMutation({
         mutationFn: UploadApi.updateMultipleFile,
         onSuccess: (result) => {
             createProductMutate({
@@ -49,17 +56,25 @@ const ProductCreate = ({ categories }: ProductCreateProps) => {
                 productImages: result.data.result,
                 imagePrimary: result.data.result[0]
             })
+            setstate({ uploadFile: false, createProduct: true })
         },
         onError: () => {
             toast.error('Có lỗi trong quá trình upload hình ảnh')
         }
     })
-    const { mutate: createProductMutate, isSuccess: isCreateProductSuccess } = useMutation({
+    const { mutate: createProductMutate } = useMutation({
         mutationFn: ProductApi.createProduct,
         onSuccess: () => {
+            setstate({ uploadFile: false, createProduct: false })
+            queryClient.invalidateQueries({ queryKey: ['productAnalytic'] })
             setTimeout(() => {
+                toast.success('Tạo đơn hàng thành công')
                 setOpenSubmit(false)
             }, 2500)
+
+            setTimeout(() => {
+                setOpenCreate(false)
+            }, 3000)
         },
         onError: () => {
             toast.error('Lỗi tạo mới sản phẩm')
@@ -86,7 +101,7 @@ const ProductCreate = ({ categories }: ProductCreateProps) => {
     }, [openSubmit])
 
     return (
-        <AlertDialog.Root>
+        <AlertDialog.Root open={openCreate} onOpenChange={setOpenCreate}>
             <AlertDialog.Trigger>
                 <Button className='bg-blue text-white'>Tạo mới sản phẩm</Button>
             </AlertDialog.Trigger>
@@ -96,11 +111,17 @@ const ProductCreate = ({ categories }: ProductCreateProps) => {
                     <Flex direction={'column'} gapY={'2'}>
                         <Carousel className='w-full'>
                             <CarouselContent>
-                                {Array(6)
+                                {Array(10)
                                     .fill(0)
                                     .map((_, idx) => (
                                         <div className='basis-1/3 mr-5 last:mr-0 flex-shrink-0'>
-                                            <ProductUploadFile setFiles={setFiles} key={idx} id={`file${idx + 1}`} />
+                                            <ProductUploadFile
+                                                setFiles={setFiles}
+                                                key={idx}
+                                                id={`file${idx + 1}`}
+                                                imagePrimary={imagePrimary}
+                                                setImagePrimary={setImagePrimary}
+                                            />
                                         </div>
                                     ))}
                             </CarouselContent>
@@ -108,7 +129,11 @@ const ProductCreate = ({ categories }: ProductCreateProps) => {
                             <CarouselNext type='button' />
                         </Carousel>
                         <Text size={'2'} color='gray'>
-                            <Text color='red'>*</Text> Cần có ít nhất 3 hình ảnh sản phẩm
+                            <Text color='red'>*</Text> Cần có ít nhất 3 hình ảnh sản phẩm (
+                            <Text color={files && Object.keys(files).length > 2 ? 'blue' : 'red'}>
+                                {files ? Object.keys(files).length : 0}
+                            </Text>
+                            /10)
                         </Text>
                     </Flex>
                     <DataList.Root>
@@ -288,11 +313,11 @@ const ProductCreate = ({ categories }: ProductCreateProps) => {
                                 </Dialog.Description>
                                 <Flex direction='column' gapY='4'>
                                     <Flex gapX={'5'} align={'center'}>
-                                        {IsUploadFileSuccess ? <CheckIcon /> : <Spinner />} Tải hình ảnh lên đám mây
+                                        {state.uploadFile ? <Spinner /> : <CheckIcon />} Tải hình ảnh lên đám mây
                                     </Flex>
                                     <Flex gapX={'5'} align={'center'}>
-                                        {isCreateProductSuccess ? <CheckIcon /> : <Spinner />} Lưu dữ liệu sản phẩm vào
-                                        cơ sở dữ liệu
+                                        {state.createProduct ? <Spinner /> : <CheckIcon />} Lưu dữ liệu sản phẩm vào cơ
+                                        sở dữ liệu
                                     </Flex>
                                 </Flex>
                             </Dialog.Content>

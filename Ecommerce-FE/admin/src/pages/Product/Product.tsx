@@ -18,7 +18,7 @@ const Product = () => {
 
     const [_, categories] = useLoaderData() as [ProductAnalyticResponse, { [key: string]: Category }]
 
-    const { refetch, data } = useQuery({
+    const { refetch: productListRefetch, data } = useQuery({
         queryKey: ['productList', JSON.stringify(query)],
         queryFn: () => ProductApi.getAllProduct({ query, storeId: (store as Store).id }),
         placeholderData: (previousData) => previousData,
@@ -26,12 +26,21 @@ const Product = () => {
         enabled: false
     })
 
+    const { data: analytics, refetch: analyticsRefetch } = useQuery({
+        queryKey: ['productAnalytic'],
+        queryFn: ProductApi.productAnalytic,
+        enabled: false
+    })
+
     useEffect(() => {
-        Object.keys(query).length && refetch()
+        Object.keys(query).length && productListRefetch()
     }, [query])
 
     return (
-        <LayoutProfile title='Quản lý sản phẩm' rightNode={<ProductAnalytics categories={categories} />}>
+        <LayoutProfile
+            title='Quản lý sản phẩm'
+            rightNode={<ProductAnalytics categories={categories} analytics={analytics} />}
+        >
             <div className='bg-white rounded-8 border-border/30 space-y-4'>
                 <Flex justify='between' width='100%'>
                     <Flex gapX={'4'}>
