@@ -38,6 +38,7 @@ const ProductTable = ({ data, categories }: ProductTableProps) => {
                             height: 140,
                             backgroundColor: 'var(--gray-5)'
                         }}
+                        loading='lazy'
                     />
                 </Inset>
             )

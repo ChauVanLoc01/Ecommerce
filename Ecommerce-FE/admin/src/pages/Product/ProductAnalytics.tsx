@@ -1,14 +1,30 @@
 import { Flex, Kbd, Text } from '@radix-ui/themes'
+import { QueryObserverResult, RefetchOptions } from '@tanstack/react-query'
 import { AxiosResponse } from 'axios'
-import { Category, ProductAnalyticResponse } from 'src/types/product.type'
+import { Category, Product, ProductAnalyticResponse, ProductQueryAndPagination } from 'src/types/product.type'
 import ProductCreate from './ProductCreate'
 
 type ProductAnalyticsProps = {
     categories: { [key: string]: Category }
     analytics: AxiosResponse<ProductAnalyticResponse, any> | undefined
+    analyticsRefetch: (
+        options?: RefetchOptions
+    ) => Promise<QueryObserverResult<AxiosResponse<ProductAnalyticResponse, any>, Error>>
+    productListRefetch: (options?: RefetchOptions) => Promise<
+        QueryObserverResult<
+            {
+                data: Product[]
+                query: Omit<ProductQueryAndPagination, 'page'> & {
+                    page: number
+                    page_size: number
+                }
+            },
+            Error
+        >
+    >
 }
 
-const ProductAnalytics = ({ categories, analytics }: ProductAnalyticsProps) => {
+const ProductAnalytics = ({ categories, analytics, analyticsRefetch, productListRefetch }: ProductAnalyticsProps) => {
     return (
         <Flex gapX={'6'}>
             <Flex gapX={'2'} align={'center'}>
@@ -29,7 +45,11 @@ const ProductAnalytics = ({ categories, analytics }: ProductAnalyticsProps) => {
                     {analytics?.data.result.block}
                 </Kbd>
             </Flex>
-            <ProductCreate categories={categories} />
+            <ProductCreate
+                categories={categories}
+                analyticsRefetch={analyticsRefetch}
+                productListRefetch={productListRefetch}
+            />
         </Flex>
     )
 }

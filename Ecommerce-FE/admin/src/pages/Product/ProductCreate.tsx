@@ -13,6 +13,7 @@ import {
     TextField
 } from '@radix-ui/themes'
 import { QueryObserverResult, RefetchOptions, useMutation } from '@tanstack/react-query'
+import { AxiosResponse } from 'axios'
 import { useEffect, useState } from 'react'
 import { Controller, SubmitHandler, useForm } from 'react-hook-form'
 import { toast } from 'sonner'
@@ -22,14 +23,27 @@ import { Carousel, CarouselContent, CarouselNext, CarouselPrevious } from 'src/c
 import { Category, Product, ProductAnalyticResponse, ProductQueryAndPagination } from 'src/types/product.type'
 import { create_product_schema, CreateProductSchema } from 'src/utils/product.schema'
 import ProductUploadFile from './ProductUploadFile'
-import { AxiosResponse } from 'axios'
-import { queryClient } from 'src/routes/main.route'
 
 type ProductCreateProps = {
     categories: { [key: string]: Category }
+    analyticsRefetch: (
+        options?: RefetchOptions
+    ) => Promise<QueryObserverResult<AxiosResponse<ProductAnalyticResponse, any>, Error>>
+    productListRefetch: (options?: RefetchOptions) => Promise<
+        QueryObserverResult<
+            {
+                data: Product[]
+                query: Omit<ProductQueryAndPagination, 'page'> & {
+                    page: number
+                    page_size: number
+                }
+            },
+            Error
+        >
+    >
 }
 
-const ProductCreate = ({ categories }: ProductCreateProps) => {
+const ProductCreate = ({ categories, analyticsRefetch, productListRefetch }: ProductCreateProps) => {
     const [openCreate, setOpenCreate] = useState<boolean>(false)
     const [openSubmit, setOpenSubmit] = useState<boolean>(false)
     const [files, setFiles] = useState<{ [key: string]: File } | undefined>(undefined)
@@ -43,7 +57,8 @@ const ProductCreate = ({ categories }: ProductCreateProps) => {
     const {
         handleSubmit,
         control,
-        formState: { errors }
+        formState: { errors },
+        reset
     } = useForm<CreateProductSchema>({
         resolver: yupResolver(create_product_schema)
     })
@@ -64,17 +79,26 @@ const ProductCreate = ({ categories }: ProductCreateProps) => {
     })
     const { mutate: createProductMutate } = useMutation({
         mutationFn: ProductApi.createProduct,
-        onSuccess: () => {
-            setstate({ uploadFile: false, createProduct: false })
-            queryClient.invalidateQueries({ queryKey: ['productAnalytic'] })
-            setTimeout(() => {
-                toast.success('Tạo đơn hàng thành công')
-                setOpenSubmit(false)
-            }, 2500)
-
-            setTimeout(() => {
-                setOpenCreate(false)
-            }, 3000)
+        onSuccess: async () => {
+            await Promise.all([
+                Promise.resolve(setstate({ uploadFile: false, createProduct: false })),
+                Promise.resolve(analyticsRefetch()),
+                Promise.resolve(productListRefetch()),
+                Promise.resolve(setFiles(undefined)),
+                Promise.resolve(
+                    setTimeout(() => {
+                        toast.success('Tạo đơn hàng thành công')
+                        setOpenSubmit(false)
+                    }, 2000)
+                ),
+                Promise.resolve(
+                    setTimeout(() => {
+                        setOpenCreate(false)
+                        setstate({ uploadFile: true, createProduct: true })
+                    }, 2500)
+                ),
+                Promise.resolve(reset())
+            ])
         },
         onError: () => {
             toast.error('Lỗi tạo mới sản phẩm')
