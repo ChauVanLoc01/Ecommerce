@@ -13,6 +13,7 @@ import Employee from 'src/pages/Employee'
 import Order from 'src/pages/Order'
 import Product from 'src/pages/Product'
 import Store from 'src/pages/Store'
+import Voucher from 'src/pages/Voucher/Voucher'
 
 const MainLayout = loadable(() => import('src/layouts/MainLayout'))
 const Analytic = loadable(() => import('src/pages/Analytic'))
@@ -76,6 +77,10 @@ const routes = createBrowserRouter([
                         path: route.product,
                         element: <Product />,
                         loader: productLoader
+                    },
+                    {
+                        path: route.voucher,
+                        element: <Voucher />
                     }
                 ]
             }

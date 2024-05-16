@@ -10,6 +10,8 @@ import { CreateOrderDTO } from '../dtos/create_order.dto'
 import { QueryOrderDTO } from '../dtos/query-order.dto'
 import { UpdateOrderDTO, UpdateStatusOrderDTO } from '../dtos/update_order.dto'
 import { OrderService } from './order.service'
+import { MessagePattern, Payload } from '@nestjs/microservices'
+import { checkVoucherExistInOrder } from 'common/constants/event.constant'
 
 @ApiBearerAuth()
 @UseGuards(JwtGuard)
@@ -82,5 +84,11 @@ export class OrderController {
     @Body() body: UpdateOrderDTO
   ) {
     return this.ordersService.updateOrder(user, orderId, body)
+  }
+
+  @Public()
+  @MessagePattern(checkVoucherExistInOrder)
+  checkVoucherInVoucher(@Payload() payload: string) {
+    return this.ordersService.checkVoucherExistInVoucher(payload)
   }
 }

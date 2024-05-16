@@ -43,6 +43,7 @@ class Http {
                         document.location.href = '/login'
                     }
                 }
+                return error
             }
         )
     }

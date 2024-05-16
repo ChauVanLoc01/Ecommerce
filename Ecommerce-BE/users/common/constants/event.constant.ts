@@ -13,3 +13,5 @@ export const getStoreDetail = 'user::get::store::detail'
 export const getAllProductWithProductOrder = 'user::get::product::order'
 
 export const createProductOrder = 'create::product::order'
+
+export const checkVoucherExistInOrder = 'voucher::exist::in::voucher'

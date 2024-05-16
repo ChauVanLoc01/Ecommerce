@@ -202,6 +202,7 @@ model User {
   DeliveryInformation                 DeliveryInformation[]
   Order                               Order[]
   OrderFlow                           OrderFlow[]
+  PriceConditionVoucher               PriceConditionVoucher[]
   Product_Product_createdByToUser     Product[]                  @relation("Product_createdByToUser")
   Product_Product_updatedByToUser     Product[]                  @relation("Product_updatedByToUser")
   Product_Product_deletedByToUser     Product[]                  @relation("Product_deletedByToUser")
@@ -223,30 +224,34 @@ model UserScore {
 }
 
 model Voucher {
-  id                       String                     @id @db.VarChar(50)
-  code                     String                     @db.VarChar(100)
-  title                    String                     @db.VarChar(255)
-  description              String?                    @db.Text
+  id                       String                    @id @db.VarChar(50)
+  code                     String                    @db.VarChar(100)
+  title                    String                    @db.VarChar(255)
+  description              String?                   @db.Text
   initQuantity             Int
   currentQuantity          Int
-  status                   Int
-  type                     Int
-  storeId                  String?                    @db.VarChar(50)
+  status                   String                    @db.VarChar(20)
+  type                     String                    @db.VarChar(20)
+  storeId                  String?                   @db.VarChar(50)
   percent                  Float?
   maximum                  Int?
-  startDate                DateTime                   @db.Timestamp(0)
-  endDate                  DateTime?                  @db.Timestamp(0)
-  createdBy                String                     @db.VarChar(50)
-  createdAt                DateTime                   @default(now()) @db.Timestamp(0)
-  updatedBy                String?                    @db.VarChar(50)
-  updatedAt                DateTime?                  @db.Timestamp(0)
-  CategoryConditionVoucher CategoryConditionVoucher[]
+  startDate                DateTime                  @db.Timestamp(0)
+  endDate                  DateTime?                 @db.Timestamp(0)
+  createdBy                String                    @db.VarChar(50)
+  createdAt                DateTime                  @default(now()) @db.Timestamp(0)
+  updatedBy                String?                   @db.VarChar(50)
+  updatedAt                DateTime?                 @db.Timestamp(0)
+  categoryConditionId      String?                   @db.VarChar(50)
+  priceConditionId         String?                   @db.VarChar(50)
   Order                    Order[]
-  PriceConditionVoucher    PriceConditionVoucher[]
   Product                  Product[]
-  Store                    Store?                     @relation(fields: [storeId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Voucher_ibfk_1")
+  Store                    Store?                    @relation(fields: [storeId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Voucher_ibfk_1")
+  CategoryConditionVoucher CategoryConditionVoucher? @relation(fields: [categoryConditionId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Voucher_ibfk_2")
+  PriceConditionVoucher    PriceConditionVoucher?    @relation(fields: [priceConditionId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Voucher_ibfk_3")
 
   @@index([storeId], map: "storeId")
+  @@index([categoryConditionId], map: "categoryConditionId")
+  @@index([priceConditionId], map: "priceConditionId")
 }
 
 model OrderFlow {
@@ -265,7 +270,6 @@ model OrderFlow {
 
 model CategoryConditionVoucher {
   id                String    @id @db.VarChar(50)
-  voucherId         String    @db.VarChar(50)
   categoryShortName String    @db.VarChar(50)
   createdAt         DateTime  @db.Timestamp(0)
   createdBy         String    @db.VarChar(50)
@@ -273,16 +277,14 @@ model CategoryConditionVoucher {
   updatedBy         String?   @db.VarChar(50)
   User              User      @relation(fields: [createdBy], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "CategoryConditionVoucher_ibfk_2")
   Category          Category  @relation(fields: [categoryShortName], references: [shortname], onDelete: NoAction, onUpdate: NoAction, map: "CategoryConditionVoucher_ibfk_3")
-  Voucher           Voucher   @relation(fields: [voucherId], references: [id], onUpdate: Restrict, map: "CategoryConditionVoucher_ibfk_4")
+  Voucher           Voucher[]
 
   @@index([categoryShortName], map: "categoryShortName")
   @@index([createdBy], map: "createdBy")
-  @@index([voucherId], map: "voucherId")
 }
 
 model PriceConditionVoucher {
   id        String    @id @db.VarChar(50)
-  voucherId String    @db.VarChar(50)
   totalMin  Float?    @db.Float
   totalMax  Float?    @db.Float
   priceMin  Float?    @db.Float
@@ -291,9 +293,10 @@ model PriceConditionVoucher {
   createdBy String    @db.VarChar(50)
   updatedAt DateTime? @db.Timestamp(0)
   updatedBy DateTime? @db.Timestamp(0)
-  Voucher   Voucher   @relation(fields: [voucherId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "PriceConditionVoucher_ibfk_1")
+  User      User      @relation(fields: [createdBy], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "PriceConditionVoucher_ibfk_1")
+  Voucher   Voucher[]
 
-  @@index([voucherId], map: "voucherId")
+  @@index([createdBy], map: "createdBy")
 }
 
 model ProductImage {

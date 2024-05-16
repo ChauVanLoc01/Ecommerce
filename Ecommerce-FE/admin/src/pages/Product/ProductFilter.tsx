@@ -182,7 +182,7 @@ const ProductFilter = ({ categories, setQuery }: ProductFilterProps) => {
                                 <Select.Trigger placeholder='Danh mục' />
                                 <Select.Content position='popper' className='!rounded-8' align='end'>
                                     {Object.entries(categories).map(([key, value]) => (
-                                        <Select.Item value={key}>{value.name}</Select.Item>
+                                        <Select.Item key={key} value={key}>{value.name}</Select.Item>
                                     ))}
                                 </Select.Content>
                             </Select.Root>

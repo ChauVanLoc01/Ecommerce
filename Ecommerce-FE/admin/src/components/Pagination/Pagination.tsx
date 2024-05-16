@@ -58,8 +58,8 @@ const Pagination = function <T>({ pagination, setQuery }: PaginationProps<T>) {
                             <Select.Label>Trang</Select.Label>
                             {Array(pagination.page_size)
                                 .fill(0)
-                                .map((_, page) => (
-                                    <Select.Item value={(page + 1).toString()}>{page + 1}</Select.Item>
+                                .map((idx, page) => (
+                                    <Select.Item key={idx} value={(page + 1).toString()}>{page + 1}</Select.Item>
                                 ))}
                         </Select.Group>
                     </Select.Content>

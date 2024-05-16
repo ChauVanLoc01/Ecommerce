@@ -446,6 +446,20 @@ export class OrderService {
     }
   }
 
+  async checkVoucherExistInVoucher(voucherId: string) {
+    const voucherExist = await this.prisma.order.findMany({
+      where: {
+        voucherId
+      }
+    })
+
+    if (voucherExist.length > 0) {
+      return 'Voucher đã được sử dụng'
+    }
+
+    return ['ok']
+  }
+
   async test() {
     return this.productClient.send('test', ['ok'])
   }

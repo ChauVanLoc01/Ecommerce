@@ -1,13 +1,10 @@
 import { ConfigModule } from '@app/common'
 import { Module } from '@nestjs/common'
-import { StoreModule } from './Store/store.module'
-import { ProductManagementModule } from './ProductManagement/pro_mana.module'
-import { UserManagementModule } from './UserManagement/user_mana.module'
-import { VoucherManagementModule } from './VoucherManagement/voucher_mana.module'
-import { JwtService } from '@nestjs/jwt'
-import { ClientsModule, Transport } from '@nestjs/microservices'
 import { ConfigService } from '@nestjs/config'
+import { ClientsModule, Transport } from '@nestjs/microservices'
 import { QueueName } from 'common/constants/queue.constant'
+import { StoreModule } from './Store/store.module'
+import { VoucherModule } from './Voucher/voucher.module'
 
 @Module({
   imports: [
@@ -31,11 +28,29 @@ import { QueueName } from 'common/constants/queue.constant'
         }
       ]
     }),
+    ClientsModule.registerAsync({
+      isGlobal: true,
+      clients: [
+        {
+          name: 'ORDER_SERVICE',
+          imports: [ConfigModule],
+          useFactory: (configService: ConfigService) => ({
+            transport: Transport.RMQ,
+            options: {
+              urls: [configService.get<string>('rabbitmq.uri')],
+              queue: QueueName.order,
+              queueOptions: {
+                durable: true
+              }
+            }
+          }),
+          inject: [ConfigService]
+        }
+      ]
+    }),
     ConfigModule,
     StoreModule,
-    ProductManagementModule,
-    UserManagementModule,
-    VoucherManagementModule
+    VoucherModule
   ],
   controllers: [],
   providers: []

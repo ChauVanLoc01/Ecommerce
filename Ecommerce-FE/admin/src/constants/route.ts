@@ -9,5 +9,6 @@ export const route = {
     permission: 'permission',
     setting: 'setting',
     analytic: 'analytic',
-    employee: 'employee'
+    employee: 'employee',
+    voucher: 'voucher'
 }

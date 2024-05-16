@@ -95,7 +95,7 @@ const ProductCreate = ({ categories, analyticsRefetch, productListRefetch }: Pro
                     setTimeout(() => {
                         setOpenCreate(false)
                         setstate({ uploadFile: true, createProduct: true })
-                    }, 2500)
+                    }, 2300)
                 ),
                 Promise.resolve(reset())
             ])
@@ -138,7 +138,7 @@ const ProductCreate = ({ categories, analyticsRefetch, productListRefetch }: Pro
                                 {Array(10)
                                     .fill(0)
                                     .map((_, idx) => (
-                                        <div className='basis-1/3 mr-5 last:mr-0 flex-shrink-0'>
+                                        <div key={idx} className='basis-1/3 mr-5 last:mr-0 flex-shrink-0'>
                                             <ProductUploadFile
                                                 setFiles={setFiles}
                                                 key={idx}
