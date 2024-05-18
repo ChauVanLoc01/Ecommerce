@@ -22,10 +22,6 @@ const SideNav = () => {
                 <Select
                     icon={<HomeIcon className='w-4 h-4' />}
                     parentData={{ title: 'Tổng Quan', path: `/${route.analytic}` }}
-                    childrenData={[
-                        { title: 'Phân tích', path: `/${route.analytic}` },
-                        { title: 'Quản lý', path: `/${route.profile}` }
-                    ]}
                 />
                 <Select
                     icon={<CubeIcon className='w-4 h-4' />}

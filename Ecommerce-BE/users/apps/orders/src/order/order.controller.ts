@@ -12,6 +12,7 @@ import { UpdateOrderDTO, UpdateStatusOrderDTO } from '../dtos/update_order.dto'
 import { OrderService } from './order.service'
 import { MessagePattern, Payload } from '@nestjs/microservices'
 import { checkVoucherExistInOrder } from 'common/constants/event.constant'
+import { AnalyticsOrderDTO } from '../dtos/analytics_order.dto'
 
 @ApiBearerAuth()
 @UseGuards(JwtGuard)
@@ -38,6 +39,12 @@ export class OrderController {
   @Get('store-order')
   getAllOrderByStore(@CurrentUser() user: CurrentStoreType, @Query() query: QueryOrderDTO) {
     return this.ordersService.getAllOrderByStore(user, query)
+  }
+
+  @Roles(Role.STORE_OWNER)
+  @Get('top-10')
+  top10Product(@CurrentUser() user: CurrentStoreType, @Body() body: AnalyticsOrderDTO) {
+    return this.ordersService.top10Product(user, body)
   }
 
   @Roles(Role.STORE_OWNER, Role.ADMIN, Role.EMPLOYEE)

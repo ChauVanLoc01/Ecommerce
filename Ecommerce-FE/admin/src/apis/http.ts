@@ -39,11 +39,15 @@ class Http {
             },
             (error: AxiosError<{ error: string; message: string; statusCode: number }>) => {
                 if (isAxiosError(error)) {
-                    if (error.response?.data.error === 'Unauthorized' && error.response.data.statusCode === 401) {
+                    if (
+                        error.response?.data.error === 'Unauthorized' &&
+                        error.response.data.statusCode === 401 &&
+                        !document.location.pathname.includes('login')
+                    ) {
                         document.location.href = '/login'
                     }
                 }
-                return error
+                return Promise.reject(error)
             }
         )
     }

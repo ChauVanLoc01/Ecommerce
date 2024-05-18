@@ -28,6 +28,11 @@ export class VoucherController {
     return this.voucherService.updateVoucher(user, voucherId, body)
   }
 
+  @Get('analytics')
+  voucherAnalytics(@CurrentUser() user: CurrentStoreType) {
+    return this.voucherService.voucherAnalytics(user)
+  }
+
   @Get()
   getAllVoucher(@CurrentUser() user: CurrentStoreType, @Body() query: VoucherQueryDTO) {
     return this.voucherService.getAllVoucher(user, query)

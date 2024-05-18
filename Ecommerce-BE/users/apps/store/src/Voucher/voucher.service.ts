@@ -32,7 +32,7 @@ export class VoucherService {
       }
     })
 
-    if (exist) {
+    if (exist.length > 0) {
       throw new BadRequestException('Tồn tại 1 mã giảm giá còn hiệu lực với mã code đó')
     }
 
@@ -52,56 +52,54 @@ export class VoucherService {
       startDate
     } = body
 
-    var createdPriceCondition, createdCategoryCondition
-
-    if (totalMin || priceMin) {
-      createdPriceCondition = this.prisma.priceConditionVoucher.create({
-        data: {
-          id: uuidv4(),
-          totalMin,
-          priceMin,
-          createdAt: new Date().toISOString(),
-          createdBy: user.userId
-        }
-      })
-    }
-
-    if (category) {
-      createdCategoryCondition = this.prisma.categoryConditionVoucher.create({
-        data: {
-          id: uuidv4(),
-          categoryShortName: category,
-          createdAt: new Date().toISOString(),
-          createdBy: user.userId
-        }
-      })
-    }
-
-    const [priceCondition, categoryCondition] = await this.prisma.$transaction([
-      createdPriceCondition,
-      createdCategoryCondition
-    ])
-
-    const createdVoucher = await this.prisma.voucher.create({
-      data: {
-        id: uuidv4(),
-        code,
-        initQuantity,
-        currentQuantity: initQuantity,
-        startDate,
-        endDate,
-        status,
-        title,
-        type,
-        categoryConditionId: categoryCondition.id,
-        priceConditionId: priceCondition.id,
-        description,
-        maximum,
-        percent,
-        storeId: user.storeId,
-        createdBy: user.userId,
-        createdAt: new Date().toISOString()
+    const createdVoucher = await this.prisma.$transaction(async (tx) => {
+      var createdPriceCondition, createdCategoryCondition
+      if (totalMin || priceMin) {
+        createdPriceCondition = await this.prisma.priceConditionVoucher.create({
+          data: {
+            id: uuidv4(),
+            totalMin,
+            priceMin,
+            createdAt: new Date().toISOString(),
+            createdBy: user.userId
+          }
+        })
       }
+
+      if (category) {
+        createdCategoryCondition = await this.prisma.categoryConditionVoucher.create({
+          data: {
+            id: uuidv4(),
+            categoryShortName: category,
+            createdAt: new Date().toISOString(),
+            createdBy: user.userId
+          }
+        })
+      }
+
+      const createdVoucher = await this.prisma.voucher.create({
+        data: {
+          id: uuidv4(),
+          code,
+          initQuantity,
+          currentQuantity: initQuantity,
+          startDate,
+          endDate,
+          status,
+          title,
+          type,
+          categoryConditionId: createdCategoryCondition ? createdCategoryCondition.id : undefined,
+          priceConditionId: createdPriceCondition ? createdPriceCondition.id : undefined,
+          description,
+          maximum,
+          percent,
+          storeId: user.storeId,
+          createdBy: user.userId,
+          createdAt: new Date().toISOString()
+        }
+      })
+
+      return createdVoucher
     })
 
     return {
@@ -232,10 +230,12 @@ export class VoucherService {
           },
           status,
           startDate: {
-            gte: startDate
+            gte: startDate,
+            lte: endDate
           },
           endDate: {
-            lte: endDate
+            lte: endDate,
+            gte: startDate
           }
         }
       }),
@@ -247,10 +247,12 @@ export class VoucherService {
           },
           status,
           startDate: {
-            gte: startDate
+            gte: startDate,
+            lte: endDate
           },
           endDate: {
-            lte: endDate
+            lte: endDate,
+            gte: startDate
           }
         },
         orderBy: {
@@ -273,6 +275,37 @@ export class VoucherService {
           },
           isUndefined
         )
+      }
+    }
+  }
+
+  async voucherAnalytics(user: CurrentStoreType): Promise<Return> {
+    const { storeId } = user
+    const [all, active, block] = await Promise.all([
+      this.prisma.voucher.count({
+        where: {
+          storeId
+        }
+      }),
+      this.prisma.voucher.count({
+        where: {
+          storeId,
+          status: 'ACTIVE'
+        }
+      }),
+      this.prisma.voucher.count({
+        where: {
+          storeId,
+          status: 'BLOCK'
+        }
+      })
+    ])
+    return {
+      msg: 'ok',
+      result: {
+        all,
+        active,
+        block
       }
     }
   }

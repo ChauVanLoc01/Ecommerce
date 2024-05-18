@@ -1,22 +1,6 @@
-import {
-  BadRequestException,
-  Body,
-  Controller,
-  Delete,
-  FileTypeValidator,
-  Get,
-  MaxFileSizeValidator,
-  Param,
-  ParseFilePipe,
-  Post,
-  Put,
-  Query,
-  UploadedFile,
-  UseGuards,
-  UseInterceptors
-} from '@nestjs/common'
+import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
-import { FileInterceptor } from '@nestjs/platform-express'
+import { ApiBearerAuth, ApiProperty } from '@nestjs/swagger'
 import {
   createProductOrder,
   getAllProductWithProductOrder,
@@ -27,13 +11,15 @@ import { Public } from 'common/decorators/public.decorator'
 import { Roles } from 'common/decorators/roles.decorator'
 import { Role } from 'common/enums/role.enum'
 import { JwtGuard } from 'common/guards/jwt.guard'
-import { CurrentStoreType } from 'common/types/current.type'
+import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
+import { AnalyticsProductDTO } from './dtos/analytics-product.dto'
+import { CreateUserAddProductToCartDTO } from './dtos/create-product-add-to-cart.dto'
+import { CreateUserViewProductDto } from './dtos/create-product-view.dto'
 import { CreateProductDTO } from './dtos/create-product.dto'
 import { QueryProductDTO } from './dtos/query-product.dto'
 import { UpdateProductDTO } from './dtos/update-product.dto'
 import { ProductService } from './product.service'
 import { SearchProductService } from './search-product.service'
-import { ApiBearerAuth, ApiProperty } from '@nestjs/swagger'
 
 @UseGuards(JwtGuard)
 @ApiBearerAuth()
@@ -60,6 +46,12 @@ export class ProductController {
   @Get('analytic')
   analyticsProduct(@CurrentUser() store: CurrentStoreType) {
     return this.productsService.analyticsProduct(store)
+  }
+
+  @Roles(Role.STORE_OWNER)
+  @Get('top-10')
+  top10ProductView(@CurrentUser() user: CurrentStoreType, @Body() body: AnalyticsProductDTO) {
+    return this.productsService.top10ProductView(user, body)
   }
 
   @Public()
@@ -91,6 +83,21 @@ export class ProductController {
   @MessagePattern(getAllProductWithProductOrder)
   getProductByProductOrder(@Payload() payload: string[]) {
     return this.productsService.getProductByProductOrder(payload)
+  }
+
+  @Roles(Role.USER)
+  @Post('view-product')
+  createViewProduct(@CurrentUser() user: CurrentUserType, @Body() body: CreateUserViewProductDto) {
+    return this.productsService.createViewProduct(user, body)
+  }
+
+  @Roles(Role.USER)
+  @Post('add-product-to-cart')
+  createUserAddProductToCart(
+    @CurrentUser() user: CurrentUserType,
+    @Body() body: CreateUserAddProductToCartDTO
+  ) {
+    return this.productsService.createUserAddProductToCart(user, body)
   }
 
   @Roles(Role.EMPLOYEE, Role.STORE_OWNER)

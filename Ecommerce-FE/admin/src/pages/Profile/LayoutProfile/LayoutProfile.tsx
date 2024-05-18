@@ -18,7 +18,7 @@ const LayoutProfile = ({ title, children, rightNode }: LayoutProfileProps) => {
                     {rightNode}
                 </Flex>
             </section>
-            <section className='p-20'>{children}</section>
+            <section className='p-20 space-y-6'>{children}</section>
         </div>
     )
 }

@@ -52,6 +52,7 @@
     "class-validator": "^0.14.0",
     "cookie-parser": "^1.4.6",
     "cross-env": "^7.0.3",
+    "date-fns": "^3.6.0",
     "dayjs": "^1.11.10",
     "lodash": "^4.17.21",
     "nodemailer": "^6.9.7",

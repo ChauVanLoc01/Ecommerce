@@ -1,4 +1,4 @@
--- Adminer 4.8.1 MySQL 8.3.0 dump
+-- Adminer 4.8.1 MySQL 8.1.0 dump
 
 SET NAMES utf8;
 SET time_zone = '+00:00';
@@ -6,7 +6,6 @@ SET foreign_key_checks = 0;
 SET sql_mode = 'NO_AUTO_VALUE_ON_ZERO';
 
 SET NAMES utf8mb4;
-
 
 create database microservice;
 
@@ -96,20 +95,17 @@ ON DUPLICATE KEY UPDATE `shortname` = VALUES(`shortname`), `name` = VALUES(`name
 
 DROP TABLE IF EXISTS `CategoryConditionVoucher`;
 CREATE TABLE `CategoryConditionVoucher` (
-  `id` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `voucherId` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `categoryShortName` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `id` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `categoryShortName` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `createdAt` timestamp NOT NULL ON UPDATE CURRENT_TIMESTAMP,
-  `createdBy` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `createdBy` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `updatedAt` timestamp NULL DEFAULT NULL,
-  `updatedBy` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `updatedBy` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `createdBy` (`createdBy`),
   KEY `categoryShortName` (`categoryShortName`),
-  KEY `voucherId` (`voucherId`),
   CONSTRAINT `CategoryConditionVoucher_ibfk_2` FOREIGN KEY (`createdBy`) REFERENCES `User` (`id`),
-  CONSTRAINT `CategoryConditionVoucher_ibfk_3` FOREIGN KEY (`categoryShortName`) REFERENCES `Category` (`shortname`),
-  CONSTRAINT `CategoryConditionVoucher_ibfk_4` FOREIGN KEY (`voucherId`) REFERENCES `Voucher` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
+  CONSTRAINT `CategoryConditionVoucher_ibfk_3` FOREIGN KEY (`categoryShortName`) REFERENCES `Category` (`shortname`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
@@ -122,17 +118,18 @@ CREATE TABLE `DeliveryInformation` (
   `isPrimary` tinyint(1) NOT NULL DEFAULT '0',
   `userId` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `createdAt` timestamp NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  `isDelete` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `userId` (`userId`),
   CONSTRAINT `DeliveryInformation_ibfk_1` FOREIGN KEY (`userId`) REFERENCES `User` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-INSERT INTO `DeliveryInformation` (`id`, `full_name`, `phone`, `address`, `isPrimary`, `userId`, `createdAt`) VALUES
-('0281b824-530b-4a03-9525-489b93ee77b2',	'CHAU VAN LOC',	'0346128692',	'TpHCM\nThu Duc',	0,	'a226f227-c629-4c75-98ca-e56a3dab016e',	'2024-04-13 05:42:40'),
-('3ea3385f-16f7-477e-b54c-c5a9eb685b3c',	'Tu',	'1234123423',	'HCM',	0,	'187af660-ad6c-4256-a90f-e463dc9081de',	NULL),
-('8bdb9d18-4994-4a79-a800-026376d49256',	'CHAU VAN LOC',	'0346128692',	'TpHCM\nThu Duc',	1,	'187af660-ad6c-4256-a90f-e463dc9081de',	'2024-04-30 10:53:19'),
-('f894b550-45cc-45fa-aa3d-b1448dd662b8',	'Hien',	'123412334324',	'HCM',	0,	'187af660-ad6c-4256-a90f-e463dc9081de',	NULL)
-ON DUPLICATE KEY UPDATE `id` = VALUES(`id`), `full_name` = VALUES(`full_name`), `phone` = VALUES(`phone`), `address` = VALUES(`address`), `isPrimary` = VALUES(`isPrimary`), `userId` = VALUES(`userId`), `createdAt` = VALUES(`createdAt`);
+INSERT INTO `DeliveryInformation` (`id`, `full_name`, `phone`, `address`, `isPrimary`, `userId`, `createdAt`, `isDelete`) VALUES
+('0281b824-530b-4a03-9525-489b93ee77b2',	'CHAU VAN LOC',	'0346128692',	'TpHCM\nThu Duc',	0,	'a226f227-c629-4c75-98ca-e56a3dab016e',	'2024-04-13 05:42:40',	0),
+('3ea3385f-16f7-477e-b54c-c5a9eb685b3c',	'Tu',	'1234123423',	'HCM',	0,	'187af660-ad6c-4256-a90f-e463dc9081de',	NULL,	0),
+('8bdb9d18-4994-4a79-a800-026376d49256',	'CHAU VAN LOC',	'0346128692',	'TpHCM\nThu Duc',	1,	'187af660-ad6c-4256-a90f-e463dc9081de',	'2024-04-30 10:53:19',	0),
+('f894b550-45cc-45fa-aa3d-b1448dd662b8',	'Hien',	'123412334324',	'HCM',	0,	'187af660-ad6c-4256-a90f-e463dc9081de',	NULL,	0)
+ON DUPLICATE KEY UPDATE `id` = VALUES(`id`), `full_name` = VALUES(`full_name`), `phone` = VALUES(`phone`), `address` = VALUES(`address`), `isPrimary` = VALUES(`isPrimary`), `userId` = VALUES(`userId`), `createdAt` = VALUES(`createdAt`), `isDelete` = VALUES(`isDelete`);
 
 DROP TABLE IF EXISTS `Order`;
 CREATE TABLE `Order` (
@@ -235,19 +232,18 @@ CREATE TABLE `Payment` (
 
 DROP TABLE IF EXISTS `PriceConditionVoucher`;
 CREATE TABLE `PriceConditionVoucher` (
-  `id` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `voucherId` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `id` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `totalMin` float DEFAULT NULL,
   `totalMax` float DEFAULT NULL,
   `priceMin` float DEFAULT NULL,
   `priceMax` float DEFAULT NULL,
   `createdAt` timestamp NOT NULL ON UPDATE CURRENT_TIMESTAMP,
-  `createdBy` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `createdBy` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `updatedAt` timestamp NULL DEFAULT NULL,
   `updatedBy` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `voucherId` (`voucherId`),
-  CONSTRAINT `PriceConditionVoucher_ibfk_1` FOREIGN KEY (`voucherId`) REFERENCES `Voucher` (`id`)
+  KEY `createdBy` (`createdBy`),
+  CONSTRAINT `PriceConditionVoucher_ibfk_1` FOREIGN KEY (`createdBy`) REFERENCES `User` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
@@ -1976,6 +1972,21 @@ INSERT INTO `Product` (`id`, `name`, `image`, `priceBefore`, `priceAfter`, `init
 ('ffe9a67f-9b37-4d51-896c-37098c1e4504',	'Nhẫn Nam Titatium Kiểu Trơn Đẳng Cấp Châu Âu',	'https://down-vn.img.susercontent.com/file/vn-11134207-7r98o-llzqxzeqtuqn6f_tn',	0,	6500,	7848,	2048,	5800,	NULL,	'ACTIVE',	'phukien&trangsucnu',	'6c868791-2b31-46aa-b24f-9442084f260a',	NULL,	'2024-04-09 16:19:42',	NULL,	NULL,	NULL,	'72e339da-c565-4a2e-97b0-1a142176e072',	NULL,	0,	0)
 ON DUPLICATE KEY UPDATE `id` = VALUES(`id`), `name` = VALUES(`name`), `image` = VALUES(`image`), `priceBefore` = VALUES(`priceBefore`), `priceAfter` = VALUES(`priceAfter`), `initQuantity` = VALUES(`initQuantity`), `currentQuantity` = VALUES(`currentQuantity`), `sold` = VALUES(`sold`), `description` = VALUES(`description`), `status` = VALUES(`status`), `category` = VALUES(`category`), `createdBy` = VALUES(`createdBy`), `updatedBy` = VALUES(`updatedBy`), `createdAt` = VALUES(`createdAt`), `updatedAt` = VALUES(`updatedAt`), `deletedBy` = VALUES(`deletedBy`), `deletedAt` = VALUES(`deletedAt`), `storeId` = VALUES(`storeId`), `voucherId` = VALUES(`voucherId`), `rate` = VALUES(`rate`), `isDelete` = VALUES(`isDelete`);
 
+DROP TABLE IF EXISTS `ProductImage`;
+CREATE TABLE `ProductImage` (
+  `id` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `productId` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `url` tinytext COLLATE utf8mb4_unicode_ci NOT NULL,
+  `createdBy` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `createdAt` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `createdBy` (`createdBy`),
+  KEY `productId` (`productId`),
+  CONSTRAINT `ProductImage_ibfk_1` FOREIGN KEY (`createdBy`) REFERENCES `User` (`id`),
+  CONSTRAINT `ProductImage_ibfk_2` FOREIGN KEY (`productId`) REFERENCES `Product` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
 DROP TABLE IF EXISTS `ProductOrder`;
 CREATE TABLE `ProductOrder` (
   `id` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -2145,6 +2156,23 @@ INSERT INTO `User` (`id`, `image`, `full_name`, `birthday`, `email`, `address`, 
 ('fb438fb4-859d-4769-b618-c895d1cf7d43',	NULL,	'chau van loc',	NULL,	'chauvanloc.tg@gmail.com',	NULL,	NULL,	'EMPLOYEE',	'ACTIVE',	'2024-05-08 16:15:24',	NULL)
 ON DUPLICATE KEY UPDATE `id` = VALUES(`id`), `image` = VALUES(`image`), `full_name` = VALUES(`full_name`), `birthday` = VALUES(`birthday`), `email` = VALUES(`email`), `address` = VALUES(`address`), `rankId` = VALUES(`rankId`), `role` = VALUES(`role`), `status` = VALUES(`status`), `createdAt` = VALUES(`createdAt`), `updatedAt` = VALUES(`updatedAt`);
 
+DROP TABLE IF EXISTS `UserAddProductToCart`;
+CREATE TABLE `UserAddProductToCart` (
+  `id` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `userId` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `productId` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `quantity` int NOT NULL,
+  `createdAt` timestamp NOT NULL,
+  `updatedAt` timestamp NULL DEFAULT NULL,
+  `isDelete` tinyint DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `productId` (`productId`),
+  KEY `userId` (`userId`),
+  CONSTRAINT `UserAddProductToCart_ibfk_1` FOREIGN KEY (`userId`) REFERENCES `User` (`id`),
+  CONSTRAINT `UserAddProductToCart_ibfk_2` FOREIGN KEY (`productId`) REFERENCES `Product` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
 DROP TABLE IF EXISTS `UserScore`;
 CREATE TABLE `UserScore` (
   `userId` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -2156,6 +2184,20 @@ CREATE TABLE `UserScore` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
+DROP TABLE IF EXISTS `UserViewProduct`;
+CREATE TABLE `UserViewProduct` (
+  `id` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `userId` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `productId` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `createdAt` timestamp NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `productId` (`productId`),
+  KEY `userId` (`userId`),
+  CONSTRAINT `UserViewProduct_ibfk_1` FOREIGN KEY (`userId`) REFERENCES `User` (`id`),
+  CONSTRAINT `UserViewProduct_ibfk_2` FOREIGN KEY (`productId`) REFERENCES `Product` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
 DROP TABLE IF EXISTS `Voucher`;
 CREATE TABLE `Voucher` (
   `id` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -2164,8 +2206,8 @@ CREATE TABLE `Voucher` (
   `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
   `initQuantity` int NOT NULL,
   `currentQuantity` int NOT NULL,
-  `status` int NOT NULL,
-  `type` int NOT NULL,
+  `status` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `type` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL,
   `storeId` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `percent` double DEFAULT NULL,
   `maximum` int DEFAULT NULL,
@@ -2175,10 +2217,16 @@ CREATE TABLE `Voucher` (
   `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updatedBy` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `updatedAt` timestamp NULL DEFAULT NULL,
+  `categoryConditionId` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `priceConditionId` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `storeId` (`storeId`),
-  CONSTRAINT `Voucher_ibfk_1` FOREIGN KEY (`storeId`) REFERENCES `Store` (`id`)
+  KEY `categoryConditionId` (`categoryConditionId`),
+  KEY `priceConditionId` (`priceConditionId`),
+  CONSTRAINT `Voucher_ibfk_1` FOREIGN KEY (`storeId`) REFERENCES `Store` (`id`),
+  CONSTRAINT `Voucher_ibfk_2` FOREIGN KEY (`categoryConditionId`) REFERENCES `CategoryConditionVoucher` (`id`),
+  CONSTRAINT `Voucher_ibfk_3` FOREIGN KEY (`priceConditionId`) REFERENCES `PriceConditionVoucher` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
--- 2024-05-14 14:56:17
+-- 2024-05-18 17:27:19

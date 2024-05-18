@@ -9,11 +9,14 @@ import { Cache } from 'cache-manager'
 import { BackgroundName } from 'common/constants/background-job.constant'
 import { getStoreDetail } from 'common/constants/event.constant'
 import { Status } from 'common/enums/status.enum'
-import { CurrentStoreType } from 'common/types/current.type'
+import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
 import { Return } from 'common/types/result.type'
-import { isUndefined, keyBy, omitBy } from 'lodash'
+import { flattenDeep, isUndefined, keyBy, omitBy } from 'lodash'
 import { firstValueFrom } from 'rxjs'
 import { v4 as uuidv4 } from 'uuid'
+import { AnalyticsProductDTO } from './dtos/analytics-product.dto'
+import { CreateUserAddProductToCartDTO } from './dtos/create-product-add-to-cart.dto'
+import { CreateUserViewProductDto } from './dtos/create-product-view.dto'
 import { CreateProductType } from './dtos/create-product.dto'
 import { QueryProductType } from './dtos/query-product.dto'
 import { UpdateProductType } from './dtos/update-product.dto'
@@ -365,6 +368,48 @@ export class ProductService {
     }
   }
 
+  async createViewProduct(user: CurrentUserType, body: CreateUserViewProductDto): Promise<Return> {
+    const result = await Promise.all(
+      body.products.map((productId) =>
+        this.prisma.userViewProduct.create({
+          data: {
+            id: uuidv4(),
+            userId: user.id,
+            productId,
+            createdAt: new Date().toISOString()
+          }
+        })
+      )
+    )
+
+    return {
+      msg: 'ok',
+      result
+    }
+  }
+
+  async createUserAddProductToCart(
+    user: CurrentUserType,
+    body: CreateUserAddProductToCartDTO
+  ): Promise<Return> {
+    const { productId, quantity } = body
+
+    const result = await this.prisma.userAddProductToCart.create({
+      data: {
+        id: uuidv4(),
+        productId,
+        quantity,
+        userId: user.id,
+        createdAt: new Date().toISOString()
+      }
+    })
+
+    return {
+      msg: 'ok',
+      result
+    }
+  }
+
   async updateProduct(
     user: CurrentStoreType,
     productId: string,
@@ -572,5 +617,18 @@ export class ProductService {
     return {
       msg: 'ok'
     }
+  }
+
+  async top10ProductView(user: CurrentStoreType, body: AnalyticsProductDTO) {
+    const { dates } = body
+    const { storeId } = user
+
+    const orders_dates = await Promise.all(
+      dates.map((day, idx) =>
+        this.prisma.userViewProduct.count({
+          where: {}
+        })
+      )
+    )
   }
 }

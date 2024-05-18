@@ -8,6 +8,7 @@ import { AppContext } from 'src/contexts/AppContext'
 import { employeeLoader } from 'src/loader/employee.loader'
 import { orderLoader } from 'src/loader/order.loader'
 import { productLoader } from 'src/loader/product.loader'
+import { voucherLoader } from 'src/loader/voucher.loader'
 import Login from 'src/pages/Auth'
 import Employee from 'src/pages/Employee'
 import Order from 'src/pages/Order'
@@ -80,7 +81,8 @@ const routes = createBrowserRouter([
                     },
                     {
                         path: route.voucher,
-                        element: <Voucher />
+                        element: <Voucher />,
+                        loader: voucherLoader
                     }
                 ]
             }

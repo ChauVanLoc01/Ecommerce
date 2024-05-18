@@ -14,9 +14,10 @@ import {
 import { OrderStatus } from 'common/enums/orderStatus.enum'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
 import { Return } from 'common/types/result.type'
-import { isUndefined, omitBy } from 'lodash'
+import { flattenDeep, isUndefined, omitBy, sumBy } from 'lodash'
 import { firstValueFrom } from 'rxjs'
 import { v4 as uuidv4 } from 'uuid'
+import { AnalyticsOrderDTO } from '../dtos/analytics_order.dto'
 import { CreateOrderType } from '../dtos/create_order.dto'
 import { QueryOrderType } from '../dtos/query-order.dto'
 import { UpdateOrderType, UpdateStatusOrderDTO } from '../dtos/update_order.dto'
@@ -458,6 +459,30 @@ export class OrderService {
     }
 
     return ['ok']
+  }
+
+  async top10Product(user: CurrentStoreType, body: AnalyticsOrderDTO): Promise<Return> {
+    const { dates } = body
+    const { storeId } = user
+
+    const orders = await Promise.all(
+      dates.map((day, idx) =>
+        this.prisma.order.findMany({
+          where: {
+            storeId,
+            createdAt: {
+              gte: day,
+              lt: dates[idx + 1]
+            }
+          }
+        })
+      )
+    )
+
+    return {
+      msg: 'ok',
+      result: orders.map((e) => sumBy(e, (o) => o.pay))
+    }
   }
 
   async test() {
