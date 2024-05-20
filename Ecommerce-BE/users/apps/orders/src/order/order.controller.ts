@@ -1,18 +1,18 @@
 import { Body, Controller, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common'
+import { MessagePattern, Payload } from '@nestjs/microservices'
 import { ApiBearerAuth } from '@nestjs/swagger'
+import { checkVoucherExistInOrder } from 'common/constants/event.constant'
 import { CurrentUser } from 'common/decorators/current_user.decorator'
 import { Public } from 'common/decorators/public.decorator'
 import { Roles } from 'common/decorators/roles.decorator'
 import { Role } from 'common/enums/role.enum'
 import { JwtGuard } from 'common/guards/jwt.guard'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
+import { AnalyticsOrderDTO } from '../dtos/analytics_order.dto'
 import { CreateOrderDTO } from '../dtos/create_order.dto'
 import { QueryOrderDTO } from '../dtos/query-order.dto'
 import { UpdateOrderDTO, UpdateStatusOrderDTO } from '../dtos/update_order.dto'
 import { OrderService } from './order.service'
-import { MessagePattern, Payload } from '@nestjs/microservices'
-import { checkVoucherExistInOrder } from 'common/constants/event.constant'
-import { AnalyticsOrderDTO } from '../dtos/analytics_order.dto'
 
 @ApiBearerAuth()
 @UseGuards(JwtGuard)
@@ -42,9 +42,15 @@ export class OrderController {
   }
 
   @Roles(Role.STORE_OWNER)
-  @Get('top-10')
-  top10Product(@CurrentUser() user: CurrentStoreType, @Body() body: AnalyticsOrderDTO) {
-    return this.ordersService.top10Product(user, body)
+  @Post('receipt-analytic')
+  receiptAnalyticByDate(@CurrentUser() user: CurrentStoreType, @Body() body: AnalyticsOrderDTO) {
+    return this.ordersService.receiptAnalyticByDate(user, body)
+  }
+
+  @Roles(Role.STORE_OWNER)
+  @Post('order-analytic')
+  orderAnalyticByDate(@CurrentUser() user: CurrentStoreType, @Body() body: AnalyticsOrderDTO) {
+    return this.ordersService.orderAnalyticByDate(user, body)
   }
 
   @Roles(Role.STORE_OWNER, Role.ADMIN, Role.EMPLOYEE)

@@ -5,6 +5,7 @@ import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom'
 
 import { route } from 'src/constants/route'
 import { AppContext } from 'src/contexts/AppContext'
+import { analyticsLoader } from 'src/loader/analytics.loader'
 import { employeeLoader } from 'src/loader/employee.loader'
 import { orderLoader } from 'src/loader/order.loader'
 import { productLoader } from 'src/loader/product.loader'
@@ -44,7 +45,8 @@ const routes = createBrowserRouter([
                 children: [
                     {
                         path: route.analytic,
-                        element: <Analytic />
+                        element: <Analytic />,
+                        loader: analyticsLoader
                     },
                     {
                         path: route.profile,

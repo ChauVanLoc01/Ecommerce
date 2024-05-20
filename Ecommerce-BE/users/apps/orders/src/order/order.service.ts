@@ -14,7 +14,7 @@ import {
 import { OrderStatus } from 'common/enums/orderStatus.enum'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
 import { Return } from 'common/types/result.type'
-import { flattenDeep, isUndefined, omitBy, sumBy } from 'lodash'
+import { isUndefined, max, omitBy, sumBy } from 'lodash'
 import { firstValueFrom } from 'rxjs'
 import { v4 as uuidv4 } from 'uuid'
 import { AnalyticsOrderDTO } from '../dtos/analytics_order.dto'
@@ -461,7 +461,7 @@ export class OrderService {
     return ['ok']
   }
 
-  async top10Product(user: CurrentStoreType, body: AnalyticsOrderDTO): Promise<Return> {
+  async receiptAnalyticByDate(user: CurrentStoreType, body: AnalyticsOrderDTO): Promise<Return> {
     const { dates } = body
     const { storeId } = user
 
@@ -479,9 +479,43 @@ export class OrderService {
       )
     )
 
+    const receipts = orders.map((e) => sumBy(e, (o) => o.pay))
+
     return {
       msg: 'ok',
-      result: orders.map((e) => sumBy(e, (o) => o.pay))
+      result: {
+        receipts: receipts.map((e, idx) => ({ date: dates[idx], total: e })),
+        current: receipts[receipts.length - 1],
+        percent: Math.floor((receipts[receipts.length - 1] * 100) / max(receipts))
+      }
+    }
+  }
+
+  async orderAnalyticByDate(user: CurrentStoreType, body: AnalyticsOrderDTO): Promise<Return> {
+    const { dates } = body
+    const { storeId } = user
+
+    const orders = await Promise.all(
+      dates.map((day, idx) =>
+        this.prisma.order.count({
+          where: {
+            storeId,
+            createdAt: {
+              gte: day,
+              lt: dates[idx + 1]
+            }
+          }
+        })
+      )
+    )
+
+    return {
+      msg: 'ok',
+      result: {
+        orders: orders.map((e, idx) => ({ date: dates[idx], order: e })),
+        current: orders[orders.length - 1],
+        percent: Math.floor((orders[orders.length - 1] * 100) / max(orders))
+      }
     }
   }
 
