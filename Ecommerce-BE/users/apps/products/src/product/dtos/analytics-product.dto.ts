@@ -1,9 +1,10 @@
-import { ApiProperty } from '@nestjs/swagger'
-import { IsArray, IsString } from 'class-validator'
+import { Type } from 'class-transformer'
+import { IsArray, IsNotEmpty, ValidateNested } from 'class-validator'
 
 export class AnalyticsProductDTO {
-  @ApiProperty()
   @IsArray()
-  @IsString({ each: true })
-  dates: Date[]
+  @ValidateNested({ each: true })
+  @Type(() => String)
+  @IsNotEmpty()
+  dates: string[]
 }

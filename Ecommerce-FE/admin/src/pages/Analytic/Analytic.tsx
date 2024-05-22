@@ -4,8 +4,8 @@ import OrderStatistic from './BarAnalytic/OrderStatistic'
 import ProductStatistic from './BarAnalytic/ProductStatistic'
 import TakingStatistic from './BarAnalytic/TakingStatistic'
 import Top10Product from './BarAnalytic/Top10Product'
-import ProductRate from './PieAnalytic/ProductRate'
 import ProductView from './LineAnalytic/ProductView'
+import ProductRate from './PieAnalytic/ProductRate'
 
 const Analytic = () => {
     return (

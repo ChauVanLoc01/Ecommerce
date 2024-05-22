@@ -203,7 +203,7 @@ const VoucherTable = ({ data, refetchDataAll }: VoucherTableProps) => {
                             <Pencil1Icon />
                         </IconButton>
                     </Tooltip>
-                    <VoucherUpdateStatus row={row} />
+                    <VoucherUpdateStatus row={row} refetchAll={refetchDataAll} />
                 </Flex>
             )
         }

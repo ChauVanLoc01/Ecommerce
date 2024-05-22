@@ -50,24 +50,24 @@ export const checkExpired = (row: Row<Voucher>) => {
 }
 
 export const timeInterval: () => {
-    monthInterval: Date[]
-    weekInterval: Date[]
-    dayInterval: Date[]
+    monthInterval: string[]
+    weekInterval: string[]
+    dayInterval: string[]
 } = () => {
     const monthInterval = eachMonthOfInterval({
         start: startOfYear(new Date()),
         end: new Date()
-    }).map((e) => addHours(e, 7))
+    }).map((e) => addHours(e, 7).toISOString())
 
     const weekInterval = eachWeekOfInterval({
         start: startOfMonth(new Date()),
         end: new Date()
-    }).map((e) => addHours(e, 31))
+    }).map((e) => addHours(e, 31).toISOString())
 
     const dayInterval = eachDayOfInterval({
         start: startOfMonth(new Date()),
         end: new Date()
-    }).map((e) => addHours(e, 7))
+    }).map((e) => addHours(e, 7).toISOString())
 
     return {
         monthInterval,

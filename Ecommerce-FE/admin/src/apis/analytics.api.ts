@@ -2,10 +2,10 @@ import { NumberOfOrderAnalytic, ReceptAnalytic } from 'src/types/analytics.type'
 import { http } from './http'
 
 export const AnalyticApi = {
-    receiptAnalytics: (body: Date[]) => {
-        return http.post<ReceptAnalytic>('order/order/receipt-analytic', body)
+    receiptAnalytics: (dates: string[]) => {
+        return http.post<ReceptAnalytic>('order/order/receipt-analytic', { dates })
     },
-    numberOfOrderAnalytics: (body: Date[]) => {
-        return http.post<NumberOfOrderAnalytic>('order/order/order-analytic', body)
+    numberOfOrderAnalytics: (dates: string[]) => {
+        return http.post<NumberOfOrderAnalytic>('order/order/order-analytic', { dates })
     }
 }

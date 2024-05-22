@@ -35,15 +35,30 @@ model Category {
   Product                  Product[]
 }
 
+model CategoryConditionVoucher {
+  id                String    @id @db.VarChar(50)
+  categoryShortName String    @db.VarChar(50)
+  createdAt         DateTime  @db.Timestamp(0)
+  createdBy         String    @db.VarChar(50)
+  updatedAt         DateTime? @db.Timestamp(0)
+  updatedBy         String?   @db.VarChar(50)
+  User              User      @relation(fields: [createdBy], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "CategoryConditionVoucher_ibfk_2")
+  Category          Category  @relation(fields: [categoryShortName], references: [shortname], onDelete: NoAction, onUpdate: NoAction, map: "CategoryConditionVoucher_ibfk_3")
+  Voucher           Voucher[]
+
+  @@index([categoryShortName], map: "categoryShortName")
+  @@index([createdBy], map: "createdBy")
+}
+
 model DeliveryInformation {
   id        String    @id @db.VarChar(100)
   full_name String    @db.VarChar(100)
   phone     String    @db.VarChar(12)
   address   String    @db.VarChar(500)
   isPrimary Boolean   @default(false)
-  isDelete Boolean   @default(false)
   userId    String    @db.VarChar(50)
   createdAt DateTime? @db.Timestamp(0)
+  isDelete  Boolean   @default(false)
   User      User      @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "DeliveryInformation_ibfk_1")
   Order     Order[]
 
@@ -70,11 +85,26 @@ model Order {
   OrderFlow             OrderFlow[]
   Payment               Payment[]
   ProductOrder          ProductOrder[]
+  Rating                Rating[]
 
   @@index([deliveryInformationId], map: "deliveryInformationId")
   @@index([storeId], map: "storeId")
   @@index([userId], map: "userId")
   @@index([voucherId], map: "voucherId")
+}
+
+model OrderFlow {
+  id        String    @id @db.VarChar(50)
+  status    String    @db.VarChar(20)
+  note      String?   @db.Text
+  createdBy String    @db.VarChar(50)
+  createdAt DateTime? @db.Timestamp(0)
+  orderId   String    @db.VarChar(50)
+  Order     Order     @relation(fields: [orderId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "OrderFlow_ibfk_2")
+  User      User      @relation(fields: [createdBy], references: [id], onUpdate: Restrict, map: "OrderFlow_ibfk_3")
+
+  @@index([createdBy], map: "createdBy")
+  @@index([orderId], map: "orderId")
 }
 
 model Payment {
@@ -88,6 +118,22 @@ model Payment {
   Order         Order     @relation(fields: [orderID], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Payment_ibfk_1")
 
   @@index([orderID], map: "orderID")
+}
+
+model PriceConditionVoucher {
+  id        String    @id @db.VarChar(50)
+  totalMin  Float?    @db.Float
+  totalMax  Float?    @db.Float
+  priceMin  Float?    @db.Float
+  priceMax  Float?    @db.Float
+  createdAt DateTime  @db.Timestamp(0)
+  createdBy String    @db.VarChar(50)
+  updatedAt DateTime? @db.Timestamp(0)
+  updatedBy DateTime? @db.Timestamp(0)
+  User      User      @relation(fields: [createdBy], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "PriceConditionVoucher_ibfk_1")
+  Voucher   Voucher[]
+
+  @@index([createdBy], map: "createdBy")
 }
 
 model Product {
@@ -120,6 +166,7 @@ model Product {
   Voucher                      Voucher?               @relation(fields: [voucherId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Product_ibfk_6")
   ProductImage                 ProductImage[]
   ProductOrder                 ProductOrder[]
+  Rating                       Rating[]
   UserAddProductToCart         UserAddProductToCart[]
   UserViewProduct              UserViewProduct[]
 
@@ -129,6 +176,19 @@ model Product {
   @@index([storeId], map: "storeId")
   @@index([updatedBy], map: "updatedBy")
   @@index([voucherId], map: "voucherId")
+}
+
+model ProductImage {
+  id        String    @id @db.VarChar(50)
+  productId String    @db.VarChar(50)
+  url       String    @db.TinyText
+  createdBy String    @db.VarChar(50)
+  createdAt DateTime? @db.Timestamp(0)
+  User      User      @relation(fields: [createdBy], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "ProductImage_ibfk_1")
+  Product   Product   @relation(fields: [productId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "ProductImage_ibfk_2")
+
+  @@index([createdBy], map: "createdBy")
+  @@index([productId], map: "productId")
 }
 
 model ProductOrder {
@@ -145,6 +205,56 @@ model ProductOrder {
   @@index([productId], map: "productId")
 }
 
+model Rating {
+  id          String        @id @db.VarChar(50)
+  productId   String        @db.VarChar(50)
+  storeId     String        @db.VarChar(50)
+  orderId     String        @db.VarChar(50)
+  stars       Float
+  title       String        @db.TinyText
+  detail      String        @db.Text
+  isReply     Boolean?      @default(false)
+  createdBy   String        @db.VarChar(50)
+  createdAt   DateTime      @db.Timestamp(0)
+  updatedBy   String?       @db.VarChar(50)
+  updatedAt   DateTime?     @db.Timestamp(0)
+  User        User          @relation(fields: [createdBy], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Rating_ibfk_1")
+  Product     Product       @relation(fields: [productId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Rating_ibfk_2")
+  Order       Order         @relation(fields: [orderId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Rating_ibfk_3")
+  Store       Store         @relation(fields: [storeId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Rating_ibfk_4")
+  RatingReply RatingReply[]
+
+  @@index([createdBy], map: "createdBy")
+  @@index([orderId], map: "orderId")
+  @@index([productId], map: "productId")
+  @@index([storeId], map: "storeId")
+}
+
+model RatingMaterial {
+  id            String   @id @db.VarChar(50)
+  url           String   @db.TinyText
+  isPrimary     Boolean? @default(false)
+  ratingId      String?  @db.VarChar(50)
+  ratingReplyId String?  @db.VarChar(50)
+
+  @@index([ratingId], map: "ratingId")
+}
+
+model RatingReply {
+  id        String   @id @db.VarChar(50)
+  ratingId  String   @db.VarChar(50)
+  detail    String   @db.Text
+  createdAt DateTime @db.Timestamp(0)
+  createdBy String   @db.VarChar(50)
+  updatedAt DateTime? @db.Timestamp(0)
+  updatedBy String?   @db.VarChar(50)
+  Rating    Rating   @relation(fields: [ratingId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "RatingReply_ibfk_1")
+  User      User     @relation(fields: [createdBy], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "RatingReply_ibfk_2")
+
+  @@index([createdBy], map: "createdBy")
+  @@index([ratingId], map: "ratingId")
+}
+
 model Store {
   id                         String      @id @db.VarChar(50)
   name                       String      @db.VarChar(255)
@@ -158,6 +268,7 @@ model Store {
   updatedAt                  DateTime?   @db.Timestamp(0)
   Order                      Order[]
   Product                    Product[]
+  Rating                     Rating[]
   User_Store_createdByToUser User        @relation("Store_createdByToUser", fields: [createdBy], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Store_ibfk_1")
   User_Store_updatedByToUser User?       @relation("Store_updatedByToUser", fields: [updatedBy], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Store_ibfk_2")
   StoreRole                  StoreRole[]
@@ -210,12 +321,29 @@ model User {
   Product_Product_updatedByToUser     Product[]                  @relation("Product_updatedByToUser")
   Product_Product_deletedByToUser     Product[]                  @relation("Product_deletedByToUser")
   ProductImage                        ProductImage[]
+  Rating                              Rating[]
+  RatingReply                         RatingReply[]
   Store_Store_createdByToUser         Store[]                    @relation("Store_createdByToUser")
   Store_Store_updatedByToUser         Store[]                    @relation("Store_updatedByToUser")
   StoreRole_StoreRole_createdByToUser StoreRole[]                @relation("StoreRole_createdByToUser")
   StoreRole_StoreRole_updatedByToUser StoreRole[]                @relation("StoreRole_updatedByToUser")
   UserAddProductToCart                UserAddProductToCart[]
   UserViewProduct                     UserViewProduct[]
+}
+
+model UserAddProductToCart {
+  id        String    @id @db.VarChar(50)
+  userId    String    @db.VarChar(50)
+  productId String    @db.VarChar(50)
+  quantity  Int
+  createdAt DateTime  @db.Timestamp(0)
+  updatedAt DateTime? @db.Timestamp(0)
+  isDelete  Int?      @db.TinyInt
+  User      User      @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "UserAddProductToCart_ibfk_1")
+  Product   Product   @relation(fields: [productId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "UserAddProductToCart_ibfk_2")
+
+  @@index([productId], map: "productId")
+  @@index([userId], map: "userId")
 }
 
 model UserScore {
@@ -226,6 +354,18 @@ model UserScore {
   updatedAt DateTime? @db.Timestamp(0)
 
   @@id([userId, storeId])
+}
+
+model UserViewProduct {
+  id        String   @id @db.VarChar(50)
+  userId    String   @db.VarChar(50)
+  productId String   @db.VarChar(50)
+  createdAt DateTime @db.Timestamp(0)
+  User      User     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "UserViewProduct_ibfk_1")
+  Product   Product  @relation(fields: [productId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "UserViewProduct_ibfk_2")
+
+  @@index([productId], map: "productId")
+  @@index([userId], map: "userId")
 }
 
 model Voucher {
@@ -254,92 +394,7 @@ model Voucher {
   CategoryConditionVoucher CategoryConditionVoucher? @relation(fields: [categoryConditionId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Voucher_ibfk_2")
   PriceConditionVoucher    PriceConditionVoucher?    @relation(fields: [priceConditionId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Voucher_ibfk_3")
 
-  @@index([storeId], map: "storeId")
   @@index([categoryConditionId], map: "categoryConditionId")
   @@index([priceConditionId], map: "priceConditionId")
-}
-
-model OrderFlow {
-  id        String    @id @db.VarChar(50)
-  status    String    @db.VarChar(20)
-  note      String?   @db.Text
-  createdBy String    @db.VarChar(50)
-  createdAt DateTime? @db.Timestamp(0)
-  orderId   String    @db.VarChar(50)
-  Order     Order     @relation(fields: [orderId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "OrderFlow_ibfk_2")
-  User      User      @relation(fields: [createdBy], references: [id], onUpdate: Restrict, map: "OrderFlow_ibfk_3")
-
-  @@index([orderId], map: "orderId")
-  @@index([createdBy], map: "createdBy")
-}
-
-model CategoryConditionVoucher {
-  id                String    @id @db.VarChar(50)
-  categoryShortName String    @db.VarChar(50)
-  createdAt         DateTime  @db.Timestamp(0)
-  createdBy         String    @db.VarChar(50)
-  updatedAt         DateTime? @db.Timestamp(0)
-  updatedBy         String?   @db.VarChar(50)
-  User              User      @relation(fields: [createdBy], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "CategoryConditionVoucher_ibfk_2")
-  Category          Category  @relation(fields: [categoryShortName], references: [shortname], onDelete: NoAction, onUpdate: NoAction, map: "CategoryConditionVoucher_ibfk_3")
-  Voucher           Voucher[]
-
-  @@index([categoryShortName], map: "categoryShortName")
-  @@index([createdBy], map: "createdBy")
-}
-
-model PriceConditionVoucher {
-  id        String    @id @db.VarChar(50)
-  totalMin  Float?    @db.Float
-  totalMax  Float?    @db.Float
-  priceMin  Float?    @db.Float
-  priceMax  Float?    @db.Float
-  createdAt DateTime  @db.Timestamp(0)
-  createdBy String    @db.VarChar(50)
-  updatedAt DateTime? @db.Timestamp(0)
-  updatedBy DateTime? @db.Timestamp(0)
-  User      User      @relation(fields: [createdBy], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "PriceConditionVoucher_ibfk_1")
-  Voucher   Voucher[]
-
-  @@index([createdBy], map: "createdBy")
-}
-
-model ProductImage {
-  id        String    @id @db.VarChar(50)
-  productId String    @db.VarChar(50)
-  url       String    @db.TinyText
-  createdBy String    @db.VarChar(50)
-  createdAt DateTime? @db.Timestamp(0)
-  User      User      @relation(fields: [createdBy], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "ProductImage_ibfk_1")
-  Product   Product   @relation(fields: [productId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "ProductImage_ibfk_2")
-
-  @@index([createdBy], map: "createdBy")
-  @@index([productId], map: "productId")
-}
-
-model UserAddProductToCart {
-  id        String    @id @db.VarChar(50)
-  userId    String    @db.VarChar(50)
-  productId String    @db.VarChar(50)
-  quantity  Int
-  createdAt DateTime  @db.Timestamp(0)
-  updatedAt DateTime? @db.Timestamp(0)
-  isDelete  Int?      @db.TinyInt
-  User      User      @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "UserAddProductToCart_ibfk_1")
-  Product   Product   @relation(fields: [productId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "UserAddProductToCart_ibfk_2")
-
-  @@index([productId], map: "productId")
-  @@index([userId], map: "userId")
-}
-
-model UserViewProduct {
-  id        String   @id @db.VarChar(50)
-  userId    String   @db.VarChar(50)
-  productId String   @db.VarChar(50)
-  createdAt DateTime @db.Timestamp(0)
-  User      User     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "UserViewProduct_ibfk_1")
-  Product   Product  @relation(fields: [productId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "UserViewProduct_ibfk_2")
-
-  @@index([productId], map: "productId")
-  @@index([userId], map: "userId")
+  @@index([storeId], map: "storeId")
 }

@@ -1,46 +1,24 @@
 import { Flex, IconButton, Select, Text } from '@radix-ui/themes'
+import { useQuery } from '@tanstack/react-query'
+import { format } from 'date-fns'
 import { useRef } from 'react'
 import { Bar, BarChart, Rectangle, Tooltip } from 'recharts'
+import { AnalyticApi } from 'src/apis/analytics.api'
+import useTimeInterval from 'src/hooks/useTimeInterval'
+import { convertDigitalNumber } from 'src/utils/utils'
 
 const TakingStatistic = () => {
+    const [time, timeFormat, handleSelectTime] = useTimeInterval()
+
     const widthRef = useRef<null | HTMLDivElement>(null)
-    const data = [
-        {
-            name: 'Page A',
-            uv: 4000,
-            pv: 4400
-        },
-        {
-            name: 'Page B',
-            uv: 3000,
-            pv: 6398
-        },
-        {
-            name: 'Page C',
-            uv: 2000,
-            pv: 9800
-        },
-        {
-            name: 'Page D',
-            uv: 2780,
-            pv: 3908
-        },
-        {
-            name: 'Page B',
-            uv: 3000,
-            pv: 8398
-        },
-        {
-            name: 'Page C',
-            uv: 2000,
-            pv: 5800
-        },
-        {
-            name: 'Page D',
-            uv: 2780,
-            pv: 3908
-        }
-    ]
+
+    const { data } = useQuery({
+        queryKey: ['receiptAnalytics'],
+        queryFn: () => AnalyticApi.receiptAnalytics(time),
+        staleTime: 1000 * 60 * 1,
+        select: (data) => data.data.result
+    })
+
     return (
         <div className='bg-white p-[16px] rounded-8 border-border/20 border shadow-sm space-y-3' ref={widthRef}>
             <Flex justify={'between'} align={'center'}>
@@ -65,12 +43,12 @@ const TakingStatistic = () => {
                         Doanh Thu
                     </Text>
                 </Flex>
-                <Select.Root defaultValue='day' size={'2'}>
+                <Select.Root defaultValue='1' size={'2'} onValueChange={(value) => handleSelectTime(Number(value))}>
                     <Select.Trigger />
                     <Select.Content>
-                        <Select.Item value='day'>Day</Select.Item>
-                        <Select.Item value='month'>Month</Select.Item>
-                        <Select.Item value='year'>Year</Select.Item>
+                        <Select.Item value='1'>Ngày</Select.Item>
+                        <Select.Item value='2'>Tuần</Select.Item>
+                        <Select.Item value='3'>Tháng</Select.Item>
                     </Select.Content>
                 </Select.Root>
             </Flex>
@@ -78,15 +56,15 @@ const TakingStatistic = () => {
                 <BarChart
                     width={widthRef.current ? ((widthRef.current.offsetWidth - 32) / 3) * 2 : 300}
                     height={80}
-                    data={data}
+                    data={data?.receipts.map((e) => ({ lable: format(e.date, timeFormat), analytic: e.total }))}
                     className='flex-shrink-0 basis-2/3'
                 >
                     <Tooltip cursor={{ fill: 'transparent' }} />
-                    <Bar dataKey='pv' fill='#1677ff' barSize={30} shape={<Rectangle radius={6} />} />
+                    <Bar dataKey={'analytic'} fill='#1677ff' barSize={30} shape={<Rectangle radius={6} />} />
                 </BarChart>
                 <Flex direction={'column'} justify={'center'} align={'center'} className='basis-1/3 flex-shrink-0'>
                     <Text weight={'medium'} size={'4'}>
-                        +10tr
+                        +{convertDigitalNumber((data as any).current)}
                     </Text>
                     <Text weight={'medium'} size={'3'} color='blue' className='flex items-center space-x-1'>
                         <svg width='15' height='15' viewBox='0 0 15 15' fill='none' xmlns='http://www.w3.org/2000/svg'>
@@ -97,7 +75,7 @@ const TakingStatistic = () => {
                                 clip-rule='evenodd'
                             ></path>
                         </svg>
-                        <span>110%</span>
+                        <span>{data?.percent}%</span>
                     </Text>
                 </Flex>
             </Flex>

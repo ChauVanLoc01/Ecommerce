@@ -1,4 +1,4 @@
-import { CubeIcon, FileTextIcon, HomeIcon, IdCardIcon, PersonIcon } from '@radix-ui/react-icons'
+import { CubeIcon, FileTextIcon, HomeIcon, IdCardIcon, PersonIcon, StarIcon } from '@radix-ui/react-icons'
 import Select from 'src/components/Select'
 
 import { route } from 'src/constants/route'
@@ -34,6 +34,10 @@ const SideNav = () => {
                 <Select
                     icon={<PersonIcon className='w-4 h-4' />}
                     parentData={{ title: 'Nhân Viên', path: route.employee }}
+                />
+                <Select
+                    icon={<StarIcon className='w-4 h-4' />}
+                    parentData={{ title: 'Đánh giá', path: route.rating }}
                 />
                 <Select
                     icon={<IdCardIcon className='w-4 h-4' />}

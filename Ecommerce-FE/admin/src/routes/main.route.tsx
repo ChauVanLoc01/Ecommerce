@@ -9,11 +9,13 @@ import { analyticsLoader } from 'src/loader/analytics.loader'
 import { employeeLoader } from 'src/loader/employee.loader'
 import { orderLoader } from 'src/loader/order.loader'
 import { productLoader } from 'src/loader/product.loader'
+import { ratingLoader } from 'src/loader/rating.loader'
 import { voucherLoader } from 'src/loader/voucher.loader'
 import Login from 'src/pages/Auth'
 import Employee from 'src/pages/Employee'
 import Order from 'src/pages/Order'
 import Product from 'src/pages/Product'
+import Rating from 'src/pages/Rating/Rating'
 import Store from 'src/pages/Store'
 import Voucher from 'src/pages/Voucher/Voucher'
 
@@ -85,6 +87,11 @@ const routes = createBrowserRouter([
                         path: route.voucher,
                         element: <Voucher />,
                         loader: voucherLoader
+                    },
+                    {
+                        path: route.rating,
+                        element: <Rating />,
+                        loader: ratingLoader
                     }
                 ]
             }
