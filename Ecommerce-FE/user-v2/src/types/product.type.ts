@@ -43,4 +43,4 @@ export type ProductListResponse = {
     query: ProductListQuery & { page_size: number }
 }
 
-export type ProductDetailResponse = Product
+export type ProductDetailResponse = Product & { productImages: { url: string }[] }

@@ -11,7 +11,7 @@ import { getStoreDetail } from 'common/constants/event.constant'
 import { Status } from 'common/enums/status.enum'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
 import { Return } from 'common/types/result.type'
-import { flattenDeep, isUndefined, keyBy, omitBy } from 'lodash'
+import { isUndefined, keyBy, omitBy } from 'lodash'
 import { firstValueFrom } from 'rxjs'
 import { v4 as uuidv4 } from 'uuid'
 import { AnalyticsProductDTO } from './dtos/analytics-product.dto'
@@ -258,18 +258,28 @@ export class ProductService {
   }
 
   async getProductDetail(productId: string): Promise<Return> {
-    const productExist = await this.prisma.product.findUnique({
-      where: {
-        id: productId,
-        status: Status.ACTIVE
-      }
-    })
+    const [productExist, imgs] = await Promise.all([
+      this.prisma.product.findUnique({
+        where: {
+          id: productId,
+          status: Status.ACTIVE
+        }
+      }),
+      this.prisma.productImage.findMany({
+        where: {
+          productId
+        }
+      })
+    ])
 
     if (!productExist) throw new NotFoundException('Sản phẩm không tồn tại')
 
     return {
       msg: 'Lấy thông tin chi tiết sản phẩm thành công',
-      result: productExist
+      result: {
+        ...productExist,
+        productImages: imgs
+      }
     }
   }
 

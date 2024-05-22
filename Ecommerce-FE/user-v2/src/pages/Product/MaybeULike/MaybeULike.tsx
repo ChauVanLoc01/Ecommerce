@@ -16,10 +16,11 @@ const MaybeULike = ({ product }: MaybeULikeProps) => {
                 <img
                     src={product.image}
                     alt='review-img'
-                    className='rounded-12 w-14 h-14 object-cover border border-border/30'
+                    className='rounded-12 w-16 h-16 object-cover border border-border/30'
                 />
             </Link>
             <div className='space-y-1'>
+                <Stars amount={3} />
                 <Link
                     to={`/${removeSpecialCharacter(product.name)}-0-${product.id}`}
                     className='font-semibold text-sm tracking-wide line-clamp-2 leading-5 w-fit pr-7'
@@ -36,7 +37,6 @@ const MaybeULike = ({ product }: MaybeULikeProps) => {
                         {convertCurrentcy(product.priceBefore || 0, 0)}
                     </span>
                 </div>
-                <Stars amount={3} />
             </div>
             <button className='absolute top-[24px] right-5'>
                 <svg

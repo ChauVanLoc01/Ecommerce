@@ -1,10 +1,13 @@
 import { PrismaService } from '@app/common/prisma/prisma.service'
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
+import { ClientProxy } from '@nestjs/microservices'
+import { getInfoUserInRating } from 'common/constants/event.constant'
 import { PaginationDTO } from 'common/decorators/pagination.dto'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
 import { Return } from 'common/types/result.type'
 import { isUndefined, keyBy, omitBy } from 'lodash'
+import { firstValueFrom } from 'rxjs'
 import { v4 as uuidv4 } from 'uuid'
 import { CreateRatingDto } from './dtos/create-rating.dto'
 import { RatingQueryDTO } from './dtos/rating-query.dto'
@@ -14,7 +17,8 @@ import { CreateReplyRatingDTO } from './dtos/reply-rating.dto'
 export class RatingService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly configService: ConfigService
+    private readonly configService: ConfigService,
+    @Inject('USER_SERVICE') private userClient: ClientProxy
   ) {}
 
   async getDetail(ratingId: string): Promise<Return> {
@@ -67,7 +71,7 @@ export class RatingService {
     const { limit, page } = query
     const limitExist = limit | this.configService.get('app.limit_default')
 
-    const [ratings] = await Promise.all([
+    const [length, ratings] = await Promise.all([
       this.prisma.rating.count({
         where: {
           productId
@@ -85,9 +89,39 @@ export class RatingService {
       })
     ])
 
+    const [users, ...materials] = await Promise.all([
+      firstValueFrom(
+        this.userClient.send(
+          getInfoUserInRating,
+          ratings.map((rating) => rating.createdBy)
+        )
+      ),
+      ...ratings.map((rating) =>
+        this.prisma.ratingMaterial.findMany({
+          where: {
+            ratingId: rating.id
+          }
+        })
+      )
+    ])
+
     return {
       msg: 'ok',
-      result: ratings
+      result: {
+        data: ratings.map((rating, idx) => ({
+          rating,
+          material: materials[idx],
+          user: users[idx]
+        })),
+        query: omitBy(
+          {
+            ...query,
+            page: page || 1,
+            page_size: Math.ceil(length / limitExist)
+          },
+          isUndefined
+        )
+      }
     }
   }
 

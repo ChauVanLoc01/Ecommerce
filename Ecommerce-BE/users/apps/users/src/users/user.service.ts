@@ -1,6 +1,7 @@
 import { PrismaService } from '@app/common/prisma/prisma.service'
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
+import { Role } from 'common/enums/role.enum'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
 import { Return } from 'common/types/result.type'
 import { QueryAllUserProfileType } from '../dtos/all_user.dto'
@@ -120,5 +121,25 @@ export class UserService {
     } catch (error) {
       return error.message
     }
+  }
+
+  async getInfoUserInRating(payload: string[]) {
+    const users = await Promise.all(
+      payload.map((id) =>
+        this.prisma.user.findUnique({
+          where: {
+            id,
+            role: Role.USER
+          }
+        })
+      )
+    )
+
+    return payload.reduce((acum, e, idx) => {
+      return {
+        ...acum,
+        [e]: users[idx]
+      }
+    }, {})
   }
 }

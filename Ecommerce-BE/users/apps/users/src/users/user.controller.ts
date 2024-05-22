@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Put, Query, UseGuards } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
-import { updateStoreRoleId } from 'common/constants/event.constant'
+import { getInfoUserInRating, updateStoreRoleId } from 'common/constants/event.constant'
 import { CurrentUser } from 'common/decorators/current_user.decorator'
 import { Roles } from 'common/decorators/roles.decorator'
 import { Role } from 'common/enums/role.enum'
@@ -9,6 +9,7 @@ import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
 import { QueryAllUserProfileDTO } from '../dtos/all_user.dto'
 import { UpdateUserProfileDTO } from '../dtos/update_user_profile.dto'
 import { UserService } from './user.service'
+import { Public } from 'common/decorators/public.decorator'
 
 @Controller('profile')
 export class UserController {
@@ -54,5 +55,11 @@ export class UserController {
   @MessagePattern(updateStoreRoleId)
   updateStoreRoleId(@Payload() payload: { userId: string; storeRoleId: string }) {
     return this.userService.updateStoreRole(payload.userId, payload.storeRoleId)
+  }
+
+  @Public()
+  @MessagePattern(getInfoUserInRating)
+  getInfoUserInRating(@Payload() payload: string[]) {
+    return this.userService.getInfoUserInRating(payload)
   }
 }

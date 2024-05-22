@@ -24,17 +24,18 @@ export const productDetailLoader: LoaderFunction = async ({ params }) => {
         gcTime: 1000 * 60 * 50
     })
 
-    const storeDetail = await queryClient.fetchQuery({
-        queryKey: ['storeDetail', productDetail.data.result.storeId],
-        queryFn: () => StoreFetching.getStoreDetail(productDetail.data.result.storeId),
-        staleTime: 1000 * 60 * 5
-    })
-
-    const relativedProducts = await queryClient.fetchQuery({
-        queryKey: ['relativedProducts', productDetail.data.result.category],
-        queryFn: () => productFetching.productList({ category: productDetail.data.result.category, sold: 'desc' }),
-        staleTime: 1000 * 60 * 2
-    })
+    const [storeDetail, relativedProducts] = await Promise.all([
+        queryClient.fetchQuery({
+            queryKey: ['storeDetail', productDetail.data.result.storeId],
+            queryFn: () => StoreFetching.getStoreDetail(productDetail.data.result.storeId),
+            staleTime: 1000 * 60 * 5
+        }),
+        queryClient.fetchQuery({
+            queryKey: ['relativedProducts', productDetail.data.result.category],
+            queryFn: () => productFetching.productList({ category: productDetail.data.result.category, sold: 'desc' }),
+            staleTime: 1000 * 60 * 2
+        })
+    ])
 
     window.dispatchEvent(
         new CustomEvent(endProductDetailFetching, {
