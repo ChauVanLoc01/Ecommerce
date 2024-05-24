@@ -11,7 +11,7 @@ import {
 import { ls } from 'src/utils/localStorage'
 import { http } from './http'
 
-const storeId = (JSON.parse(ls.getItem('profile') as string) as LoginResponse).store.id
+const storeId = (JSON.parse(ls.getItem('profile') as string) as LoginResponse)?.store?.id
 
 export const ProductApi = {
     getAllCategories: () => {
