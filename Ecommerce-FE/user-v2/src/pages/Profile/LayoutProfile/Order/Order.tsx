@@ -310,7 +310,7 @@ const Order = () => {
                 <Table<OrderType>
                     columns={columns}
                     data={data?.data.result.data || []}
-                    tableMaxHeight='550px'
+                    tableMaxHeight='520px'
                     className='w-[1200px] max-w-[1200px]'
                 />
             </Flex>

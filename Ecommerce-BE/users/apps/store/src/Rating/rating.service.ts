@@ -2,7 +2,12 @@ import { PrismaService } from '@app/common/prisma/prisma.service'
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { ClientProxy } from '@nestjs/microservices'
-import { getInfoUserInRating } from 'common/constants/event.constant'
+import { ProductOrder } from '@prisma/client'
+import {
+  getInfoUserInRating,
+  getOrderByRating,
+  getProductOrderByRating
+} from 'common/constants/event.constant'
 import { PaginationDTO } from 'common/decorators/pagination.dto'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
 import { Return } from 'common/types/result.type'
@@ -18,7 +23,9 @@ export class RatingService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
-    @Inject('USER_SERVICE') private userClient: ClientProxy
+    @Inject('USER_SERVICE') private userClient: ClientProxy,
+    @Inject('ORDER_SERVICE') private orderClient: ClientProxy,
+    @Inject('PRODUCT_SERVICE') private productClient: ClientProxy
   ) {}
 
   async getDetail(ratingId: string): Promise<Return> {
@@ -302,6 +309,59 @@ export class RatingService {
         reply: createdReply,
         materials
       }
+    }
+  }
+
+  async ratingExist(user: CurrentUserType, productId: string): Promise<Return> {
+    const orderIds = omitBy(
+      await this.prisma.rating.findMany({
+        where: {
+          createdBy: user.id
+        }
+      }),
+      'orderId'
+    )
+
+    const convertOrderIds = Object.keys(orderIds)
+
+    console.log('converOrderData', convertOrderIds)
+
+    if (!convertOrderIds.length) {
+      return {
+        msg: 'ok',
+        result: false
+      }
+    }
+
+    const orders: string[] = await firstValueFrom(
+      this.orderClient.send(getOrderByRating, { userId: user.id, orderIds: convertOrderIds })
+    )
+
+    console.log('orders', orders)
+
+    if (orders.length) {
+      return {
+        msg: 'ok',
+        result: false
+      }
+    }
+
+    const productOrders: ProductOrder[] = await firstValueFrom(
+      this.productClient.send(getProductOrderByRating, { productId, orders })
+    )
+
+    console.log('productOrders', productOrders)
+
+    if (!productOrders.length) {
+      return {
+        msg: 'ok',
+        result: false
+      }
+    }
+
+    return {
+      msg: 'ok',
+      result: productOrders
     }
   }
 }

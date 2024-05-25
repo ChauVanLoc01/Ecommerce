@@ -74,13 +74,13 @@ const Checkout = () => {
             accessorKey: 'Mã đơn hàng',
             header: () => {
                 return (
-                    <div className='flex items-center gap-x-2'>
+                    <div className='flex items-center gap-x-2 max-w-32'>
                         Mã đơn hàng
                         <BiSolidSortAlt />
                     </div>
                 )
             },
-            cell: ({ row }) => <div className='line-clamp-1'>{row.original.id}</div>
+            cell: ({ row }) => <div className='line-clamp-1 max-w-32'>{row.original.id}</div>
         },
         {
             accessorKey: 'Trạng thái',
@@ -389,7 +389,11 @@ const Checkout = () => {
                 <AlertDialog.Content maxWidth={'900px'} className='!rounded-8'>
                     <AlertDialog.Title>Đặt hàng thành công</AlertDialog.Title>
                     <AlertDialog.Description size='2'>
-                        <Table columns={columns} data={createdOrders?.data.result ?? []} />
+                        <Table<Order>
+                            columns={columns}
+                            data={createdOrders?.data.result ?? []}
+                            className='w-[1200px]'
+                        />
                     </AlertDialog.Description>
                     <Flex gap='3' mt='4' justify='end'>
                         <AlertDialog.Cancel>

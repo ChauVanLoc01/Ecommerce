@@ -20,16 +20,16 @@ const AddressItem = ({
 }: AddressItemProps) => {
     return (
         <Card
-            className={cn('!rounded-6', {
+            className={cn('!rounded-6 !p-3', {
                 '!border-blue-400 shadow-input bg-blue-50': isChecked
             })}
         >
-            <div className='space-y-2'>
+            <div className='space-y-1'>
                 <h3 className='font-semibold'>{delivery.full_name}</h3>
                 <p className='text-gray-400 text-[13px]'>{delivery.address}</p>
             </div>
             <div className='text-gray-400 text-[13px]'>{delivery.phone}</div>
-            <Box className='absolute top-1 right-2 !flex !items-center space-x-1'>
+            <Box className='absolute top-3 right-2 !flex !items-center space-x-1'>
                 <Badge
                     color='blue'
                     className={classNames({

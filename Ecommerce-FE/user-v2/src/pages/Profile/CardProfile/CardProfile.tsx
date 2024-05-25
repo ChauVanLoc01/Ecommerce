@@ -2,16 +2,14 @@ import { useContext, useRef, useState } from 'react'
 
 import classNames from 'classnames'
 import { AiOutlineCloudUpload } from 'react-icons/ai'
-import { FaFacebookSquare, FaGoogle } from 'react-icons/fa'
-import { FaApple } from 'react-icons/fa6'
 import { MdOutlinePayment } from 'react-icons/md'
-import { PiDotsThreeOutlineVerticalDuotone } from 'react-icons/pi'
 import { TbTruckDelivery } from 'react-icons/tb'
 import { NavLink } from 'react-router-dom'
 
-import { ArchiveIcon, InfoCircledIcon, LockClosedIcon } from '@radix-ui/react-icons'
-import { Spinner } from '@radix-ui/themes'
+import { ArchiveIcon, CubeIcon, InfoCircledIcon, LockClosedIcon, QuestionMarkCircledIcon } from '@radix-ui/react-icons'
+import { Spinner, Tooltip } from '@radix-ui/themes'
 import { useMutation } from '@tanstack/react-query'
+import { CiDeliveryTruck } from 'react-icons/ci'
 import { toast } from 'sonner'
 import { profileFetching } from 'src/apis/profile'
 import { route } from 'src/constants/route'
@@ -87,11 +85,11 @@ const CardProfile = ({ rootClassName }: CardProps) => {
     return (
         <div
             className={classNames(
-                'p-24 border border-border/30 rounded-8 bg-white space-y-8 relative shrink-0',
+                'px-12 py-24 border border-border/30 rounded-8 bg-white space-y-4 relative shrink-0',
                 rootClassName
             )}
         >
-            <section className='space-y-2 text-center'>
+            <section className='space-y-4 text-center flex flex-col'>
                 <button
                     className='w-28 h-28 rounded-full border border-dashed border-blue-600 object-cover mx-auto overflow-hidden relative group'
                     onClick={handleOpenFile}
@@ -100,9 +98,9 @@ const CardProfile = ({ rootClassName }: CardProps) => {
                         loading='lazy'
                         src={imgUrl}
                         alt='background'
-                        className='group-hover:opacity-0 transition-all duration-100 ease-linear rounded-full bg-center'
+                        className='transition-all duration-100 ease-linear rounded-full bg-center'
                     />
-                    <span className='opacity-0 absolute inset-0 flex justify-center items-center bg-white group-hover:opacity-100 transition-all duration-100 ease-linear rounded-full delay-100'>
+                    <span className='opacity-0 absolute inset-0 flex justify-center items-center bg-white/60 group-hover:opacity-100 transition-all duration-100 ease-linear rounded-full delay-100'>
                         <AiOutlineCloudUpload size={30} className='w-full hful text-blue-600' />
                     </span>
                     {(isPending || updateUserProfilePending) && (
@@ -112,31 +110,31 @@ const CardProfile = ({ rootClassName }: CardProps) => {
                     )}
                 </button>
                 <input type='file' onChange={handleFileChaneg} ref={fileRef} name='' id='' className='hidden' />
-                <h4 className='font-semibold'>Stebin Ben</h4>
-                <p>Admin</p>
-                <article className='flex items-center justify-center gap-x-2'>
-                    <FaGoogle color='#FF4528' />
-                    <FaFacebookSquare color='blue' />
-                    <FaApple color='#4D94C8' />
-                </article>
+                <h4 className='font-semibold'>{profile?.user.full_name}</h4>
             </section>
             <section className='flex divide-x-[1px] divide-border/50'>
                 <div className='basis-1/3'>
                     <div className='w-fit mx-auto text-center'>
                         <h2 className='font-semibold'>86</h2>
-                        <p className='text-sm'>Chờ</p>
+                        <Tooltip content='Tổng'>
+                            <CubeIcon width={20} height={20} />
+                        </Tooltip>
                     </div>
                 </div>
                 <div className='basis-1/3'>
                     <div className='w-fit mx-auto text-center'>
                         <h2 className='font-semibold'>86</h2>
-                        <p className='text-sm'>Tổng</p>
+                        <Tooltip content='Đang vận chuyển'>
+                            <CiDeliveryTruck size={22} />
+                        </Tooltip>
                     </div>
                 </div>
                 <div className='basis-1/3'>
                     <div className='w-fit mx-auto text-center'>
                         <h2 className='font-semibold'>86</h2>
-                        <p className='text-sm'>NV</p>
+                        <Tooltip content='Chờ xác nhận'>
+                            <QuestionMarkCircledIcon width={20} height={20} />
+                        </Tooltip>
                     </div>
                 </div>
             </section>
@@ -209,9 +207,6 @@ const CardProfile = ({ rootClassName }: CardProps) => {
                     <span>Cài Đặt Thanh Toán</span>
                 </NavLink>
             </section>
-            <button className='absolute -top-6 right-2 p-8 rounded-8 bg-text_2/[0.05] hover:bg-text_2/[0.15]'>
-                <PiDotsThreeOutlineVerticalDuotone color='rgb(91, 107, 121, 0.85)' className='rotate-90' />
-            </button>
         </div>
     )
 }

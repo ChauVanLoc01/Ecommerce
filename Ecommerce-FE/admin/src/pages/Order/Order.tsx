@@ -16,7 +16,8 @@ const Order = () => {
         staleTime: 1000 * 60 * 1,
         enabled: false,
         placeholderData: (oldData) => oldData,
-        select: (data) => data.data.result
+        select: (data) => data.data.result,
+        refetchInterval: 1000 * 60 * 1
     })
 
     const { data: analyticOrderStore, refetch: analyticOrderStoreRefetching } = useQuery({

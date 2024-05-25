@@ -1,25 +1,20 @@
-import SimpleBar from 'simplebar-react'
-
 import Button from 'src/components/Button'
 import InputNumber from 'src/components/InputNumber'
-import Stars from 'src/components/Stars'
 
-import { Avatar, Flex, Spinner, Text } from '@radix-ui/themes'
-import { useQuery } from '@tanstack/react-query'
+import { Avatar, Flex, Text } from '@radix-ui/themes'
 import classNames from 'classnames'
 import { motion } from 'framer-motion'
 import { useContext, useState } from 'react'
 import { Link, useLoaderData, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
-import { RatingApi } from 'src/apis/rating.api'
 import { route } from 'src/constants/route'
 import { AppContext } from 'src/contexts/AppContext'
 import { ProductDetailResponse, ProductListResponse } from 'src/types/product.type'
 import { Store } from 'src/types/store.type'
 import { ls } from 'src/utils/localStorage'
 import { convertCurrentcy } from 'src/utils/utils.ts'
-import MaybeULike from './MaybeULike'
-import Review from './Review'
+import ProductRecomend from './ProductRecomend'
+import Rating from './Rating'
 
 const Product = () => {
     const { setProducts, products, profile } = useContext(AppContext)
@@ -30,13 +25,6 @@ const Product = () => {
         Store
     ]
     const navigate = useNavigate()
-
-    const { isPending: isRatingPending, data: ratingsData } = useQuery({
-        queryKey: ['ratingList'],
-        queryFn: () => RatingApi.getAllRating({ productId: productDetail.id }),
-        staleTime: 1000 * 60 * 2,
-        select: (data) => data.data.result
-    })
 
     const handleAddToCart = (checked: boolean) => () => {
         if (!profile) {
@@ -120,7 +108,7 @@ const Product = () => {
                     <img src={productDetail.image} className='object-cover w-full h-full' />
                 </div>
                 <div className='space-y-3'>
-                    <Stars amount={3} />
+                    {/* <Stars rating={3} /> */}
                     <h3 className='font-semibold text-2xl tracking-wider'>{productDetail.name}</h3>
                     <Link to={`/store/${storeDetail.id}`} className='inline-block'>
                         <Flex align={'center'} gapX={'4'}>
@@ -150,45 +138,8 @@ const Product = () => {
                 </div>
             </section>
             <div className='flex gap-4'>
-                <section className='bg-[#FFFFFF] rounded-12 border border-border/30 p-[24px] basis-2/3 space-y-4 sticky top-0'>
-                    <div className='rounded-12 border border-border/30 p-[24px] flex'>
-                        {ratingsData?.data.length ? (
-                            <div className='basis-1/3 space-y-2'>
-                                <div className='space-x-2 text-2xl relative'>
-                                    <span className='font-semibold'>4</span>
-                                    <span className='text-lg absolute top-1/2 -translate-y-1/2 text-gray-500'>/5</span>
-                                </div>
-                                <h3 className='tracking-wide'>Dựa trên 13 đánh giá</h3>
-                                <Stars amount={4} />
-                            </div>
-                        ) : (
-                            <div>
-                                <Text size={'5'}>Chưa có đánh giá</Text>
-                            </div>
-                        )}
-                    </div>
-                    <SimpleBar style={{ maxHeight: `${ratingsData?.data.length ? 708 : 0}px` }}>
-                        <div className='space-y-4'>
-                            {isRatingPending ? (
-                                <Spinner />
-                            ) : (
-                                ratingsData?.data.map((rating) => <Review data={rating} />)
-                            )}
-                        </div>
-                    </SimpleBar>
-                </section>
-                <section className='bg-[#FFFFFF] rounded-12 border border-border/30 basis-1/3 sticky top-0'>
-                    <div className='border-b border-border/30 p-[24px]'>
-                        <h3 className='text-base font-semibold tracking-wide'>Có thể bạn sẽ thích</h3>
-                    </div>
-                    <SimpleBar style={{ maxHeight: 810 }}>
-                        <div className='divide-y divide-border/30'>
-                            {relativedProducts.data.map((relative) => (
-                                <MaybeULike key={relative.id} product={relative} />
-                            ))}
-                        </div>
-                    </SimpleBar>
-                </section>
+                <Rating />
+                <ProductRecomend />
             </div>
         </motion.div>
     )

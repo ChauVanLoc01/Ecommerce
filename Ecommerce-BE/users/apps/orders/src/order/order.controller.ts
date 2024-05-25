@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
 import { ApiBearerAuth } from '@nestjs/swagger'
-import { checkVoucherExistInOrder } from 'common/constants/event.constant'
+import { checkVoucherExistInOrder, getOrderByRating } from 'common/constants/event.constant'
 import { CurrentUser } from 'common/decorators/current_user.decorator'
 import { Public } from 'common/decorators/public.decorator'
 import { Roles } from 'common/decorators/roles.decorator'
@@ -82,7 +82,6 @@ export class OrderController {
   }
 
   // User Order
-
   @Roles(Role.USER)
   @Post('user-order')
   createOrder(@CurrentUser() user: CurrentUserType, @Body() body: CreateOrderDTO) {
@@ -103,5 +102,11 @@ export class OrderController {
   @MessagePattern(checkVoucherExistInOrder)
   checkVoucherInVoucher(@Payload() payload: string) {
     return this.ordersService.checkVoucherExistInVoucher(payload)
+  }
+
+  @Public()
+  @MessagePattern(getOrderByRating)
+  getOrderValid(@Payload() payload: { userId: string; orderIds: string[] }) {
+    return this.ordersService.orderWithoutRating(payload.userId, payload.orderIds)
   }
 }

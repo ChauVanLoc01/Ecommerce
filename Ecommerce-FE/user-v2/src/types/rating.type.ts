@@ -1,3 +1,4 @@
+import { ProductOrder } from './order.type'
 import { ProfileResponse } from './profile.type'
 import { Return } from './return.type'
 
@@ -48,3 +49,5 @@ export type CreateRatingResponse = Return<{
     cratedRating: Rating
     materials: RatingMaterial[]
 }>
+
+export type IsCreateRatingResponse = Return<boolean | ProductOrder[]>

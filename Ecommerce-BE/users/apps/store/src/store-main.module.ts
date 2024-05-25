@@ -49,6 +49,26 @@ import { VoucherModule } from './Voucher/voucher.module'
         }
       ]
     }),
+    ClientsModule.registerAsync({
+      isGlobal: true,
+      clients: [
+        {
+          name: 'PRODUCT_SERVICE',
+          imports: [ConfigModule],
+          useFactory: (configService: ConfigService) => ({
+            transport: Transport.RMQ,
+            options: {
+              urls: [configService.get<string>('rabbitmq.uri')],
+              queue: QueueName.product,
+              queueOptions: {
+                durable: true
+              }
+            }
+          }),
+          inject: [ConfigService]
+        }
+      ]
+    }),
     ConfigModule,
     StoreModule,
     VoucherModule,

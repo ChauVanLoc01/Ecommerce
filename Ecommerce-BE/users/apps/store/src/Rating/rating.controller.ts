@@ -40,6 +40,12 @@ export class RatingController {
     return this.ratingService.getAllRatingByProduct(productId, query)
   }
 
+  @Roles(Role.USER)
+  @Get('is-can-create-rating/:productId')
+  ratingExist(@CurrentUser() user: CurrentUserType, @Param('productId') productId: string) {
+    return this.ratingService.ratingExist(user, productId)
+  }
+
   @Public()
   @Get(':ratingId')
   getDetail(@Param('ratingId') ratingId: string) {

@@ -1,7 +1,7 @@
+import { Text } from '@radix-ui/themes'
 import classNames from 'classnames'
 import { Link } from 'react-router-dom'
 
-import Stars from 'src/components/Stars'
 import { Product } from 'src/types/product.type'
 import { convertCurrentcy, removeSpecialCharacter } from 'src/utils/utils.ts'
 
@@ -19,13 +19,10 @@ const MaybeULike = ({ product }: MaybeULikeProps) => {
                     className='rounded-12 w-16 h-16 object-cover border border-border/30'
                 />
             </Link>
-            <div className='space-y-1'>
-                <Stars amount={3} />
-                <Link
-                    to={`/${removeSpecialCharacter(product.name)}-0-${product.id}`}
-                    className='font-semibold text-sm tracking-wide line-clamp-2 leading-5 w-fit pr-7'
-                >
-                    {product.name}
+            <div>
+                {/* <Stars amount={3} /> */}
+                <Link to={`/${removeSpecialCharacter(product.name)}-0-${product.id}`} className='inline-block'>
+                    <Text className='line-clamp-2 pr-7 overflow-hidden'>{product.name}</Text>
                 </Link>
                 <div className='space-x-3 text-sm'>
                     <span className=''>{convertCurrentcy(product.priceAfter || 0, 0)}</span>

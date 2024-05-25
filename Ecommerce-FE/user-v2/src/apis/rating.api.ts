@@ -1,4 +1,4 @@
-import { CreateRatingResponse, RatingListResponse, RatingQuery } from 'src/types/rating.type'
+import { CreateRatingResponse, IsCreateRatingResponse, RatingListResponse, RatingQuery } from 'src/types/rating.type'
 import { CreateRating } from 'src/utils/rating.schema'
 import { http } from './http'
 
@@ -13,5 +13,8 @@ export const RatingApi = {
                 page: body.page
             }
         })
+    },
+    canCreateRating: (productId: string) => {
+        return http.get<IsCreateRatingResponse>(`/store/rating/is-can-create-rating/${productId}`)
     }
 }

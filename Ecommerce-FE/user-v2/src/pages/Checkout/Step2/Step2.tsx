@@ -60,16 +60,12 @@ const Step2 = ({ addressId, setAddressId }: Step2Props) => {
         }
     }, [deliveriesQuery.data?.data])
 
-    console.log('addressId', addressId)
-
     return (
         <section className='p-24 rounded-8 border border-border/30 bg-[#FFFFFF] space-y-4'>
             <Flex justify={'end'}>
                 <AlertDialog.Root>
                     <AlertDialog.Trigger>
-                        <Button variant='outline' size={'3'}>
-                            Thêm mới địa chỉ
-                        </Button>
+                        <Button variant='soft'>Thêm mới địa chỉ</Button>
                     </AlertDialog.Trigger>
                     <AlertDialog.Content className='!rounded-8'>
                         <AlertDialog.Title>Thêm mới địa chỉ nhận hàng</AlertDialog.Title>

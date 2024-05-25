@@ -11,7 +11,7 @@ import { getStoreDetail } from 'common/constants/event.constant'
 import { Status } from 'common/enums/status.enum'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
 import { Return } from 'common/types/result.type'
-import { isUndefined, keyBy, omitBy } from 'lodash'
+import { isNull, isUndefined, keyBy, omitBy } from 'lodash'
 import { firstValueFrom } from 'rxjs'
 import { v4 as uuidv4 } from 'uuid'
 import { AnalyticsProductDTO } from './dtos/analytics-product.dto'
@@ -79,6 +79,7 @@ export class ProductService {
             lte: price_max,
             gte: price_min
           },
+          status: 'ACTIVE',
           createdAt: {
             gte: min_date,
             lte: max_date
@@ -92,6 +93,7 @@ export class ProductService {
             lte: price_max,
             gte: price_min
           },
+          status: 'ACTIVE',
           createdAt: {
             gte: min_date,
             lte: max_date
@@ -639,6 +641,22 @@ export class ProductService {
           where: {}
         })
       )
+    )
+  }
+
+  async getProductOrderByRating(productId: string, orders: string[]) {
+    return omitBy(
+      await Promise.all(
+        orders.map((order) =>
+          this.prisma.productOrder.findMany({
+            where: {
+              orderId: order,
+              productId
+            }
+          })
+        )
+      ),
+      isNull
     )
   }
 }

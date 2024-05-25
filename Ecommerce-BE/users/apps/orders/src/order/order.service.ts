@@ -14,6 +14,7 @@ import {
 import { OrderStatus } from 'common/enums/orderStatus.enum'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
 import { Return } from 'common/types/result.type'
+import { addHours, subDays } from 'date-fns'
 import { isUndefined, max, omitBy, sumBy } from 'lodash'
 import { firstValueFrom } from 'rxjs'
 import { v4 as uuidv4 } from 'uuid'
@@ -521,5 +522,24 @@ export class OrderService {
 
   async test() {
     return this.productClient.send('test', ['ok'])
+  }
+
+  async orderWithoutRating(userId: string, orderIds: string[]) {
+    const result = omitBy(
+      await this.prisma.order.findMany({
+        where: {
+          userId,
+          status: OrderStatus.SUCCESS,
+          id: {
+            notIn: orderIds
+          },
+          createdAt: {
+            gte: subDays(addHours(new Date(), 7), 5)
+          }
+        }
+      }),
+      'id'
+    )
+    return Object.keys(result)
   }
 }
