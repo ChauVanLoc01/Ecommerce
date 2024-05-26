@@ -1,6 +1,7 @@
 import { isUndefined, omitBy } from 'lodash'
 import { LoaderFunction } from 'react-router-dom'
 import { productFetching } from 'src/apis/product'
+import { RatingApi } from 'src/apis/rating.api'
 import { StoreFetching } from 'src/apis/store'
 import { endProductDetailFetching, startProductDetailFetching } from 'src/constants/event'
 import { queryClient } from 'src/routes/main.route'
@@ -24,7 +25,7 @@ export const productDetailLoader: LoaderFunction = async ({ params }) => {
         gcTime: 1000 * 60 * 50
     })
 
-    const [storeDetail, relativedProducts] = await Promise.all([
+    const [storeDetail, relativedProducts, isCanCreateRating] = await Promise.all([
         queryClient.fetchQuery({
             queryKey: ['storeDetail', productDetail.data.result.storeId],
             queryFn: () => StoreFetching.getStoreDetail(productDetail.data.result.storeId),
@@ -34,6 +35,10 @@ export const productDetailLoader: LoaderFunction = async ({ params }) => {
             queryKey: ['relativedProducts', productDetail.data.result.category],
             queryFn: () => productFetching.productList({ category: productDetail.data.result.category, sold: 'desc' }),
             staleTime: 1000 * 60 * 2
+        }),
+        queryClient.fetchQuery({
+            queryKey: ['isCanCreateRating', productId],
+            queryFn: () => RatingApi.canCreateRating(productId as string)
         })
     ])
 
@@ -45,7 +50,12 @@ export const productDetailLoader: LoaderFunction = async ({ params }) => {
         })
     )
 
-    return [productDetail.data.result, relativedProducts.data.result, storeDetail.data.result]
+    return [
+        productDetail.data.result,
+        relativedProducts.data.result,
+        storeDetail.data.result,
+        isCanCreateRating.data.result
+    ]
 }
 
 export const productListLoader: LoaderFunction = async ({ request }) => {

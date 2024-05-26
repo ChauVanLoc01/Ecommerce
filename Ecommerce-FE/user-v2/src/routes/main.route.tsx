@@ -12,6 +12,7 @@ import { productDetailLoader, productListLoader } from 'src/loaders/product.load
 import { profileLoader } from 'src/loaders/profile.loader'
 import { storeLoader } from 'src/loaders/store.loader'
 import Checkout from 'src/pages/Checkout'
+import Error from 'src/pages/Error/Error'
 import NotFound from 'src/pages/NotFound'
 import Profile from 'src/pages/Profile'
 import Address from 'src/pages/Profile/LayoutProfile/Address'
@@ -62,6 +63,7 @@ const routes = createBrowserRouter([
     {
         path: route.root,
         element: <MainLayout />,
+        errorElement: <Error />,
         children: [
             {
                 index: true,

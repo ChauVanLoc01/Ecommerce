@@ -25,6 +25,7 @@ import { Role } from 'common/enums/role.enum'
 import { JwtGuard } from 'common/guards/jwt.guard'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
 import { CreateStoreDTO } from './dtos/create-store.dto'
+import { StoreByUserDTO } from './dtos/store-by-user.dto'
 import { UpdateStoreDTO } from './dtos/update-store.dto'
 import { StoreService } from './store.service'
 
@@ -124,5 +125,11 @@ export class StoreController {
   @Get(':storeId')
   getStoreDetail(@Param('storeId') storeId: string) {
     return this.storeService.getStoreDetail(storeId)
+  }
+
+  @Public()
+  @Post('user-store')
+  getStoreByUser(@Body() body: StoreByUserDTO) {
+    return this.storeService.getStoreByUser(body)
   }
 }

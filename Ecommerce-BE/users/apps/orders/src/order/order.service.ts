@@ -525,21 +525,16 @@ export class OrderService {
   }
 
   async orderWithoutRating(userId: string, orderIds: string[]) {
-    const result = omitBy(
-      await this.prisma.order.findMany({
-        where: {
-          userId,
-          status: OrderStatus.SUCCESS,
-          id: {
-            notIn: orderIds
-          },
-          createdAt: {
-            gte: subDays(addHours(new Date(), 7), 5)
-          }
+    return await this.prisma.order.findMany({
+      where: {
+        userId,
+        id: {
+          notIn: orderIds.length ? orderIds : undefined
+        },
+        createdAt: {
+          gte: subDays(addHours(new Date(), 7), 5)
         }
-      }),
-      'id'
-    )
-    return Object.keys(result)
+      }
+    })
   }
 }

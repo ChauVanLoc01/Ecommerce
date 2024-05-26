@@ -241,15 +241,15 @@ model RatingMaterial {
 }
 
 model RatingReply {
-  id        String   @id @db.VarChar(50)
-  ratingId  String   @db.VarChar(50)
-  detail    String   @db.Text
-  createdAt DateTime @db.Timestamp(0)
-  createdBy String   @db.VarChar(50)
+  id        String    @id @db.VarChar(50)
+  ratingId  String    @db.VarChar(50)
+  detail    String    @db.Text
+  createdAt DateTime  @db.Timestamp(0)
+  createdBy String    @db.VarChar(50)
   updatedAt DateTime? @db.Timestamp(0)
   updatedBy String?   @db.VarChar(50)
-  Rating    Rating   @relation(fields: [ratingId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "RatingReply_ibfk_1")
-  User      User     @relation(fields: [createdBy], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "RatingReply_ibfk_2")
+  Rating    Rating    @relation(fields: [ratingId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "RatingReply_ibfk_1")
+  User      User      @relation(fields: [createdBy], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "RatingReply_ibfk_2")
 
   @@index([createdBy], map: "createdBy")
   @@index([ratingId], map: "ratingId")
@@ -329,6 +329,7 @@ model User {
   StoreRole_StoreRole_updatedByToUser StoreRole[]                @relation("StoreRole_updatedByToUser")
   UserAddProductToCart                UserAddProductToCart[]
   UserViewProduct                     UserViewProduct[]
+  UserVoucher                         UserVoucher[]
 }
 
 model UserAddProductToCart {
@@ -390,6 +391,7 @@ model Voucher {
   priceConditionId         String?                   @db.VarChar(50)
   Order                    Order[]
   Product                  Product[]
+  UserVoucher              UserVoucher[]
   Store                    Store?                    @relation(fields: [storeId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Voucher_ibfk_1")
   CategoryConditionVoucher CategoryConditionVoucher? @relation(fields: [categoryConditionId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Voucher_ibfk_2")
   PriceConditionVoucher    PriceConditionVoucher?    @relation(fields: [priceConditionId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Voucher_ibfk_3")
@@ -397,4 +399,20 @@ model Voucher {
   @@index([categoryConditionId], map: "categoryConditionId")
   @@index([priceConditionId], map: "priceConditionId")
   @@index([storeId], map: "storeId")
+}
+
+model UserVoucher {
+  id        String    @id @db.VarChar(50)
+  userId    String    @db.VarChar(50)
+  voucherId String    @db.VarChar(50)
+  isUsed    Int
+  createdAt DateTime  @db.Timestamp(0)
+  createdBy String    @db.VarChar(50)
+  updatedAt DateTime? @db.Timestamp(0)
+  updatedBy String?   @db.VarChar(50)
+  User      User      @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "UserVoucher_ibfk_1")
+  Voucher   Voucher   @relation(fields: [voucherId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "UserVoucher_ibfk_2")
+
+  @@index([userId], map: "userId")
+  @@index([voucherId], map: "voucherId")
 }

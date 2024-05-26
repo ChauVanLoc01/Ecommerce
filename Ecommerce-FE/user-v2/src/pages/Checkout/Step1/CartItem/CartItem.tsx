@@ -1,6 +1,8 @@
 import { Checkbox, Text } from '@radix-ui/themes'
+import { useQuery } from '@tanstack/react-query'
 import { motion, Reorder } from 'framer-motion'
 import { useContext, useState } from 'react'
+import { StoreFetching } from 'src/apis/store'
 import { AppContext } from 'src/contexts/AppContext'
 import { ls } from 'src/utils/localStorage'
 import { cn } from 'src/utils/utils.ts'
@@ -13,6 +15,14 @@ type CartItemProps = {
 const CartItem = ({ storeId }: CartItemProps) => {
     const { products, setProducts } = useContext(AppContext)
     const [productOrder, setProductOrder] = useState<string[]>(Object.keys(products.products))
+
+    const { data: refreshStores } = useQuery({
+        queryKey: ['refreshStore', JSON.stringify(Object.keys(products.products))],
+        queryFn: () => StoreFetching.refreshStore(Object.keys(products.products)),
+        refetchInterval: 1000 * 60 * 3,
+        enabled: false,
+        select: (data) => data.data.result
+    })
 
     const handleCheckedAll = (status: boolean) => {
         var storeExist = products.products[storeId].map((product) => {
@@ -32,7 +42,7 @@ const CartItem = ({ storeId }: CartItemProps) => {
 
     return (
         <motion.div
-            className={cn('bg-[#FFFFFF] rounded-8', {
+            className={cn('bg-[#FFFFFF] rounded-8 hover:shadow-md', {
                 'border border-border/30 hover:shadow-sm': products.length > 0
             })}
         >
@@ -43,7 +53,7 @@ const CartItem = ({ storeId }: CartItemProps) => {
                             checked={products.products[storeId].every((productInLS) => productInLS.checked)}
                             onCheckedChange={handleCheckedAll}
                         />
-                        <Text>Cửa hàng</Text>
+                        {refreshStores && <Text>{refreshStores[storeId].name}</Text>}
                     </div>
                 </motion.div>
             )}

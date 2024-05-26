@@ -11,7 +11,7 @@ const Step1 = () => {
     const [stores, setStores] = useState<string[]>(Object.keys(products.products))
 
     return (
-        <SimpleBar style={{ maxHeight: 680, paddingRight: 10 }}>
+        <SimpleBar style={{ maxHeight: 680, paddingRight: 10, paddingBottom: 15 }}>
             <Reorder.Group as='ul' axis='y' values={stores} onReorder={setStores} className='space-y-4'>
                 {Object.keys(products.products).map((storeId) => (
                     <Reorder.Item key={storeId} value={storeId}>

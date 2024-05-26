@@ -2,7 +2,6 @@ import { PrismaService } from '@app/common/prisma/prisma.service'
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { ClientProxy } from '@nestjs/microservices'
-import { ProductOrder } from '@prisma/client'
 import {
   getInfoUserInRating,
   getOrderByRating,
@@ -11,12 +10,13 @@ import {
 import { PaginationDTO } from 'common/decorators/pagination.dto'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
 import { Return } from 'common/types/result.type'
-import { isUndefined, keyBy, omitBy } from 'lodash'
+import { flatten, isUndefined, keyBy, omitBy } from 'lodash'
 import { firstValueFrom } from 'rxjs'
 import { v4 as uuidv4 } from 'uuid'
 import { CreateRatingDto } from './dtos/create-rating.dto'
 import { RatingQueryDTO } from './dtos/rating-query.dto'
 import { CreateReplyRatingDTO } from './dtos/reply-rating.dto'
+import { Order } from '@prisma/client'
 
 @Injectable()
 export class RatingService {
@@ -313,55 +313,53 @@ export class RatingService {
   }
 
   async ratingExist(user: CurrentUserType, productId: string): Promise<Return> {
-    const orderIds = omitBy(
-      await this.prisma.rating.findMany({
-        where: {
-          createdBy: user.id
+    try {
+      const orderIds = (
+        await this.prisma.rating.findMany({
+          where: {
+            createdBy: user.id
+          }
+        })
+      ).map((e) => {
+        if (e) {
+          return e.id
         }
-      }),
-      'orderId'
-    )
+      })
 
-    const convertOrderIds = Object.keys(orderIds)
+      const orders = (
+        (await firstValueFrom(
+          this.orderClient.send(getOrderByRating, { userId: user.id, orderIds })
+        )) as Order[]
+      ).map((e) => {
+        if (e) return e.id
+      })
 
-    console.log('converOrderData', convertOrderIds)
+      if (!orders.length) {
+        return {
+          msg: 'ok',
+          result: false
+        }
+      }
 
-    if (!convertOrderIds.length) {
+      const productOrders = flatten(
+        await firstValueFrom(
+          this.productClient.send(getProductOrderByRating, { productId, orders })
+        )
+      )
+
+      if (!productOrders.length) {
+        return {
+          msg: 'ok',
+          result: false
+        }
+      }
+
       return {
         msg: 'ok',
-        result: false
+        result: productOrders
       }
-    }
-
-    const orders: string[] = await firstValueFrom(
-      this.orderClient.send(getOrderByRating, { userId: user.id, orderIds: convertOrderIds })
-    )
-
-    console.log('orders', orders)
-
-    if (orders.length) {
-      return {
-        msg: 'ok',
-        result: false
-      }
-    }
-
-    const productOrders: ProductOrder[] = await firstValueFrom(
-      this.productClient.send(getProductOrderByRating, { productId, orders })
-    )
-
-    console.log('productOrders', productOrders)
-
-    if (!productOrders.length) {
-      return {
-        msg: 'ok',
-        result: false
-      }
-    }
-
-    return {
-      msg: 'ok',
-      result: productOrders
+    } catch (err) {
+      throw new BadRequestException('Lỗi BE')
     }
   }
 }

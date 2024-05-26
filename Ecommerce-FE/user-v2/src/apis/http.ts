@@ -32,15 +32,18 @@ class Http {
         })
     }
     middlewareResponse() {
-        this.instance.interceptors.response.use((response: AxiosResponse<Return<any>>) => {
-            const { config, status, data } = response
-            if (status === 201 && (config.url?.endsWith(route.login) || config.url?.endsWith(route.register))) {
-                ls.setItem('profile', JSON.stringify(data.result))
-                window.dispatchEvent(new CustomEvent(profileEvent))
-                this.access_token = data.result.access_token
-            }
-            return response
-        })
+        this.instance.interceptors.response.use(
+            (response: AxiosResponse<Return<any>>) => {
+                const { config, status, data } = response
+                if (status === 201 && (config.url?.endsWith(route.login) || config.url?.endsWith(route.register))) {
+                    ls.setItem('profile', JSON.stringify(data.result))
+                    window.dispatchEvent(new CustomEvent(profileEvent))
+                    this.access_token = data.result.access_token
+                }
+                return response
+            },
+            (err) => Promise.reject(err)
+        )
     }
 }
 

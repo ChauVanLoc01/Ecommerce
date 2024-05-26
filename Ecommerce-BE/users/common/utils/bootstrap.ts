@@ -48,13 +48,14 @@ export async function bootstrap(mainModule: any) {
         transform: true,
         whitelist: true,
         exceptionFactory(errors: ValidationError[]) {
-          const messages = Object.fromEntries(
-            errors.map((err) => {
+          const err = errors.map((err) => {
+            if (err.constraints) {
               return [err.property, Object.values(err.constraints)] as [string, string[]]
-            })
-          )
+            }
+            return [err.property, Object.values(err.children[0].constraints)]
+          })
           throw new BadRequestException({
-            message: messages,
+            message: err,
             error: 'Bad Request',
             statusCode: 400
           })

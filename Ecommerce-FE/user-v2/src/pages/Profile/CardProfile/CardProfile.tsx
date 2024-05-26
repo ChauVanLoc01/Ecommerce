@@ -85,7 +85,7 @@ const CardProfile = ({ rootClassName }: CardProps) => {
     return (
         <div
             className={classNames(
-                'px-12 py-24 border border-border/30 rounded-8 bg-white space-y-4 relative shrink-0',
+                'p-24 border border-border/30 rounded-8 bg-white space-y-4 relative shrink-0',
                 rootClassName
             )}
         >

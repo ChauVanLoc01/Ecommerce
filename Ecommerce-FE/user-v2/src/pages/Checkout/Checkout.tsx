@@ -4,7 +4,7 @@ import classNames from 'classnames'
 
 import { motion } from 'framer-motion'
 
-import { AlertDialog, Avatar, Badge, Button, Flex, Spinner, Text, TextField } from '@radix-ui/themes'
+import { AlertDialog, Avatar, Badge, Button, Flex, Spinner, Text } from '@radix-ui/themes'
 import { useMutation } from '@tanstack/react-query'
 import { ColumnDef } from '@tanstack/react-table'
 import { format } from 'date-fns'
@@ -22,13 +22,13 @@ import { convertCurrentcy } from 'src/utils/utils.ts'
 import Step1 from './Step1'
 import Step2 from './Step2'
 import Step3 from './Step3'
+import Voucher from './Voucher'
 
 const Checkout = () => {
     const { products, setProducts } = useContext(AppContext)
     const [step, setStep] = useState<number>(1)
     const [addressId, setAddressId] = useState<string>('')
     const navigate = useNavigate()
-
     const [orderSuccess, setOrderSuccess] = useState<boolean>(false)
 
     const {
@@ -287,17 +287,7 @@ const Checkout = () => {
                         <section className='basis-1/3 space-y-4'>
                             <SimpleBar style={{ maxHeight: '600px', paddingBottom: '5px' }}>
                                 <div className='space-y-4 pr-2'>
-                                    <div className='p-24 rounded-8 border border-border/30 bg-[#FFFFFF] space-y-4'>
-                                        <h3 className='font-semibold'>Bạn có mã giảm giá?</h3>
-                                        <div className='flex justify-between items-center gap-x-2'>
-                                            <TextField.Root
-                                                className='flex-grow'
-                                                placeholder='Nhập mã giảm giá'
-                                                size={'3'}
-                                            />
-                                            <Button size={'3'}>Áp dụng</Button>
-                                        </div>
-                                    </div>
+                                    <Voucher />
                                     <div className='rounded-8 border border-border/30 bg-[#FFFFFF]'>
                                         <div className='p-24 border-b border-border-border/30'>
                                             <h3 className='font-semibold'>Tổng quan đơn hàng</h3>

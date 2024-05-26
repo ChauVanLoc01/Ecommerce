@@ -1,10 +1,12 @@
 import { TrashIcon } from '@radix-ui/react-icons'
 import { AlertDialog, Button, Checkbox, Flex, IconButton, Text, Tooltip } from '@radix-ui/themes'
+import { useQuery } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import { debounce } from 'lodash'
 import { useContext, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
+import { productFetching } from 'src/apis/product'
 import InputNumber from 'src/components/InputNumber'
 import { AppContext } from 'src/contexts/AppContext'
 import { ls } from 'src/utils/localStorage'
@@ -26,6 +28,19 @@ const ProductIncart = ({ product, storeId }: ProductInCartType) => {
     const { setProducts, products } = useContext(AppContext)
     const [quantity, setQuantity] = useState<number>(product.buy)
     const debounceRef = useRef<any>()
+
+    const productsId = Object.keys(products.products).reduce((acum: any, e) => {
+        const storeIds = products.products[e].map((i) => i.productId)
+        return [...acum, ...storeIds]
+    }, [])
+
+    const { data: refreshProducts } = useQuery({
+        queryKey: ['refreshProduct', productsId],
+        queryFn: () => productFetching.refreshProduct(productsId),
+        refetchInterval: 1000 * 60,
+        enabled: false,
+        select: (data) => data.data.result
+    })
 
     const handleCheckBox = (checked: boolean) => {
         var storeExist = products.products[storeId]
@@ -119,8 +134,14 @@ const ProductIncart = ({ product, storeId }: ProductInCartType) => {
                 <h3 className='text-gray-400'>Red</h3>
             </div>
             <div className='flex items-center space-x-4'>
-                <h3 className='font-semibold'> {convertCurrentcy(product.priceAfter || 0, 0)}</h3>
-                <InputNumber quantity={quantity} setQuantity={setQuantity} />
+                <h3 className='font-semibold'>
+                    {convertCurrentcy((refreshProducts as any)[product.productId].priceAfter || 0, 0)}
+                </h3>
+                <InputNumber
+                    quantity={quantity}
+                    setQuantity={setQuantity}
+                    currentQuantity={(refreshProducts as any)[product.productId].currentQuantity}
+                />
                 <AlertDialog.Root>
                     <AlertDialog.Trigger>
                         <IconButton color='red'>

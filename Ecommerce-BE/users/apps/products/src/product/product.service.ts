@@ -11,7 +11,7 @@ import { getStoreDetail } from 'common/constants/event.constant'
 import { Status } from 'common/enums/status.enum'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
 import { Return } from 'common/types/result.type'
-import { isNull, isUndefined, keyBy, omitBy } from 'lodash'
+import { isUndefined, keyBy, omitBy } from 'lodash'
 import { firstValueFrom } from 'rxjs'
 import { v4 as uuidv4 } from 'uuid'
 import { AnalyticsProductDTO } from './dtos/analytics-product.dto'
@@ -19,6 +19,7 @@ import { CreateUserAddProductToCartDTO } from './dtos/create-product-add-to-cart
 import { CreateUserViewProductDto } from './dtos/create-product-view.dto'
 import { CreateProductType } from './dtos/create-product.dto'
 import { QueryProductType } from './dtos/query-product.dto'
+import { RefreshCartDTO } from './dtos/refresh-cart.dto'
 import { UpdateProductType } from './dtos/update-product.dto'
 import { SearchProductService } from './search-product.service'
 
@@ -645,18 +646,41 @@ export class ProductService {
   }
 
   async getProductOrderByRating(productId: string, orders: string[]) {
-    return omitBy(
+    return await Promise.all(
+      orders.map((orderId) =>
+        this.prisma.productOrder.findMany({
+          where: {
+            orderId,
+            productId
+          }
+        })
+      )
+    )
+  }
+
+  async refreshCart(body: RefreshCartDTO): Promise<Return> {
+    const products = (
       await Promise.all(
-        orders.map((order) =>
-          this.prisma.productOrder.findMany({
+        body.productsId.map((id) =>
+          this.prisma.product.findUnique({
             where: {
-              orderId: order,
-              productId
+              id
             }
           })
         )
-      ),
-      isNull
-    )
+      )
+    ).filter((e) => e)
+
+    if (!products.length) {
+      return {
+        msg: 'ok',
+        result: []
+      }
+    }
+
+    return {
+      msg: 'ok',
+      result: keyBy(products, 'id')
+    }
   }
 }

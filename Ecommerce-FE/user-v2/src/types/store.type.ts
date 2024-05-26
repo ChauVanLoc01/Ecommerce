@@ -10,3 +10,5 @@ export type Store = {
     createdAt?: string
     updatedAt?: string
 }
+
+export type RefreshStore = { [key: string]: Store }

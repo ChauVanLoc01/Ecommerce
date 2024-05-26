@@ -1,5 +1,5 @@
 import { yupResolver } from '@hookform/resolvers/yup'
-import { AlertDialog, Button, DataList, Flex, Select, Text, TextArea, TextField } from '@radix-ui/themes'
+import { AlertDialog, Button, DataList, Flex, Select, Spinner, Text, TextArea, TextField } from '@radix-ui/themes'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { isAxiosError } from 'axios'
 import { useState } from 'react'
@@ -33,7 +33,7 @@ const VoucherCreate = ({ refetchDataAll }: VoucherCreateProps) => {
         select: (data) => data.data.result
     })
 
-    const { mutate: createVoucherMutation } = useMutation({
+    const { mutate: createVoucherMutation, isPending: isCreateVoucherPending } = useMutation({
         mutationFn: VoucherApi.createVoucher,
         onSuccess: () => {
             refetchDataAll()
@@ -385,6 +385,7 @@ const VoucherCreate = ({ refetchDataAll }: VoucherCreateProps) => {
                             </Button>
                         </AlertDialog.Cancel>
                         <Button type='submit' className='bg-blue text-white'>
+                            {isCreateVoucherPending && <Spinner />}
                             Tạo mới
                         </Button>
                     </Flex>

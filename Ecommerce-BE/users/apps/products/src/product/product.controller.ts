@@ -21,6 +21,7 @@ import { QueryProductDTO } from './dtos/query-product.dto'
 import { UpdateProductDTO } from './dtos/update-product.dto'
 import { ProductService } from './product.service'
 import { SearchProductService } from './search-product.service'
+import { RefreshCartDTO } from './dtos/refresh-cart.dto'
 
 @UseGuards(JwtGuard)
 @ApiBearerAuth()
@@ -41,6 +42,12 @@ export class ProductController {
   @Get('es-search')
   searchProduct(@Query('search') search: string) {
     return this.productsService.searchProduct(search)
+  }
+
+  @Public()
+  @Post('refresh-cart')
+  refreshCart(@Body() body: RefreshCartDTO) {
+    return this.productsService.refreshCart(body)
   }
 
   @Roles(Role.EMPLOYEE, Role.STORE_OWNER)

@@ -4,7 +4,8 @@ import { ConfigService } from '@nestjs/config'
 import { ClientProxy } from '@nestjs/microservices'
 import { Prisma } from '@prisma/client'
 import { checkVoucherExistInOrder } from 'common/constants/event.constant'
-import { CurrentStoreType } from 'common/types/current.type'
+import { VoucherType } from 'common/constants/voucher.constant'
+import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
 import { Return } from 'common/types/result.type'
 import { isUndefined, omitBy } from 'lodash'
 import { firstValueFrom } from 'rxjs'
@@ -307,6 +308,58 @@ export class VoucherService {
         active,
         block
       }
+    }
+  }
+
+  async getUserVoucherByStore(user: CurrentUserType, storeId: string): Promise<Return> {
+    const vouchersValid = await this.prisma.voucher.findMany({
+      where: {
+        storeId,
+        currentQuantity: {
+          gte: 1
+        },
+        type: VoucherType.store
+      },
+      include: {
+        CategoryConditionVoucher: true,
+        PriceConditionVoucher: true
+      }
+    })
+
+    return {
+      msg: 'ok',
+      result: vouchersValid
+    }
+  }
+
+  async getUserVoucherByGlobal(user: CurrentUserType): Promise<Return> {
+    const userVouchers = await this.prisma.userVoucher.findMany({
+      where: {
+        userId: user.id
+      }
+    })
+
+    const vouchersValid = await Promise.all(
+      userVouchers.map((voucher) =>
+        this.prisma.voucher.findUnique({
+          where: {
+            id: voucher.voucherId,
+            currentQuantity: {
+              gte: 1
+            },
+            type: VoucherType.global
+          },
+          include: {
+            CategoryConditionVoucher: true,
+            PriceConditionVoucher: true
+          }
+        })
+      )
+    )
+
+    return {
+      msg: 'ok',
+      result: vouchersValid
     }
   }
 }

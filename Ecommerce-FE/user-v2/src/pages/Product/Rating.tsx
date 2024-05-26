@@ -4,23 +4,22 @@ import { useLoaderData } from 'react-router-dom'
 import SimpleBar from 'simplebar-react'
 import { RatingApi } from 'src/apis/rating.api'
 import { ProductDetailResponse } from 'src/types/product.type'
+import { IsCreateRatingResponse } from 'src/types/rating.type'
 import CreateRating from './CreateRating'
 import Review from './Review'
 
 const Rating = () => {
-    const [{ id: productId }, ,] = useLoaderData() as [ProductDetailResponse, any, any]
+    const [{ id: productId }, , , isCanCreateRating] = useLoaderData() as [
+        ProductDetailResponse,
+        any,
+        any,
+        boolean | IsCreateRatingResponse
+    ]
 
     const { isPending: isRatingPending, data: ratingsData } = useQuery({
         queryKey: ['ratingList', productId],
         queryFn: () => RatingApi.getAllRating({ productId }),
         staleTime: 1000 * 60 * 2,
-        select: (data) => data.data.result
-    })
-
-    const { data: isCanCreate } = useQuery({
-        queryKey: ['isCanCreateRating', productId],
-        queryFn: () => RatingApi.canCreateRating(productId),
-        staleTime: Infinity,
         select: (data) => data.data.result
     })
 
@@ -43,7 +42,7 @@ const Rating = () => {
                         ) : (
                             <Flex justify={'between'} className='w-full'>
                                 <Text size={'4'}>Chưa có đánh giá</Text>
-                                {isCanCreate !== false && <CreateRating />}
+                                {isCanCreateRating !== false && <CreateRating />}
                             </Flex>
                         )}
                     </div>
