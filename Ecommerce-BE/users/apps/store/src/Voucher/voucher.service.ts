@@ -1,5 +1,11 @@
 import { PrismaService } from '@app/common/prisma/prisma.service'
-import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common'
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException
+} from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { ClientProxy } from '@nestjs/microservices'
 import { Prisma } from '@prisma/client'
@@ -7,12 +13,14 @@ import { checkVoucherExistInOrder } from 'common/constants/event.constant'
 import { VoucherType } from 'common/constants/voucher.constant'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
 import { Return } from 'common/types/result.type'
+import { addHours } from 'date-fns'
 import { isUndefined, omitBy } from 'lodash'
 import { firstValueFrom } from 'rxjs'
 import { v4 as uuidv4 } from 'uuid'
 import { CreateVoucherDTO } from './dtos/CreateVoucher.dto'
 import { VoucherQueryDTO } from './dtos/QueryVoucher.dto'
 import { UpdateVoucherDTO } from './dtos/UpdateVoucher.dto'
+import { SearchCodeDTO } from './dtos/search-code.dto'
 
 @Injectable()
 export class VoucherService {
@@ -360,6 +368,39 @@ export class VoucherService {
     return {
       msg: 'ok',
       result: vouchersValid
+    }
+  }
+
+  async searchVoucherByCode(body: SearchCodeDTO): Promise<Return> {
+    try {
+      const { code, storesID } = body
+      const vouchers = await Promise.all(
+        storesID.map((storeId) =>
+          this.prisma.voucher.findFirst({
+            where: {
+              storeId,
+              code,
+              endDate: {
+                gt: addHours(new Date(), 7)
+              }
+            }
+          })
+        )
+      )
+
+      if (!vouchers.length) {
+        return {
+          msg: 'ok',
+          result: {}
+        }
+      }
+
+      return {
+        msg: 'ok',
+        result: omitBy(vouchers, 'storeId')
+      }
+    } catch (err) {
+      throw new InternalServerErrorException('Lỗi BE')
     }
   }
 }

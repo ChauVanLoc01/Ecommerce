@@ -35,6 +35,10 @@ class OrdersParameter {
 
   @IsString()
   @IsOptional()
+  voucherId: string
+
+  @IsString()
+  @IsOptional()
   note?: string
 
   @IsArray()
@@ -64,7 +68,7 @@ export class CreateOrderDTO {
   @ApiPropertyOptional()
   @IsString()
   @IsOptional()
-  voucherId?: string
+  globalVoucherId: string
 }
 
 export type CreateOrderType = InstanceType<typeof CreateOrderDTO>

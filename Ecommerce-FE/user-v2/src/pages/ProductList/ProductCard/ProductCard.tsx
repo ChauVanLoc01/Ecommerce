@@ -136,7 +136,7 @@ const ProductCard = ({ product, isHiddenStore = false }: ProductCardProps) => {
                                 {convertCurrentcy(priceBefore || 0, 0)}
                             </span>
                         </h3>
-                        <Stars amount={5} />
+                        <Stars rating={3} />
                     </div>
                     <div>
                         <Button className='px-5 py-[10px] text-xs' text='Add' onClick={handleAddToCart} />

@@ -1,11 +1,11 @@
 import { CalendarIcon, ChatBubbleIcon, HomeIcon, PersonIcon, PlusIcon, StarIcon } from '@radix-ui/react-icons'
-import { Avatar, Box, Button, DataList, Flex, Tabs, Text } from '@radix-ui/themes'
+import { Avatar, Box, DataList, Flex, Tabs, Text } from '@radix-ui/themes'
 import { useLoaderData } from 'react-router-dom'
+import { Product } from 'src/types/product.type'
 import { Store as StoreType } from 'src/types/store.type'
 import Home from './Home'
-import Sold from './Sold'
 import New from './New'
-import { Product } from 'src/types/product.type'
+import Sold from './Sold'
 
 const Store = () => {
     const [storeDetail, solds, news] = useLoaderData() as [StoreType, Product[], Product[]]

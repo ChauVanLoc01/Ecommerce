@@ -14,7 +14,7 @@ type VoucherFilterProps = {
     page_size: number
 }
 
-const VoucherFilter = ({ query, setQuery, page, page_size }: VoucherFilterProps) => {
+const VoucherFilter = ({ setQuery, page, page_size }: VoucherFilterProps) => {
     const [date, setDate] = useState<DateRange | undefined>(undefined)
 
     const handleSelectStatus = (status: string) => {

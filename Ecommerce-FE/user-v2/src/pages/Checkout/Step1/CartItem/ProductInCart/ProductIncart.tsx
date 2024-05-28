@@ -135,12 +135,12 @@ const ProductIncart = ({ product, storeId }: ProductInCartType) => {
             </div>
             <div className='flex items-center space-x-4'>
                 <h3 className='font-semibold'>
-                    {convertCurrentcy((refreshProducts as any)[product.productId].priceAfter || 0, 0)}
+                    {refreshProducts ? convertCurrentcy(refreshProducts[product.productId].priceAfter, 0) : 0}
                 </h3>
                 <InputNumber
                     quantity={quantity}
                     setQuantity={setQuantity}
-                    currentQuantity={(refreshProducts as any)[product.productId].currentQuantity}
+                    currentQuantity={refreshProducts ? refreshProducts[product.productId].currentQuantity : 0}
                 />
                 <AlertDialog.Root>
                     <AlertDialog.Trigger>

@@ -1,8 +1,9 @@
 import { yupResolver } from '@hookform/resolvers/yup'
+import { Spinner } from '@radix-ui/themes'
 import { useMutation } from '@tanstack/react-query'
 import axios from 'axios'
 import classNames from 'classnames'
-import { useRef } from 'react'
+import { useContext, useRef } from 'react'
 import { SubmitHandler, useForm } from 'react-hook-form'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -13,10 +14,12 @@ import Image from 'src/components/Image'
 import Input from 'src/components/Input'
 import Password from 'src/components/Password'
 import { route } from 'src/constants/route'
+import { AppContext } from 'src/contexts/AppContext'
 import { RegisterBody } from 'src/types/auth.type'
 import { RegisterSchemaType, register_schema } from 'src/utils/auth.schema'
 
 const Register = () => {
+    const { setProfile } = useContext(AppContext)
     const navigate = useNavigate()
     const redirectRef = useRef<any>(undefined)
     const {
@@ -32,13 +35,17 @@ const Register = () => {
 
     const { mutate, isSuccess, isPending } = useMutation({
         mutationFn: (body: RegisterBody) => authFetching.register(body),
-        onSuccess: () => {
-            redirectRef.current = setTimeout(() => navigate(route.root), 3000)
+        onSuccess: (result) => {
+            redirectRef.current = setTimeout(() => {
+                setProfile(result.data.result)
+                navigate(route.root)
+            }, 3000)
             toast.success('Đăng kí thành công', {
                 description: 'Chuyển đến trang chủ trong 3s kế tiếp',
                 action: {
                     label: 'Trang chủ',
                     onClick: () => {
+                        setProfile(result.data.result)
                         clearTimeout(redirectRef.current)
                         navigate(route.root)
                     }

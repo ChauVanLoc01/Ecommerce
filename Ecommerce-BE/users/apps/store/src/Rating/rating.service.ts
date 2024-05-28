@@ -320,11 +320,7 @@ export class RatingService {
             createdBy: user.id
           }
         })
-      ).map((e) => {
-        if (e) {
-          return e.id
-        }
-      })
+      ).map((e) => e.orderId)
 
       const orders = (
         (await firstValueFrom(

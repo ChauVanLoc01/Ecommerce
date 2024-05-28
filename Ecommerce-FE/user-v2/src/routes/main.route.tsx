@@ -6,6 +6,7 @@ import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom'
 import { route } from 'src/constants/route'
 import { AppContext } from 'src/contexts/AppContext'
 import MainLayout from 'src/layouts/MainLayout'
+import { checkoutLoader } from 'src/loaders/checkout.loader'
 import { deliveryLoader } from 'src/loaders/delivery.loader'
 import { ordersLoader } from 'src/loaders/order.loader'
 import { productDetailLoader, productListLoader } from 'src/loaders/product.loader'
@@ -115,7 +116,7 @@ const routes = createBrowserRouter([
                     {
                         path: route.checkout,
                         element: <Checkout />,
-                        loader: deliveryLoader
+                        loader: checkoutLoader
                     }
                 ]
             }

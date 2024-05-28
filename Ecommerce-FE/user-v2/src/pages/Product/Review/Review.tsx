@@ -7,7 +7,7 @@ type ReviewProps = {
 }
 
 const Review = ({ data }: ReviewProps) => {
-    const { material, rating, user } = data
+    const { rating, user } = data
     return (
         <section className='rounded-12 p-[24px] flex gap-4 bg-[#F8F9FA]'>
             <img src={user.image} alt='review-img' className='rounded-full w-14 h-14' />

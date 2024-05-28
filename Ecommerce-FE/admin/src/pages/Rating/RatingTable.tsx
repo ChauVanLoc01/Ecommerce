@@ -13,7 +13,7 @@ type RatingTableProps = {
     refetchDataAll: () => Promise<any>
 }
 
-const RatingTable = ({ data, refetchDataAll }: RatingTableProps) => {
+const RatingTable = ({ data }: RatingTableProps) => {
     const columns: ColumnDef<Rating>[] = [
         {
             accessorKey: 'title',
@@ -145,7 +145,7 @@ const RatingTable = ({ data, refetchDataAll }: RatingTableProps) => {
         },
         {
             accessorKey: ' ',
-            cell: ({ row }) => (
+            cell: () => (
                 <Flex gapX={'2'} align={'center'}>
                     <Tooltip content='Xem chi tiết'>
                         <IconButton variant='soft'>

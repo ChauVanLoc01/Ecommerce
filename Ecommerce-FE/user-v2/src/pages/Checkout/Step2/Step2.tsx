@@ -17,6 +17,7 @@ type Step2Props = {
 
 const Step2 = ({ addressId, setAddressId }: Step2Props) => {
     const [open, setOpen] = useState<boolean>(false)
+    console.log('object', open);
 
     const deliveriesQuery = useQuery({
         queryKey: ['delivery'],

@@ -7,6 +7,7 @@ import { motion } from 'framer-motion'
 import { useContext, useState } from 'react'
 import { Link, useLoaderData, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from 'src/components/Shadcn/carousel'
 import { route } from 'src/constants/route'
 import { AppContext } from 'src/contexts/AppContext'
 import { ProductDetailResponse, ProductListResponse } from 'src/types/product.type'
@@ -19,11 +20,7 @@ import Rating from './Rating'
 const Product = () => {
     const { setProducts, products, profile } = useContext(AppContext)
     const [quantity, setQuantity] = useState<number>(1)
-    const [productDetail, relativedProducts, storeDetail] = useLoaderData() as [
-        ProductDetailResponse,
-        ProductListResponse,
-        Store
-    ]
+    const [productDetail, _, storeDetail] = useLoaderData() as [ProductDetailResponse, ProductListResponse, Store]
     const navigate = useNavigate()
 
     const handleAddToCart = (checked: boolean) => () => {
@@ -104,19 +101,36 @@ const Product = () => {
             className='space-y-4 pb-20'
         >
             <section className='flex gap-10'>
-                <div className='basis-2/5 max-w-[40%] grow-0 bg-[#FFFFFF] rounded-12 flex-shrink-0 overflow-hidden w-[512px] h-[512px]'>
-                    <img src={productDetail.image} className='object-cover w-full h-full' />
+                <div className='basis-2/5 max-w-[40%] grow-0 bg-[#FFFFFF] rounded-12 flex-shrink-0 w-[512px] h-[512px]'>
+                    <Carousel className='w-full'>
+                        <CarouselContent className=''>
+                            {productDetail.productImages.map((image, idx) => (
+                                <CarouselItem key={idx}>
+                                    <img
+                                        src={image.url}
+                                        className='object-cover w-full h-full rounded-8 overflow-hidden'
+                                    />
+                                </CarouselItem>
+                            ))}
+                        </CarouselContent>
+                        <CarouselPrevious />
+                        <CarouselNext />
+                    </Carousel>
                 </div>
                 <div className='space-y-3'>
                     {/* <Stars rating={3} /> */}
-                    <h3 className='font-semibold text-2xl tracking-wider'>{productDetail.name}</h3>
+                    <h3 className='font-semibold text-2xl'>{productDetail.name}</h3>
                     <Link to={`/store/${storeDetail.id}`} className='inline-block'>
                         <Flex align={'center'} gapX={'4'}>
                             <Avatar fallback='A' src={storeDetail.image} />
                             <Text color='gray'>{storeDetail.name}</Text>
                         </Flex>
                     </Link>
-                    <InputNumber quantity={quantity} setQuantity={setQuantity} />
+                    <InputNumber
+                        quantity={quantity}
+                        setQuantity={setQuantity}
+                        currentQuantity={productDetail.currentQuantity}
+                    />
                     <div className='space-x-3 text-2xl'>
                         <span className='text-red-600'>{convertCurrentcy(productDetail.priceAfter || 0, 0)}</span>
                         <span

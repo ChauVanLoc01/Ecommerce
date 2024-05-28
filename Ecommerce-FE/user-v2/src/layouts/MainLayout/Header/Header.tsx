@@ -4,6 +4,7 @@ import { useContext } from 'react'
 import { PiShoppingCartLight } from 'react-icons/pi'
 import { Link, useNavigate } from 'react-router-dom'
 import SimpleBar from 'simplebar-react'
+import { http } from 'src/apis/http'
 
 import Button from 'src/components/Button'
 import Image from 'src/components/Image'
@@ -15,7 +16,7 @@ import RegisterStore from 'src/pages/RegisterStore'
 import { convertCurrentcy, removeSpecialCharacter } from 'src/utils/utils.ts'
 
 const Header = () => {
-    const { products, profile } = useContext(AppContext)
+    const { products, profile, setProducts, setProfile } = useContext(AppContext)
     const navigate = useNavigate()
 
     const handleNavigate = (setIsOpen: React.Dispatch<React.SetStateAction<boolean>>, path?: string) => () => {
@@ -25,6 +26,8 @@ const Header = () => {
 
     const handleExit = (setIsOpen: React.Dispatch<React.SetStateAction<boolean>>) => () => {
         setIsOpen(false)
+        setProfile(undefined)
+        setProducts({ length: 0, products: {} })
         window.dispatchEvent(new CustomEvent(exitEvent))
     }
 

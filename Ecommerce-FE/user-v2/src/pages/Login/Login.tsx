@@ -8,7 +8,7 @@ import { toast } from 'sonner'
 import { yupResolver } from '@hookform/resolvers/yup'
 import axios from 'axios'
 import classNames from 'classnames'
-import { useRef } from 'react'
+import { useContext, useRef } from 'react'
 import Button from 'src/components/Button'
 import Image from 'src/components/Image'
 import Input from 'src/components/Input'
@@ -17,8 +17,11 @@ import { route } from 'src/constants/route'
 import { LoginBody } from 'src/types/auth.type'
 import { Reject } from 'src/types/return.type'
 import { login_schema } from 'src/utils/auth.schema'
+import { Spinner } from '@radix-ui/themes'
+import { AppContext } from 'src/contexts/AppContext'
 
 const Login = () => {
+    const { setProfile } = useContext(AppContext)
     const navigate = useNavigate()
     const redirectRef = useRef<any>(undefined)
     const {
@@ -34,8 +37,9 @@ const Login = () => {
 
     const { mutate, isSuccess, isPending } = useMutation({
         mutationFn: (body: LoginBody) => authFetching.login(body),
-        onSuccess: () => {
+        onSuccess: (result) => {
             redirectRef.current = setTimeout(() => {
+                setProfile(result.data.result)
                 navigate(route.root)
             }, 3000)
             toast.success('Đăng nhập thành công', {
@@ -43,6 +47,7 @@ const Login = () => {
                 action: {
                     label: 'Trang chủ',
                     onClick: () => {
+                        setProfile(result.data.result)
                         clearTimeout(redirectRef.current)
                         navigate(route.root)
                     }

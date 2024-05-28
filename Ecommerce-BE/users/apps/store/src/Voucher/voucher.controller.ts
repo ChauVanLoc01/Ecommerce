@@ -8,6 +8,7 @@ import { VoucherQueryDTO } from './dtos/QueryVoucher.dto'
 import { UpdateVoucherDTO } from './dtos/UpdateVoucher.dto'
 import { UserVoucherDTO } from './dtos/UserVoucher.dto'
 import { VoucherService } from './voucher.service'
+import { SearchCodeDTO } from './dtos/search-code.dto'
 
 @ApiBearerAuth()
 @UseGuards(JwtGuard)
@@ -52,5 +53,10 @@ export class VoucherController {
   @Get(':voucherId')
   getDetail(@Param('voucherId') voucherId: string, @CurrentUser() user: CurrentStoreType) {
     return this.voucherService.getDetail(user, voucherId)
+  }
+
+  @Post('search-code')
+  searchVoucherByCode(@Body() body: SearchCodeDTO) {
+    return this.voucherService.searchVoucherByCode(body)
   }
 }

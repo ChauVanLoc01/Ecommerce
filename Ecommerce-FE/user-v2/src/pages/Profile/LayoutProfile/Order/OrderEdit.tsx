@@ -2,7 +2,7 @@ import { AlertDialog, Avatar, Badge, Button, DataList, Flex, Spinner, Text } fro
 import { ColumnDef } from '@tanstack/react-table'
 import { format } from 'date-fns'
 import { BiSolidSortAlt } from 'react-icons/bi'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import Table from 'src/components/Table'
 import { OrderStatus } from 'src/constants/order-status'
 import { OrderDetailResponse, ProductOrderWithProduct } from 'src/types/order.type'
@@ -16,8 +16,6 @@ type OrderDetailProps = {
 }
 
 const OrderEdit = ({ isOpen, setIsOpen, data, orderData }: OrderDetailProps) => {
-    const navigate = useNavigate()
-
     const columns: ColumnDef<ProductOrderWithProduct>[] = [
         {
             accessorKey: 'Hình ảnh',

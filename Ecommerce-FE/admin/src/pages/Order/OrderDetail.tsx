@@ -7,7 +7,7 @@ type OrderDetailProps = {
     setOpen: React.Dispatch<React.SetStateAction<boolean>>
 }
 
-const OrderDetail = ({ data, open, setOpen }: OrderDetailProps) => {
+const OrderDetail = ({ open, setOpen }: OrderDetailProps) => {
     return (
         <AlertDialog.Root open={open} onOpenChange={setOpen}>
             <AlertDialog.Content maxWidth='450px' className='!rounded-8'>

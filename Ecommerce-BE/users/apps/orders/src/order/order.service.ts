@@ -210,7 +210,7 @@ export class OrderService {
   async createOrder(user: CurrentUserType, body: CreateOrderType): Promise<Return> {
     try {
       const { id } = user
-      const { orderParameters, deliveryInformationId, voucherId } = body
+      const { orderParameters, deliveryInformationId } = body
 
       const stores = orderParameters.map((parameter) => parameter.storeId)
 
@@ -249,7 +249,6 @@ export class OrderService {
                 storeId: parameter.storeId,
                 note: parameter.note,
                 userId: id,
-                voucherId,
                 ProductOrder: {
                   createMany: {
                     data: parameter.orders.map((order) => {
@@ -533,7 +532,8 @@ export class OrderService {
         },
         createdAt: {
           gte: subDays(addHours(new Date(), 7), 5)
-        }
+        },
+        status: OrderStatus.SUCCESS
       }
     })
   }

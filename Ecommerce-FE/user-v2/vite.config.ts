@@ -11,7 +11,10 @@ export default defineConfig({
         port: 3000,
         watch: {
             usePolling: true
-        }
+        },
+    },
+    preview: {
+        port: 4001
     },
     css: {
         devSourcemap: true
