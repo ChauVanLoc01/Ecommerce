@@ -1,19 +1,23 @@
 import SimpleBar from 'simplebar-react'
 
-import { useContext, useState } from 'react'
-import { AppContext } from 'src/contexts/AppContext'
+import { useState } from 'react'
 import CartItem from './CartItem'
 
 import { Reorder } from 'framer-motion'
+import { ProductContextExtends } from 'src/types/context.type'
 
-const Step1 = () => {
-    const { products } = useContext(AppContext)
-    const [stores, setStores] = useState<string[]>(Object.keys(products.products))
+type Step1Props = {
+    products: { [storeId: string]: ProductContextExtends[] }
+    storeIds: string[]
+}
+
+const Step1 = ({ products, storeIds }: Step1Props) => {
+    const [stores, setStores] = useState<string[]>(storeIds)
 
     return (
         <SimpleBar style={{ maxHeight: 680, paddingRight: 10, paddingBottom: 15 }}>
             <Reorder.Group as='ul' axis='y' values={stores} onReorder={setStores} className='space-y-4'>
-                {Object.keys(products.products).map((storeId) => (
+                {Object.keys(products).map((storeId) => (
                     <Reorder.Item key={storeId} value={storeId}>
                         <CartItem key={storeId} storeId={storeId} />
                     </Reorder.Item>

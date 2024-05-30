@@ -1,4 +1,5 @@
 import { LoginResponse } from './auth.type'
+import { Product } from './product.type'
 
 export type ProductContext = {
     length: number
@@ -13,6 +14,9 @@ export type ProductContext = {
         }[]
     }
 }
+
+export type ProductContextExtends = ProductContext['products'][string][0] &
+    Partial<Pick<Product, 'currentQuantity' | 'priceBefore'>>
 
 export type AppContext = {
     profile?: LoginResponse

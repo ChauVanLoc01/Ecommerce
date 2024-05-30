@@ -7,37 +7,33 @@ import { AppContext } from 'src/contexts/AppContext'
 import { ls } from 'src/utils/localStorage'
 import { cn } from 'src/utils/utils.ts'
 import ProductIncart from './ProductInCart'
+import { ProductContextExtends } from 'src/types/context.type'
+import { Store } from 'src/types/store.type'
 
 type CartItemProps = {
-    storeId: string
+    products: ProductContextExtends[]
+    productIds: string[]
+    store: Store
+    isCheckedAll: boolean
 }
 
-const CartItem = ({ storeId }: CartItemProps) => {
-    const { products, setProducts } = useContext(AppContext)
-    const [productOrder, setProductOrder] = useState<string[]>(Object.keys(products.products))
-
-    const { data: refreshStores } = useQuery({
-        queryKey: ['refreshStore', JSON.stringify(Object.keys(products.products))],
-        queryFn: () => StoreFetching.refreshStore(Object.keys(products.products)),
-        refetchInterval: 1000 * 60 * 3,
-        enabled: false,
-        select: (data) => data.data.result
-    })
+const CartItem = ({ products, productIds, store, isCheckedAll }: CartItemProps) => {
+    const [productOrder, setProductOrder] = useState<string[]>(productIds)
 
     const handleCheckedAll = (status: boolean) => {
-        var storeExist = products.products[storeId].map((product) => {
-            return { ...product, checked: status }
-        })
-        const newProducts = {
-            ...products,
-            products: {
-                ...products.products,
-                [storeId]: storeExist
-            }
-        }
-        ls.deleteItem('products')
-        ls.setItem('products', JSON.stringify(newProducts))
-        setProducts(newProducts)
+        // var storeExist = products.products[storeId].map((product) => {
+        //     return { ...product, checked: status }
+        // })
+        // const newProducts = {
+        //     ...products,
+        //     products: {
+        //         ...products.products,
+        //         [storeId]: storeExist
+        //     }
+        // }
+        // ls.deleteItem('products')
+        // ls.setItem('products', JSON.stringify(newProducts))
+        // setProducts(newProducts)
     }
 
     return (
@@ -47,18 +43,15 @@ const CartItem = ({ storeId }: CartItemProps) => {
             })}
         >
             {products.length > 0 && (
-                <motion.div key={storeId} className='border-b border-border/30 flex-shrink'>
+                <motion.div key={store.id} className='border-b border-border/30 flex-shrink'>
                     <div className='p-24 space-x-5 flex items-center'>
-                        <Checkbox
-                            checked={products.products[storeId].every((productInLS) => productInLS.checked)}
-                            onCheckedChange={handleCheckedAll}
-                        />
-                        {refreshStores && <Text>{refreshStores[storeId].name}</Text>}
+                        <Checkbox checked={isCheckedAll} onCheckedChange={handleCheckedAll} />
+                        <Text>{store.name}</Text>
                     </div>
                 </motion.div>
             )}
             <Reorder.Group as='ul' axis='y' values={productOrder} onReorder={setProductOrder}>
-                {Object.values(products.products[storeId]).map((product) => (
+                {products.map((product) => (
                     <Reorder.Item key={product.productId} value={product}>
                         <ProductIncart storeId={storeId} product={product} />
                     </Reorder.Item>
