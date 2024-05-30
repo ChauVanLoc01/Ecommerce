@@ -46,7 +46,10 @@ export const checkAxiosError = (
 }
 
 export const checkExpired = (row: Row<Voucher>) => {
-    return isAfter(row.original.endDate, new Date()) || row.original.currentQuantity > 0
+    return (
+        (row.original.currentQuantity > 0 && isAfter(row.original.endDate, new Date())) ||
+        (row.original.currentQuantity <= 0 && isAfter(row.original.endDate, new Date()))
+    )
 }
 
 export const timeInterval: () => {

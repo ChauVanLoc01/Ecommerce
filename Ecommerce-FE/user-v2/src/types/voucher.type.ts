@@ -49,3 +49,8 @@ export type VoucherWithCondition = Voucher & {
 }
 
 export type VoucherStoreResponse = Return<VoucherWithCondition[]>
+
+export type SearchVoucher = {
+    code: string
+    storesID: string[]
+}

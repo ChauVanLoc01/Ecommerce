@@ -1,4 +1,5 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios'
+import { exitEvent } from 'src/constants/event'
 import { route } from 'src/constants/route'
 import { LoginResponse } from 'src/types/auth.type'
 import { Return } from 'src/types/return.type'
@@ -31,6 +32,7 @@ class Http {
             } else {
                 if (this.access_token) {
                     this.access_token = undefined
+                    window.dispatchEvent(new Event(exitEvent))
                 }
             }
             return config

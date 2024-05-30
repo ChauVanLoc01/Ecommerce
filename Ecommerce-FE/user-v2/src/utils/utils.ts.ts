@@ -1,5 +1,7 @@
 import { type ClassValue, clsx } from 'clsx'
+import { endLoadingLoader, startLoadingLoader } from 'src/constants/event'
 import { twMerge } from 'tailwind-merge'
+import { ls } from './localStorage'
 
 export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs))
@@ -21,3 +23,13 @@ export const removeSpecialCharacter = (str: string) =>
         .replace(/!|@|%|\^|\*|\(|\)|\+|\=|\<|\>|\?|\/|,|\.|\:|\;|\'|\"|\&|\#|\[|\]|~|\$|_|`|-|{|}|\||\\/g, '')
         .split(' ')
         .join('-')
+
+export const loadingEvent = {
+    start: (checkAuth = true) => {
+        window.dispatchEvent(new Event(startLoadingLoader))
+        if (checkAuth && !ls.getItem('profile')) {
+            throw new Response('Unauthentication', { status: 401 })
+        }
+    },
+    end: () => window.dispatchEvent(new Event(endLoadingLoader))
+}

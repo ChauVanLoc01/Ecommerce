@@ -5,7 +5,8 @@ import {
   createProductOrder,
   getAllProductWithProductOrder,
   getProductOrderByRating,
-  updateQuantityProducts
+  updateQuantityProducts,
+  updateQuantiyProductsWhenCancelOrder
 } from 'common/constants/event.constant'
 import { CurrentUser } from 'common/decorators/current_user.decorator'
 import { Public } from 'common/decorators/public.decorator'
@@ -18,10 +19,10 @@ import { CreateUserAddProductToCartDTO } from './dtos/create-product-add-to-cart
 import { CreateUserViewProductDto } from './dtos/create-product-view.dto'
 import { CreateProductDTO } from './dtos/create-product.dto'
 import { QueryProductDTO } from './dtos/query-product.dto'
+import { RefreshCartDTO } from './dtos/refresh-cart.dto'
 import { UpdateProductDTO } from './dtos/update-product.dto'
 import { ProductService } from './product.service'
 import { SearchProductService } from './search-product.service'
-import { RefreshCartDTO } from './dtos/refresh-cart.dto'
 
 @UseGuards(JwtGuard)
 @ApiBearerAuth()
@@ -137,6 +138,15 @@ export class ProductController {
     data: { storeId: string; note?: string; orders: { productId: string; quantity: number }[] }[]
   ) {
     return this.productsService.updateQuantityProducts(data)
+  }
+
+  @Public()
+  @MessagePattern(updateQuantiyProductsWhenCancelOrder)
+  updateQuantiyProductsWhenCancelOrder(
+    @Payload()
+    data: string
+  ) {
+    return this.productsService.updateQuantiyProductsWhenCancelOrder(data)
   }
 
   @Public()

@@ -13,7 +13,7 @@ import { checkVoucherExistInOrder } from 'common/constants/event.constant'
 import { VoucherType } from 'common/constants/voucher.constant'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
 import { Return } from 'common/types/result.type'
-import { addHours } from 'date-fns'
+import { addHours, addMinutes } from 'date-fns'
 import { isUndefined, omitBy } from 'lodash'
 import { firstValueFrom } from 'rxjs'
 import { v4 as uuidv4 } from 'uuid'
@@ -21,6 +21,7 @@ import { CreateVoucherDTO } from './dtos/CreateVoucher.dto'
 import { VoucherQueryDTO } from './dtos/QueryVoucher.dto'
 import { UpdateVoucherDTO } from './dtos/UpdateVoucher.dto'
 import { SearchCodeDTO } from './dtos/search-code.dto'
+import { Status } from 'common/enums/status.enum'
 
 @Injectable()
 export class VoucherService {
@@ -323,10 +324,14 @@ export class VoucherService {
     const vouchersValid = await this.prisma.voucher.findMany({
       where: {
         storeId,
+        status: Status.ACTIVE,
         currentQuantity: {
           gte: 1
         },
-        type: VoucherType.store
+        type: VoucherType.store,
+        endDate: {
+          gt: addMinutes(addHours(new Date(), 7), 1)
+        }
       },
       include: {
         CategoryConditionVoucher: true,
@@ -352,6 +357,7 @@ export class VoucherService {
         this.prisma.voucher.findUnique({
           where: {
             id: voucher.voucherId,
+            status: Status.ACTIVE,
             currentQuantity: {
               gte: 1
             },
@@ -374,33 +380,60 @@ export class VoucherService {
   async searchVoucherByCode(body: SearchCodeDTO): Promise<Return> {
     try {
       const { code, storesID } = body
-      const vouchers = await Promise.all(
-        storesID.map((storeId) =>
-          this.prisma.voucher.findFirst({
-            where: {
-              storeId,
-              code,
-              endDate: {
-                gt: addHours(new Date(), 7)
+      const vouchers = (
+        await Promise.all(
+          storesID.map((storeId) =>
+            this.prisma.voucher.findFirst({
+              where: {
+                storeId,
+                code,
+                status: {
+                  in: [Status.ACTIVE, Status.HIDDEN]
+                },
+                endDate: {
+                  gt: addMinutes(addHours(new Date(), 7), 1)
+                }
               }
-            }
-          })
+            })
+          )
         )
-      )
+      ).filter((e) => e)
 
       if (!vouchers.length) {
         return {
           msg: 'ok',
-          result: {}
+          result: false
         }
       }
 
       return {
         msg: 'ok',
-        result: omitBy(vouchers, 'storeId')
+        result: vouchers
       }
     } catch (err) {
       throw new InternalServerErrorException('Lỗi BE')
+    }
+  }
+
+  async checkVoucherExistToCreateOrder(voucherIds: string[]) {
+    try {
+      const vouchers = await Promise.all(
+        voucherIds.map((id) =>
+          this.prisma.voucher.findUnique({
+            where: {
+              id
+            },
+            include: {
+              CategoryConditionVoucher: true,
+              PriceConditionVoucher: true
+            }
+          })
+        )
+      )
+
+      return vouchers
+    } catch (err) {
+      return 'Lỗi BE'
     }
   }
 }

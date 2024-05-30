@@ -1,8 +1,9 @@
 import loadable from '@loadable/component'
-import { useContext } from 'react'
+import { Portal } from '@radix-ui/themes'
+import { useContext, useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import SimpleBar from 'simplebar-react'
-import { exitEvent } from 'src/constants/event'
+import { endLoadingLoader, exitEvent, startLoadingLoader } from 'src/constants/event'
 import { AppContext } from 'src/contexts/AppContext'
 import { ls } from 'src/utils/localStorage'
 
@@ -10,21 +11,34 @@ const Header = loadable(() => import('./Header'))
 
 const MainLayout = () => {
     const { setProfile } = useContext(AppContext)
+    const [loadingLoader, setLoadingLoader] = useState<boolean>(false)
 
     window.addEventListener(exitEvent, () => {
         setProfile(undefined)
         ls.deleteItem('profile')
     })
 
+    window.addEventListener(startLoadingLoader, () => setLoadingLoader(true))
+    window.addEventListener(endLoadingLoader, () => setLoadingLoader(false))
+
     return (
-        <div className='bg-[#F8F9FA] min-h-screen h-screen overflow-hidden select-none'>
-            <SimpleBar style={{ maxHeight: '100vh', height: '100vh' }}>
-                <div className='mx-auto w-full max-w-screen-xl max-h-screen'>
-                    <Header />
-                    <Outlet />
-                </div>
-            </SimpleBar>
-        </div>
+        <>
+            <div className='bg-[#F8F9FA] min-h-screen h-screen overflow-hidden select-none'>
+                <SimpleBar style={{ maxHeight: '100vh', height: '100vh' }}>
+                    <div className='mx-auto w-full max-w-screen-xl max-h-screen'>
+                        <Header />
+                        <Outlet />
+                    </div>
+                </SimpleBar>
+            </div>
+            {loadingLoader && (
+                <Portal>
+                    <div className='fixed inset-0 flex justify-center items-center z-50 bg-black/20'>
+                        <div className='loader' />
+                    </div>
+                </Portal>
+            )}
+        </>
     )
 }
 

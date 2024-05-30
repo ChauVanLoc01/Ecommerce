@@ -151,8 +151,8 @@ const Order = () => {
     const { refetch, data } = useQuery({
         queryKey: ['orders', JSON.stringify(query)],
         queryFn: ({ signal }) => OrderFetching.getAllOrder(query, signal),
-        enabled: false,
-        placeholderData: (oldData) => oldData
+        placeholderData: (oldData) => oldData,
+        refetchInterval: 1000 * 60 * 2
     })
 
     const { refetch: orderRefetch, data: orderDetailData } = useQuery({

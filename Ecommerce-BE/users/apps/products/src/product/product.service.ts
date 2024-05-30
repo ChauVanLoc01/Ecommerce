@@ -84,6 +84,9 @@ export class ProductService {
           createdAt: {
             gte: min_date,
             lte: max_date
+          },
+          currentQuantity: {
+            gt: 0
           }
         }
       }),
@@ -98,6 +101,9 @@ export class ProductService {
           createdAt: {
             gte: min_date,
             lte: max_date
+          },
+          currentQuantity: {
+            gt: 0
           }
         },
         orderBy: {
@@ -563,6 +569,34 @@ export class ProductService {
       return result
     } catch (err) {
       return err.message
+    }
+  }
+
+  async updateQuantiyProductsWhenCancelOrder(orderId: string) {
+    try {
+      console.log('update lai quantity ne')
+      const productOrderExists = await this.prisma.productOrder.findMany({
+        where: {
+          orderId
+        }
+      })
+      const result = await Promise.all(
+        productOrderExists.map((product) =>
+          this.prisma.product.update({
+            where: {
+              id: product.productId
+            },
+            data: {
+              currentQuantity: {
+                increment: product.quantity
+              }
+            }
+          })
+        )
+      )
+      return result
+    } catch (_) {
+      return 'Rollback thất bại'
     }
   }
 

@@ -32,7 +32,7 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
         </Theme>
         <Toaster
             richColors
-            position='top-right'
+            position={['login', 'register'].includes(window.location.href) ? 'top-right' : 'top-center'}
             toastOptions={{
                 unstyled: false,
                 classNames: {

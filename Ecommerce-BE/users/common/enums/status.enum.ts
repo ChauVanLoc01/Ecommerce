@@ -1,4 +1,5 @@
 export enum Status {
   ACTIVE = 'ACTIVE',
-  BLOCK = 'BLOCK'
+  BLOCK = 'BLOCK',
+  HIDDEN = 'HIDDEN'
 }

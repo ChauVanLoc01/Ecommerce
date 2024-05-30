@@ -122,6 +122,7 @@ export class StoreController {
     return this.storeService.getStoresDetail(payload)
   }
 
+  @Public()
   @Get(':storeId')
   getStoreDetail(@Param('storeId') storeId: string) {
     return this.storeService.getStoreDetail(storeId)

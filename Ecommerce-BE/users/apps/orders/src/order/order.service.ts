@@ -1,6 +1,12 @@
 import { PrismaService } from '@app/common/prisma/prisma.service'
 import { CACHE_MANAGER } from '@nestjs/cache-manager'
-import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common'
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException
+} from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { ClientProxy } from '@nestjs/microservices'
 import { Prisma, Product, Store } from '@prisma/client'
@@ -9,7 +15,8 @@ import {
   checkDeliveryInformationId,
   checkStoreExist,
   getAllProductWithProductOrder,
-  updateQuantityProducts
+  updateQuantityProducts,
+  updateQuantiyProductsWhenCancelOrder
 } from 'common/constants/event.constant'
 import { OrderStatus } from 'common/enums/orderStatus.enum'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
@@ -312,30 +319,66 @@ export class OrderService {
     orderId: string,
     body: UpdateOrderType
   ): Promise<Return> {
-    const { address, status, transaction } = body
+    try {
+      const { address, status, transaction } = body
 
-    const orderExist = await this.prisma.order.findUnique({
-      where: {
-        id: orderId,
-        userId: user.id
-      }
-    })
-
-    if (!orderExist) throw new NotFoundException('Đơn hàng không tồn tại')
-
-    if (orderExist.status === OrderStatus.SUCCESS)
-      throw new BadRequestException('Không thể cập nhật đơn hàng đã hoàn tất')
-
-    return {
-      msg: 'Cập nhật đơn hàng thành công',
-      result: await this.prisma.order.update({
+      const orderExist = await this.prisma.order.findUnique({
         where: {
-          id: orderId
-        },
-        data: {
-          status
+          id: orderId,
+          userId: user.id
         }
       })
+
+      if (!orderExist) throw new NotFoundException('Đơn hàng không tồn tại')
+
+      if (orderExist.status === OrderStatus.SUCCESS)
+        throw new BadRequestException('Không thể cập nhật đơn hàng đã hoàn tất')
+
+      if (status === OrderStatus.CANCEL) {
+        const [result, orderProducts] = await Promise.all([
+          this.prisma.order.update({
+            where: {
+              id: orderId
+            },
+            data: {
+              status
+            }
+          }),
+          firstValueFrom(this.productClient.send(updateQuantiyProductsWhenCancelOrder, orderId)),
+          this.prisma.orderFlow.create({
+            data: {
+              id: uuidv4(),
+              status,
+              createdAt: new Date(),
+              createdBy: user.id,
+              orderId
+            }
+          })
+        ])
+
+        if (typeof orderProducts === 'string') {
+          throw new Error('Rollback product thất bại')
+        }
+
+        return {
+          msg: 'Cập nhật đơn hàng thành công',
+          result
+        }
+      }
+
+      return {
+        msg: 'Cập nhật đơn hàng thành công',
+        result: await this.prisma.order.update({
+          where: {
+            id: orderId
+          },
+          data: {
+            status
+          }
+        })
+      }
+    } catch (err) {
+      throw new InternalServerErrorException('Lỗi BE')
     }
   }
 

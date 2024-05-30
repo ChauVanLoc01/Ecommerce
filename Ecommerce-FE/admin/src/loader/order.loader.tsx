@@ -10,12 +10,12 @@ export const orderLoader: LoaderFunction = async () => {
         await queryClient.fetchQuery({
             queryKey: ['orderList', JSON.stringify({ limit: import.meta.env.VITE_LIMIT, createdAt: 'desc' })],
             queryFn: () => OrderApi.getAllOrder({ limit: import.meta.env.VITE_LIMIT, createdAt: 'desc' }),
-            staleTime: 1000 * 60 * 1
+            staleTime: 1000 * 30
         }),
         await queryClient.fetchQuery({
             queryKey: ['analyticOrderStore'],
             queryFn: OrderApi.analyticOrderStore,
-            staleTime: 1000 * 60 * 1
+            staleTime: 1000 * 60
         })
     ])
 

@@ -9,6 +9,9 @@ import { UpdateVoucherDTO } from './dtos/UpdateVoucher.dto'
 import { UserVoucherDTO } from './dtos/UserVoucher.dto'
 import { VoucherService } from './voucher.service'
 import { SearchCodeDTO } from './dtos/search-code.dto'
+import { MessagePattern, Payload } from '@nestjs/microservices'
+import { checkVoucherExistToCreateOrder } from 'common/constants/event.constant'
+import { Public } from 'common/decorators/public.decorator'
 
 @ApiBearerAuth()
 @UseGuards(JwtGuard)
@@ -58,5 +61,11 @@ export class VoucherController {
   @Post('search-code')
   searchVoucherByCode(@Body() body: SearchCodeDTO) {
     return this.voucherService.searchVoucherByCode(body)
+  }
+
+  @Public()
+  @MessagePattern(checkVoucherExistToCreateOrder)
+  checkVoucherExistToCreateOrder(@Payload() payload: string[]) {
+    return this.voucherService.checkVoucherExistToCreateOrder(payload)
   }
 }

@@ -323,6 +323,7 @@ model User {
   ProductImage                        ProductImage[]
   Rating                              Rating[]
   RatingReply                         RatingReply[]
+  SalePromotion                       SalePromotion[]
   Store_Store_createdByToUser         Store[]                    @relation("Store_createdByToUser")
   Store_Store_updatedByToUser         Store[]                    @relation("Store_updatedByToUser")
   StoreRole_StoreRole_createdByToUser StoreRole[]                @relation("StoreRole_createdByToUser")
@@ -415,4 +416,21 @@ model UserVoucher {
 
   @@index([userId], map: "userId")
   @@index([voucherId], map: "voucherId")
+}
+
+model SalePromotion {
+  id          String    @id @db.VarChar(50)
+  title       String    @db.TinyText
+  description String?   @db.Text
+  type        String    @db.VarChar(50)
+  status      String    @db.VarChar(50)
+  startDate   DateTime  @db.Timestamp(0)
+  endDate     DateTime? @db.Timestamp(0)
+  createdAt   DateTime  @db.Timestamp(0)
+  createdBy   String    @db.VarChar(50)
+  updatedAt   DateTime? @db.Timestamp(0)
+  updatedBy   String?   @db.VarChar(50)
+  User        User      @relation(fields: [createdBy], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "SalePromotion_ibfk_1")
+
+  @@index([createdBy], map: "createdBy")
 }

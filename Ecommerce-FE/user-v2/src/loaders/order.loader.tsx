@@ -1,8 +1,11 @@
 import { LoaderFunction } from 'react-router-dom'
 import { OrderFetching } from 'src/apis/order'
 import { queryClient } from 'src/routes/main.route'
+import { loadingEvent } from 'src/utils/utils.ts'
 
 export const ordersLoader: LoaderFunction = async () => {
+    loadingEvent.start()
+
     const orderList = await queryClient.fetchQuery({
         queryKey: [
             'orders',
@@ -17,6 +20,8 @@ export const ordersLoader: LoaderFunction = async () => {
         staleTime: 1000 * 60 * 2,
         gcTime: 1000 * 60 * 50
     })
+
+    loadingEvent.end()
 
     return [orderList.data.result]
 }

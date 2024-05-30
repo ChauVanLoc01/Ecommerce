@@ -108,7 +108,7 @@ const Product = () => {
                                 <CarouselItem key={idx}>
                                     <img
                                         src={image.url}
-                                        className='object-cover w-full h-full rounded-8 overflow-hidden'
+                                        className='object-cover w-full h-full rounded-8 overflow-hidden max-w-[512px] max-h-[512px]'
                                     />
                                 </CarouselItem>
                             ))}

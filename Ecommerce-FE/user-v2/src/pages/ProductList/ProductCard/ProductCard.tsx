@@ -9,7 +9,6 @@ import Button from 'src/components/Button'
 import Image from 'src/components/Image'
 import Stars from 'src/components/Stars'
 import { AppContext } from 'src/contexts/AppContext'
-import useLoadingProduct from 'src/hooks/useLoadingProduct'
 import { Product } from 'src/types/product.type'
 import { ls } from 'src/utils/localStorage'
 import { convertCurrentcy, removeSpecialCharacter } from 'src/utils/utils.ts'
@@ -23,8 +22,6 @@ const ProductCard = ({ product, isHiddenStore = false }: ProductCardProps) => {
     const { name, image, priceAfter, priceBefore, id } = product
 
     const { setProducts, products } = useContext(AppContext)
-
-    const [isFetching] = useLoadingProduct(product.id)
 
     const handleAddToCart = () => {
         var isNewProductInStoreExist = true
@@ -90,21 +87,16 @@ const ProductCard = ({ product, isHiddenStore = false }: ProductCardProps) => {
             animate={{ opacity: 1, transition: { duration: 0.8, ease: 'backInOut' } }}
             exit={{ opacity: 0 }}
         >
-            <Link to={`/${removeSpecialCharacter(name)}-0-${id}`} className='p-[16px] pb-0 inline-block relative'>
+            <Link
+                to={`/${removeSpecialCharacter(name)}-0-${id}`}
+                className='p-[16px] pb-0 inline-block relative w-full'
+            >
                 <Image
                     src={image}
                     alt='product-img'
-                    className='object-cover overflow-hidden rounded-12 h-[295px] max-h-[295px]'
-                    overlay={isFetching as boolean}
+                    className='object-cover overflow-hidden rounded-12 h-[295px] max-h-[295px] w-full bg-center'
                     loading='lazy'
                 />
-                <div
-                    className={classNames('absolute inset-0 flex justify-center items-center', {
-                        '!hidden': !isFetching
-                    })}
-                >
-                    <div className='spinner2' />
-                </div>
             </Link>
             <div className='p-[16px] space-y-4'>
                 <div className='space-y-1'>

@@ -14,7 +14,7 @@ const VoucherCard = ({ vouchers, storeName }: VoucherCardProps) => {
             {vouchers.length > 0 && <Text>{storeName}</Text>}
             <CheckboxCards.Root size={'1'} columns={{ initial: '1', sm: '2' }}>
                 {vouchers.map((voucher) => (
-                    <CheckboxCards.Item value={voucher.id}>
+                    <CheckboxCards.Item key={voucher.id} value={voucher.id}>
                         <Flex direction='column' width='100%'>
                             <Text weight='bold' size={'3'}>
                                 {voucher.title}

@@ -13,19 +13,17 @@ const Order = () => {
     const { data, refetch: orderListRefetch } = useQuery({
         queryKey: ['orderList', JSON.stringify(query)],
         queryFn: () => OrderApi.getAllOrder(query),
-        staleTime: 1000 * 60 * 1,
-        enabled: false,
+        staleTime: 1000 * 30,
         placeholderData: (oldData) => oldData,
         select: (data) => data.data.result,
-        refetchInterval: 1000 * 60 * 1
+        refetchInterval: 1000 * 30
     })
 
     const { data: analyticOrderStore, refetch: analyticOrderStoreRefetching } = useQuery({
         queryKey: ['analyticOrderStore'],
         queryFn: OrderApi.analyticOrderStore,
         staleTime: 1000 * 60 * 1,
-        refetchInterval: 1000 * 60 * 1,
-        enabled: false,
+        refetchInterval: 1000 * 60,
         placeholderData: (oldData) => oldData,
         select: (data) => data.data.result
     })

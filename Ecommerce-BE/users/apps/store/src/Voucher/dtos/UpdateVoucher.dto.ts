@@ -36,7 +36,7 @@ export class UpdateVoucherDTO {
   @ApiPropertyOptional({
     type: 'Enum'
   })
-  @IsEnum(['ACTIVE', 'BLOCK'])
+  @IsEnum(['ACTIVE', 'BLOCK', 'HIDDEN'])
   @IsOptional()
   status: Status
 

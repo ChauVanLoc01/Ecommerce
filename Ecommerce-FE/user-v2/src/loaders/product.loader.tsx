@@ -3,25 +3,21 @@ import { LoaderFunction } from 'react-router-dom'
 import { productFetching } from 'src/apis/product'
 import { RatingApi } from 'src/apis/rating.api'
 import { StoreFetching } from 'src/apis/store'
-import { endProductDetailFetching, startProductDetailFetching } from 'src/constants/event'
 import { queryClient } from 'src/routes/main.route'
 import { ProductListQuery } from 'src/types/product.type'
+import { ls } from 'src/utils/localStorage'
+import { loadingEvent } from 'src/utils/utils.ts'
 
 export const productDetailLoader: LoaderFunction = async ({ params }) => {
-    const productId = params.productId?.split('-0-')[1]
+    loadingEvent.start(false)
 
-    window.dispatchEvent(
-        new CustomEvent(startProductDetailFetching, {
-            detail: {
-                productDetail: productId
-            }
-        })
-    )
+    const productId = params.productId?.split('-0-')[1]
+    const isAuth = ls.getItem('profile')
 
     const productDetail = await queryClient.fetchQuery({
         queryKey: ['productDetail', productId],
         queryFn: () => productFetching.productDetail(productId as string),
-        staleTime: 1000 * 60 * 2,
+        staleTime: 1000 * 10,
         gcTime: 1000 * 60 * 50
     })
 
@@ -36,29 +32,27 @@ export const productDetailLoader: LoaderFunction = async ({ params }) => {
             queryFn: () => productFetching.productList({ category: productDetail.data.result.category, sold: 'desc' }),
             staleTime: 1000 * 60 * 2
         }),
-        queryClient.fetchQuery({
-            queryKey: ['isCanCreateRating', productId],
-            queryFn: () => RatingApi.canCreateRating(productId as string)
-        })
+        isAuth
+            ? queryClient.fetchQuery({
+                  queryKey: ['isCanCreateRating', productId],
+                  queryFn: () => RatingApi.canCreateRating(productId as string)
+              })
+            : Promise.resolve(false)
     ])
 
-    window.dispatchEvent(
-        new CustomEvent(endProductDetailFetching, {
-            detail: {
-                productDetail: productId
-            }
-        })
-    )
+    loadingEvent.end()
 
     return [
         productDetail.data.result,
         relativedProducts.data.result,
         storeDetail.data.result,
-        isCanCreateRating.data.result
+        typeof isCanCreateRating === 'boolean' ? isCanCreateRating : isCanCreateRating.data.result
     ]
 }
 
 export const productListLoader: LoaderFunction = async ({ request }) => {
+    loadingEvent.start(false)
+
     const queryParams = new URL(request.url).searchParams as Partial<Record<keyof ProductListQuery, string>>
 
     const productList = await queryClient.fetchQuery({
@@ -92,6 +86,8 @@ export const productListLoader: LoaderFunction = async ({ request }) => {
         queryFn: () => productFetching.categoryList(),
         staleTime: Infinity
     })
+
+    loadingEvent.end()
 
     return [productList.data.result, categories.data.result]
 }

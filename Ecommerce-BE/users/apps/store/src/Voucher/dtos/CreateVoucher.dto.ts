@@ -37,7 +37,7 @@ export class CreateVoucherDTO {
   @ApiProperty({
     type: 'Enum'
   })
-  @IsEnum(['ACTIVE', 'BLOCK'])
+  @IsEnum(['ACTIVE', 'BLOCK', 'HIDDEN'])
   @IsNotEmpty()
   status: Status
 

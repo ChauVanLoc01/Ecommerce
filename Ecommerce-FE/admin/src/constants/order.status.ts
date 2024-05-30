@@ -25,6 +25,10 @@ export const UserStatus: { [key: string]: { lable: string; color: string } } = {
     BLOCK: {
         lable: 'Đã bị khóa',
         color: 'red'
+    },
+    HIDDEN: {
+        lable: 'Đã ẩn',
+        color: 'orange'
     }
 }
 

@@ -233,6 +233,7 @@ const VoucherCreate = ({ refetchDataAll }: VoucherCreateProps) => {
                                             <Select.Trigger placeholder='Chọn trạng thái...' />
                                             <Select.Content position='popper' className='!rounded-8'>
                                                 <Select.Item value='ACTIVE'>ACTIVE</Select.Item>
+                                                <Select.Item value='HIDDEN'>HIDDEN</Select.Item>
                                                 <Select.Item value='BLOCK'>BLOCK</Select.Item>
                                             </Select.Content>
                                         </Select.Root>

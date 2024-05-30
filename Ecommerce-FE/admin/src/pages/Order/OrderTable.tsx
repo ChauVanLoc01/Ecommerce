@@ -46,11 +46,7 @@ const OrderTable = ({ data, orderListRefetch, analyticOrderStoreRefetching }: Or
     const [openChangeStatus, setOpenChangeStatus] = useState<boolean>(false)
     const [choosedProduct, setChoosedProduct] = useState<string>('')
 
-    console.log(openDetail);
-
-    const {
-        refetch: orderDetailRefetch,
-    } = useQuery({
+    const { refetch: orderDetailRefetch } = useQuery({
         queryKey: ['orderDetail', choosedProduct],
         queryFn: () => OrderApi.getOrderDetail(choosedProduct),
         staleTime: 1000 * 60 * 3,
