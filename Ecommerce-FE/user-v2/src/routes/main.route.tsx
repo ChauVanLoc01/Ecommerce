@@ -1,7 +1,7 @@
 import loadable from '@loadable/component'
 import { QueryClient } from '@tanstack/react-query'
 import { useContext } from 'react'
-import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom'
+import { createBrowserRouter, Navigate, Outlet, useLocation } from 'react-router-dom'
 
 import { route } from 'src/constants/route'
 import { AppContext } from 'src/contexts/AppContext'
@@ -30,19 +30,14 @@ const ProductList = loadable(() => import('src/pages/ProductList'))
 const Product = loadable(() => import('src/pages/Product'))
 
 const PrivateRoute = () => {
-    const { profile, previousPage } = useContext(AppContext)
-    return profile ? (
-        <Outlet />
-    ) : previousPage === route.profile ? (
-        <Navigate to={route.root} />
-    ) : (
-        <Navigate to={route.login} />
-    )
+    const { profile } = useContext(AppContext)
+    const location = useLocation()
+    return profile ? <Outlet /> : <Navigate to={'/login'} state={{ from: location.pathname }} replace />
 }
 
 const RejectRoute = () => {
     const { profile } = useContext(AppContext)
-    return profile ? <Navigate to={route.root} /> : <Outlet />
+    return profile ? <Navigate to={document.referrer} /> : <Outlet />
 }
 
 export const queryClient = new QueryClient()

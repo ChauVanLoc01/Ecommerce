@@ -1,36 +1,26 @@
-import { AlertDialog, Button, Flex, Spinner, Text, TextField } from '@radix-ui/themes'
-import { useMutation, useQueries, useQuery } from '@tanstack/react-query'
-import { useContext, useMemo, useState } from 'react'
-import SimpleBar from 'simplebar-react'
-import { StoreFetching } from 'src/apis/store'
+import { AlertDialog, Button, Flex, Spinner, TextField } from '@radix-ui/themes'
+import { useMutation, useQueries } from '@tanstack/react-query'
+import { useMemo, useState } from 'react'
 import { VoucherFetching } from 'src/apis/voucher.api'
-import { AppContext } from 'src/contexts/AppContext'
+import { RefreshStore } from 'src/types/store.type'
 import { VoucherWithCondition } from 'src/types/voucher.type'
-import VoucherCard from './VoucherCard'
-import SearchVoucherResult from './SearchVoucherResult'
 
-const Voucher = () => {
-    const { products } = useContext(AppContext)
+type VoucherProps = {
+    storeCheckedIds: string[]
+    storeLatest: RefreshStore
+}
+
+const Voucher = ({ storeLatest, storeCheckedIds }: VoucherProps) => {
     const [open, setOpen] = useState<boolean>(false)
     const [search, setSearch] = useState<string>('')
     const handleFocus = () => setTimeout(() => setOpen(true), 150)
 
     const storesVoucher = useQueries({
-        queries: Object.keys(products.products)
-            .filter((e) => products.products[e].some((x) => x.checked))
-            .map((e) => ({
-                queryKey: ['storeVoucher', e],
-                queryFn: () => VoucherFetching.getVoucherByStoreId(e),
-                refetchInterval: 1000 * 10
-            }))
-    })
-
-    const { data: refreshStores } = useQuery({
-        queryKey: ['refreshStore', JSON.stringify(Object.keys(products.products))],
-        queryFn: () => StoreFetching.refreshStore(Object.keys(products.products)),
-        refetchInterval: 1000 * 60 * 3,
-        enabled: false,
-        select: (data) => data.data.result
+        queries: storeCheckedIds.map((e) => ({
+            queryKey: ['storeVoucher', e],
+            queryFn: () => VoucherFetching.getVoucherByStoreId(e),
+            refetchInterval: 1000 * 10
+        }))
     })
 
     const {
@@ -43,7 +33,7 @@ const Voucher = () => {
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)
 
-    const handleSearch = () => searchVoucher({ code: search, storesID: Object.keys(products.products) })
+    const handleSearch = () => searchVoucher({ code: search, storesID: storeCheckedIds })
 
     const calVoucherSearch = useMemo(() => {
         if (searchVoucherData) {
@@ -94,7 +84,7 @@ const Voucher = () => {
                                 Áp dụng
                             </Button>
                         </div>
-                        <div className='space-y-2'>
+                        {/* <div className='space-y-2'>
                             {calVoucherSearch && <Text color='red'>Kết quả tìm kiếm: {calVoucherSearch.lenght}</Text>}
                             {calVoucherSearch && calVoucherSearch.lenght > 0 && (
                                 <SearchVoucherResult
@@ -102,26 +92,22 @@ const Voucher = () => {
                                     refreshStores={refreshStores || {}}
                                 />
                             )}
-                        </div>
+                        </div> */}
                     </div>
 
-                    <SimpleBar style={{ maxHeight: '317px', paddingBottom: '5px' }}>
+                    {/* <SimpleBar style={{ maxHeight: '317px', paddingBottom: '5px' }}>
                         <div className='space-y-2'>
                             {storesVoucher.map((store, idx) => (
                                 <div className='space-y-1' key={idx}>
                                     <VoucherCard
                                         key={idx}
                                         vouchers={store.data?.data.result || []}
-                                        storeName={
-                                            refreshStores && store.data?.data.result[0].storeId
-                                                ? refreshStores[store.data?.data.result[0].storeId].name
-                                                : 'Ecommerce'
-                                        }
+                                        storeName={storeLatest[store.data?.data.result]}
                                     />
                                 </div>
                             ))}
                         </div>
-                    </SimpleBar>
+                    </SimpleBar> */}
                     <Flex justify={'end'} gapX={'4'}>
                         <AlertDialog.Cancel>
                             <Button type='button' variant='outline' color='red'>

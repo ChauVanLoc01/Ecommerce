@@ -18,6 +18,12 @@ export type ProductContext = {
 export type ProductContextExtends = ProductContext['products'][string][0] &
     Partial<Pick<Product, 'currentQuantity' | 'priceBefore'>>
 
+export type ProductConvert = {
+    [storeId: string]: {
+        [productId: string]: ProductContextExtends
+    }
+}
+
 export type AppContext = {
     profile?: LoginResponse
     setProfile: React.Dispatch<React.SetStateAction<LoginResponse | undefined>>

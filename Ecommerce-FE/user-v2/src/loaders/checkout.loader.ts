@@ -9,6 +9,13 @@ import { loadingEvent } from 'src/utils/utils.ts'
 export const checkoutLoader = async () => {
     loadingEvent.start()
 
+    const productStringify = ls.getItem('products')
+
+    if (!productStringify) {
+        loadingEvent.end()
+        return []
+    }
+
     const stores = (JSON.parse(ls.getItem('products') as string) as ProductContext).products
     const productsId: string[] = Object.keys(stores).reduce((acum: any, e) => {
         const storeIds = stores[e].map((i) => i.productId)

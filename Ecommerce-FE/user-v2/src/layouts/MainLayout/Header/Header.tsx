@@ -4,7 +4,6 @@ import { useContext } from 'react'
 import { PiShoppingCartLight } from 'react-icons/pi'
 import { Link, useNavigate } from 'react-router-dom'
 import SimpleBar from 'simplebar-react'
-import { http } from 'src/apis/http'
 
 import Button from 'src/components/Button'
 import Image from 'src/components/Image'
@@ -102,7 +101,7 @@ const Header = () => {
                                                     return [...acu, ...item]
                                                 }, [])
                                                 .map((e) => (
-                                                    <li className='flex gap-x-3'>
+                                                    <li key={e.productId} className='flex gap-x-3'>
                                                         <button
                                                             className='flex-shrink-0'
                                                             onClick={handleNavigate(

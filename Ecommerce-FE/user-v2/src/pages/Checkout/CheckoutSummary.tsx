@@ -1,5 +1,6 @@
 import { Button, Spinner, Text } from '@radix-ui/themes'
 import SimpleBar from 'simplebar-react'
+import { RefreshStore } from 'src/types/store.type'
 import Voucher from './Voucher'
 
 type CheckoutSummaryProps = {
@@ -7,14 +8,23 @@ type CheckoutSummaryProps = {
     step: number
     handleNextStep: () => false | void
     handleOrder: () => void
+    storeCheckedIds: string[]
+    storeLatest: RefreshStore
 }
 
-const CheckoutSummary = ({ handleNextStep, handleOrder, isPending, step }: CheckoutSummaryProps) => {
+const CheckoutSummary = ({
+    handleNextStep,
+    handleOrder,
+    isPending,
+    step,
+    storeCheckedIds,
+    storeLatest
+}: CheckoutSummaryProps) => {
     return (
         <section className='basis-1/3 space-y-4'>
             <SimpleBar style={{ maxHeight: '600px', paddingBottom: '5px' }}>
                 <div className='space-y-4 pr-2'>
-                    <Voucher />
+                    <Voucher storeCheckedIds={storeCheckedIds} storeLatest={storeLatest} />
                     <div className='rounded-8 border border-border/30 bg-[#FFFFFF]'>
                         <div className='p-24 border-b border-border-border/30'>
                             <h3 className='font-semibold'>Tổng quan đơn hàng</h3>

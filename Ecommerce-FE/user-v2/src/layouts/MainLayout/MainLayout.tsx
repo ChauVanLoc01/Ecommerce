@@ -1,7 +1,7 @@
 import loadable from '@loadable/component'
 import { Portal } from '@radix-ui/themes'
 import { useContext, useState } from 'react'
-import { Outlet } from 'react-router-dom'
+import { Outlet, useBeforeUnload } from 'react-router-dom'
 import SimpleBar from 'simplebar-react'
 import { endLoadingLoader, exitEvent, startLoadingLoader } from 'src/constants/event'
 import { AppContext } from 'src/contexts/AppContext'
@@ -10,7 +10,7 @@ import { ls } from 'src/utils/localStorage'
 const Header = loadable(() => import('./Header'))
 
 const MainLayout = () => {
-    const { setProfile } = useContext(AppContext)
+    const { setProfile, profile, products } = useContext(AppContext)
     const [loadingLoader, setLoadingLoader] = useState<boolean>(false)
 
     window.addEventListener(exitEvent, () => {
@@ -20,6 +20,15 @@ const MainLayout = () => {
 
     window.addEventListener(startLoadingLoader, () => setLoadingLoader(true))
     window.addEventListener(endLoadingLoader, () => setLoadingLoader(false))
+
+    useBeforeUnload(() => {
+        if (profile) {
+            ls.setItem('profile', JSON.stringify(profile))
+        }
+        if (products) {
+            ls.setItem('products', JSON.stringify(products))
+        }
+    })
 
     return (
         <>
