@@ -87,8 +87,10 @@ const CartItem = ({ products, productIds, store, isCheckedAll }: CartItemProps) 
         <motion.div className={cn('bg-[#FFFFFF] rounded-8 hover:shadow-md border border-border/30')}>
             <motion.div key={store.id} className='border-b border-border/30 flex-shrink'>
                 <div className='p-24 space-x-5 flex items-center'>
-                    <Checkbox checked={isCheckedAll} onCheckedChange={handleCheckedAll} />
-                    <Text>{store.name}</Text>
+                    <Checkbox id={store.id} checked={isCheckedAll} onCheckedChange={handleCheckedAll} />
+                    <Text as='label' htmlFor={store.id}>
+                        {store.name}
+                    </Text>
                 </div>
             </motion.div>
             <Reorder.Group as='ul' axis='y' values={productOrder} onReorder={setProductOrder}>

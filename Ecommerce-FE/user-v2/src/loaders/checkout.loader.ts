@@ -34,7 +34,7 @@ export const checkoutLoader = async () => {
             queryFn: () => StoreFetching.refreshStore(Object.keys(stores))
         }),
         queryClient.fetchQuery({
-            queryKey: ['refreshProduct', productsId],
+            queryKey: ['refreshProduct', JSON.stringify(productsId)],
             queryFn: () => productFetching.refreshProduct(productsId)
         })
     ])

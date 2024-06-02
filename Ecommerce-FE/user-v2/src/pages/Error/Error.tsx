@@ -1,16 +1,17 @@
 import { Button, Flex, Text } from '@radix-ui/themes'
-import { isRouteErrorResponse, Navigate, useRouteError } from 'react-router-dom'
+import { isRouteErrorResponse, Navigate, useLocation, useRouteError } from 'react-router-dom'
 import SimpleBar from 'simplebar-react'
 import { toast } from 'sonner'
 import Header from 'src/layouts/MainLayout/Header'
 
 const Error = () => {
     const error = useRouteError()
+    const location = useLocation()
 
     if (isRouteErrorResponse(error)) {
         switch (error.status) {
             case 401:
-                return <Navigate to={'/login'} />
+                return <Navigate to={'/login'} state={{ from: location.pathname }} replace />
             case 400:
                 toast.error('Dữ liệu nạp vào api không đúng yêu cầu')
                 break

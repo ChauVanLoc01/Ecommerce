@@ -25,7 +25,11 @@ const Step1 = ({ all, checked, storeIds, storesLatest }: Step1Props) => {
                         <CartItem
                             key={storeId}
                             productIds={Object.keys(all[storeId])}
-                            isCheckedAll={Object.values(all[storeId]).length === Object.values(checked[storeId]).length}
+                            isCheckedAll={
+                                checked[storeId]
+                                    ? Object.values(all[storeId]).length === Object.values(checked[storeId]).length
+                                    : false
+                            }
                             products={all[storeId]}
                             store={storesLatest[storeId]}
                         />

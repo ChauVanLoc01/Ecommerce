@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 
 import { Button, Spinner } from '@radix-ui/themes'
 import { useMutation, useQuery } from '@tanstack/react-query'
+import { sumBy } from 'lodash'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { OrderFetching } from 'src/apis/order'
@@ -20,57 +21,44 @@ import Step2 from './Step2'
 import Step3 from './Step3'
 
 const Checkout = () => {
-    const { products } = useContext(AppContext)
+    const { products, ids } = useContext(AppContext)
     const [addressId, setAddressId] = useState<string>('')
     const navigate = useNavigate()
     const { step, handleNextStep, handlePreviousStep } = useStep()
     const [orderSuccess, setOrderSuccess] = useState<boolean>(false)
+    const [voucherIds, setVoucherIds] = useState<string[] | undefined>(undefined)
 
-    const ids = useMemo(() => {
-        if (!Object.keys(products.products).length) {
-            return undefined
-        }
-
-        const ids: {
-            storeIds: string[]
-            productIds: string[]
-        } = Object.keys(products.products).reduce(
-            (
-                acum: {
-                    storeIds: string[]
-                    productIds: string[]
-                },
-                storeId
-            ) => {
-                return {
-                    storeIds: [...acum.storeIds, storeId],
-                    productIds: [...acum.productIds, ...products.products[storeId].map((e) => e.productId)]
-                }
-            },
-            { storeIds: [], productIds: [] }
+    if (!ids) {
+        return (
+            <div className='flex flex-col items-center gap-y-4'>
+                <div className='w-1/4'>
+                    <img
+                        src='https://cdn-icons-png.flaticon.com/512/13637/13637462.png'
+                        className='object-cover'
+                        alt=''
+                    />
+                </div>
+                <Button variant='soft' size={'3'} onClick={() => navigate('/')}>
+                    Tiếp tục mua hàng
+                </Button>
+            </div>
         )
-
-        return {
-            ...ids
-        }
-    }, [products])
+    }
 
     const { data: refreshProducts } = useQuery({
-        queryKey: ['refreshProduct', JSON.stringify(ids ? ids.productIds : [])],
-        queryFn: () => productFetching.refreshProduct(ids ? ids.productIds : []),
+        queryKey: ['refreshProduct', JSON.stringify(ids.all)],
+        queryFn: () => productFetching.refreshProduct(ids.all),
         refetchInterval: 1000 * 10,
-        enabled: !!ids,
         select: (data) => data.data.result,
         placeholderData: (old) => old
     })
 
     const { data: refreshStores } = useQuery({
-        queryKey: ['refreshStore', JSON.stringify(ids ? ids.storeIds : [])],
-        queryFn: () => StoreFetching.refreshStore(ids ? ids.storeIds : []),
+        queryKey: ['refreshStore', JSON.stringify(ids.storeIds)],
+        queryFn: () => StoreFetching.refreshStore(ids.storeIds),
         refetchInterval: 1000 * 10,
         select: (data) => data.data.result,
-        placeholderData: (old) => old,
-        enabled: !!ids
+        placeholderData: (old) => old
     })
 
     const productLatest = useMemo(() => {
@@ -109,6 +97,13 @@ const Checkout = () => {
                     { checked: {}, all: {} }
                 )
 
+                if (!Object.keys(tmp.checked).length) {
+                    return {
+                        checked: { ...acum.checked },
+                        all: { ...acum.all, [storeId]: { ...tmp.all } }
+                    }
+                }
+
                 return {
                     checked: { ...acum.checked, [storeId]: { ...tmp.checked } },
                     all: { ...acum.all, [storeId]: { ...tmp.all, ...tmp.checked } }
@@ -117,6 +112,46 @@ const Checkout = () => {
             { checked: {}, all: {} }
         )
     }, [refreshProducts, products])
+
+    const priceLatest = useMemo(() => {
+        if (!productLatest) return undefined
+
+        var summary:
+            | {
+                  [storeId: string]: {
+                      total: number
+                      discount: number
+                      pay: number
+                  }
+              }
+            | undefined = undefined
+
+        if (!voucherIds || !voucherIds?.length) {
+            Object.keys(productLatest?.checked).forEach((storeId) => {
+                let total = sumBy(Object.values(productLatest.checked[storeId]), (o) => o.priceAfter)
+                if (!summary) {
+                    summary = {
+                        [storeId]: {
+                            total,
+                            discount: 0,
+                            pay: total
+                        }
+                    }
+                } else {
+                    summary = {
+                        ...summary,
+                        [storeId]: {
+                            total,
+                            discount: 0,
+                            pay: total
+                        }
+                    }
+                }
+            })
+
+            return summary
+        }
+    }, [productLatest, voucherIds])
 
     const {
         mutate,
@@ -133,23 +168,6 @@ const Checkout = () => {
     })
 
     const handleOrder = () => {}
-
-    if (!ids) {
-        return (
-            <div className='flex flex-col items-center gap-y-4'>
-                <div className='w-1/4'>
-                    <img
-                        src='https://cdn-icons-png.flaticon.com/512/13637/13637462.png'
-                        className='object-cover'
-                        alt=''
-                    />
-                </div>
-                <Button variant='soft' size={'3'} onClick={() => navigate('/')}>
-                    Tiếp tục mua hàng
-                </Button>
-            </div>
-        )
-    }
 
     return (
         <>
@@ -191,6 +209,7 @@ const Checkout = () => {
                                 step={step}
                                 storeCheckedIds={Object.keys(productLatest?.checked)}
                                 storeLatest={refreshStores}
+                                productChecked={productLatest.checked}
                             />
                         </div>
                     ) : (

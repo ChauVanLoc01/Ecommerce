@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { authFetching } from 'src/apis/authentication'
 
 import { SubmitHandler, useForm } from 'react-hook-form'
@@ -14,15 +14,15 @@ import Image from 'src/components/Image'
 import Input from 'src/components/Input'
 import Password from 'src/components/Password'
 import { route } from 'src/constants/route'
+import { AppContext } from 'src/contexts/AppContext'
 import { LoginBody } from 'src/types/auth.type'
 import { Reject } from 'src/types/return.type'
 import { login_schema } from 'src/utils/auth.schema'
-import { Spinner } from '@radix-ui/themes'
-import { AppContext } from 'src/contexts/AppContext'
 
 const Login = () => {
-    const { setProfile } = useContext(AppContext)
+    const { setProfile, profile } = useContext(AppContext)
     const navigate = useNavigate()
+    const location = useLocation()
     const redirectRef = useRef<any>(undefined)
     const {
         register,
@@ -40,7 +40,6 @@ const Login = () => {
         onSuccess: (result) => {
             redirectRef.current = setTimeout(() => {
                 setProfile(result.data.result)
-                navigate(route.root)
             }, 3000)
             toast.success('Đăng nhập thành công', {
                 description: 'Chuyển đến trang chủ trong 3s kế tiếp',
@@ -49,7 +48,6 @@ const Login = () => {
                     onClick: () => {
                         setProfile(result.data.result)
                         clearTimeout(redirectRef.current)
-                        navigate(route.root)
                     }
                 },
                 icon: (

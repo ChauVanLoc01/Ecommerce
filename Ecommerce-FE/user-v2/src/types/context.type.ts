@@ -31,4 +31,11 @@ export type AppContext = {
     setProducts: React.Dispatch<React.SetStateAction<ProductContext>>
     previousPage: string
     setPreviousPage: React.Dispatch<React.SetStateAction<string>>
+    ids:
+        | {
+              all: string[]
+              checked: string[]
+              storeIds: string[]
+          }
+        | undefined
 }

@@ -1,6 +1,8 @@
-import { Button, Spinner, Text } from '@radix-ui/themes'
+import { Avatar, Button, Flex, Spinner, Text } from '@radix-ui/themes'
 import SimpleBar from 'simplebar-react'
+import { ProductConvert } from 'src/types/context.type'
 import { RefreshStore } from 'src/types/store.type'
+import { convertCurrentcy } from 'src/utils/utils.ts'
 import Voucher from './Voucher'
 
 type CheckoutSummaryProps = {
@@ -10,6 +12,7 @@ type CheckoutSummaryProps = {
     handleOrder: () => void
     storeCheckedIds: string[]
     storeLatest: RefreshStore
+    productChecked: ProductConvert
 }
 
 const CheckoutSummary = ({
@@ -18,7 +21,8 @@ const CheckoutSummary = ({
     isPending,
     step,
     storeCheckedIds,
-    storeLatest
+    storeLatest,
+    productChecked
 }: CheckoutSummaryProps) => {
     return (
         <section className='basis-1/3 space-y-4'>
@@ -30,25 +34,32 @@ const CheckoutSummary = ({
                             <h3 className='font-semibold'>Tổng quan đơn hàng</h3>
                         </div>
                         <div className='border-b border-border/30 p-24 space-y-4'>
-                            {/* {productsChecked.map((productChecked) => (
-                        <div
-                            className='flex items-start justify-between'
-                            key={productChecked.productId}
-                        >
-                            <div className='basis-2/3 flex-grow-0 space-x-3 flex items-start'>
-                                <Avatar fallback='A' src={productChecked.image} size={'4'} />
-                                <Text size={'3'} className='line-clamp-2'>
-                                    {productChecked.name}
-                                </Text>
-                            </div>
-                            <div className='flex flex-col items-end'>
-                                <Text color='red'>x{productChecked.buy}</Text>
-                                <Text size={'3'}>
-                                    {convertCurrentcy(productChecked.priceAfter)}
-                                </Text>
-                            </div>
-                        </div>
-                    ))} */}
+                            {Object.keys(productChecked).map((storeId) => (
+                                <div className='space-y-2'>
+                                    <Flex justify={'between'}>
+                                        <Text>{storeLatest[storeId].name}</Text>
+                                        <Text color='gray'>
+                                            Số lượng: {Object.values(productChecked[storeId]).length}
+                                        </Text>
+                                    </Flex>
+                                    <div className='space-y-4'>
+                                        {Object.values(productChecked[storeId]).map((product) => (
+                                            <div className='flex items-start justify-between' key={product.productId}>
+                                                <div className='basis-2/3 flex-grow-0 space-x-3 flex items-start'>
+                                                    <Avatar fallback='A' src={product.image} size={'4'} />
+                                                    <Text size={'3'} className='line-clamp-2'>
+                                                        {product.name}
+                                                    </Text>
+                                                </div>
+                                                <div className='flex flex-col items-end'>
+                                                    <Text color='red'>x{product.buy}</Text>
+                                                    <Text size={'3'}>{convertCurrentcy(product.priceAfter)}</Text>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                         <div className='p-24 space-y-4'>
                             <div className='flex justify-between'>

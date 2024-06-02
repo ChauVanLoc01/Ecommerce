@@ -15,12 +15,12 @@ import RegisterStore from 'src/pages/RegisterStore'
 import { convertCurrentcy, removeSpecialCharacter } from 'src/utils/utils.ts'
 
 const Header = () => {
-    const { products, profile, setProducts, setProfile } = useContext(AppContext)
+    const { products, profile, setProducts, setProfile, ids } = useContext(AppContext)
     const navigate = useNavigate()
 
     const handleNavigate = (setIsOpen: React.Dispatch<React.SetStateAction<boolean>>, path?: string) => () => {
         setIsOpen(false)
-        path && navigate(path)
+        path && navigate({ pathname: path }, { state: ids })
     }
 
     const handleExit = (setIsOpen: React.Dispatch<React.SetStateAction<boolean>>) => () => {
@@ -28,6 +28,7 @@ const Header = () => {
         setProfile(undefined)
         setProducts({ length: 0, products: {} })
         window.dispatchEvent(new CustomEvent(exitEvent))
+        setTimeout(() => navigate('/'), 500)
     }
 
     return (
