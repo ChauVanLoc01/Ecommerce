@@ -15,8 +15,7 @@ export type ProductContext = {
     }
 }
 
-export type ProductContextExtends = ProductContext['products'][string][0] &
-    Partial<Pick<Product, 'currentQuantity' | 'priceBefore'>>
+export type ProductContextExtends = ProductContext['products'][string][0] & Product
 
 export type ProductConvert = {
     [storeId: string]: {
@@ -36,6 +35,7 @@ export type AppContext = {
               all: string[]
               checked: string[]
               storeIds: string[]
+              storeCheckedIds: string[]
           }
         | undefined
 }

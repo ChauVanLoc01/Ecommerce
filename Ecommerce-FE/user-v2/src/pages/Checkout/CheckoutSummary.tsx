@@ -1,4 +1,4 @@
-import { Avatar, Button, Flex, Spinner, Text } from '@radix-ui/themes'
+import { Avatar, Button, Spinner, Text } from '@radix-ui/themes'
 import SimpleBar from 'simplebar-react'
 import { ProductConvert } from 'src/types/context.type'
 import { RefreshStore } from 'src/types/store.type'
@@ -13,6 +13,22 @@ type CheckoutSummaryProps = {
     storeCheckedIds: string[]
     storeLatest: RefreshStore
     productChecked: ProductConvert
+    priceLatest:
+        | {
+              summary: {
+                  [storeId: string]: {
+                      total: number
+                      discount: number
+                      pay: number
+                  }
+              }
+              allOrder: {
+                  total: number
+                  discount: number
+                  pay: number
+              }
+          }
+        | undefined
 }
 
 const CheckoutSummary = ({
@@ -22,7 +38,8 @@ const CheckoutSummary = ({
     step,
     storeCheckedIds,
     storeLatest,
-    productChecked
+    productChecked,
+    priceLatest
 }: CheckoutSummaryProps) => {
     return (
         <section className='basis-1/3 space-y-4'>
@@ -36,12 +53,16 @@ const CheckoutSummary = ({
                         <div className='border-b border-border/30 p-24 space-y-4'>
                             {Object.keys(productChecked).map((storeId) => (
                                 <div className='space-y-2'>
-                                    <Flex justify={'between'}>
-                                        <Text>{storeLatest[storeId].name}</Text>
-                                        <Text color='gray'>
-                                            Số lượng: {Object.values(productChecked[storeId]).length}
-                                        </Text>
-                                    </Flex>
+                                    <details>
+                                        <summary>
+                                            <div className='inline-flex justify-between items-center w-full'>
+                                                <Text>{storeLatest[storeId].name}</Text>
+                                                <Text color='gray'>
+                                                    Số lượng: {Object.values(productChecked[storeId]).length}
+                                                </Text>
+                                            </div>
+                                        </summary>
+                                    </details>
                                     <div className='space-y-4'>
                                         {Object.values(productChecked[storeId]).map((product) => (
                                             <div className='flex items-start justify-between' key={product.productId}>
@@ -66,25 +87,29 @@ const CheckoutSummary = ({
                                 <Text weight={'bold'} size={'3'}>
                                     Tổng
                                 </Text>
-                                <Text>đ</Text>
+                                {!priceLatest ? (
+                                    <Spinner />
+                                ) : (
+                                    <Text>{convertCurrentcy(priceLatest.allOrder.total)}</Text>
+                                )}
                             </div>
                             <div className='flex justify-between'>
                                 <Text weight={'bold'} size={'3'}>
-                                    Mã giảm giá
+                                    Giảm giá
                                 </Text>
-                                <Text>0đ</Text>
-                            </div>
-                            <div className='flex justify-between'>
-                                <Text weight={'bold'} size={'3'}>
-                                    Vận chuyển
-                                </Text>
-                                <Text>0đ</Text>
+                                {!priceLatest ? (
+                                    <Spinner />
+                                ) : (
+                                    <Text>{convertCurrentcy(priceLatest.allOrder.discount)}</Text>
+                                )}
                             </div>
                         </div>
                     </div>
                     <div className='p-24 rounded-8 border border-border/30 bg-[#FFFFFF] flex justify-between'>
-                        <h3 className='font-semibold'>Tổng thanh toán</h3>
-                        <h3 className='text-red-500 font-semibold'>đ</h3>
+                        <Text weight={'bold'} size={'3'}>
+                            Thanh toán
+                        </Text>
+                        {!priceLatest ? <Spinner /> : <Text>{convertCurrentcy(priceLatest.allOrder.pay)}</Text>}
                     </div>
                 </div>
             </SimpleBar>

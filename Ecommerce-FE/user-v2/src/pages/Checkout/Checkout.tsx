@@ -3,16 +3,18 @@ import { useContext, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 
 import { Button, Spinner } from '@radix-ui/themes'
-import { useMutation, useQuery } from '@tanstack/react-query'
-import { sumBy } from 'lodash'
+import { useMutation, useQueries, useQuery } from '@tanstack/react-query'
+import { keyBy, sumBy } from 'lodash'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { OrderFetching } from 'src/apis/order'
 import { productFetching } from 'src/apis/product'
 import { StoreFetching } from 'src/apis/store'
+import { VoucherFetching } from 'src/apis/voucher.api'
 import { AppContext } from 'src/contexts/AppContext'
 import useStep from 'src/hooks/useStep'
 import { ProductConvert } from 'src/types/context.type'
+import { VoucherWithCondition } from 'src/types/voucher.type'
 import CheckoutHeader from './CheckoutHeader'
 import CheckoutSummary from './CheckoutSummary'
 import CreateOrder from './CreateOrder'
@@ -26,7 +28,7 @@ const Checkout = () => {
     const navigate = useNavigate()
     const { step, handleNextStep, handlePreviousStep } = useStep()
     const [orderSuccess, setOrderSuccess] = useState<boolean>(false)
-    const [voucherIds, setVoucherIds] = useState<string[] | undefined>(undefined)
+    const [voucherIds, setVoucherIds] = useState<{ [storeId: string]: string } | undefined>(undefined)
 
     if (!ids) {
         return (
@@ -59,6 +61,14 @@ const Checkout = () => {
         refetchInterval: 1000 * 10,
         select: (data) => data.data.result,
         placeholderData: (old) => old
+    })
+
+    const storeVouchers = useQueries({
+        queries: ids.storeCheckedIds.map((storeId) => ({
+            queryKey: ['storeVoucher', storeId],
+            queryFn: () => VoucherFetching.getVoucherByStoreId(storeId),
+            refetchInterval: 1000 * 5
+        }))
     })
 
     const productLatest = useMemo(() => {
@@ -113,43 +123,110 @@ const Checkout = () => {
         )
     }, [refreshProducts, products])
 
+    const voucherLatest = useMemo(() => {
+        if (!storeVouchers.length) return undefined
+
+        const voucher = storeVouchers.reduce(
+            (acum: { [storeId: string]: { [voucherId: string]: VoucherWithCondition } }, voucher, idx) => {
+                if (!voucher.data) {
+                    return { ...acum }
+                }
+                let vouchers = voucher.data.data.result
+                if (!vouchers.length) {
+                    return {
+                        ...acum
+                    }
+                }
+                return {
+                    ...acum,
+                    [ids.storeCheckedIds[idx]]: keyBy(voucher.data.data.result, 'id')
+                }
+            },
+            {}
+        )
+
+        if (!Object.keys(voucher).length) return undefined
+
+        return voucher
+    }, [storeVouchers])
+
     const priceLatest = useMemo(() => {
         if (!productLatest) return undefined
 
-        var summary:
-            | {
-                  [storeId: string]: {
-                      total: number
-                      discount: number
-                      pay: number
-                  }
-              }
-            | undefined = undefined
+        var tmp = {
+            total: 0,
+            discount: 0,
+            pay: 0
+        }
 
-        if (!voucherIds || !voucherIds?.length) {
+        var summary: {
+            [storeId: string]: {
+                total: number
+                discount: number
+                pay: number
+            }
+        } = {}
+
+        if (!voucherLatest || !voucherIds || !voucherIds?.length) {
             Object.keys(productLatest?.checked).forEach((storeId) => {
-                let total = sumBy(Object.values(productLatest.checked[storeId]), (o) => o.priceAfter)
-                if (!summary) {
-                    summary = {
-                        [storeId]: {
-                            total,
-                            discount: 0,
-                            pay: total
-                        }
+                let total = sumBy(Object.values(productLatest.checked[storeId]), (o) => o.priceAfter * o.buy)
+                summary = {
+                    ...summary,
+                    [storeId]: {
+                        total,
+                        discount: 0,
+                        pay: total
                     }
-                } else {
-                    summary = {
-                        ...summary,
-                        [storeId]: {
-                            total,
-                            discount: 0,
-                            pay: total
-                        }
+                }
+                tmp.pay += summary[storeId].pay
+                tmp.total += summary[storeId].total
+            })
+
+            return {
+                summary,
+                allOrder: tmp
+            }
+        }
+
+        Object.keys(voucherIds).forEach((storeId) => {
+            let voucher = voucherLatest[storeId][voucherIds[storeId]]
+            if (!voucher) return
+            let isOk = true
+            let categoryCondition = voucher.CategoryConditionVoucher
+            let priceCondition = voucher.PriceConditionVoucher
+            let remainingMaximum = voucher.maximum
+            let total = 0
+
+            Object.values(productLatest.checked[storeId]).forEach((product) => {
+                total += product.priceAfter * product.buy
+                if (categoryCondition && product.category !== categoryCondition.categoryShortName) {
+                    isOk = false
+                }
+                if (priceCondition && priceCondition.priceMin && product.priceAfter < priceCondition.priceMin) {
+                    isOk = false
+                }
+                if (isOk && remainingMaximum > 0) {
+                    let productDiscount = (product.priceAfter * voucher.percent) / 100
+                    if (productDiscount <= remainingMaximum) {
+                        remainingMaximum -= productDiscount
+                    } else {
+                        remainingMaximum = 0
                     }
                 }
             })
+            summary[storeId] = {
+                discount: voucher.maximum - remainingMaximum,
+                pay: total - voucher.maximum,
+                total
+            }
+            tmp.discount += summary[storeId].discount
+            tmp.total += summary[storeId].total
+            tmp.pay += summary[storeId].pay
+        }, {})
 
-            return summary
+        return {
+            summary,
+            allOrder: tmp
         }
     }, [productLatest, voucherIds])
 
@@ -210,6 +287,7 @@ const Checkout = () => {
                                 storeCheckedIds={Object.keys(productLatest?.checked)}
                                 storeLatest={refreshStores}
                                 productChecked={productLatest.checked}
+                                priceLatest={priceLatest}
                             />
                         </div>
                     ) : (

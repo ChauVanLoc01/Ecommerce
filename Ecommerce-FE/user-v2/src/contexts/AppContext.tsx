@@ -29,27 +29,48 @@ const ContextWrap = ({ children }: { children: ReactNode }) => {
 
         const ids: {
             storeIds: string[]
+            storeCheckedIds: string[]
             all: string[]
             checked: string[]
         } = Object.keys(products.products).reduce(
             (
                 acum: {
                     storeIds: string[]
+                    storeCheckedIds: string[]
                     all: string[]
                     checked: string[]
                 },
                 storeId
             ) => {
+                const tmp: {
+                    checked: string[]
+                    storeChecked: string[]
+                    all: string[]
+                } = {
+                    checked: [],
+                    storeChecked: [],
+                    all: []
+                }
+
+                products.products[storeId].forEach((product) => {
+                    if (product.checked) {
+                        tmp.checked.push(product.productId)
+                    }
+                    tmp.all.push(product.productId)
+                })
+
+                if (tmp.checked.length) {
+                    tmp.storeChecked.push(storeId)
+                }
+
                 return {
                     storeIds: [...acum.storeIds, storeId],
-                    all: [...acum.all, ...products.products[storeId].map((e) => e.productId)],
-                    checked: [
-                        ...acum.checked,
-                        ...products.products[storeId].filter((e) => e.checked).map((e) => e.productId)
-                    ]
+                    storeCheckedIds: [...acum.storeCheckedIds, ...tmp.storeChecked],
+                    all: [...acum.all, ...tmp.all],
+                    checked: [...acum.checked, ...tmp.checked]
                 }
             },
-            { storeIds: [], all: [], checked: [] }
+            { storeIds: [], storeCheckedIds: [], all: [], checked: [] }
         )
 
         return ids
