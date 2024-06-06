@@ -13,7 +13,7 @@ import { Public } from 'common/decorators/public.decorator'
 import { Roles } from 'common/decorators/roles.decorator'
 import { Role } from 'common/enums/role.enum'
 import { JwtGuard } from 'common/guards/jwt.guard'
-import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
+import { CurrentStoreType } from 'common/types/current.type'
 import { AnalyticsProductDTO } from './dtos/analytics-product.dto'
 import { CreateUserAddProductToCartDTO } from './dtos/create-product-add-to-cart.dto'
 import { CreateUserViewProductDto } from './dtos/create-product-view.dto'
@@ -22,27 +22,17 @@ import { QueryProductDTO } from './dtos/query-product.dto'
 import { RefreshCartDTO } from './dtos/refresh-cart.dto'
 import { UpdateProductDTO } from './dtos/update-product.dto'
 import { ProductService } from './product.service'
-import { SearchProductService } from './search-product.service'
 
 @UseGuards(JwtGuard)
 @ApiBearerAuth()
 @Controller('product')
 export class ProductController {
-  constructor(
-    private readonly productsService: ProductService,
-    private searchProductService: SearchProductService
-  ) {}
+  constructor(private readonly productsService: ProductService) {}
 
   @Public()
   @Get('update-data')
   updateData() {
     return this.productsService.updateData()
-  }
-
-  @Public()
-  @Get('es-search')
-  searchProduct(@Query('search') search: string) {
-    return this.productsService.searchProduct(search)
   }
 
   @Public()
@@ -94,19 +84,16 @@ export class ProductController {
     return this.productsService.getProductByProductOrder(payload)
   }
 
-  @Roles(Role.USER)
+  @Public()
   @Post('view-product')
-  createViewProduct(@CurrentUser() user: CurrentUserType, @Body() body: CreateUserViewProductDto) {
-    return this.productsService.createViewProduct(user, body)
+  createViewProduct(@Body() body: CreateUserViewProductDto) {
+    return this.productsService.createViewProduct(body)
   }
 
-  @Roles(Role.USER)
+  @Public()
   @Post('add-product-to-cart')
-  createUserAddProductToCart(
-    @CurrentUser() user: CurrentUserType,
-    @Body() body: CreateUserAddProductToCartDTO
-  ) {
-    return this.productsService.createUserAddProductToCart(user, body)
+  createUserAddProductToCart(@Body() body: CreateUserAddProductToCartDTO) {
+    return this.productsService.createUserAddProductToCart(body)
   }
 
   @Roles(Role.EMPLOYEE, Role.STORE_OWNER)

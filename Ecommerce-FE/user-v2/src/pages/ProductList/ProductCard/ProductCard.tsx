@@ -1,9 +1,11 @@
 import { Avatar, Text } from '@radix-ui/themes'
+import { useMutation } from '@tanstack/react-query'
 import classNames from 'classnames'
 import { motion } from 'framer-motion'
 import { useContext } from 'react'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
+import { productFetching } from 'src/apis/product'
 
 import Button from 'src/components/Button'
 import Image from 'src/components/Image'
@@ -22,6 +24,10 @@ const ProductCard = ({ product, isHiddenStore = false }: ProductCardProps) => {
     const { name, image, priceAfter, priceBefore, id } = product
 
     const { setProducts, products } = useContext(AppContext)
+
+    const { mutate: createViewAddToCart } = useMutation({
+        mutationFn: productFetching.createViewAddToCart
+    })
 
     const handleAddToCart = () => {
         var isNewProductInStoreExist = true
@@ -77,6 +83,7 @@ const ProductCard = ({ product, isHiddenStore = false }: ProductCardProps) => {
         ls.setItem('products', JSON.stringify(productsTmp))
         setProducts(productsTmp)
         toast.info('Thêm sản phẩm thành công')
+        createViewAddToCart({ productId: id, quantity: 1 })
     }
 
     return (

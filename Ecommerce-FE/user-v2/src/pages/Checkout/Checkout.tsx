@@ -167,7 +167,7 @@ const Checkout = () => {
             }
         } = {}
 
-        if (!voucherLatest || !voucherIds || !voucherIds?.length) {
+        if (!voucherLatest || !voucherIds) {
             Object.keys(productLatest?.checked).forEach((storeId) => {
                 let total = sumBy(Object.values(productLatest.checked[storeId]), (o) => o.priceAfter * o.buy)
                 summary = {
@@ -191,13 +191,13 @@ const Checkout = () => {
         Object.keys(voucherIds).forEach((storeId) => {
             let voucher = voucherLatest[storeId][voucherIds[storeId]]
             if (!voucher) return
-            let isOk = true
             let categoryCondition = voucher.CategoryConditionVoucher
             let priceCondition = voucher.PriceConditionVoucher
             let remainingMaximum = voucher.maximum
             let total = 0
 
             Object.values(productLatest.checked[storeId]).forEach((product) => {
+                let isOk = true
                 total += product.priceAfter * product.buy
                 if (categoryCondition && product.category !== categoryCondition.categoryShortName) {
                     isOk = false
@@ -206,7 +206,7 @@ const Checkout = () => {
                     isOk = false
                 }
                 if (isOk && remainingMaximum > 0) {
-                    let productDiscount = (product.priceAfter * voucher.percent) / 100
+                    let productDiscount = (product.priceAfter * product.buy * voucher.percent) / 100
                     if (productDiscount <= remainingMaximum) {
                         remainingMaximum -= productDiscount
                     } else {
@@ -221,14 +221,14 @@ const Checkout = () => {
             }
             tmp.discount += summary[storeId].discount
             tmp.total += summary[storeId].total
-            tmp.pay += summary[storeId].pay
+            tmp.pay += tmp.total - tmp.discount
         }, {})
 
         return {
             summary,
             allOrder: tmp
         }
-    }, [productLatest, voucherIds])
+    }, [productLatest, voucherIds, voucherLatest])
 
     const {
         mutate,
@@ -245,6 +245,21 @@ const Checkout = () => {
     })
 
     const handleOrder = () => {}
+
+    const handleRemoveVoucher = (storeId: string, isUncheckedAll: boolean) => () => {
+        console.log('out side')
+        if (voucherIds && voucherIds[storeId] && isUncheckedAll) {
+            console.log('do day')
+            if (Object.keys(voucherIds).length > 1) {
+                setVoucherIds((pre) => {
+                    pre && delete pre[storeId]
+                    return pre
+                })
+            } else {
+                setVoucherIds(undefined)
+            }
+        }
+    }
 
     return (
         <>
@@ -272,6 +287,7 @@ const Checkout = () => {
                                                 checked={productLatest.checked}
                                                 storeIds={ids.storeIds}
                                                 storesLatest={refreshStores}
+                                                handleRemoveVoucher={handleRemoveVoucher}
                                             />
                                         ),
                                         2: <Step2 addressId={addressId} setAddressId={setAddressId} />,
@@ -284,10 +300,13 @@ const Checkout = () => {
                                 handleOrder={handleOrder}
                                 isPending={isPending}
                                 step={step}
-                                storeCheckedIds={Object.keys(productLatest?.checked)}
                                 storeLatest={refreshStores}
                                 productChecked={productLatest.checked}
                                 priceLatest={priceLatest}
+                                refreshStores={refreshStores}
+                                voucherLatest={voucherLatest}
+                                setVoucherIds={setVoucherIds}
+                                voucherIds={voucherIds}
                             />
                         </div>
                     ) : (

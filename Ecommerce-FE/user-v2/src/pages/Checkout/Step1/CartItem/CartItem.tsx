@@ -13,10 +13,11 @@ type CartItemProps = {
     productIds: string[]
     store: Store
     isCheckedAll: boolean
+    handleRemoveVoucher: () => void
 }
 
-const CartItem = ({ products, productIds, store, isCheckedAll }: CartItemProps) => {
-    const { setProducts } = useContext(AppContext)
+const CartItem = ({ products, productIds, store, isCheckedAll, handleRemoveVoucher }: CartItemProps) => {
+    const { setProducts, ids } = useContext(AppContext)
     const [productOrder, setProductOrder] = useState<string[]>(productIds)
 
     const handleCheckedAll = () => {
@@ -27,6 +28,7 @@ const CartItem = ({ products, productIds, store, isCheckedAll }: CartItemProps) 
                 [store.id]: Object.values(products).map((product) => ({ ...product, checked: !isCheckedAll }))
             }
         }))
+        handleRemoveVoucher()
     }
 
     const handleChecked = (productId: string, checked: boolean) => () => {
@@ -43,6 +45,7 @@ const CartItem = ({ products, productIds, store, isCheckedAll }: CartItemProps) 
                 })
             }
         }))
+        handleRemoveVoucher()
     }
 
     const handleChangeQuantity = (productId: string, buy: number) => {

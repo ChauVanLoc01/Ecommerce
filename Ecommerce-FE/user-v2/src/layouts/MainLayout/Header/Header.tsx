@@ -58,13 +58,13 @@ const Header = () => {
                             <PiShoppingCartLight size={27} />
                             <span
                                 className={classNames(
-                                    'absolute -top-1 -right-1 inline-block p-1 rounded-full bg-red-500 text-[11px] text-white',
+                                    'absolute -top-2 -right-3 text-center inline-block p-1 rounded-full bg-red-500 text-[11px] text-white w-6',
                                     {
                                         'px-1.5': products.length < 9
                                     }
                                 )}
                             >
-                                {products.length < 9 ? products.length : '9+'}
+                                {ids?.all && ids.all.length < 10 ? ids?.all.length : '9+'}
                             </span>
                         </div>
                     }
@@ -75,7 +75,7 @@ const Header = () => {
                         <>
                             <div className='flex justify-between items-baseline'>
                                 <h3 className='font-semibold text-lg'>Giỏ hàng</h3>
-                                <h4>{products.length} sản phẩm</h4>
+                                <h4>{ids?.all.length} sản phẩm</h4>
                             </div>
                             {!products.length ? (
                                 <>

@@ -9,7 +9,7 @@ import { Cache } from 'cache-manager'
 import { BackgroundName } from 'common/constants/background-job.constant'
 import { getStoreDetail } from 'common/constants/event.constant'
 import { Status } from 'common/enums/status.enum'
-import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
+import { CurrentStoreType } from 'common/types/current.type'
 import { Return } from 'common/types/result.type'
 import { isUndefined, keyBy, omitBy } from 'lodash'
 import { firstValueFrom } from 'rxjs'
@@ -21,7 +21,6 @@ import { CreateProductType } from './dtos/create-product.dto'
 import { QueryProductType } from './dtos/query-product.dto'
 import { RefreshCartDTO } from './dtos/refresh-cart.dto'
 import { UpdateProductType } from './dtos/update-product.dto'
-import { SearchProductService } from './search-product.service'
 
 @Injectable()
 export class ProductService {
@@ -29,19 +28,10 @@ export class ProductService {
     private readonly prisma: PrismaService,
     @Inject('USER_SERVICE') private readonly user_service: ClientProxy,
     @Inject('STORE_SERVICE') private readonly store_service: ClientProxy,
-    private readonly searchService: SearchProductService,
     private readonly configService: ConfigService,
     @InjectQueue(BackgroundName.product) private productBullQueue: Queue,
     @Inject(CACHE_MANAGER) private cacheManager: Cache
   ) {}
-
-  async searchProduct(search: string) {
-    const result = this.searchService.searchProduct(search)
-
-    console.log(result)
-
-    return result
-  }
 
   async getALlProductForUser(query: QueryProductType): Promise<Return> {
     const {
@@ -387,19 +377,15 @@ export class ProductService {
     }
   }
 
-  async createViewProduct(user: CurrentUserType, body: CreateUserViewProductDto): Promise<Return> {
-    const result = await Promise.all(
-      body.products.map((productId) =>
-        this.prisma.userViewProduct.create({
-          data: {
-            id: uuidv4(),
-            userId: user.id,
-            productId,
-            createdAt: new Date().toISOString()
-          }
-        })
-      )
-    )
+  async createViewProduct(body: CreateUserViewProductDto): Promise<Return> {
+    const result = await this.prisma.userViewProduct.create({
+      data: {
+        id: uuidv4(),
+        userId: body.userId,
+        productId: body.productId,
+        createdAt: new Date().toISOString()
+      }
+    })
 
     return {
       msg: 'ok',
@@ -407,10 +393,7 @@ export class ProductService {
     }
   }
 
-  async createUserAddProductToCart(
-    user: CurrentUserType,
-    body: CreateUserAddProductToCartDTO
-  ): Promise<Return> {
+  async createUserAddProductToCart(body: CreateUserAddProductToCartDTO): Promise<Return> {
     const { productId, quantity } = body
 
     const result = await this.prisma.userAddProductToCart.create({
@@ -418,7 +401,7 @@ export class ProductService {
         id: uuidv4(),
         productId,
         quantity,
-        userId: user.id,
+        userId: body.userId,
         createdAt: new Date().toISOString()
       }
     })

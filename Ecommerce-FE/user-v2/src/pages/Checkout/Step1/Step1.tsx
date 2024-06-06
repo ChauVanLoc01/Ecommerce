@@ -12,9 +12,10 @@ type Step1Props = {
     checked: ProductConvert
     storesLatest: RefreshStore
     storeIds: string[]
+    handleRemoveVoucher: (storeId: string, isUncheckedAll: boolean) => () => void
 }
 
-const Step1 = ({ all, checked, storeIds, storesLatest }: Step1Props) => {
+const Step1 = ({ all, checked, storeIds, storesLatest, handleRemoveVoucher }: Step1Props) => {
     const [stores, setStores] = useState<string[]>(storeIds)
 
     return (
@@ -32,6 +33,7 @@ const Step1 = ({ all, checked, storeIds, storesLatest }: Step1Props) => {
                             }
                             products={all[storeId]}
                             store={storesLatest[storeId]}
+                            handleRemoveVoucher={handleRemoveVoucher(storeId, !checked[storeId] ? true : false)}
                         />
                     </Reorder.Item>
                 ))}

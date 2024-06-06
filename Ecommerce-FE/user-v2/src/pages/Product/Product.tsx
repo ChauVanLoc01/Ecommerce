@@ -2,11 +2,13 @@ import Button from 'src/components/Button'
 import InputNumber from 'src/components/InputNumber'
 
 import { Avatar, Flex, Text } from '@radix-ui/themes'
+import { useMutation } from '@tanstack/react-query'
 import classNames from 'classnames'
 import { motion } from 'framer-motion'
-import { useContext, useState } from 'react'
-import { Link, useLoaderData, useNavigate } from 'react-router-dom'
+import { useContext, useEffect, useState } from 'react'
+import { Link, ScrollRestoration, useLoaderData, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import { productFetching } from 'src/apis/product'
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from 'src/components/Shadcn/carousel'
 import { route } from 'src/constants/route'
 import { AppContext } from 'src/contexts/AppContext'
@@ -22,6 +24,14 @@ const Product = () => {
     const [quantity, setQuantity] = useState<number>(1)
     const [productDetail, _, storeDetail] = useLoaderData() as [ProductDetailResponse, ProductListResponse, Store]
     const navigate = useNavigate()
+
+    const { mutate: createViewProduct } = useMutation({
+        mutationFn: productFetching.createViewProduct
+    })
+
+    const { mutate: createViewAddToCart } = useMutation({
+        mutationFn: productFetching.createViewAddToCart
+    })
 
     const handleAddToCart = (checked: boolean) => () => {
         if (!profile) {
@@ -80,6 +90,7 @@ const Product = () => {
             ls.setItem('products', JSON.stringify(productsTmp))
             setProducts(productsTmp)
             toast.info('Thêm sản phẩm thành công')
+            createViewAddToCart({ productId: productDetail.id, quantity })
         }
     }
 
@@ -87,6 +98,10 @@ const Product = () => {
         handleAddToCart(true)()
         navigate(`/${route.checkout}`)
     }
+
+    useEffect(() => {
+        createViewProduct({ productId: productDetail.id, userId: profile?.user?.id })
+    }, [])
 
     return (
         <motion.div
@@ -99,6 +114,7 @@ const Product = () => {
                 hidden: { opacity: 0 }
             }}
             className='space-y-4 pb-20'
+            id='product-detail'
         >
             <section className='flex gap-10'>
                 <div className='basis-2/5 max-w-[40%] grow-0 bg-[#FFFFFF] rounded-12 flex-shrink-0 w-[512px] h-[512px]'>

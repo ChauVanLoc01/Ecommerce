@@ -2,17 +2,15 @@ import { ConfigModule, PrismaModule } from '@app/common'
 import { BullModule } from '@nestjs/bull'
 import { Module } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { ElasticsearchModule } from '@nestjs/elasticsearch'
 import { JwtService } from '@nestjs/jwt'
 import { ClientsModule, Transport } from '@nestjs/microservices'
 import { MulterModule } from '@nestjs/platform-express'
 import { BackgroundName } from 'common/constants/background-job.constant'
+import { QueueName } from 'common/constants/queue.constant'
 import { diskStorage } from 'multer'
 import { v4 as uuidv4 } from 'uuid'
 import { ProductController } from './product.controller'
 import { ProductService } from './product.service'
-import { SearchProductService } from './search-product.service'
-import { QueueName } from 'common/constants/queue.constant'
 
 @Module({
   imports: [
@@ -69,22 +67,11 @@ import { QueueName } from 'common/constants/queue.constant'
         }
       })
     }),
-    ElasticsearchModule.registerAsync({
-      imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        node: configService.get<string>('elasticsearch.node'),
-        auth: {
-          username: configService.get('elasticsearch.username'),
-          password: configService.get('elasticsearch.password')
-        }
-      }),
-      inject: [ConfigService]
-    }),
     ConfigModule,
     PrismaModule
   ],
 
   controllers: [ProductController],
-  providers: [ProductService, SearchProductService, JwtService]
+  providers: [ProductService, JwtService]
 })
 export class ProductModule {}

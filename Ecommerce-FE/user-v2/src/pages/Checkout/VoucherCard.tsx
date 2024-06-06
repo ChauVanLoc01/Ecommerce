@@ -1,21 +1,30 @@
 import { ArrowBottomLeftIcon } from '@radix-ui/react-icons'
-import { CheckboxCards, Flex, Text } from '@radix-ui/themes'
+import { Badge, Flex, RadioCards, Text } from '@radix-ui/themes'
+import { Store } from 'src/types/store.type'
 import { VoucherWithCondition } from 'src/types/voucher.type'
 import { convertCurrentcy } from 'src/utils/utils.ts'
 
 type VoucherCardProps = {
-    storeName: string
+    store: Store
     vouchers: VoucherWithCondition[]
+    voucherId: string | undefined
+    handleSelectVoucher: (voucherId: string) => void
+    select?: string
 }
 
-const VoucherCard = ({ vouchers, storeName }: VoucherCardProps) => {
+const VoucherCard = ({ vouchers, voucherId, store, handleSelectVoucher, select }: VoucherCardProps) => {
     return (
         <>
-            {vouchers.length > 0 && <Text>{storeName}</Text>}
-            <CheckboxCards.Root size={'1'} columns={{ initial: '1', sm: '2' }}>
+            {vouchers.length > 0 && <Text>{store.name}</Text>}
+            <RadioCards.Root
+                size={'1'}
+                columns={{ initial: '1', sm: '2' }}
+                defaultValue={voucherId}
+                onValueChange={(val) => val !== voucherId && handleSelectVoucher(val)}
+            >
                 {vouchers.map((voucher) => (
-                    <CheckboxCards.Item key={voucher.id} value={voucher.id}>
-                        <Flex direction='column' width='100%'>
+                    <RadioCards.Item key={voucher.id} value={voucher.id}>
+                        <Flex direction='column' width='100%' className='relative'>
                             <Text weight='bold' size={'3'}>
                                 {voucher.title}
                             </Text>
@@ -31,10 +40,20 @@ const VoucherCard = ({ vouchers, storeName }: VoucherCardProps) => {
                                     Chi tiết
                                 </Text>
                             </Flex>
+                            {voucherId && voucherId === voucher.id && (
+                                <Badge className='absolute top-0 right-0' size={'1'}>
+                                    Đang sử dụng
+                                </Badge>
+                            )}
+                            {select && select === voucher?.id && (
+                                <Badge className='absolute top-0 right-0' color='crimson' size={'1'}>
+                                    Đang chọn
+                                </Badge>
+                            )}
                         </Flex>
-                    </CheckboxCards.Item>
+                    </RadioCards.Item>
                 ))}
-            </CheckboxCards.Root>
+            </RadioCards.Root>
         </>
     )
 }

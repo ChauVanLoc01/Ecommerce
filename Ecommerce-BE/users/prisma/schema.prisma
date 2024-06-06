@@ -328,20 +328,17 @@ model User {
   Store_Store_updatedByToUser         Store[]                    @relation("Store_updatedByToUser")
   StoreRole_StoreRole_createdByToUser StoreRole[]                @relation("StoreRole_createdByToUser")
   StoreRole_StoreRole_updatedByToUser StoreRole[]                @relation("StoreRole_updatedByToUser")
-  UserAddProductToCart                UserAddProductToCart[]
-  UserViewProduct                     UserViewProduct[]
   UserVoucher                         UserVoucher[]
 }
 
 model UserAddProductToCart {
   id        String    @id @db.VarChar(50)
-  userId    String    @db.VarChar(50)
+  userId    String?   @db.VarChar(50)
   productId String    @db.VarChar(50)
   quantity  Int
   createdAt DateTime  @db.Timestamp(0)
   updatedAt DateTime? @db.Timestamp(0)
   isDelete  Int?      @db.TinyInt
-  User      User      @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "UserAddProductToCart_ibfk_1")
   Product   Product   @relation(fields: [productId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "UserAddProductToCart_ibfk_2")
 
   @@index([productId], map: "productId")
@@ -360,10 +357,9 @@ model UserScore {
 
 model UserViewProduct {
   id        String   @id @db.VarChar(50)
-  userId    String   @db.VarChar(50)
+  userId    String?  @db.VarChar(50)
   productId String   @db.VarChar(50)
   createdAt DateTime @db.Timestamp(0)
-  User      User     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "UserViewProduct_ibfk_1")
   Product   Product  @relation(fields: [productId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "UserViewProduct_ibfk_2")
 
   @@index([productId], map: "productId")

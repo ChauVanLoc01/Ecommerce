@@ -2,6 +2,7 @@ import { Avatar, Button, Spinner, Text } from '@radix-ui/themes'
 import SimpleBar from 'simplebar-react'
 import { ProductConvert } from 'src/types/context.type'
 import { RefreshStore } from 'src/types/store.type'
+import { VoucherWithCondition } from 'src/types/voucher.type'
 import { convertCurrentcy } from 'src/utils/utils.ts'
 import Voucher from './Voucher'
 
@@ -10,9 +11,29 @@ type CheckoutSummaryProps = {
     step: number
     handleNextStep: () => false | void
     handleOrder: () => void
-    storeCheckedIds: string[]
     storeLatest: RefreshStore
     productChecked: ProductConvert
+    refreshStores: RefreshStore
+    voucherIds:
+        | {
+              [storeId: string]: string
+          }
+        | undefined
+    setVoucherIds: React.Dispatch<
+        React.SetStateAction<
+            | {
+                  [storeId: string]: string
+              }
+            | undefined
+        >
+    >
+    voucherLatest:
+        | {
+              [x: string]: {
+                  [voucherId: string]: VoucherWithCondition
+              }
+          }
+        | undefined
     priceLatest:
         | {
               summary: {
@@ -36,32 +57,73 @@ const CheckoutSummary = ({
     handleOrder,
     isPending,
     step,
-    storeCheckedIds,
     storeLatest,
     productChecked,
-    priceLatest
+    priceLatest,
+    refreshStores,
+    voucherLatest,
+    setVoucherIds,
+    voucherIds
 }: CheckoutSummaryProps) => {
     return (
         <section className='basis-1/3 space-y-4'>
             <SimpleBar style={{ maxHeight: '600px', paddingBottom: '5px' }}>
                 <div className='space-y-4 pr-2'>
-                    <Voucher storeCheckedIds={storeCheckedIds} storeLatest={storeLatest} />
+                    <Voucher
+                        setVoucherIds={setVoucherIds}
+                        voucherIds={voucherIds}
+                        refreshStores={refreshStores}
+                        voucherLatest={voucherLatest}
+                    />
                     <div className='rounded-8 border border-border/30 bg-[#FFFFFF]'>
                         <div className='p-24 border-b border-border-border/30'>
                             <h3 className='font-semibold'>Tổng quan đơn hàng</h3>
                         </div>
                         <div className='border-b border-border/30 p-24 space-y-4'>
                             {Object.keys(productChecked).map((storeId) => (
-                                <div className='space-y-2'>
+                                <div className='space-y-2' key={storeId}>
                                     <details>
-                                        <summary>
-                                            <div className='inline-flex justify-between items-center w-full'>
-                                                <Text>{storeLatest[storeId].name}</Text>
-                                                <Text color='gray'>
-                                                    Số lượng: {Object.values(productChecked[storeId]).length}
-                                                </Text>
-                                            </div>
+                                        <summary className='relative'>
+                                            <Text>{storeLatest[storeId].name}</Text>
                                         </summary>
+                                        <div className='w-2/3 text-right ml-auto'>
+                                            <div className='flex justify-between'>
+                                                <Text weight={'bold'} size={'1'}>
+                                                    Tổng
+                                                </Text>
+                                                {priceLatest && priceLatest.summary[storeId] ? (
+                                                    <Text size={'1'}>
+                                                        {convertCurrentcy(priceLatest.summary[storeId].total)}
+                                                    </Text>
+                                                ) : (
+                                                    <Spinner />
+                                                )}
+                                            </div>
+                                            <div className='flex justify-between'>
+                                                <Text weight={'bold'} size={'1'}>
+                                                    Giảm giá
+                                                </Text>
+                                                {priceLatest && priceLatest.summary[storeId] ? (
+                                                    <Text size={'1'}>
+                                                        -{convertCurrentcy(priceLatest.summary[storeId].discount)}
+                                                    </Text>
+                                                ) : (
+                                                    <Spinner />
+                                                )}
+                                            </div>
+                                            <div className='flex justify-between'>
+                                                <Text weight={'bold'} size={'1'}>
+                                                    Thanh toán
+                                                </Text>
+                                                {priceLatest && priceLatest.summary[storeId] ? (
+                                                    <Text size={'1'}>
+                                                        {convertCurrentcy(priceLatest.summary[storeId].pay)}
+                                                    </Text>
+                                                ) : (
+                                                    <Spinner />
+                                                )}
+                                            </div>
+                                        </div>
                                     </details>
                                     <div className='space-y-4'>
                                         {Object.values(productChecked[storeId]).map((product) => (
@@ -100,7 +162,7 @@ const CheckoutSummary = ({
                                 {!priceLatest ? (
                                     <Spinner />
                                 ) : (
-                                    <Text>{convertCurrentcy(priceLatest.allOrder.discount)}</Text>
+                                    <Text>-{convertCurrentcy(priceLatest.allOrder.discount)}</Text>
                                 )}
                             </div>
                         </div>

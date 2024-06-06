@@ -25,5 +25,11 @@ export const productFetching = {
     },
     refreshProduct: (body: string[]) => {
         return http.post<Return<RefreshProduct>>('/product/product/refresh-cart', { productsId: body })
+    },
+    createViewProduct: (body: {productId: string, userId?: string}) => {
+        return http.post('/product/product/view-product', body)
+    },
+    createViewAddToCart: (body: { productId: string; quantity: number }) => {
+        return http.post('/product/product/add-product-to-cart', body)
     }
 }
