@@ -1,9 +1,7 @@
 import loadable from '@loadable/component'
 import { motion } from 'framer-motion'
-import { IoSearchOutline } from 'react-icons/io5'
 
 import Dropdown from 'src/components/Dropdown'
-import InputIcon from 'src/components/InputIcon'
 import Pagination from 'src/components/Pagination'
 
 import { useQuery } from '@tanstack/react-query'
@@ -16,6 +14,7 @@ import { CategoryListResponse } from 'src/types/category.type'
 import { ProductListQuery, ProductListResponse } from 'src/types/product.type'
 import FlashSale from './FlashSale'
 import ProductCard from './ProductCard'
+import ProductSearch from './ProductSearch'
 
 const Filter = loadable(() => import('./Filter'))
 
@@ -80,11 +79,7 @@ const ProductList = () => {
                 </section>
                 <section className='grow space-y-3 mb-10'>
                     <div className='p-[16px] bg-[#FFFFFF] rounded-12 border border-border/30 flex justify-between'>
-                        <InputIcon
-                            icon={<IoSearchOutline size={22} className='text-gray-400' />}
-                            placeholder='Tìm kiếm sản phẩm'
-                            rootClassName='basis-2/5'
-                        />
+                        <ProductSearch />
                         <Dropdown
                             data={{
                                 createdAt_desc: 'Mới nhất',

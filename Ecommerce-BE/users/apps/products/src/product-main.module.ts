@@ -3,7 +3,7 @@ import { BullModule } from '@nestjs/bull'
 import { CacheModule } from '@nestjs/cache-manager'
 import { Module } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { ElasticsearchModule } from '@nestjs/elasticsearch'
+import { ElasticsearchModule, ElasticsearchService } from '@nestjs/elasticsearch'
 import { JwtService } from '@nestjs/jwt'
 import * as redisStore from 'cache-manager-redis-store'
 import { CategoryModule } from './category/category.module'
@@ -34,17 +34,6 @@ import { SearchModule } from './search/search.module'
       })
     }),
     ConfigModule,
-    ElasticsearchModule.registerAsync({
-      imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        node: configService.get<string>('elasticsearch.node'),
-        auth: {
-          username: configService.get('elasticsearch.username'),
-          password: configService.get('elasticsearch.password')
-        }
-      }),
-      inject: [ConfigService]
-    }),
     PrismaModule,
     ProductModule,
     CategoryModule,

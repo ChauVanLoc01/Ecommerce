@@ -1,5 +1,6 @@
 import { CubeIcon, FileTextIcon, HomeIcon, IdCardIcon, PersonIcon, StarIcon } from '@radix-ui/react-icons'
 import Select from 'src/components/Select'
+import { CiDiscount1 } from 'react-icons/ci'
 
 import { route } from 'src/constants/route'
 
@@ -22,6 +23,10 @@ const SideNav = () => {
                 <Select
                     icon={<HomeIcon className='w-4 h-4' />}
                     parentData={{ title: 'Tổng Quan', path: `/${route.analytic}` }}
+                />
+                <Select
+                    icon={<CiDiscount1 className='w-4 h-4 stroke-[1.5]' />}
+                    parentData={{ title: 'Flash Sale', path: `/${route.flashSale}` }}
                 />
                 <Select
                     icon={<CubeIcon className='w-4 h-4' />}

@@ -129,3 +129,54 @@
     background-position: calc(0*100%/3) 50%, calc(1*100%/3) 50%, calc(2*100%/3) 50%, calc(3*100%/3) 50%
   }
 }
+
+.rbc-allday-cell {
+  display: none;
+}
+
+.rbc-time-content {
+  border: none !important;
+}
+
+.rbc-toolbar-label {
+  text-transform: capitalize;
+  font-size: 23px;
+}
+
+.rbc-month-view {
+  border-radius: 7px;
+}
+
+.rbc-toolbar {
+  margin-bottom: 12px !important;
+}
+
+.rbc-time-content::-webkit-scrollbar {
+  width: 6px;
+  z-index: 99;
+}
+
+.rbc-time-content::-webkit-scrollbar-track {
+  background-color: transparent;
+}
+
+.rbc-time-content::-webkit-scrollbar-thumb {
+  background-color: #bfbfbf;
+  border-radius: 5px;
+}
+
+.rbc-time-header {
+  margin-right: 5px !important;
+}
+
+.rbc-today {
+  background-color: rgb(51 102 255 / 0.2) !important;
+}
+
+.rbc-slot-selection {
+  background-color: #bfbfbf !important;
+}
+
+.powderBlue {
+  background-color: red !important;
+}

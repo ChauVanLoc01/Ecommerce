@@ -13,6 +13,7 @@ import { ratingLoader } from 'src/loader/rating.loader'
 import { voucherLoader } from 'src/loader/voucher.loader'
 import Login from 'src/pages/Auth'
 import Employee from 'src/pages/Employee'
+import FlashSale from 'src/pages/FlashSale/FlashSale'
 import Order from 'src/pages/Order'
 import Product from 'src/pages/Product'
 import Rating from 'src/pages/Rating/Rating'
@@ -91,6 +92,11 @@ const routes = createBrowserRouter([
                     {
                         path: route.rating,
                         element: <Rating />,
+                        loader: ratingLoader
+                    },
+                    {
+                        path: route.flashSale,
+                        element: <FlashSale />,
                         loader: ratingLoader
                     }
                 ]

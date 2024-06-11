@@ -1,4 +1,5 @@
 import { Status } from './auth.type'
+import { Return } from './return.type'
 import { Store } from './store.type'
 
 export type Product = {
@@ -46,3 +47,9 @@ export type ProductListResponse = {
 export type ProductDetailResponse = Product & { productImages: { url: string }[] }
 
 export type RefreshProduct = { [key: string]: Product }
+
+export type ProductSearch = Return<{
+    scroll_id: string
+    total: number
+    data: Product[]
+}>

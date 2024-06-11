@@ -9,11 +9,10 @@ import { productFetching } from 'src/apis/product'
 
 import Button from 'src/components/Button'
 import Image from 'src/components/Image'
-import Stars from 'src/components/Stars'
 import { AppContext } from 'src/contexts/AppContext'
 import { Product } from 'src/types/product.type'
 import { ls } from 'src/utils/localStorage'
-import { convertCurrentcy, removeSpecialCharacter } from 'src/utils/utils.ts'
+import { cn, convertCurrentcy, removeSpecialCharacter } from 'src/utils/utils.ts'
 
 type ProductCardProps = {
     product: Product
@@ -88,7 +87,7 @@ const ProductCard = ({ product, isHiddenStore = false }: ProductCardProps) => {
 
     return (
         <motion.article
-            className='rounded-12 border border-border/30 bg-[#FFFFFF] hover:shadow-md overflow-hidden'
+            className='rounded-12 border border-border/30 bg-[#FFFFFF] hover:shadow-md relative'
             whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1, transition: { duration: 0.8, ease: 'backInOut' } }}
@@ -135,12 +134,18 @@ const ProductCard = ({ product, isHiddenStore = false }: ProductCardProps) => {
                                 {convertCurrentcy(priceBefore || 0, 0)}
                             </span>
                         </h3>
-                        <Stars rating={3} />
                     </div>
                     <div>
                         <Button className='px-5 py-[10px] text-xs' text='Add' onClick={handleAddToCart} />
                     </div>
                 </div>
+            </div>
+            <div
+                className={cn('ribbon', {
+                    hidden: !priceBefore
+                })}
+            >
+                Giảm {100 - Math.ceil((priceAfter * 100) / priceBefore)}%
             </div>
         </motion.article>
     )

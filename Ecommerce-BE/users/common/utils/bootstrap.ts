@@ -73,6 +73,8 @@ export async function bootstrap(mainModule: any) {
       )} with ${configService.get<string>('rabbitmq.queue_name')}`
     )
 
+    console.log('Elasticsearch run at ', configService.get<string>('elasticsearch.node'))
+
     console.log(`App running at endpoint: http://localhost:${configService.get('app.port')}`)
   } catch (err) {
     console.log('Error:::', err.message)

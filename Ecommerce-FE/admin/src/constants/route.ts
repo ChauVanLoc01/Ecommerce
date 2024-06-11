@@ -11,5 +11,6 @@ export const route = {
     analytic: 'analytic',
     employee: 'employee',
     voucher: 'voucher',
-    rating: 'rating'
+    rating: 'rating',
+    flashSale: 'flash-sale'
 }

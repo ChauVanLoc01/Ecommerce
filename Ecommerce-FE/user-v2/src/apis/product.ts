@@ -1,6 +1,12 @@
 import { GenericAbortSignal } from 'axios'
 import { CategoryListResponse } from 'src/types/category.type'
-import { ProductDetailResponse, ProductListQuery, ProductListResponse, RefreshProduct } from 'src/types/product.type'
+import {
+    ProductDetailResponse,
+    ProductListQuery,
+    ProductListResponse,
+    ProductSearch,
+    RefreshProduct
+} from 'src/types/product.type'
 import { Return } from 'src/types/return.type'
 import { http } from './http'
 import { method } from './method'
@@ -26,10 +32,15 @@ export const productFetching = {
     refreshProduct: (body: string[]) => {
         return http.post<Return<RefreshProduct>>('/product/product/refresh-cart', { productsId: body })
     },
-    createViewProduct: (body: {productId: string, userId?: string}) => {
+    createViewProduct: (body: { productId: string; userId?: string }) => {
         return http.post('/product/product/view-product', body)
     },
     createViewAddToCart: (body: { productId: string; quantity: number }) => {
         return http.post('/product/product/add-product-to-cart', body)
+    },
+    searchProduct: (params: { query: string; scroll: string; scroll_id?: string }) => {
+        return http.get<ProductSearch>('/product/search-product', {
+            params
+        })
     }
 }
