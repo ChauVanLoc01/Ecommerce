@@ -1,4 +1,4 @@
-import axios, { AxiosError, AxiosInstance, AxiosResponse, isAxiosError } from 'axios'
+import axios, { AxiosError, AxiosInstance, AxiosResponse } from 'axios'
 import { route } from 'src/constants/route'
 import { LoginResponse } from 'src/types/auth.type'
 import { Return } from 'src/types/return.type'
@@ -37,18 +37,7 @@ class Http {
                 }
                 return response
             },
-            (error: AxiosError<{ error: string; message: string; statusCode: number }>) => {
-                if (isAxiosError(error)) {
-                    if (
-                        error.response?.data.error === 'Unauthorized' &&
-                        error.response.data.statusCode === 401 &&
-                        !document.location.pathname.includes('login')
-                    ) {
-                        document.location.href = '/login'
-                    }
-                }
-                return Promise.reject(error)
-            }
+            (error: AxiosError<{ error: string; message: string; statusCode: number }>) => Promise.reject(error)
         )
     }
 }

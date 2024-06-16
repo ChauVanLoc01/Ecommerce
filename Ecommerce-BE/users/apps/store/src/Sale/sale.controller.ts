@@ -1,31 +1,26 @@
 import { Body, Controller, Post, Put, UseGuards } from '@nestjs/common'
-import { ScheduleService } from './schedule.service'
-import { SaleService } from './sale.service'
-import { PrismaService } from '@app/common/prisma/prisma.service'
-import { JwtGuard } from 'common/guards/jwt.guard'
-import { CreateProductSalePromotionDTO } from './dtos/create-product-sale.dto'
 import { CurrentUser } from 'common/decorators/current_user.decorator'
-import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
+import { JwtGuard } from 'common/guards/jwt.guard'
+import { CurrentStoreType } from 'common/types/current.type'
+import { CreateProductSalePromotionDTO } from './dtos/create-product-sale.dto'
 import { UpdateProductSalePromotion } from './dtos/update-product-sale.dto'
+import { SaleService } from './sale.service'
 
 @UseGuards(JwtGuard)
-@Controller()
+@Controller('sale-promotion')
 export class SaleController {
-  constructor(
-    private readonly saleService: SaleService,
-    private readonly prisma: PrismaService
-  ) {}
+    constructor(private readonly saleService: SaleService) {}
 
-  @Post('adding-product')
-  addingProduct(
-    @CurrentUser() user: CurrentStoreType,
-    @Body() body: CreateProductSalePromotionDTO
-  ) {
-    return this.saleService.addingProduct(user, body)
-  }
+    @Post('adding-product')
+    addingProduct(
+        @CurrentUser() user: CurrentStoreType,
+        @Body() body: CreateProductSalePromotionDTO
+    ) {
+        return this.saleService.addingProduct(user, body)
+    }
 
-  @Put('update-product')
-  updateProduct(@CurrentUser() user: CurrentStoreType, @Body() body: UpdateProductSalePromotion) {
-    return this.saleService.updateProduct(user, body)
-  }
+    @Put('update-product')
+    updateProduct(@CurrentUser() user: CurrentStoreType, @Body() body: UpdateProductSalePromotion) {
+        return this.saleService.updateProduct(user, body)
+    }
 }

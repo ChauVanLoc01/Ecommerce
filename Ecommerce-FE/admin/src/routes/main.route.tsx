@@ -36,7 +36,16 @@ const RejectRoute = () => {
     return profile ? <Navigate to={route.analytic} /> : <Outlet />
 }
 
-export const queryClient = new QueryClient()
+export const queryClient = new QueryClient({
+    defaultOptions: {
+        queries: {
+            networkMode: 'online'
+        },
+        mutations: {
+            networkMode: 'online'
+        }
+    }
+})
 
 const routes = createBrowserRouter([
     {

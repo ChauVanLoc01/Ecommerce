@@ -1,16 +1,20 @@
+import { PrismaService } from '@app/common/prisma/prisma.service'
 import { Injectable } from '@nestjs/common'
 import { CurrentStoreType } from 'common/types/current.type'
+import { Return } from 'common/types/result.type'
+import { add } from 'date-fns'
+import { v4 as uuidv4 } from 'uuid'
 import { CreateProductSalePromotionDTO } from './dtos/create-product-sale.dto'
 import { UpdateProductSalePromotion } from './dtos/update-product-sale.dto'
-import { PrismaService } from '@app/common/prisma/prisma.service'
-import { v4 as uuidv4 } from 'uuid'
-import { add } from 'date-fns'
 
 @Injectable()
 export class SaleService {
     constructor(private readonly prisma: PrismaService) {}
 
-    async addingProduct(user: CurrentStoreType, body: CreateProductSalePromotionDTO) {
+    async addingProduct(
+        user: CurrentStoreType,
+        body: CreateProductSalePromotionDTO
+    ): Promise<Return> {
         const { userId } = user
         const { priceAfter, priceBefore, productIds, quantity, salePromotionId } = body
 
@@ -31,7 +35,35 @@ export class SaleService {
                 })
             )
         )
+
+        return {
+            msg: 'ok',
+            result
+        }
     }
 
-    updateProduct(user: CurrentStoreType, body: UpdateProductSalePromotion) {}
+    async updateProduct(user: CurrentStoreType, body: UpdateProductSalePromotion): Promise<Return> {
+        const { userId } = user
+        const { isDelete, productId, priceAfter, priceBefore, quantity, salePromotionId } = body
+
+        const result = await this.prisma.productPromotion.update({
+            where: {
+                id: salePromotionId,
+                productId
+            },
+            data: {
+                quantity,
+                priceAfter,
+                priceBefore,
+                isDelete,
+                updatedAt: add(new Date(), { hours: 7 }),
+                updatedBy: userId
+            }
+        })
+
+        return {
+            msg: 'ok',
+            result
+        }
+    }
 }
