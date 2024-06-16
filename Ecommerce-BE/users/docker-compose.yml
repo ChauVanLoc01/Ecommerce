@@ -3,7 +3,7 @@ version: '3.8'
 services:
     mysql:
         image: mysql
-        container_name: mysql1
+        container_name: mysql
         restart: unless-stopped
         volumes:
             - mysql_data:/var/lib/mysql
@@ -14,6 +14,9 @@ services:
             - MYSQL_DATABASE=microservice
             - MYSQL_USER=vanloc
             - MYSQL_PASSWORD=123123
+        networks:
+            - kong-net
+
     rabbitmq:
         container_name: rabbitmq1
         image: rabbitmq:3-management
@@ -26,6 +29,9 @@ services:
         environment:
             - RABBITMQ_DEFAULT_USER=vanloc
             - RABBITMQ_DEFAULT_PASS=123123
+        networks:
+            - kong-net
+
     redis:
         container_name: redis1
         image: redis
@@ -34,6 +40,9 @@ services:
             - redis_data:/data
         ports:
             - 6400:6379
+        networks:
+            - kong-net
+
     es01:
         image: docker.elastic.co/elasticsearch/elasticsearch:7.9.1
         container_name: es01
@@ -52,19 +61,37 @@ services:
             - es01_data:/usr/share/elasticsearch/data
         ports:
             - 9200:9200
-    kibana:
-        image: docker.elastic.co/kibana/kibana:7.9.1
-        environment:
-            - ELASTICSEARCH_HOSTS=http://es01:9200
-        depends_on:
-            - es01
-        ports:
-            - 5601:5601
+        networks:
+            - kong-net
+
     adminer:
         image: adminer
         restart: unless-stopped
         ports:
             - 8080:8080
+        networks:
+            - kong-net
+
+    store-api:
+        image: chauvanloc/store-api:latest
+        container_name: store-api
+        ports:
+            - 4003:3003
+        env_file:
+            - .env
+            - .env.store
+            - .env.aws
+            - .env.rabbitmq
+            - .env.bullqueue
+            - .env.elasticsearch
+        depends_on:
+            - mysql
+        networks:
+            - kong-net
+
+networks:
+    kong-net:
+        driver: bridge
 
 volumes:
     mysql_data:
@@ -72,3 +99,4 @@ volumes:
     product_rabbitmq_data:
     redis_data:
     es01_data:
+    kong-data:
