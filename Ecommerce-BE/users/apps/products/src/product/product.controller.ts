@@ -1,5 +1,5 @@
 import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common'
-import { MessagePattern, Payload } from '@nestjs/microservices'
+import { Ctx, MessagePattern, Payload, RmqContext } from '@nestjs/microservices'
 import { ApiBearerAuth, ApiProperty } from '@nestjs/swagger'
 import {
   createProductOrder,
@@ -155,5 +155,13 @@ export class ProductController {
   @MessagePattern(getProductOrderByRating)
   getProductOrderByRating(@Payload() payload: { productId: string; orders: string[] }) {
     return this.productsService.getProductOrderByRating(payload.productId, payload.orders)
+  }
+
+  @Public()
+  @MessagePattern('test')
+  async test(@Ctx() ctx: RmqContext, @Payload() payload: {}) {
+    return {
+      payload
+    }
   }
 }

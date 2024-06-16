@@ -166,6 +166,7 @@ model Product {
   Voucher                      Voucher?               @relation(fields: [voucherId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Product_ibfk_6")
   ProductImage                 ProductImage[]
   ProductOrder                 ProductOrder[]
+  ProductPromotion             ProductPromotion[]
   Rating                       Rating[]
   UserAddProductToCart         UserAddProductToCart[]
   UserViewProduct              UserViewProduct[]
@@ -321,9 +322,9 @@ model User {
   Product_Product_updatedByToUser     Product[]                  @relation("Product_updatedByToUser")
   Product_Product_deletedByToUser     Product[]                  @relation("Product_deletedByToUser")
   ProductImage                        ProductImage[]
+  ProductPromotion                    ProductPromotion[]
   Rating                              Rating[]
   RatingReply                         RatingReply[]
-  SalePromotion                       SalePromotion[]
   Store_Store_createdByToUser         Store[]                    @relation("Store_createdByToUser")
   Store_Store_updatedByToUser         Store[]                    @relation("Store_updatedByToUser")
   StoreRole_StoreRole_createdByToUser StoreRole[]                @relation("StoreRole_createdByToUser")
@@ -415,18 +416,37 @@ model UserVoucher {
 }
 
 model SalePromotion {
-  id          String    @id @db.VarChar(50)
-  title       String    @db.TinyText
-  description String?   @db.Text
-  type        String    @db.VarChar(50)
-  status      String    @db.VarChar(50)
-  startDate   DateTime  @db.Timestamp(0)
-  endDate     DateTime? @db.Timestamp(0)
-  createdAt   DateTime  @db.Timestamp(0)
-  createdBy   String    @db.VarChar(50)
-  updatedAt   DateTime? @db.Timestamp(0)
-  updatedBy   String?   @db.VarChar(50)
-  User        User      @relation(fields: [createdBy], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "SalePromotion_ibfk_1")
+  id               String             @id @db.VarChar(50)
+  title            String             @db.TinyText
+  description      String?            @db.Text
+  type             String             @db.VarChar(50)
+  status           String             @db.VarChar(50)
+  startDate        DateTime           @db.Timestamp(0)
+  endDate          DateTime?          @db.Timestamp(0)
+  createdAt        DateTime           @db.Timestamp(0)
+  createdBy        String             @db.VarChar(50)
+  updatedAt        DateTime?          @db.Timestamp(0)
+  updatedBy        String?            @db.VarChar(50)
+  ProductPromotion ProductPromotion[]
+}
+
+model ProductPromotion {
+  id              String        @id @db.VarChar(50)
+  salePromotionId String        @db.VarChar(50)
+  productId       String        @db.VarChar(50)
+  quantity        Int
+  priceBefore     Float         @db.Float
+  priceAfter      Float         @db.Float
+  isDelete        Boolean       @default(false)
+  createdAt       DateTime      @db.Timestamp(0)
+  createdBy       String        @db.VarChar(50)
+  updatedAt       DateTime?     @db.Timestamp(0)
+  updatedBy       String?       @db.VarChar(50)
+  SalePromotion   SalePromotion @relation(fields: [salePromotionId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "ProductPromotion_ibfk_1")
+  Product         Product       @relation(fields: [productId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "ProductPromotion_ibfk_2")
+  User            User          @relation(fields: [createdBy], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "ProductPromotion_ibfk_3")
 
   @@index([createdBy], map: "createdBy")
+  @@index([productId], map: "productId")
+  @@index([salePromotionId], map: "salePromotionId")
 }

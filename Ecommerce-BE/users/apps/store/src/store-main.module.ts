@@ -1,9 +1,12 @@
 import { ConfigModule } from '@app/common'
+import { PrismaService } from '@app/common/prisma/prisma.service'
 import { Module } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { ClientsModule, Transport } from '@nestjs/microservices'
+import { ScheduleModule } from '@nestjs/schedule'
 import { QueueName } from 'common/constants/queue.constant'
 import { RatingModule } from './Rating/rating.module'
+import { SaleModule } from './Sale/sale.module'
 import { StoreModule } from './Store/store.module'
 import { VoucherModule } from './Voucher/voucher.module'
 
@@ -69,12 +72,14 @@ import { VoucherModule } from './Voucher/voucher.module'
         }
       ]
     }),
+    ScheduleModule.forRoot(),
     ConfigModule,
     StoreModule,
     VoucherModule,
-    RatingModule
+    RatingModule,
+    SaleModule
   ],
   controllers: [],
-  providers: []
+  providers: [PrismaService]
 })
 export class StoreMainModule {}
