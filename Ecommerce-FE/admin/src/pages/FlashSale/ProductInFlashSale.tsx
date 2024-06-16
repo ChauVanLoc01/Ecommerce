@@ -20,13 +20,13 @@ const ProductInFlashSale = ({ products, onSelectChange, selectedProduct }: Produ
             accessorKey: 'image',
             header: () => {
                 return (
-                    <div className='flex items-center gap-x-2 px-4 z-50 overflow-hidden'>
+                    <div className='flex items-center px-4'>
                         <Checkbox size={'3'} />
                     </div>
                 )
             },
             cell: ({ row }) => (
-                <Flex justify={'center'} align={'center'}>
+                <Flex align={'center'} className='px-4'>
                     <Checkbox
                         size={'3'}
                         checked={!!selectedProduct.products[row.original.id]}

@@ -257,23 +257,25 @@ model RatingReply {
 }
 
 model Store {
-  id                         String      @id @db.VarChar(50)
-  name                       String      @db.VarChar(255)
-  image                      String      @db.VarChar(255)
-  location                   String?     @db.VarChar(100)
-  description                String?     @db.VarChar(1000)
-  status                     String      @db.VarChar(10)
-  createdBy                  String      @db.VarChar(50)
-  updatedBy                  String?     @db.VarChar(50)
-  createdAt                  DateTime?   @default(now()) @db.Timestamp(0)
-  updatedAt                  DateTime?   @db.Timestamp(0)
-  Order                      Order[]
-  Product                    Product[]
-  Rating                     Rating[]
-  User_Store_createdByToUser User        @relation("Store_createdByToUser", fields: [createdBy], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Store_ibfk_1")
-  User_Store_updatedByToUser User?       @relation("Store_updatedByToUser", fields: [updatedBy], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Store_ibfk_2")
-  StoreRole                  StoreRole[]
-  Voucher                    Voucher[]
+  id                                                   String           @id @db.VarChar(50)
+  name                                                 String           @db.VarChar(255)
+  image                                                String           @db.VarChar(255)
+  location                                             String?          @db.VarChar(100)
+  description                                          String?          @db.VarChar(1000)
+  status                                               String           @db.VarChar(10)
+  createdBy                                            String           @db.VarChar(50)
+  updatedBy                                            String?          @db.VarChar(50)
+  createdAt                                            DateTime?        @default(now()) @db.Timestamp(0)
+  updatedAt                                            DateTime?        @db.Timestamp(0)
+  Order                                                Order[]
+  Product                                              Product[]
+  Rating                                               Rating[]
+  User_Store_createdByToUser                           User             @relation("Store_createdByToUser", fields: [createdBy], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Store_ibfk_1")
+  User_Store_updatedByToUser                           User?            @relation("Store_updatedByToUser", fields: [updatedBy], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Store_ibfk_2")
+  StorePromotion_StorePromotion_storeIdToStore         StorePromotion[] @relation("StorePromotion_storeIdToStore")
+  StorePromotion_StorePromotion_salePromotionIdToStore StorePromotion[] @relation("StorePromotion_salePromotionIdToStore")
+  StoreRole                                            StoreRole[]
+  Voucher                                              Voucher[]
 
   @@index([createdBy], map: "createdBy")
   @@index([updatedBy], map: "updatedBy")
@@ -327,6 +329,7 @@ model User {
   RatingReply                         RatingReply[]
   Store_Store_createdByToUser         Store[]                    @relation("Store_createdByToUser")
   Store_Store_updatedByToUser         Store[]                    @relation("Store_updatedByToUser")
+  StorePromotion                      StorePromotion[]
   StoreRole_StoreRole_createdByToUser StoreRole[]                @relation("StoreRole_createdByToUser")
   StoreRole_StoreRole_updatedByToUser StoreRole[]                @relation("StoreRole_updatedByToUser")
   UserVoucher                         UserVoucher[]
@@ -416,37 +419,55 @@ model UserVoucher {
 }
 
 model SalePromotion {
-  id               String             @id @db.VarChar(50)
-  title            String             @db.TinyText
-  description      String?            @db.Text
-  type             String             @db.VarChar(50)
-  status           String             @db.VarChar(50)
-  startDate        DateTime           @db.Timestamp(0)
-  endDate          DateTime?          @db.Timestamp(0)
-  createdAt        DateTime           @db.Timestamp(0)
-  createdBy        String             @db.VarChar(50)
-  updatedAt        DateTime?          @db.Timestamp(0)
-  updatedBy        String?            @db.VarChar(50)
-  ProductPromotion ProductPromotion[]
+  id          String    @id @db.VarChar(50)
+  title       String    @db.TinyText
+  description String?   @db.Text
+  type        String    @db.VarChar(50)
+  status      String    @db.VarChar(50)
+  startDate   DateTime  @db.Timestamp(0)
+  endDate     DateTime? @db.Timestamp(0)
+  createdAt   DateTime  @db.Timestamp(0)
+  createdBy   String    @db.VarChar(50)
+  updatedAt   DateTime? @db.Timestamp(0)
+  updatedBy   String?   @db.VarChar(50)
 }
 
 model ProductPromotion {
-  id              String        @id @db.VarChar(50)
-  salePromotionId String        @db.VarChar(50)
-  productId       String        @db.VarChar(50)
-  quantity        Int
-  priceBefore     Float         @db.Float
-  priceAfter      Float         @db.Float
-  isDelete        Boolean       @default(false)
-  createdAt       DateTime      @db.Timestamp(0)
-  createdBy       String        @db.VarChar(50)
-  updatedAt       DateTime?     @db.Timestamp(0)
-  updatedBy       String?       @db.VarChar(50)
-  SalePromotion   SalePromotion @relation(fields: [salePromotionId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "ProductPromotion_ibfk_1")
-  Product         Product       @relation(fields: [productId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "ProductPromotion_ibfk_2")
-  User            User          @relation(fields: [createdBy], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "ProductPromotion_ibfk_3")
+  id               String         @id @db.VarChar(50)
+  storePromotionId String         @db.VarChar(50)
+  productId        String         @db.VarChar(50)
+  quantity         Int
+  priceBefore      Float          @db.Float
+  priceAfter       Float          @db.Float
+  isDelete         Boolean        @default(false)
+  createdAt        DateTime       @db.Timestamp(0)
+  createdBy        String         @db.VarChar(50)
+  updatedAt        DateTime?      @db.Timestamp(0)
+  updatedBy        String?        @db.VarChar(50)
+  Product          Product        @relation(fields: [productId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "ProductPromotion_ibfk_2")
+  User             User           @relation(fields: [createdBy], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "ProductPromotion_ibfk_3")
+  StorePromotion   StorePromotion @relation(fields: [storePromotionId], references: [id], onUpdate: Restrict, map: "ProductPromotion_ibfk_4")
 
   @@index([createdBy], map: "createdBy")
   @@index([productId], map: "productId")
+  @@index([storePromotionId], map: "salePromotionId")
+}
+
+model StorePromotion {
+  id                                          String             @id @db.VarChar(50)
+  salePromotionId                             String             @db.VarChar(50)
+  storeId                                     String             @db.VarChar(50)
+  status                                      String             @db.VarChar(50)
+  createdAt                                   DateTime           @db.Timestamp(0)
+  createdBy                                   String             @db.VarChar(50)
+  updatedAt                                   DateTime?          @db.Timestamp(0)
+  updatedBy                                   String?            @db.VarChar(50)
+  ProductPromotion                            ProductPromotion[]
+  Store_StorePromotion_storeIdToStore         Store              @relation("StorePromotion_storeIdToStore", fields: [storeId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "StorePromotion_ibfk_1")
+  Store_StorePromotion_salePromotionIdToStore Store              @relation("StorePromotion_salePromotionIdToStore", fields: [salePromotionId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "StorePromotion_ibfk_2")
+  User                                        User               @relation(fields: [createdBy], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "StorePromotion_ibfk_3")
+
+  @@index([createdBy], map: "createdBy")
   @@index([salePromotionId], map: "salePromotionId")
+  @@index([storeId], map: "storeId")
 }

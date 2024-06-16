@@ -43,11 +43,11 @@ services:
         networks:
             - kong-net
 
-    es01:
+    elasticsearch:
         image: docker.elastic.co/elasticsearch/elasticsearch:7.9.1
-        container_name: es01
+        container_name: elasticsearch
         environment:
-            - node.name=es01
+            - node.name=elasticsearch
             - cluster.name=es-docker-cluster
             - bootstrap.memory_lock=true
             - 'ES_JAVA_OPTS=-Xms512m -Xmx512m'
@@ -72,6 +72,40 @@ services:
         networks:
             - kong-net
 
+    user-api:
+        image: chauvanloc/user-api:latest
+        container_name: user-api
+        ports:
+            - 4001:3001
+        env_file:
+            - .env
+            - .env.user
+            - .env.aws
+            - .env.rabbitmq
+            - .env.bullqueue
+            - .env.elasticsearch
+        depends_on:
+            - mysql
+        networks:
+            - kong-net
+
+    product-api:
+        image: chauvanloc/product-api:latest
+        container_name: product-api
+        ports:
+            - 4002:3002
+        env_file:
+            - .env
+            - .env.product
+            - .env.aws
+            - .env.rabbitmq
+            - .env.bullqueue
+            - .env.elasticsearch
+        depends_on:
+            - mysql
+            - elasticsearch
+        networks:
+            - kong-net
     store-api:
         image: chauvanloc/store-api:latest
         container_name: store-api
@@ -80,6 +114,22 @@ services:
         env_file:
             - .env
             - .env.store
+            - .env.aws
+            - .env.rabbitmq
+            - .env.bullqueue
+            - .env.elasticsearch
+        depends_on:
+            - mysql
+        networks:
+            - kong-net
+    order-api:
+        image: chauvanloc/order-api:latest
+        container_name: order-api
+        ports:
+            - 4004:3004
+        env_file:
+            - .env
+            - .env.order
             - .env.aws
             - .env.rabbitmq
             - .env.bullqueue

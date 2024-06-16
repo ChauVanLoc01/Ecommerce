@@ -1,29 +1,96 @@
 import { PrismaService } from '@app/common/prisma/prisma.service'
-import { Injectable } from '@nestjs/common'
+import { BadRequestException, Injectable } from '@nestjs/common'
+import { Status } from 'common/enums/status.enum'
 import { CurrentStoreType } from 'common/types/current.type'
 import { Return } from 'common/types/result.type'
-import { add } from 'date-fns'
+import { add, endOfDay } from 'date-fns'
 import { v4 as uuidv4 } from 'uuid'
 import { CreateProductSalePromotionDTO } from './dtos/create-product-sale.dto'
-import { UpdateProductSalePromotion } from './dtos/update-product-sale.dto'
+import { QuerySalePromotionDTO } from './dtos/query-promotion.dto'
+import { UpdateProductsSalePromotion } from './dtos/update-product-sale.dto'
 
 @Injectable()
 export class SaleService {
     constructor(private readonly prisma: PrismaService) {}
 
+    async getSalePromotionDetail(storePromotionId: string): Promise<Return> {
+        const storePromotion = await this.prisma.storePromotion.findUnique({
+            where: {
+                id: storePromotionId
+            }
+        })
+
+        if (!storePromotion) {
+            throw new BadRequestException('Cửa hàng chưa tham gia sự kiện này')
+        }
+
+        const productPromotions = await this.prisma.productPromotion.findMany({
+            where: {
+                storePromotionId: storePromotion.id
+            }
+        })
+
+        return {
+            msg: 'ok',
+            result: productPromotions
+        }
+    }
+
+    async getSalePromotion(user: CurrentStoreType, query: QuerySalePromotionDTO): Promise<Return> {
+        const { storeId } = user
+        const { date } = query
+
+        const promotions = await this.prisma.salePromotion.findMany({
+            where: {
+                startDate: date,
+                endDate: add(endOfDay(date), { hours: 7 })
+            }
+        })
+
+        const storePromotions = await Promise.all(
+            promotions.map((promotion) =>
+                this.prisma.storePromotion.findFirst({
+                    where: {
+                        salePromotionId: promotion.id,
+                        storeId
+                    }
+                })
+            )
+        )
+
+        return {
+            msg: 'ok',
+            result: {
+                promotions,
+                storePromotions
+            }
+        }
+    }
+
     async addingProduct(
         user: CurrentStoreType,
         body: CreateProductSalePromotionDTO
     ): Promise<Return> {
-        const { userId } = user
-        const { priceAfter, priceBefore, productIds, quantity, salePromotionId } = body
+        const { userId, storeId } = user
+        const { salePromotionId, products } = body
+
+        const storePromotion = await this.prisma.storePromotion.create({
+            data: {
+                id: uuidv4(),
+                salePromotionId,
+                storeId,
+                createdAt: add(new Date(), { hours: 7 }),
+                status: Status.ACTIVE,
+                createdBy: userId
+            }
+        })
 
         const result = await Promise.all(
-            productIds.map((productId) =>
+            products.map(({ priceAfter, priceBefore, productId, quantity }) =>
                 this.prisma.productPromotion.create({
                     data: {
                         id: uuidv4(),
-                        salePromotionId,
+                        storePromotionId: storePromotion.id,
                         productId,
                         isDelete: false,
                         createdAt: add(new Date(), { hours: 7 }),
@@ -42,24 +109,19 @@ export class SaleService {
         }
     }
 
-    async updateProduct(user: CurrentStoreType, body: UpdateProductSalePromotion): Promise<Return> {
-        const { userId } = user
-        const { isDelete, productId, priceAfter, priceBefore, quantity, salePromotionId } = body
+    async updateProduct(body: UpdateProductsSalePromotion): Promise<Return> {
+        const { productPromotions } = body
 
-        const result = await this.prisma.productPromotion.update({
-            where: {
-                id: salePromotionId,
-                productId
-            },
-            data: {
-                quantity,
-                priceAfter,
-                priceBefore,
-                isDelete,
-                updatedAt: add(new Date(), { hours: 7 }),
-                updatedBy: userId
-            }
-        })
+        const result = await Promise.all(
+            productPromotions.map(({ productPromotionId, ...data }) =>
+                this.prisma.productPromotion.update({
+                    where: {
+                        id: productPromotionId
+                    },
+                    data
+                })
+            )
+        )
 
         return {
             msg: 'ok',

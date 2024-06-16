@@ -1,17 +1,17 @@
-import { ApiPropertyOptional, OmitType, PartialType } from '@nestjs/swagger'
-import { IsBoolean, IsOptional, IsString } from 'class-validator'
-import { CreateProductSalePromotionDTO } from './create-product-sale.dto'
+import { OmitType } from '@nestjs/swagger'
+import { Type } from 'class-transformer'
+import { IsArray, IsNotEmpty, IsString, ValidateNested } from 'class-validator'
+import { ProductJoinPromotionDTO } from './create-product-sale.dto'
 
-export class UpdateProductSalePromotion extends PartialType(
-    OmitType(CreateProductSalePromotionDTO, ['productIds'])
-) {
-    @ApiPropertyOptional()
-    @IsOptional()
+class UpdateProductSalePromotion extends OmitType(ProductJoinPromotionDTO, ['productId']) {
     @IsString()
-    productId: string
+    @IsNotEmpty()
+    productPromotionId: string
+}
 
-    @ApiPropertyOptional()
-    @IsOptional()
-    @IsBoolean()
-    isDelete: boolean
+export class UpdateProductsSalePromotion {
+    @IsArray()
+    @ValidateNested({ each: true })
+    @Type(() => UpdateProductSalePromotion)
+    productPromotions: UpdateProductSalePromotion[]
 }

@@ -25,3 +25,5 @@ export const getOrderByRating = 'get::order::valid::by::rating'
 export const getProductOrderByRating = 'get::product::order::by::rating'
 
 export const checkVoucherExistToCreateOrder = 'checkVoucherExistToCreateOrder'
+
+export const productDetailPromotion = 'product::detail::promotion'

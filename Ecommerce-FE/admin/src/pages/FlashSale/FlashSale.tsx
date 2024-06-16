@@ -1,4 +1,4 @@
-import { AlertDialog, DataList, Portal, Text } from '@radix-ui/themes'
+import { AlertDialog, DataList, Flex, Portal, SegmentedControl, Text } from '@radix-ui/themes'
 import { useQuery } from '@tanstack/react-query'
 import { differenceInHours, format, getDay, getMinutes, parse, startOfWeek } from 'date-fns'
 import { vi } from 'date-fns/locale'
@@ -132,7 +132,12 @@ const FlashSale = () => {
                                 </DataList.Value>
                             </DataList.Item>
                             <DataList.Item className='!flex !flex-col'>
-                                <DataList.Label>Sản phẩm tham gia ({selectedProduct.size})</DataList.Label>
+                                <DataList.Label>
+                                    <SegmentedControl.Root defaultValue='inbox' size={'3'}>
+                                        <SegmentedControl.Item value='inbox'>Hiện có (2)</SegmentedControl.Item>
+                                        <SegmentedControl.Item value='drafts'>Đã chọn (1)</SegmentedControl.Item>
+                                    </SegmentedControl.Root>
+                                </DataList.Label>
                                 <DataList.Value className='items-center w-full'>
                                     <ProductInFlashSale
                                         products={productList?.data || []}
