@@ -2,11 +2,13 @@ import loadable from '@loadable/component'
 import { QueryClient } from '@tanstack/react-query'
 import { useContext } from 'react'
 import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom'
+import Error from 'src/components/Error/Error'
 
 import { route } from 'src/constants/route'
 import { AppContext } from 'src/contexts/AppContext'
 import { analyticsLoader } from 'src/loader/analytics.loader'
 import { employeeLoader } from 'src/loader/employee.loader'
+import { flashSaleLoader } from 'src/loader/flash-sale.loader'
 import { orderLoader } from 'src/loader/order.loader'
 import { productLoader } from 'src/loader/product.loader'
 import { ratingLoader } from 'src/loader/rating.loader'
@@ -54,6 +56,7 @@ const routes = createBrowserRouter([
             {
                 path: route.root,
                 element: <MainLayout />,
+                errorElement: <Error />,
                 children: [
                     {
                         path: route.analytic,
@@ -106,7 +109,7 @@ const routes = createBrowserRouter([
                     {
                         path: route.flashSale,
                         element: <FlashSale />,
-                        loader: ratingLoader
+                        loader: flashSaleLoader
                     }
                 ]
             }

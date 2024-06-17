@@ -1,3 +1,5 @@
+import { Return } from './return.type'
+
 export type ProductJoinSale = {
     productId: string
     quantity: number
@@ -37,3 +39,21 @@ export type ProductSalePromotion = {
     updatedAt?: Date
     updatedBy?: string
 }
+
+export type StoreSalePromotion = {
+    id: string
+    salePromotionId: string
+    storeId: string
+    status: string
+    createdAt: Date
+    createdBy: string
+    updatedAt?: Date
+    updatedBy?: string
+}
+
+export type SalePromotionResponse = Return<{
+    promotions: SalePromotion[]
+    storePromotions: StoreSalePromotion[]
+}>
+
+export type SalePromotionDetailResponse = Return<ProductSalePromotion[]>

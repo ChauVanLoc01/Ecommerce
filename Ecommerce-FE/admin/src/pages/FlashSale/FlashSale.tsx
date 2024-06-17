@@ -1,6 +1,6 @@
-import { AlertDialog, DataList, Flex, Portal, SegmentedControl, Text } from '@radix-ui/themes'
+import { AlertDialog, DataList, Portal, SegmentedControl, Text } from '@radix-ui/themes'
 import { useQuery } from '@tanstack/react-query'
-import { differenceInHours, format, getDay, getMinutes, parse, startOfWeek } from 'date-fns'
+import { add, differenceInHours, format, getDay, getMinutes, parse, startOfDay, startOfWeek } from 'date-fns'
 import { vi } from 'date-fns/locale'
 import { useContext, useState } from 'react'
 import { Calendar, dateFnsLocalizer, SlotInfo } from 'react-big-calendar'
@@ -10,6 +10,7 @@ import { AppContext } from 'src/contexts/AppContext'
 import { Store } from 'src/types/auth.type'
 import { Product } from 'src/types/product.type'
 import ProductInFlashSale from './ProductInFlashSale'
+import { sale_api } from 'src/apis/sale.api'
 
 const locales = {
     vi: vi
@@ -37,6 +38,11 @@ const FlashSale = () => {
             ProductApi.getAllProduct({ query: { limit: import.meta.env.VITE_LIMIT }, storeId: (store as Store).id }),
         placeholderData: (previousData) => previousData,
         select: (data) => data.data.result
+    })
+
+    const {} = useQuery({
+        queryKey: ['salePromotion'],
+        queryFn: () => sale_api.getSalePromotion(add(startOfDay(new Date()), { hours: 7 }).toISOString())
     })
 
     const onSelectEvent = (e: SlotInfo) => {

@@ -3,7 +3,8 @@ import { BadRequestException, Injectable } from '@nestjs/common'
 import { Status } from 'common/enums/status.enum'
 import { CurrentStoreType } from 'common/types/current.type'
 import { Return } from 'common/types/result.type'
-import { add, endOfDay } from 'date-fns'
+import { add, startOfDay } from 'date-fns'
+import { isNull, omitBy } from 'lodash'
 import { v4 as uuidv4 } from 'uuid'
 import { CreateProductSalePromotionDTO } from './dtos/create-product-sale.dto'
 import { QuerySalePromotionDTO } from './dtos/query-promotion.dto'
@@ -39,24 +40,30 @@ export class SaleService {
     async getSalePromotion(user: CurrentStoreType, query: QuerySalePromotionDTO): Promise<Return> {
         const { storeId } = user
         const { date } = query
-
+        console.log('end', add(startOfDay(add(date, { days: 1 })), { hours: 7 }))
         const promotions = await this.prisma.salePromotion.findMany({
             where: {
-                startDate: date,
-                endDate: add(endOfDay(date), { hours: 7 })
+                startDate: {
+                    gte: date
+                },
+                endDate: {
+                    lte: add(startOfDay(add(date, { days: 1 })), { hours: 7 })
+                }
             }
         })
 
-        const storePromotions = await Promise.all(
-            promotions.map((promotion) =>
-                this.prisma.storePromotion.findFirst({
-                    where: {
-                        salePromotionId: promotion.id,
-                        storeId
-                    }
-                })
+        const storePromotions = (
+            await Promise.all(
+                promotions.map((promotion) =>
+                    this.prisma.storePromotion.findFirst({
+                        where: {
+                            salePromotionId: promotion.id,
+                            storeId
+                        }
+                    })
+                )
             )
-        )
+        ).filter(Boolean)
 
         return {
             msg: 'ok',

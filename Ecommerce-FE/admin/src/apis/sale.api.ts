@@ -1,11 +1,12 @@
+import { SalePromotionDetailResponse, SalePromotionResponse } from 'src/types/sale.type'
 import { http } from './http'
 
 export const sale_api = {
     getSalePromotionDetail: (storePromotionId: string) => {
-        return http.get(`/store/sale-promotion/${storePromotionId}`)
+        return http.get<SalePromotionDetailResponse>(`/store/sale-promotion/${storePromotionId}`)
     },
     getSalePromotion: (date: string) => {
-        return http.get('/store/sale-promotion', {
+        return http.get<SalePromotionResponse>('/store/sale-promotion', {
             params: {
                 date
             }
