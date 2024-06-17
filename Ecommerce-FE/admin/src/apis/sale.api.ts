@@ -1,4 +1,4 @@
-import { SalePromotionDetailResponse, SalePromotionResponse } from 'src/types/sale.type'
+import { JoinSalePromotion, SalePromotionDetailResponse, SalePromotionResponse } from 'src/types/sale.type'
 import { http } from './http'
 
 export const sale_api = {
@@ -12,7 +12,10 @@ export const sale_api = {
             }
         })
     },
-    joinSalePromotion: () => {
-        return http.post('/store/sale-promotion')
+    joinSalePromotion: (body: JoinSalePromotion) => {
+        return http.post('/store/sale-promotion', body)
+    },
+    removeSalePromotion: () => {
+        return
     }
 }

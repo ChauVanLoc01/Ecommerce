@@ -1,5 +1,7 @@
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 
+import { setDefaultOptions } from 'date-fns'
+import { vi } from 'date-fns/locale'
 import { useContext, useEffect } from 'react'
 import { exitEvent } from 'src/constants/event.constants'
 import { route } from 'src/constants/route'
@@ -8,6 +10,8 @@ import useLoadingFetching from 'src/hooks/useLoadingFetching'
 import { ls } from 'src/utils/localStorage'
 import Header from './Header'
 import SideNav from './SideNav'
+
+setDefaultOptions({ locale: vi })
 
 const MainLayout = () => {
     const { setProfile, setStore } = useContext(AppContext)

@@ -1,15 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger'
 import { Type } from 'class-transformer'
-import {
-    IsArray,
-    IsBoolean,
-    IsInt,
-    IsNotEmpty,
-    IsNumber,
-    IsOptional,
-    IsString,
-    ValidateNested
-} from 'class-validator'
+import { IsArray, IsInt, IsNotEmpty, IsNumber, IsString, ValidateNested } from 'class-validator'
 
 export class ProductJoinPromotionDTO {
     @IsNotEmpty()
@@ -22,15 +13,7 @@ export class ProductJoinPromotionDTO {
 
     @IsNotEmpty()
     @IsNumber()
-    priceBefore: number
-
-    @IsNotEmpty()
-    @IsNumber()
     priceAfter: number
-
-    @IsOptional()
-    @IsBoolean()
-    isDelete: boolean
 }
 
 export class CreateProductSalePromotionDTO {

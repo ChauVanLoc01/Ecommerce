@@ -1,5 +1,5 @@
 import { MixerHorizontalIcon } from '@radix-ui/react-icons'
-import { Button, Checkbox, Flex, IconButton, Popover, Text, TextField, Tooltip } from '@radix-ui/themes'
+import { Box, Button, Checkbox, Flex, IconButton, Popover, Text, TextField, Tooltip } from '@radix-ui/themes'
 import { ColumnDef } from '@tanstack/react-table'
 import Table from 'src/components/Table'
 import { Product } from 'src/types/product.type'
@@ -9,19 +9,94 @@ export type ProductInFlashSaleProps = {
     products: Product[]
     onSelectChange: (product: Product) => (checked: boolean) => void
     selectedProduct: {
-        products: Record<string, Product>
+        products: Record<
+            string,
+            Product & { quantityInSale: number; priceBeforeInSale: number; priceAfterInSale: number }
+        >
         size: number
     }
+    setSelectedProduct: React.Dispatch<
+        React.SetStateAction<{
+            products: Record<
+                string,
+                Product & {
+                    quantityInSale: number
+                    priceBeforeInSale: number
+                    priceAfterInSale: number
+                }
+            >
+            size: number
+        }>
+    >
+    isSelectedMode?: boolean
 }
 
-const ProductInFlashSale = ({ products, onSelectChange, selectedProduct }: ProductInFlashSaleProps) => {
+const ProductInFlashSale = ({
+    products,
+    onSelectChange,
+    selectedProduct,
+    setSelectedProduct,
+    isSelectedMode = false
+}: ProductInFlashSaleProps) => {
+    const handleFormatCurrency = (
+        e: React.ChangeEvent<HTMLInputElement>,
+        productId: string,
+        type: 'quantityInSale' | 'priceBeforeInSale' | 'priceAfterInSale'
+    ) => {
+        const value = e.target.value.replace(/[^0-9]/g, '')
+        if (value || value === ' ') {
+            setSelectedProduct((pre) => {
+                return {
+                    ...pre,
+                    products: {
+                        ...pre.products,
+                        [productId]: {
+                            ...pre.products[productId],
+                            [type]: value
+                        }
+                    }
+                }
+            })
+        }
+    }
+
+    const columnInSelectedMode: ColumnDef<Product>[] = [
+        {
+            accessorKey: 'priceAfter',
+            header: () => <div className='flex items-center gap-x-2'>Số lượng tham gia</div>,
+            cell: ({ row }) => (
+                <Box maxWidth={'80px'}>
+                    <TextField.Root
+                        value={convertCurrentcy(selectedProduct.products[row.original.id].quantityInSale, false)}
+                        onChange={(e) => handleFormatCurrency(e, row.original.id, 'quantityInSale')}
+                    />
+                </Box>
+            )
+        },
+        {
+            accessorKey: 'priceAfter',
+            header: () => <div className='flex items-center gap-x-2'>Giá sẽ giảm</div>,
+            cell: ({ row }) => (
+                <Box maxWidth={'150px'}>
+                    <TextField.Root
+                        value={convertCurrentcy(selectedProduct.products[row.original.id].priceAfterInSale)}
+                        onChange={(e) => handleFormatCurrency(e, row.original.id, 'priceAfterInSale')}
+                    />
+                </Box>
+            )
+        }
+    ]
+
     const columns: ColumnDef<Product>[] = [
         {
             accessorKey: 'image',
             header: () => {
                 return (
                     <div className='flex items-center px-4'>
-                        <Checkbox size={'3'} />
+                        <Checkbox
+                            size={'3'}
+                            checked={isSelectedMode ? true : selectedProduct.size === products.length}
+                        />
                     </div>
                 )
             },
@@ -83,7 +158,7 @@ const ProductInFlashSale = ({ products, onSelectChange, selectedProduct }: Produ
             accessorKey: 'priceAfter',
             header: () => (
                 <div className='flex items-center gap-x-2'>
-                    Giá
+                    Giá hiện tại
                     <Popover.Root>
                         <Popover.Trigger>
                             <IconButton size={'3'} className='text-gray-500'>
@@ -99,7 +174,7 @@ const ProductInFlashSale = ({ products, onSelectChange, selectedProduct }: Produ
                     </Popover.Root>
                 </div>
             ),
-            cell: ({ row }) => <Text color='red'>{convertCurrentcy(row.getValue('priceAfter'))}</Text>
+            cell: ({ row }) => <Text color='red'>{convertCurrentcy(row.original.priceAfter)}</Text>
         },
         {
             accessorKey: 'currentQuantity',
@@ -124,7 +199,17 @@ const ProductInFlashSale = ({ products, onSelectChange, selectedProduct }: Produ
             cell: ({ row }) => <Text>{convertCurrentcy(row.getValue('currentQuantity'), false)}</Text>
         }
     ]
-    return <Table<Product> columns={columns} data={products} tableMaxHeight='400px' className='w-[1000px]'></Table>
+
+    const columnsMerged = isSelectedMode ? [...columns, ...columnInSelectedMode] : columns
+
+    return (
+        <Table<Product>
+            columns={columnsMerged}
+            data={products}
+            tableMaxHeight='400px'
+            className='w-[1300px] !max-w-[1300px]'
+        ></Table>
+    )
 }
 
 export default ProductInFlashSale

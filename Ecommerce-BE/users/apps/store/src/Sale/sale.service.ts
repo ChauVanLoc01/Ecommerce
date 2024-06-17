@@ -4,7 +4,6 @@ import { Status } from 'common/enums/status.enum'
 import { CurrentStoreType } from 'common/types/current.type'
 import { Return } from 'common/types/result.type'
 import { add, startOfDay } from 'date-fns'
-import { isNull, omitBy } from 'lodash'
 import { v4 as uuidv4 } from 'uuid'
 import { CreateProductSalePromotionDTO } from './dtos/create-product-sale.dto'
 import { QuerySalePromotionDTO } from './dtos/query-promotion.dto'
@@ -40,14 +39,10 @@ export class SaleService {
     async getSalePromotion(user: CurrentStoreType, query: QuerySalePromotionDTO): Promise<Return> {
         const { storeId } = user
         const { date } = query
-        console.log('end', add(startOfDay(add(date, { days: 1 })), { hours: 7 }))
         const promotions = await this.prisma.salePromotion.findMany({
             where: {
                 startDate: {
-                    gte: date
-                },
-                endDate: {
-                    lte: add(startOfDay(add(date, { days: 1 })), { hours: 7 })
+                    gte: add(startOfDay(add(date, { days: 1 })), { hours: 7 })
                 }
             }
         })
@@ -81,6 +76,8 @@ export class SaleService {
         const { userId, storeId } = user
         const { salePromotionId, products } = body
 
+        console.log('salePromotionId', salePromotionId)
+
         const storePromotion = await this.prisma.storePromotion.create({
             data: {
                 id: uuidv4(),
@@ -93,7 +90,7 @@ export class SaleService {
         })
 
         const result = await Promise.all(
-            products.map(({ priceAfter, priceBefore, productId, quantity }) =>
+            products.map(({ priceAfter, productId, quantity }) =>
                 this.prisma.productPromotion.create({
                     data: {
                         id: uuidv4(),
@@ -102,7 +99,6 @@ export class SaleService {
                         isDelete: false,
                         createdAt: add(new Date(), { hours: 7 }),
                         priceAfter,
-                        priceBefore,
                         quantity,
                         createdBy: userId
                     }

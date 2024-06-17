@@ -3,13 +3,12 @@ import { Return } from './return.type'
 export type ProductJoinSale = {
     productId: string
     quantity: number
-    priceBefore: number
     priceAfter: number
 }
 
 export type JoinSalePromotion = {
     salePromotionId: string
-    productIds: ProductJoinSale[]
+    products: ProductJoinSale[]
 }
 
 export type SalePromotion = {
@@ -19,7 +18,7 @@ export type SalePromotion = {
     type: string
     status: string
     startDate: Date
-    endDate?: Date
+    endDate: Date
     createdAt: Date
     createdBy: string
     updatedAt?: Date
