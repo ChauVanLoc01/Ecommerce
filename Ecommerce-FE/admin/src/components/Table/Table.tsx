@@ -1,4 +1,5 @@
 import { ColumnDef, flexRender, getCoreRowModel, TableOptions, useReactTable } from '@tanstack/react-table'
+import { v4 as uuid } from 'uuid'
 import { TableBody, TableCell, TableHead, TableHeader, TableRow, Table as TableShadcn } from './TableShadcn'
 
 type TableProps<T> = {
@@ -20,10 +21,10 @@ const Table = function <T>({ columns, data, className, tableMaxHeight }: TablePr
         <TableShadcn className={className} maxHeight={tableMaxHeight ?? 'auto'}>
             <TableHeader className='bg-gray-100 sticky top-0 z-50'>
                 {table.getHeaderGroups().map((headerGroup) => (
-                    <TableRow key={headerGroup.id}>
+                    <TableRow key={uuid()}>
                         {headerGroup.headers.map((header) => {
                             return (
-                                <TableHead key={header.id}>
+                                <TableHead key={uuid()}>
                                     {header.isPlaceholder
                                         ? null
                                         : flexRender(header.column.columnDef.header, header.getContext())}
@@ -36,9 +37,9 @@ const Table = function <T>({ columns, data, className, tableMaxHeight }: TablePr
             <TableBody>
                 {table.getRowModel().rows?.length ? (
                     table.getRowModel().rows.map((row) => (
-                        <TableRow className='border-none' key={row.id} data-state={row.getIsSelected() && 'selected'}>
+                        <TableRow className='border-none' key={uuid()} data-state={row.getIsSelected() && 'selected'}>
                             {row.getVisibleCells().map((cell) => (
-                                <TableCell key={cell.id}>
+                                <TableCell key={uuid()}>
                                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                 </TableCell>
                             ))}

@@ -21,7 +21,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
                 <Portal>
                     <Toaster
                         richColors
-                        position='top-right'
+                        position='top-center'
                         toastOptions={{
                             unstyled: false,
                             classNames: {

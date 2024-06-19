@@ -1,4 +1,4 @@
-import { MixerHorizontalIcon } from '@radix-ui/react-icons'
+import { Cross2Icon, MixerHorizontalIcon } from '@radix-ui/react-icons'
 import { Box, Button, Checkbox, Flex, IconButton, Popover, Text, TextField, Tooltip } from '@radix-ui/themes'
 import { ColumnDef } from '@tanstack/react-table'
 import Table from 'src/components/Table'
@@ -11,7 +11,7 @@ export type ProductInFlashSaleProps = {
     selectedProduct: {
         products: Record<
             string,
-            Product & { quantityInSale: number; priceBeforeInSale: number; priceAfterInSale: number }
+            Product & { quantityInSale: number; priceBeforeInSale: number; priceAfterInSale: number; isExist: boolean }
         >
         size: number
     }
@@ -23,6 +23,7 @@ export type ProductInFlashSaleProps = {
                     quantityInSale: number
                     priceBeforeInSale: number
                     priceAfterInSale: number
+                    isExist: boolean
                 }
             >
             size: number
@@ -41,7 +42,8 @@ const ProductInFlashSale = ({
     const handleFormatCurrency = (
         e: React.ChangeEvent<HTMLInputElement>,
         productId: string,
-        type: 'quantityInSale' | 'priceBeforeInSale' | 'priceAfterInSale'
+        type: 'quantityInSale' | 'priceBeforeInSale' | 'priceAfterInSale',
+        quantityMax?: number
     ) => {
         const value = e.target.value.replace(/[^0-9]/g, '')
         if (value || value === ' ') {
@@ -52,7 +54,7 @@ const ProductInFlashSale = ({
                         ...pre.products,
                         [productId]: {
                             ...pre.products[productId],
-                            [type]: value
+                            [type]: quantityMax && +value > quantityMax ? quantityMax : +value
                         }
                     }
                 }
@@ -67,7 +69,11 @@ const ProductInFlashSale = ({
             cell: ({ row }) => (
                 <Box maxWidth={'80px'}>
                     <TextField.Root
-                        value={convertCurrentcy(selectedProduct.products[row.original.id].quantityInSale, false)}
+                        value={
+                            selectedProduct.products[row.original.id].quantityInSale
+                                ? convertCurrentcy(selectedProduct.products[row.original.id].quantityInSale, false)
+                                : 0
+                        }
                         onChange={(e) => handleFormatCurrency(e, row.original.id, 'quantityInSale')}
                     />
                 </Box>
@@ -102,11 +108,19 @@ const ProductInFlashSale = ({
             },
             cell: ({ row }) => (
                 <Flex align={'center'} className='px-4'>
-                    <Checkbox
-                        size={'3'}
-                        checked={!!selectedProduct.products[row.original.id]}
-                        onCheckedChange={onSelectChange(row.original)}
-                    />
+                    {selectedProduct.products?.[row.original.id]?.isExist ? (
+                        <Tooltip content='Hủy tham gia'>
+                            <IconButton color='red' size={'1'}>
+                                <Cross2Icon />
+                            </IconButton>
+                        </Tooltip>
+                    ) : (
+                        <Checkbox
+                            size={'3'}
+                            checked={!!selectedProduct.products[row.original.id]}
+                            onCheckedChange={onSelectChange(row.original)}
+                        />
+                    )}
                 </Flex>
             )
         },
@@ -208,7 +222,7 @@ const ProductInFlashSale = ({
             data={products}
             tableMaxHeight='400px'
             className='w-[1300px] !max-w-[1300px]'
-        ></Table>
+        />
     )
 }
 

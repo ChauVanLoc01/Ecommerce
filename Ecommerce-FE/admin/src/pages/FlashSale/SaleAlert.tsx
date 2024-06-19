@@ -8,7 +8,7 @@ import { toast } from 'sonner'
 import { sale_api } from 'src/apis/sale.api'
 import { formatDefault } from 'src/constants/date.constants'
 import { Product } from 'src/types/product.type'
-import { SalePromotion, StoreSalePromotion } from 'src/types/sale.type'
+import { SalePromotion, StoreWithProductSalePromotion } from 'src/types/sale.type'
 import ProductInFlashSale from './ProductInFlashSale'
 
 type SaleAlertProps = {
@@ -19,17 +19,13 @@ type SaleAlertProps = {
     setSelectedEvent: React.Dispatch<
         React.SetStateAction<{
             open: boolean
-            event?: Event
+            event?: SalePromotion
         }>
     >
     selectedProduct: {
         products: Record<
             string,
-            Product & {
-                quantityInSale: number
-                priceBeforeInSale: number
-                priceAfterInSale: number
-            }
+            Product & { quantityInSale: number; priceBeforeInSale: number; priceAfterInSale: number; isExist: boolean }
         >
         size: number
     }
@@ -41,6 +37,7 @@ type SaleAlertProps = {
                     quantityInSale: number
                     priceBeforeInSale: number
                     priceAfterInSale: number
+                    isExist: boolean
                 }
             >
             size: number
@@ -50,8 +47,8 @@ type SaleAlertProps = {
     refetchSalePromotion: (options?: RefetchOptions) => Promise<
         QueryObserverResult<
             {
-                promotions: SalePromotion[]
-                storePromotionObj: Dictionary<StoreSalePromotion>
+                promotionObjs: Dictionary<SalePromotion>
+                storePromotionObj: Dictionary<StoreWithProductSalePromotion>
             },
             Error
         >
@@ -89,7 +86,8 @@ const SaleAlert = ({
                         ...product,
                         priceAfterInSale: 0,
                         priceBeforeInSale: 0,
-                        quantityInSale: 0
+                        quantityInSale: 0,
+                        isExist: false
                     }
                 },
                 size: pre.size + 1
@@ -110,8 +108,16 @@ const SaleAlert = ({
             toast.warning('Chưa thêm sản phẩm nào vào chương trình')
             return
         }
+
+        let isOk = Object.values(selectedProduct.products).every((e) => e.quantityInSale && e.priceAfterInSale)
+
+        if (!isOk) {
+            toast.warning('Số lượng tham gia và giá phải lớn hơn 0')
+            return
+        }
+
         joinSalePromotion({
-            salePromotionId: (selectedEvent.event?.resource as SalePromotion).id,
+            salePromotionId: (selectedEvent.event as SalePromotion).id,
             products: Object.keys(selectedProduct.products).map((e) => ({
                 productId: e,
                 priceAfter: selectedProduct.products[e].priceAfterInSale,
@@ -124,7 +130,7 @@ const SaleAlert = ({
 
     return (
         selectedEvent.open &&
-        selectedEvent?.event?.resource && (
+        selectedEvent?.event && (
             <Portal>
                 <AlertDialog.Root
                     open={selectedEvent.open}
@@ -136,7 +142,17 @@ const SaleAlert = ({
                             <DataList.Item>
                                 <DataList.Label>Tên sự kiện</DataList.Label>
                                 <DataList.Value className='items-center'>
-                                    <Text>{(selectedEvent.event.resource as SalePromotion).title}</Text>
+                                    <Flex gapX={'2'}>
+                                        <Text>{(selectedEvent.event as SalePromotion).title}</Text>
+                                        <Text className='italic' color='gray'>
+                                            (Đã tham gia:{' '}
+                                            {formatDistance(
+                                                new Date(),
+                                                (selectedEvent.event as SalePromotion).createdAt
+                                            )}
+                                            )
+                                        </Text>
+                                    </Flex>
                                 </DataList.Value>
                             </DataList.Item>
                             <DataList.Item>
@@ -149,25 +165,15 @@ const SaleAlert = ({
                                 <DataList.Label>Bắt đầu</DataList.Label>
                                 <DataList.Value className='items-center'>
                                     <Text>
-                                        {format(
-                                            (selectedEvent.event.resource as SalePromotion).startDate,
-                                            formatDefault
-                                        )}{' '}
-                                        (
-                                        {formatDistance(
-                                            new Date(),
-                                            (selectedEvent.event.resource as SalePromotion).startDate
-                                        )}
-                                        )
+                                        {format((selectedEvent.event as SalePromotion).startDate, formatDefault)} (
+                                        {formatDistance(new Date(), (selectedEvent.event as SalePromotion).startDate)})
                                     </Text>
                                 </DataList.Value>
                             </DataList.Item>
                             <DataList.Item>
                                 <DataList.Label>Kết thúc</DataList.Label>
                                 <DataList.Value className='items-center'>
-                                    <Text>
-                                        {format((selectedEvent.event.resource as SalePromotion).endDate, formatDefault)}
-                                    </Text>
+                                    <Text>{format((selectedEvent.event as SalePromotion).endDate, formatDefault)}</Text>
                                 </DataList.Value>
                             </DataList.Item>
                             <DataList.Item className='!flex !flex-col'>

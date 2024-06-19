@@ -54,6 +54,9 @@ export class SaleService {
                         where: {
                             salePromotionId: promotion.id,
                             storeId
+                        },
+                        include: {
+                            ProductPromotion: true
                         }
                     })
                 )

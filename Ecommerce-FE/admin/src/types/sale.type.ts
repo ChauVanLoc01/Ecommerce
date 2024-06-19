@@ -17,9 +17,9 @@ export type SalePromotion = {
     description?: string
     type: string
     status: string
-    startDate: Date
-    endDate: Date
-    createdAt: Date
+    startDate: string
+    endDate: string
+    createdAt: string
     createdBy: string
     updatedAt?: Date
     updatedBy?: string
@@ -50,9 +50,11 @@ export type StoreSalePromotion = {
     updatedBy?: string
 }
 
+export type StoreWithProductSalePromotion = StoreSalePromotion & { ProductPromotion: ProductSalePromotion[] }
+
 export type SalePromotionResponse = Return<{
     promotions: SalePromotion[]
-    storePromotions: StoreSalePromotion[]
+    storePromotions: StoreWithProductSalePromotion[]
 }>
 
 export type SalePromotionDetailResponse = Return<ProductSalePromotion[]>
