@@ -42,7 +42,7 @@ export class SaleService {
         const promotions = await this.prisma.salePromotion.findMany({
             where: {
                 startDate: {
-                    gte: add(startOfDay(add(date, { days: 1 })), { hours: 7 })
+                    gte: startOfDay(add(date, { days: 1 }))
                 }
             }
         })
@@ -56,7 +56,11 @@ export class SaleService {
                             storeId
                         },
                         include: {
-                            ProductPromotion: true
+                            ProductPromotion: {
+                                where: {
+                                    isDelete: false
+                                }
+                            }
                         }
                     })
                 )
@@ -79,14 +83,12 @@ export class SaleService {
         const { userId, storeId } = user
         const { salePromotionId, products } = body
 
-        console.log('salePromotionId', salePromotionId)
-
         const storePromotion = await this.prisma.storePromotion.create({
             data: {
                 id: uuidv4(),
                 salePromotionId,
                 storeId,
-                createdAt: add(new Date(), { hours: 7 }),
+                createdAt: new Date(),
                 status: Status.ACTIVE,
                 createdBy: userId
             }
@@ -100,7 +102,7 @@ export class SaleService {
                         storePromotionId: storePromotion.id,
                         productId,
                         isDelete: false,
-                        createdAt: add(new Date(), { hours: 7 }),
+                        createdAt: new Date(),
                         priceAfter,
                         quantity,
                         createdBy: userId
@@ -115,16 +117,25 @@ export class SaleService {
         }
     }
 
-    async updateProduct(body: UpdateProductsSalePromotion): Promise<Return> {
+    async updateProduct(
+        user: CurrentStoreType,
+        body: UpdateProductsSalePromotion
+    ): Promise<Return> {
         const { productPromotions } = body
 
         const result = await Promise.all(
-            productPromotions.map(({ productPromotionId, ...data }) =>
+            productPromotions.map((data) =>
                 this.prisma.productPromotion.update({
                     where: {
-                        id: productPromotionId
+                        id: data.productPromotionId
                     },
-                    data
+                    data: {
+                        quantity: data.quantity,
+                        priceAfter: data.priceAfter,
+                        isDelete: data.isDelete,
+                        updatedAt: new Date(),
+                        updatedBy: user.userId
+                    }
                 })
             )
         )

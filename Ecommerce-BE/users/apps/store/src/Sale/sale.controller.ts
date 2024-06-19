@@ -31,7 +31,10 @@ export class SaleController {
     }
 
     @Put()
-    updateProduct(@Body() body: UpdateProductsSalePromotion) {
-        return this.saleService.updateProduct(body)
+    updateProduct(
+        @CurrentUser() user: CurrentStoreType,
+        @Body() body: UpdateProductsSalePromotion
+    ) {
+        return this.saleService.updateProduct(user, body)
     }
 }

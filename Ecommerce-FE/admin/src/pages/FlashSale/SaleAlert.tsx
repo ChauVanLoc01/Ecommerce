@@ -1,12 +1,13 @@
 import { AlertDialog, Button, DataList, Flex, Portal, SegmentedControl, Spinner, Text } from '@radix-ui/themes'
 import { QueryObserverResult, RefetchOptions, useMutation } from '@tanstack/react-query'
-import { format, formatDistance } from 'date-fns'
+import { format, formatDistance, getHours } from 'date-fns'
+import { enUS } from 'date-fns/locale'
 import { Dictionary } from 'lodash'
 import { useState } from 'react'
 import { Event } from 'react-big-calendar'
 import { toast } from 'sonner'
 import { sale_api } from 'src/apis/sale.api'
-import { formatDefault } from 'src/constants/date.constants'
+import { formatDateDefault, formatDefault, formatHourDefault } from 'src/constants/date.constants'
 import { Product } from 'src/types/product.type'
 import { SalePromotion, StoreWithProductSalePromotion } from 'src/types/sale.type'
 import ProductInFlashSale from './ProductInFlashSale'
@@ -128,9 +129,11 @@ const SaleAlert = ({
 
     const onClear = () => setSelectedProduct({ products: {}, size: 0 })
 
+    const formatDate = (date: string) => `${format(date, formatDefault)}`
+
     return (
         selectedEvent.open &&
-        selectedEvent?.event && (
+        (selectedEvent?.event as SalePromotion) && (
             <Portal>
                 <AlertDialog.Root
                     open={selectedEvent.open}
@@ -165,8 +168,8 @@ const SaleAlert = ({
                                 <DataList.Label>Bắt đầu</DataList.Label>
                                 <DataList.Value className='items-center'>
                                     <Text>
-                                        {format((selectedEvent.event as SalePromotion).startDate, formatDefault)} (
-                                        {formatDistance(new Date(), (selectedEvent.event as SalePromotion).startDate)})
+                                        {format((selectedEvent.event as SalePromotion).startDate, formatDefault)}(
+                                        {formatDistance(new Date(), (selectedEvent.event as SalePromotion).endDate)})
                                     </Text>
                                 </DataList.Value>
                             </DataList.Item>

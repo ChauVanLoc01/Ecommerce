@@ -73,7 +73,7 @@ const FlashSale = () => {
                                 ...productList?.dataObj[product.productId],
                                 priceBefore: productList?.dataObj[product.productId].priceBefore,
                                 priceAfter: productList?.dataObj[product.productId].priceAfter,
-                                quantity: product.quantity,
+                                quantityInSale: product.quantity,
                                 priceBeforeInSale: product.priceBefore,
                                 priceAfterInSale: product.priceAfter,
                                 isExist: true

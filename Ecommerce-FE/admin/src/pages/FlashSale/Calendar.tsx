@@ -1,5 +1,5 @@
 import { ChevronLeftIcon, ChevronRightIcon } from '@radix-ui/react-icons'
-import { Flex, Grid, IconButton, Spinner, Tooltip } from '@radix-ui/themes'
+import { Flex, Grid, IconButton, Tooltip } from '@radix-ui/themes'
 import { add, eachDayOfInterval, endOfWeek, format, setHours, startOfWeek, sub } from 'date-fns'
 import { Dictionary } from 'lodash'
 import { useMemo, useRef, useState } from 'react'
@@ -46,57 +46,51 @@ const Calendar = ({ promotionObjs, onSelectEvent, storePromotionObj }: CalendarP
 
     return (
         <div ref={parentRef}>
-            {parentRef?.current ? (
-                <SimpleBar
-                    style={{
-                        maxHeight: 600,
-                        paddingRight: 8,
-                        maxWidth: `${parentRef.current.clientWidth}px`
-                    }}
-                    scrollableNodeProps={{ ref: scrollableNodeRef }}
-                >
-                    <Flex direction={'column'}>
-                        <HeaderCalendar
-                            parentRef={parentRef}
-                            scrollableNodeRef={scrollableNodeRef}
-                            dayInWeek={dayInWeek}
-                            handleChangeDate={handleChangeDate}
-                        />
-                        <Flex>
-                            <SideHour />
-                            <div className='grid grid-cols-7 grid-rows-[24] h-[900px] w-[1600px]'>
-                                {totalDate.map((date, idx) => (
-                                    <div
-                                        key={`${date}-${idx}`}
-                                        className={cn(
-                                            'p-2 h-16 border border-gray-300 border-r-0 border-b-0 [&:nth-child(7n)]:border-r',
-                                            {
-                                                'border-b': idx > 7 * 24 - 8
-                                            }
-                                        )}
+            <SimpleBar
+                style={{
+                    maxHeight: 600,
+                    paddingRight: 8,
+                    maxWidth: `${parentRef?.current?.clientWidth}px`
+                }}
+                scrollableNodeProps={{ ref: scrollableNodeRef }}
+            >
+                <Flex direction={'column'}>
+                    <HeaderCalendar
+                        parentRef={parentRef}
+                        scrollableNodeRef={scrollableNodeRef}
+                        dayInWeek={dayInWeek}
+                        handleChangeDate={handleChangeDate}
+                    />
+                    <Flex>
+                        <SideHour />
+                        <div className='grid grid-cols-7 grid-rows-[24] h-[900px] w-[1600px]'>
+                            {totalDate.map((date, idx) => (
+                                <div
+                                    key={`${date}-${idx}`}
+                                    className={cn(
+                                        'p-2 h-16 border border-gray-300 border-r-0 border-b-0 [&:nth-child(7n)]:border-r',
+                                        {
+                                            'border-b': idx > 7 * 24 - 8
+                                        }
+                                    )}
+                                >
+                                    <button
+                                        type='button'
+                                        className={cn('rounded-6 w-full h-full p-1 text-xs', {
+                                            'bg-cyan-500 text-white hover:bg-cyan-600': promotionObjs[date],
+                                            'bg-green-600 hover:bg-green-700':
+                                                storePromotionObj?.[promotionObjs?.[date]?.id]
+                                        })}
+                                        onClick={onSelectEvent(promotionObjs?.[date])}
                                     >
-                                        <button
-                                            type='button'
-                                            className={cn('rounded-6 w-full h-full p-1 text-xs', {
-                                                'bg-cyan-500 text-white hover:bg-cyan-600': promotionObjs[date],
-                                                'bg-green-600 hover:bg-green-700':
-                                                    storePromotionObj?.[promotionObjs?.[date]?.id]
-                                            })}
-                                            onClick={onSelectEvent(promotionObjs?.[date])}
-                                        >
-                                            {promotionObjs?.[date]?.title}
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-                        </Flex>
+                                        {promotionObjs?.[date]?.title}
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
                     </Flex>
-                </SimpleBar>
-            ) : (
-                <Flex justify={'center'} align={'center'}>
-                    <Spinner />
                 </Flex>
-            )}
+            </SimpleBar>
         </div>
     )
 }
@@ -109,7 +103,7 @@ type HeaderCalendarProps = {
 }
 
 const HeaderCalendar = ({ parentRef, scrollableNodeRef, dayInWeek, handleChangeDate }: HeaderCalendarProps) => {
-    return parentRef.current ? (
+    return (
         <Flex
             className={cn(`!w-[${parentRef.current?.offsetWidth}px] sticky top-0 bg-gray-200`, {
                 'shadow-md': scrollableNodeRef?.current?.scrollTop
@@ -138,8 +132,6 @@ const HeaderCalendar = ({ parentRef, scrollableNodeRef, dayInWeek, handleChangeD
                 ))}
             </Grid>
         </Flex>
-    ) : (
-        <></>
     )
 }
 

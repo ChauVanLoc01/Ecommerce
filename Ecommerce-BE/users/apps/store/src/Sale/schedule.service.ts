@@ -30,24 +30,21 @@ export class ScheduleService {
         chunk(this.calDate(), 24).map((dates, idx) =>
             this.createSalePromotion(uuidv4(), 5 * idx, dates)
         )
-
-        console.log('ok')
     }
 
     async createSalePromotion(name: string, second: number, data: Date[]) {
         const cron_job = new CronJob(`${second} 31 3 * * 1`, async () => {
             await Promise.all(
                 data.map((date) => {
-                    let dateConverted = add(date, { hours: 7 })
                     let formatDate = format(date, 'HH:mm dd-MM-yyyy')
                     return this.prisma.salePromotion.create({
                         data: {
                             id: uuidv4(),
                             title: `Daily Sale ${formatDate}`,
                             description: `Chương trình giảm giá hằng ngày kích cầu mua sắm ${formatDate}`,
-                            startDate: dateConverted,
-                            endDate: add(dateConverted, { hours: 1 }),
-                            createdAt: add(new Date(), { hours: 7 }),
+                            startDate: date,
+                            endDate: add(date, { hours: 1 }),
+                            createdAt: new Date(),
                             status: Status.BLOCK,
                             type: SalePromotion.NORMAL,
                             createdBy: 'auto'
