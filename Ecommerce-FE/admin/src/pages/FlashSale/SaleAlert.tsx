@@ -1,15 +1,15 @@
 import { AlertDialog, Button, DataList, Flex, Portal, SegmentedControl, Spinner, Text } from '@radix-ui/themes'
 import { QueryObserverResult, RefetchOptions, useMutation } from '@tanstack/react-query'
-import { format, formatDistance, getHours } from 'date-fns'
-import { enUS } from 'date-fns/locale'
-import { Dictionary } from 'lodash'
+import { format, formatDistance } from 'date-fns'
+import { Dictionary, keyBy } from 'lodash'
 import { useState } from 'react'
 import { Event } from 'react-big-calendar'
 import { toast } from 'sonner'
 import { sale_api } from 'src/apis/sale.api'
-import { formatDateDefault, formatDefault, formatHourDefault } from 'src/constants/date.constants'
+import { formatDefault } from 'src/constants/date.constants'
 import { Product } from 'src/types/product.type'
-import { SalePromotion, StoreWithProductSalePromotion } from 'src/types/sale.type'
+import { ProductSaleMix, SalePromotion, StoreWithProductSalePromotion } from 'src/types/sale.type'
+import { JoinedProduct, ProductSelected } from './FlashSale'
 import ProductInFlashSale from './ProductInFlashSale'
 
 type SaleAlertProps = {
@@ -23,28 +23,9 @@ type SaleAlertProps = {
             event?: SalePromotion
         }>
     >
-    selectedProduct: {
-        products: Record<
-            string,
-            Product & { quantityInSale: number; priceBeforeInSale: number; priceAfterInSale: number; isExist: boolean }
-        >
-        size: number
-    }
-    setSelectedProduct: React.Dispatch<
-        React.SetStateAction<{
-            products: Record<
-                string,
-                Product & {
-                    quantityInSale: number
-                    priceBeforeInSale: number
-                    priceAfterInSale: number
-                    isExist: boolean
-                }
-            >
-            size: number
-        }>
-    >
-    productTab: Product[][]
+    selectedProduct: ProductSelected
+    setSelectedProduct: React.Dispatch<React.SetStateAction<ProductSelected>>
+    productTab: ProductSaleMix[][]
     refetchSalePromotion: (options?: RefetchOptions) => Promise<
         QueryObserverResult<
             {
@@ -54,6 +35,12 @@ type SaleAlertProps = {
             Error
         >
     >
+    handleUpdateProduct: () => void
+    setIsJoin: React.Dispatch<React.SetStateAction<boolean>>
+    isJoin: boolean
+    onClear: () => void
+    joinedProduct: JoinedProduct
+    setJoinedProduct: React.Dispatch<React.SetStateAction<JoinedProduct>>
 }
 
 const SaleAlert = ({
@@ -62,7 +49,12 @@ const SaleAlert = ({
     selectedProduct,
     setSelectedProduct,
     productTab,
-    refetchSalePromotion
+    refetchSalePromotion,
+    handleUpdateProduct,
+    isJoin,
+    onClear,
+    joinedProduct,
+    setJoinedProduct
 }: SaleAlertProps) => {
     const [tab, setTab] = useState<number>(0)
 
@@ -80,19 +72,21 @@ const SaleAlert = ({
 
     const onChecked = (product: Product) => (checked: boolean) => {
         if (checked) {
-            setSelectedProduct((pre) => ({
-                products: {
-                    ...pre.products,
-                    [product.id]: {
-                        ...product,
-                        priceAfterInSale: 0,
-                        priceBeforeInSale: 0,
-                        quantityInSale: 0,
-                        isExist: false
-                    }
-                },
-                size: pre.size + 1
-            }))
+            setSelectedProduct((pre) => {
+                return {
+                    products: {
+                        ...pre.products,
+                        [product.id]: {
+                            ...product,
+                            priceAfterInSale: 0,
+                            priceBeforeInSale: 0,
+                            quantityInSale: 0,
+                            isChecked: true
+                        }
+                    },
+                    size: pre.size + 1
+                }
+            })
         } else {
             setSelectedProduct((pre) => {
                 delete pre.products[product.id]
@@ -102,6 +96,34 @@ const SaleAlert = ({
                 }
             })
         }
+    }
+
+    const handleCheckedAndUncheckedAll = (checked: boolean) => () => {
+        if (tab < 2) {
+            if (tab === 0) {
+                if (checked) {
+                    setSelectedProduct({ products: keyBy(productTab[tab], 'productId'), size: productTab[tab].length })
+                } else {
+                    setSelectedProduct({ products: {}, size: 0 })
+                }
+            } else {
+                !checked && setSelectedProduct({ products: {}, size: 0 })
+            }
+            return
+        }
+        setJoinedProduct((pre) => ({
+            ...pre,
+            products: Object.keys(pre.products).reduce((acum, key) => {
+                return {
+                    ...acum,
+                    [key]: {
+                        ...pre.products[key],
+                        isChecked: checked
+                    },
+                    checked: checked ? pre.size : 0
+                }
+            }, {})
+        }))
     }
 
     const handleJoin = () => {
@@ -127,10 +149,6 @@ const SaleAlert = ({
         })
     }
 
-    const onClear = () => setSelectedProduct({ products: {}, size: 0 })
-
-    const formatDate = (date: string) => `${format(date, formatDefault)}`
-
     return (
         selectedEvent.open &&
         (selectedEvent?.event as SalePromotion) && (
@@ -147,14 +165,16 @@ const SaleAlert = ({
                                 <DataList.Value className='items-center'>
                                     <Flex gapX={'2'}>
                                         <Text>{(selectedEvent.event as SalePromotion).title}</Text>
-                                        <Text className='italic' color='gray'>
-                                            (Đã tham gia:{' '}
-                                            {formatDistance(
-                                                new Date(),
-                                                (selectedEvent.event as SalePromotion).createdAt
-                                            )}
-                                            )
-                                        </Text>
+                                        {isJoin && (
+                                            <Text className='italic' color='gray'>
+                                                (Đã tham gia:{' '}
+                                                {formatDistance(
+                                                    new Date(),
+                                                    (selectedEvent.event as SalePromotion).createdAt
+                                                )}
+                                                )
+                                            </Text>
+                                        )}
                                     </Flex>
                                 </DataList.Value>
                             </DataList.Item>
@@ -186,6 +206,11 @@ const SaleAlert = ({
                                         <SegmentedControl.Item value='1'>
                                             Đã chọn ({selectedProduct.size})
                                         </SegmentedControl.Item>
+                                        {isJoin && (
+                                            <SegmentedControl.Item value='2'>
+                                                Đã tham gia ({joinedProduct.size})
+                                            </SegmentedControl.Item>
+                                        )}
                                     </SegmentedControl.Root>
                                 </DataList.Label>
                                 <DataList.Value className='items-center w-full'>
@@ -193,8 +218,10 @@ const SaleAlert = ({
                                         products={productTab[tab]}
                                         onSelectChange={onChecked}
                                         selectedProduct={selectedProduct}
-                                        isSelectedMode={!!+tab}
+                                        tab={tab}
                                         setSelectedProduct={setSelectedProduct}
+                                        joinedProduct={joinedProduct}
+                                        handleCheckedAndUncheckedAll={handleCheckedAndUncheckedAll}
                                     />
                                 </DataList.Value>
                             </DataList.Item>
@@ -206,14 +233,14 @@ const SaleAlert = ({
                                 </Button>
                             </AlertDialog.Cancel>
                             <Button
-                                onClick={handleJoin}
+                                onClick={isJoin ? handleUpdateProduct : handleJoin}
                                 variant='solid'
                                 className='bg-blue text-white'
                                 color='blue'
                                 size={'3'}
                             >
                                 {isPending && <Spinner />}
-                                Tham gia
+                                {isJoin ? 'Cập nhật' : 'Tham gia'}
                             </Button>
                         </Flex>
                     </AlertDialog.Content>

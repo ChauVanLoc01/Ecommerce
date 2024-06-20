@@ -1,3 +1,4 @@
+import { Product } from './product.type'
 import { Return } from './return.type'
 
 export type ProductJoinSale = {
@@ -58,3 +59,20 @@ export type SalePromotionResponse = Return<{
 }>
 
 export type SalePromotionDetailResponse = Return<ProductSalePromotion[]>
+
+export type UpdateProductSaleBody = {
+    productPromotions: {
+        productPromotionId: string
+        isDelete?: boolean
+        quantity?: number
+        priceAfter?: number
+    }[]
+}
+
+export type ProductSaleMix = Product & {
+    quantityInSale: number
+    priceBeforeInSale: number
+    priceAfterInSale: number
+    productSaleId?: string
+    isChecked?: boolean
+}

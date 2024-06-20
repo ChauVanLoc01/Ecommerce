@@ -1,16 +1,27 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { add, startOfDay } from 'date-fns'
-import { keyBy } from 'lodash'
-import { useContext, useEffect, useState } from 'react'
+import { Dictionary, keyBy } from 'lodash'
+import { useContext, useEffect, useMemo, useState } from 'react'
 import 'react-big-calendar/lib/css/react-big-calendar.css'
+import { toast } from 'sonner'
 import { ProductApi } from 'src/apis/product.api'
 import { sale_api } from 'src/apis/sale.api'
 import { AppContext } from 'src/contexts/AppContext'
 import { Store } from 'src/types/auth.type'
-import { Product } from 'src/types/product.type'
-import { SalePromotion } from 'src/types/sale.type'
+import { ProductSaleMix, SalePromotion } from 'src/types/sale.type'
 import Calendar from './CalendarEvent'
 import SaleAlert from './SaleAlert'
+
+export type ProductSelected = {
+    products: Dictionary<ProductSaleMix>
+    size: number
+}
+
+export type JoinedProduct = {
+    products: Dictionary<ProductSaleMix>
+    size: number
+    checked?: number
+}
 
 const FlashSale = () => {
     const { store } = useContext(AppContext)
@@ -20,16 +31,12 @@ const FlashSale = () => {
         event: undefined
     })
 
-    const [selectedProduct, setSelectedProduct] = useState<{
-        products: Record<
-            string,
-            Product & { quantityInSale: number; priceBeforeInSale: number; priceAfterInSale: number; isExist: boolean }
-        >
-        size: number
-    }>({
+    const [selectedProduct, setSelectedProduct] = useState<ProductSelected>({
         products: {},
         size: 0
     })
+
+    const [joinedProduct, setJoinedProduct] = useState<JoinedProduct>({ products: {}, size: 0 })
 
     const [isJoin, setIsJoin] = useState<boolean>(false)
 
@@ -54,38 +61,63 @@ const FlashSale = () => {
         })
     })
 
+    const { mutate } = useMutation({
+        mutationFn: sale_api.updateProductPromotion,
+        onSuccess: () => {
+            refetchSalePromotion()
+            toast.success('Cập nhật thành công')
+            setSelectedEvent({ open: true })
+            setIsJoin(false)
+        }
+    })
+
     const onSelectEvent = (event: any) => () => setSelectedEvent({ open: true, event })
 
-    const productTab = [productList?.dataArr || [], Object.values(selectedProduct.products)]
+    const productTab = useMemo(
+        () => [
+            (productList?.dataArr || []) as ProductSaleMix[],
+            Object.values(selectedProduct.products),
+            Object.values(joinedProduct.products)
+        ],
+        [joinedProduct, selectedProduct, productList]
+    )
+
+    const handleUpdateProduct = () => {
+        if (isJoin && selectedEvent?.event) {
+        }
+    }
+
+    const onClear = () => {
+        setSelectedProduct({ products: {}, size: 0 })
+        setIsJoin(false)
+        setJoinedProduct({ products: {}, size: 0 })
+    }
 
     useEffect(() => {
-        if (
-            selectedEvent.open &&
-            selectedEvent.event?.id &&
-            data?.storePromotionObj?.[selectedEvent.event.id]?.ProductPromotion?.length
-        ) {
-            setSelectedProduct({
-                products: {
-                    ...data.storePromotionObj[selectedEvent.event.id].ProductPromotion.reduce((acum, product) => {
+        if (selectedEvent?.event) {
+            let salePromotionId = selectedEvent.event.id
+            setIsJoin(!!data?.storePromotionObj?.[salePromotionId])
+            if (data?.storePromotionObj?.[salePromotionId]?.ProductPromotion.length) {
+                setJoinedProduct({
+                    products: data.storePromotionObj?.[salePromotionId].ProductPromotion.reduce((acum, product) => {
                         return {
                             ...acum,
                             [product.productId]: {
-                                ...productList?.dataObj[product.productId],
-                                priceBefore: productList?.dataObj[product.productId].priceBefore,
-                                priceAfter: productList?.dataObj[product.productId].priceAfter,
+                                ...productList?.dataObj?.[product.productId],
                                 quantityInSale: product.quantity,
                                 priceBeforeInSale: product.priceBefore,
                                 priceAfterInSale: product.priceAfter,
-                                isExist: true
+                                productSaleId: product.productId,
+                                isChecked: true
                             }
                         }
-                    }, {})
-                },
-                size: data?.storePromotionObj[selectedEvent.event.id].ProductPromotion.length
-            })
-            setIsJoin(true)
+                    }, {}),
+                    size: data?.storePromotionObj[salePromotionId].ProductPromotion.length,
+                    checked: data?.storePromotionObj[salePromotionId].ProductPromotion.length
+                })
+            }
         }
-    }, [selectedEvent])
+    }, [selectedEvent.open])
 
     return (
         <>
@@ -101,6 +133,12 @@ const FlashSale = () => {
                 selectedProduct={selectedProduct}
                 setSelectedProduct={setSelectedProduct}
                 refetchSalePromotion={refetchSalePromotion}
+                setIsJoin={setIsJoin}
+                handleUpdateProduct={handleUpdateProduct}
+                isJoin={isJoin}
+                onClear={onClear}
+                joinedProduct={joinedProduct}
+                setJoinedProduct={setJoinedProduct}
             />
         </>
     )

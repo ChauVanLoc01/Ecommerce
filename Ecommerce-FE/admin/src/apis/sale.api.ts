@@ -1,4 +1,9 @@
-import { JoinSalePromotion, SalePromotionDetailResponse, SalePromotionResponse } from 'src/types/sale.type'
+import {
+    JoinSalePromotion,
+    SalePromotionDetailResponse,
+    SalePromotionResponse,
+    UpdateProductSaleBody
+} from 'src/types/sale.type'
 import { http } from './http'
 
 export const sale_api = {
@@ -15,7 +20,7 @@ export const sale_api = {
     joinSalePromotion: (body: JoinSalePromotion) => {
         return http.post('/store/sale-promotion', body)
     },
-    removeSalePromotion: () => {
-        return
+    updateProductPromotion: (body: UpdateProductSaleBody) => {
+        return http.put('/store/sale-promotion', body)
     }
 }
