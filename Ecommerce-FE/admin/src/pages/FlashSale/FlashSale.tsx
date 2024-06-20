@@ -8,7 +8,7 @@ import { ProductApi } from 'src/apis/product.api'
 import { sale_api } from 'src/apis/sale.api'
 import { AppContext } from 'src/contexts/AppContext'
 import { Store } from 'src/types/auth.type'
-import { ProductSaleMix, SalePromotion } from 'src/types/sale.type'
+import { ProductSaleMix, SalePromotion, UpdateProductSaleBody } from 'src/types/sale.type'
 import Calendar from './CalendarEvent'
 import SaleAlert from './SaleAlert'
 
@@ -25,6 +25,8 @@ export type JoinedProduct = {
 
 const FlashSale = () => {
     const { store } = useContext(AppContext)
+
+    const [tab, setTab] = useState<number>(0)
 
     const [selectedEvent, setSelectedEvent] = useState<{ open: boolean; event?: SalePromotion }>({
         open: false,
@@ -61,13 +63,16 @@ const FlashSale = () => {
         })
     })
 
-    const { mutate } = useMutation({
+    const { mutate: updateProductSale } = useMutation({
         mutationFn: sale_api.updateProductPromotion,
         onSuccess: () => {
             refetchSalePromotion()
             toast.success('Cập nhật thành công')
-            setSelectedEvent({ open: true })
-            setIsJoin(false)
+            setSelectedEvent({ open: false })
+            onClear()
+        },
+        onError: () => {
+            toast.error('Lôi! Cập nhật không thành công')
         }
     })
 
@@ -83,14 +88,24 @@ const FlashSale = () => {
     )
 
     const handleUpdateProduct = () => {
-        if (isJoin && selectedEvent?.event) {
-        }
+        updateProductSale({
+            productPromotions: Object.keys(joinedProduct.products).map((key) => {
+                let { isChecked, priceAfterInSale, quantityInSale, productSaleId } = joinedProduct.products[key]
+                return {
+                    productPromotionId: productSaleId,
+                    isDelete: !isChecked,
+                    priceAfter: priceAfterInSale,
+                    quantity: quantityInSale
+                }
+            }) as UpdateProductSaleBody['productPromotions']
+        })
     }
 
     const onClear = () => {
         setSelectedProduct({ products: {}, size: 0 })
         setIsJoin(false)
         setJoinedProduct({ products: {}, size: 0 })
+        setTab(0)
     }
 
     useEffect(() => {
@@ -107,7 +122,7 @@ const FlashSale = () => {
                                 quantityInSale: product.quantity,
                                 priceBeforeInSale: product.priceBefore,
                                 priceAfterInSale: product.priceAfter,
-                                productSaleId: product.productId,
+                                productSaleId: product.id,
                                 isChecked: true
                             }
                         }
@@ -139,6 +154,8 @@ const FlashSale = () => {
                 onClear={onClear}
                 joinedProduct={joinedProduct}
                 setJoinedProduct={setJoinedProduct}
+                setTab={setTab}
+                tab={tab}
             />
         </>
     )

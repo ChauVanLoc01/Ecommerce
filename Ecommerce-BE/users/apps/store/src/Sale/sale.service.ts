@@ -124,15 +124,15 @@ export class SaleService {
         const { productPromotions } = body
 
         const result = await Promise.all(
-            productPromotions.map((data) =>
+            productPromotions.map(({ productPromotionId, isDelete, priceAfter, quantity }) =>
                 this.prisma.productPromotion.update({
                     where: {
-                        id: data.productPromotionId
+                        id: productPromotionId
                     },
                     data: {
-                        quantity: data.quantity,
-                        priceAfter: data.priceAfter,
-                        isDelete: data.isDelete,
+                        quantity,
+                        priceAfter,
+                        isDelete,
                         updatedAt: new Date(),
                         updatedBy: user.userId
                     }

@@ -16,6 +16,7 @@ export type ProductInFlashSaleProps = {
     tab: number
     joinedProduct: JoinedProduct
     handleCheckedAndUncheckedAll: (checked: boolean) => () => void
+    onCheckedJoinProduct: (productId: string, checked: boolean) => () => void
 }
 
 const ProductInFlashSale = ({
@@ -25,7 +26,8 @@ const ProductInFlashSale = ({
     setSelectedProduct,
     tab,
     joinedProduct,
-    handleCheckedAndUncheckedAll
+    handleCheckedAndUncheckedAll,
+    onCheckedJoinProduct
 }: ProductInFlashSaleProps) => {
     const handleFormatCurrency = (
         e: React.ChangeEvent<HTMLInputElement>,
@@ -67,7 +69,7 @@ const ProductInFlashSale = ({
                             <Checkbox
                                 size={'3'}
                                 checked={isCheckedAll}
-                                onCheckedChange={handleCheckedAndUncheckedAll(isCheckedAll)}
+                                onCheckedChange={handleCheckedAndUncheckedAll(!isCheckedAll)}
                             />
                         </div>
                     )
@@ -76,8 +78,16 @@ const ProductInFlashSale = ({
                     <Flex align={'center'} className='px-4'>
                         <Checkbox
                             size={'3'}
-                            checked={!!row.original?.isChecked}
-                            onCheckedChange={onSelectChange(row.original)}
+                            checked={
+                                tab === 2
+                                    ? row.original.isChecked
+                                    : !!selectedProduct.products[row.original.id]?.isChecked
+                            }
+                            onCheckedChange={
+                                tab === 2
+                                    ? onCheckedJoinProduct(row.original.id, !row.original.isChecked)
+                                    : onSelectChange(row.original)
+                            }
                         />
                     </Flex>
                 )

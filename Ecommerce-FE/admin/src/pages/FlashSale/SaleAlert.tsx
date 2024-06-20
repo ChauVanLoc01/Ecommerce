@@ -1,8 +1,7 @@
 import { AlertDialog, Button, DataList, Flex, Portal, SegmentedControl, Spinner, Text } from '@radix-ui/themes'
 import { QueryObserverResult, RefetchOptions, useMutation } from '@tanstack/react-query'
 import { format, formatDistance } from 'date-fns'
-import { Dictionary, keyBy } from 'lodash'
-import { useState } from 'react'
+import { Dictionary } from 'lodash'
 import { Event } from 'react-big-calendar'
 import { toast } from 'sonner'
 import { sale_api } from 'src/apis/sale.api'
@@ -41,6 +40,8 @@ type SaleAlertProps = {
     onClear: () => void
     joinedProduct: JoinedProduct
     setJoinedProduct: React.Dispatch<React.SetStateAction<JoinedProduct>>
+    tab: number
+    setTab: React.Dispatch<React.SetStateAction<number>>
 }
 
 const SaleAlert = ({
@@ -54,10 +55,10 @@ const SaleAlert = ({
     isJoin,
     onClear,
     joinedProduct,
-    setJoinedProduct
+    setJoinedProduct,
+    setTab,
+    tab
 }: SaleAlertProps) => {
-    const [tab, setTab] = useState<number>(0)
-
     const { mutate: joinSalePromotion, isPending } = useMutation({
         mutationFn: sale_api.joinSalePromotion,
         onSuccess: () => {
@@ -98,11 +99,36 @@ const SaleAlert = ({
         }
     }
 
+    const onCheckedJoinProduct = (productId: string, checked: boolean) => () => {
+        setJoinedProduct((pre) => ({
+            ...pre,
+            products: {
+                ...pre.products,
+                [productId]: {
+                    ...pre.products[productId],
+                    isChecked: checked
+                }
+            },
+            checked: checked ? pre.size + 1 : pre.size - 1
+        }))
+    }
+
     const handleCheckedAndUncheckedAll = (checked: boolean) => () => {
         if (tab < 2) {
             if (tab === 0) {
                 if (checked) {
-                    setSelectedProduct({ products: keyBy(productTab[tab], 'productId'), size: productTab[tab].length })
+                    setSelectedProduct({
+                        products: productTab[tab].reduce((acum, e) => {
+                            return {
+                                ...acum,
+                                [e.id]: {
+                                    ...e,
+                                    isChecked: checked
+                                }
+                            }
+                        }, {}),
+                        size: productTab[tab].length
+                    })
                 } else {
                     setSelectedProduct({ products: {}, size: 0 })
                 }
@@ -119,10 +145,10 @@ const SaleAlert = ({
                     [key]: {
                         ...pre.products[key],
                         isChecked: checked
-                    },
-                    checked: checked ? pre.size : 0
+                    }
                 }
-            }, {})
+            }, {}),
+            checked: checked ? pre.size : 0
         }))
     }
 
@@ -222,6 +248,7 @@ const SaleAlert = ({
                                         setSelectedProduct={setSelectedProduct}
                                         joinedProduct={joinedProduct}
                                         handleCheckedAndUncheckedAll={handleCheckedAndUncheckedAll}
+                                        onCheckedJoinProduct={onCheckedJoinProduct}
                                     />
                                 </DataList.Value>
                             </DataList.Item>
@@ -240,7 +267,7 @@ const SaleAlert = ({
                                 size={'3'}
                             >
                                 {isPending && <Spinner />}
-                                {isJoin ? 'Cập nhật' : 'Tham gia'}
+                                {tab === 2 ? 'Cập nhật' : 'Tham gia'}
                             </Button>
                         </Flex>
                     </AlertDialog.Content>

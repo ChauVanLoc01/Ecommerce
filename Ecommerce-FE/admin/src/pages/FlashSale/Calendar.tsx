@@ -78,12 +78,17 @@ const Calendar = ({ promotionObjs, onSelectEvent, storePromotionObj }: CalendarP
                                         type='button'
                                         className={cn('rounded-6 w-full h-full p-1 text-xs', {
                                             'bg-cyan-500 text-white hover:bg-cyan-600': promotionObjs[date],
-                                            'bg-green-600 hover:bg-green-700':
+                                            'bg-green-600 hover:bg-green-700 relative z-10':
                                                 storePromotionObj?.[promotionObjs?.[date]?.id]
                                         })}
                                         onClick={onSelectEvent(promotionObjs?.[date])}
                                     >
                                         {promotionObjs?.[date]?.title}
+                                        {!!storePromotionObj?.[promotionObjs?.[date]?.id] && (
+                                            <span className='absolute -top-2 -right-1 w-4 h-4 bg-red text-white rounded-full text-[10px] flex justify-center items-center'>
+                                                {storePromotionObj?.[promotionObjs?.[date]?.id].ProductPromotion.length}
+                                            </span>
+                                        )}
                                     </button>
                                 </div>
                             ))}

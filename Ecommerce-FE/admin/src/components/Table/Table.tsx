@@ -19,7 +19,7 @@ const Table = function <T>({ columns, data, className, tableMaxHeight }: TablePr
 
     return (
         <TableShadcn className={className} maxHeight={tableMaxHeight ?? 'auto'}>
-            <TableHeader className='bg-gray-100 sticky top-0 z-50'>
+            <TableHeader className='bg-gray-100 sticky top-0 z-50 overflow-hidden'>
                 {table.getHeaderGroups().map((headerGroup) => (
                     <TableRow key={uuid()}>
                         {headerGroup.headers.map((header) => {
