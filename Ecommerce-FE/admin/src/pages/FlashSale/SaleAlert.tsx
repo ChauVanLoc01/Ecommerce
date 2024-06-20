@@ -2,7 +2,6 @@ import { AlertDialog, Button, DataList, Flex, Portal, SegmentedControl, Spinner,
 import { QueryObserverResult, RefetchOptions, useMutation } from '@tanstack/react-query'
 import { format, formatDistance } from 'date-fns'
 import { Dictionary } from 'lodash'
-import { Event } from 'react-big-calendar'
 import { toast } from 'sonner'
 import { sale_api } from 'src/apis/sale.api'
 import { formatDefault } from 'src/constants/date.constants'
@@ -10,8 +9,6 @@ import { Product } from 'src/types/product.type'
 import { ProductSaleMix, SalePromotion, StoreWithProductSalePromotion } from 'src/types/sale.type'
 import { JoinedProduct, ProductSelected } from './FlashSale'
 import ProductInFlashSale from './ProductInFlashSale'
-import { useContext } from 'react'
-import { AppContext } from 'src/contexts/AppContext'
 
 type SaleAlertProps = {
     selectedEvent: {
@@ -171,11 +168,11 @@ const SaleAlert = ({
 
         joinSalePromotion({
             salePromotionId: (selectedEvent.event as SalePromotion).id,
+            storePromotionId,
             products: Object.keys(selectedProduct.products).map((e) => ({
                 productId: e,
                 priceAfter: selectedProduct.products[e].priceAfterInSale,
-                quantity: selectedProduct.products[e].quantityInSale,
-                storePromotionId
+                quantity: selectedProduct.products[e].quantityInSale
             }))
         })
     }
