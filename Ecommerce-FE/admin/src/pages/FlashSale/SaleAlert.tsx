@@ -10,11 +10,13 @@ import { Product } from 'src/types/product.type'
 import { ProductSaleMix, SalePromotion, StoreWithProductSalePromotion } from 'src/types/sale.type'
 import { JoinedProduct, ProductSelected } from './FlashSale'
 import ProductInFlashSale from './ProductInFlashSale'
+import { useContext } from 'react'
+import { AppContext } from 'src/contexts/AppContext'
 
 type SaleAlertProps = {
     selectedEvent: {
         open: boolean
-        event?: Event
+        event?: SalePromotion
     }
     setSelectedEvent: React.Dispatch<
         React.SetStateAction<{
@@ -42,6 +44,7 @@ type SaleAlertProps = {
     setJoinedProduct: React.Dispatch<React.SetStateAction<JoinedProduct>>
     tab: number
     setTab: React.Dispatch<React.SetStateAction<number>>
+    storePromotionObj: Dictionary<StoreWithProductSalePromotion>
 }
 
 const SaleAlert = ({
@@ -57,7 +60,8 @@ const SaleAlert = ({
     joinedProduct,
     setJoinedProduct,
     setTab,
-    tab
+    tab,
+    storePromotionObj
 }: SaleAlertProps) => {
     const { mutate: joinSalePromotion, isPending } = useMutation({
         mutationFn: sale_api.joinSalePromotion,
@@ -152,7 +156,7 @@ const SaleAlert = ({
         }))
     }
 
-    const handleJoin = () => {
+    const handleJoin = (storePromotionId?: string) => () => {
         if (!selectedProduct.size) {
             toast.warning('Chưa thêm sản phẩm nào vào chương trình')
             return
@@ -170,7 +174,8 @@ const SaleAlert = ({
             products: Object.keys(selectedProduct.products).map((e) => ({
                 productId: e,
                 priceAfter: selectedProduct.products[e].priceAfterInSale,
-                quantity: selectedProduct.products[e].quantityInSale
+                quantity: selectedProduct.products[e].quantityInSale,
+                storePromotionId
             }))
         })
     }
@@ -260,7 +265,11 @@ const SaleAlert = ({
                                 </Button>
                             </AlertDialog.Cancel>
                             <Button
-                                onClick={isJoin ? handleUpdateProduct : handleJoin}
+                                onClick={
+                                    tab === 2
+                                        ? handleUpdateProduct
+                                        : handleJoin(storePromotionObj?.[selectedEvent?.event?.id as any].id)
+                                }
                                 variant='solid'
                                 className='bg-blue text-white'
                                 color='blue'

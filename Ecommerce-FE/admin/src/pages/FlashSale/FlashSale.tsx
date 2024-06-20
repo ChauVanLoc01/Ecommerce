@@ -156,6 +156,7 @@ const FlashSale = () => {
                 setJoinedProduct={setJoinedProduct}
                 setTab={setTab}
                 tab={tab}
+                storePromotionObj={data?.storePromotionObj || {}}
             />
         </>
     )

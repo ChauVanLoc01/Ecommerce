@@ -9,6 +9,7 @@ export type ProductJoinSale = {
 
 export type JoinSalePromotion = {
     salePromotionId: string
+    storePromotionId?: string
     products: ProductJoinSale[]
 }
 

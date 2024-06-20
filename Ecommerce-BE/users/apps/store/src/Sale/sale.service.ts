@@ -81,25 +81,29 @@ export class SaleService {
         body: CreateProductSalePromotionDTO
     ): Promise<Return> {
         const { userId, storeId } = user
-        const { salePromotionId, products } = body
+        const { salePromotionId, products, storePromotionId } = body
 
-        const storePromotion = await this.prisma.storePromotion.create({
-            data: {
-                id: uuidv4(),
-                salePromotionId,
-                storeId,
-                createdAt: new Date(),
-                status: Status.ACTIVE,
-                createdBy: userId
-            }
-        })
+        let id = uuidv4()
+
+        if (!storePromotionId) {
+            await this.prisma.storePromotion.create({
+                data: {
+                    id,
+                    salePromotionId,
+                    storeId,
+                    createdAt: new Date(),
+                    status: Status.ACTIVE,
+                    createdBy: userId
+                }
+            })
+        }
 
         const result = await Promise.all(
             products.map(({ priceAfter, productId, quantity }) =>
                 this.prisma.productPromotion.create({
                     data: {
                         id: uuidv4(),
-                        storePromotionId: storePromotion.id,
+                        storePromotionId: storePromotionId || id,
                         productId,
                         isDelete: false,
                         createdAt: new Date(),
