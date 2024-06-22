@@ -101,6 +101,7 @@ const Product = () => {
 
     useEffect(() => {
         createViewProduct({ productId: productDetail.id, userId: profile?.user?.id })
+        window.scrollTo({ top: 0, behavior: 'smooth' })
     }, [])
 
     return (
@@ -120,14 +121,23 @@ const Product = () => {
                 <div className='basis-2/5 max-w-[40%] grow-0 bg-[#FFFFFF] rounded-12 flex-shrink-0 w-[512px] h-[512px]'>
                     <Carousel className='w-full'>
                         <CarouselContent className=''>
-                            {productDetail.productImages.map((image, idx) => (
-                                <CarouselItem key={idx}>
+                            {productDetail.productImages.length ? (
+                                productDetail.productImages.map((image, idx) => (
+                                    <CarouselItem key={idx}>
+                                        <img
+                                            src={image.url}
+                                            className='object-cover w-full h-full rounded-8 overflow-hidden max-w-[512px] max-h-[512px]'
+                                        />
+                                    </CarouselItem>
+                                ))
+                            ) : (
+                                <CarouselItem key={new Date().toISOString()}>
                                     <img
-                                        src={image.url}
+                                        src={productDetail.image}
                                         className='object-cover w-full h-full rounded-8 overflow-hidden max-w-[512px] max-h-[512px]'
                                     />
                                 </CarouselItem>
-                            ))}
+                            )}
                         </CarouselContent>
                         <CarouselPrevious />
                         <CarouselNext />

@@ -247,9 +247,7 @@ const Checkout = () => {
     const handleOrder = () => {}
 
     const handleRemoveVoucher = (storeId: string, isUncheckedAll: boolean) => () => {
-        console.log('out side')
         if (voucherIds && voucherIds[storeId] && isUncheckedAll) {
-            console.log('do day')
             if (Object.keys(voucherIds).length > 1) {
                 setVoucherIds((pre) => {
                     pre && delete pre[storeId]

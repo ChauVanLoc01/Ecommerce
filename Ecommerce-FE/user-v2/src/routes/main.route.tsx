@@ -1,11 +1,11 @@
 import loadable from '@loadable/component'
+import { Flex } from '@radix-ui/themes'
 import { QueryClient } from '@tanstack/react-query'
 import { useContext } from 'react'
 import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom'
 
 import { route } from 'src/constants/route'
 import { AppContext } from 'src/contexts/AppContext'
-import MainLayout from 'src/layouts/MainLayout'
 import { checkoutLoader } from 'src/loaders/checkout.loader'
 import { deliveryLoader } from 'src/loaders/delivery.loader'
 import { ordersLoader } from 'src/loaders/order.loader'
@@ -29,6 +29,8 @@ const Register = loadable(() => import('src/pages/Register'))
 
 const ProductList = loadable(() => import('src/pages/ProductList'))
 const Product = loadable(() => import('src/pages/Product'))
+
+const MainLayout = loadable(() => import('src/layouts/MainLayout'))
 
 const RejectRoute = () => {
     const { profile } = useContext(AppContext)

@@ -9,6 +9,7 @@ import { ProductApi } from 'src/apis/product.api'
 import { VoucherApi } from 'src/apis/voucher.api'
 import { DatePicker } from 'src/components/Shadcn/datePicker'
 import { Category } from 'src/types/category.type'
+import { convertCurrentcy } from 'src/utils/utils'
 import { create_voucher_schema, CreateVoucher } from 'src/utils/voucher.schema'
 
 type VoucherCreateProps = {
@@ -22,7 +23,8 @@ const VoucherCreate = ({ refetchDataAll }: VoucherCreateProps) => {
         control,
         formState: { errors },
         handleSubmit,
-        resetField
+        resetField,
+        setValue
     } = useForm<CreateVoucher>({
         resolver: yupResolver(create_voucher_schema)
     })
