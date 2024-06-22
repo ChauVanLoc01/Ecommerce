@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { add, startOfDay } from 'date-fns'
 import { Dictionary, keyBy } from 'lodash'
-import { useContext, useMemo, useState } from 'react'
+import { useContext, useMemo, useRef, useState } from 'react'
 import 'react-big-calendar/lib/css/react-big-calendar.css'
 import { toast } from 'sonner'
 import { ProductApi } from 'src/apis/product.api'
@@ -39,6 +39,16 @@ const FlashSale = () => {
     })
 
     const [joinedProduct, setJoinedProduct] = useState<JoinedProduct>({ products: {}, size: 0 })
+
+    const valueRef = useRef<
+        | {
+              productId: string
+              value: number
+              mode: 'checked' | 'created'
+              type: 'quantityInSale' | 'priceAfterInSale'
+          }
+        | undefined
+    >(undefined)
 
     const [isJoin, setIsJoin] = useState<boolean>(false)
 
@@ -89,7 +99,6 @@ const FlashSale = () => {
                         [product.productId]: {
                             ...productList?.dataObj?.[product.productId],
                             quantityInSale: product.quantity,
-                            priceBeforeInSale: product.priceBefore,
                             priceAfterInSale: product.priceAfter,
                             productSaleId: product.id,
                             isChecked: true
@@ -140,6 +149,7 @@ const FlashSale = () => {
                 storePromotionObj={data?.storePromotionObj || {}}
             />
             <SaleAlert
+                valueRef={valueRef}
                 productTab={productTab}
                 selectedEvent={selectedEvent}
                 setSelectedEvent={setSelectedEvent}

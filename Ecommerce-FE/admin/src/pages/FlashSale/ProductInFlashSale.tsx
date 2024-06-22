@@ -1,8 +1,7 @@
 import { MixerHorizontalIcon } from '@radix-ui/react-icons'
 import { Box, Button, Checkbox, Flex, IconButton, Popover, Text, TextField, Tooltip } from '@radix-ui/themes'
 import { ColumnDef } from '@tanstack/react-table'
-import { debounce, DebouncedFunc } from 'lodash'
-import { useMemo, useRef } from 'react'
+import { useMemo } from 'react'
 import Table from 'src/components/Table'
 import { Product } from 'src/types/product.type'
 import { ProductSaleMix } from 'src/types/sale.type'
@@ -18,6 +17,17 @@ export type ProductInFlashSaleProps = {
     joinedProduct: JoinedProduct
     handleCheckedAndUncheckedAll: (checked: boolean) => () => void
     onCheckedJoinProduct: (productId: string, checked: boolean) => () => void
+    setJoinedProduct: React.Dispatch<React.SetStateAction<JoinedProduct>>
+    valueRef: React.MutableRefObject<
+        | {
+              productId: string
+              value: number
+              mode: 'checked' | 'created'
+              type: 'quantityInSale' | 'priceAfterInSale'
+          }
+        | undefined
+    >
+    handleFocusOut: () => void
 }
 
 const ProductInFlashSale = ({
@@ -28,40 +38,30 @@ const ProductInFlashSale = ({
     tab,
     joinedProduct,
     handleCheckedAndUncheckedAll,
-    onCheckedJoinProduct
+    onCheckedJoinProduct,
+    setJoinedProduct,
+    valueRef,
+    handleFocusOut
 }: ProductInFlashSaleProps) => {
-    const debounceRef = useRef<DebouncedFunc<() => void> | undefined>(undefined)
-
     const handleFormatCurrency = (
         e: React.ChangeEvent<HTMLInputElement>,
         productId: string,
+        mode: 'created' | 'checked',
         type: 'quantityInSale' | 'priceAfterInSale',
         quantityMax?: number
     ) => {
-        const value = e.target.value.replace(/[^0-9]/g, '')
+        var value = e.target.value.replace(/[^0-9]/g, '')
+        value = !!value ? value : '0'
 
-        if (debounceRef?.current) {
-            debounceRef.current.cancel()
+        valueRef.current = {
+            productId,
+            value: type === 'quantityInSale' ? Math.min(+value, quantityMax as number) : +value,
+            mode,
+            type
         }
 
-        if (value || value === ' ') {
-            let deboundFn = debounce(() => {
-                setSelectedProduct((pre) => {
-                    return {
-                        ...pre,
-                        products: {
-                            ...pre.products,
-                            [productId]: {
-                                ...pre.products[productId],
-                                [type]: type === 'quantityInSale' ? Math.min(+value, quantityMax as number) : value
-                            }
-                        }
-                    }
-                })
-            }, 200)
-            debounceRef.current = deboundFn
-            deboundFn()
-        }
+        document.removeEventListener('focus', handleFocusOut)
+        document.addEventListener('focus', handleFocusOut)
     }
 
     const columns = useMemo(() => {
@@ -90,7 +90,6 @@ const ProductInFlashSale = ({
                     <Flex align={'center'} className='px-4'>
                         <Checkbox
                             size={'3'}
-                            disabled={tab !== 2 && !!joinedProduct.products?.[row.original.id]}
                             checked={
                                 tab === 2
                                     ? row.original.isChecked
@@ -191,11 +190,16 @@ const ProductInFlashSale = ({
                         </Popover.Root>
                     </div>
                 ),
-                cell: ({ row }) => <Text>{convertCurrentcy(row.getValue('currentQuantity'), false)}</Text>
+                cell: ({ row }) => (
+                    <Text className='diagonal-fractions text-xl flex justify-center items-center'>
+                        {row.original.currentQuantity}/{row.original.initQuantity}
+                    </Text>
+                )
             }
         ]
 
         if (tab > 0) {
+            let mode = ['checked', 'created'][tab - 1]
             columnInSelectedMode = [
                 {
                     accessorKey: 'priceAfter',
@@ -203,7 +207,7 @@ const ProductInFlashSale = ({
                     cell: ({ row }) => (
                         <Box maxWidth={'80px'}>
                             <TextField.Root
-                                value={
+                                defaultValue={
                                     tab === 2
                                         ? convertCurrentcy(
                                               joinedProduct.products[row.original.id].quantityInSale,
@@ -218,12 +222,14 @@ const ProductInFlashSale = ({
                                     handleFormatCurrency(
                                         e,
                                         row.original.id,
+                                        mode as any,
                                         'quantityInSale',
                                         tab === 2
                                             ? joinedProduct.products[row.original.id].initQuantity
                                             : selectedProduct.products?.[row.original.id]?.initQuantity
                                     )
                                 }
+                                onBlur={handleFocusOut}
                             />
                         </Box>
                     )
@@ -234,14 +240,17 @@ const ProductInFlashSale = ({
                     cell: ({ row }) => (
                         <Box maxWidth={'150px'}>
                             <TextField.Root
-                                value={
+                                defaultValue={
                                     tab === 2
                                         ? convertCurrentcy(joinedProduct.products[row.original.id].priceAfterInSale)
                                         : convertCurrentcy(
                                               selectedProduct.products?.[row.original.id]?.priceAfterInSale
                                           )
                                 }
-                                onChange={(e) => handleFormatCurrency(e, row.original.id, 'priceAfterInSale')}
+                                onChange={(e) =>
+                                    handleFormatCurrency(e, row.original.id, mode as any, 'priceAfterInSale')
+                                }
+                                onBlur={handleFocusOut}
                             />
                         </Box>
                     )
@@ -260,7 +269,6 @@ const ProductInFlashSale = ({
             data={products}
             tableMaxHeight='400px'
             className='w-[1300px] !max-w-[1300px]'
-            usingSimpleBar={false}
         />
     )
 }

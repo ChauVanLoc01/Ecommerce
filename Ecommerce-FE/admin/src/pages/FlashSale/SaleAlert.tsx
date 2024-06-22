@@ -41,6 +41,15 @@ type SaleAlertProps = {
     tab: number
     setTab: React.Dispatch<React.SetStateAction<number>>
     storePromotionObj: Dictionary<StoreWithProductSalePromotion>
+    valueRef: React.MutableRefObject<
+        | {
+              productId: string
+              value: number
+              mode: 'checked' | 'created'
+              type: 'quantityInSale' | 'priceAfterInSale'
+          }
+        | undefined
+    >
 }
 
 const SaleAlert = ({
@@ -57,7 +66,8 @@ const SaleAlert = ({
     setJoinedProduct,
     setTab,
     tab,
-    storePromotionObj
+    storePromotionObj,
+    valueRef
 }: SaleAlertProps) => {
     const { mutate: joinSalePromotion, isPending } = useMutation({
         mutationFn: sale_api.joinSalePromotion,
@@ -176,6 +186,38 @@ const SaleAlert = ({
         })
     }
 
+    const handleFocusOut = () => {
+        if (!valueRef?.current) {
+            return
+        }
+        let { mode, productId, type, value } = valueRef?.current
+        if (mode === 'checked') {
+            setSelectedProduct((pre) => ({
+                ...pre,
+                products: {
+                    ...pre.products,
+                    [productId]: {
+                        ...pre.products[productId],
+                        [type]: value
+                    }
+                }
+            }))
+        } else {
+            setJoinedProduct((pre) => ({
+                ...pre,
+                products: {
+                    ...pre.products,
+                    [productId]: {
+                        ...pre.products[productId],
+                        [type]: value
+                    }
+                }
+            }))
+        }
+        valueRef.current = undefined
+        document.removeEventListener('focus', handleFocusOut)
+    }
+
     return (
         selectedEvent.open &&
         (selectedEvent?.event as SalePromotion) && (
@@ -242,6 +284,8 @@ const SaleAlert = ({
                                 </DataList.Label>
                                 <DataList.Value className='items-center w-full'>
                                     <ProductInFlashSale
+                                        handleFocusOut={handleFocusOut}
+                                        valueRef={valueRef}
                                         products={productTab}
                                         onSelectChange={onChecked}
                                         selectedProduct={selectedProduct}
@@ -250,6 +294,7 @@ const SaleAlert = ({
                                         joinedProduct={joinedProduct}
                                         handleCheckedAndUncheckedAll={handleCheckedAndUncheckedAll}
                                         onCheckedJoinProduct={onCheckedJoinProduct}
+                                        setJoinedProduct={setJoinedProduct}
                                     />
                                 </DataList.Value>
                             </DataList.Item>

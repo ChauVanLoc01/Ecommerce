@@ -1,6 +1,6 @@
 import { ChevronLeftIcon, ChevronRightIcon } from '@radix-ui/react-icons'
 import { Button, Flex, Grid, IconButton, Tooltip } from '@radix-ui/themes'
-import { add, eachDayOfInterval, endOfWeek, format, setHours, startOfWeek, sub } from 'date-fns'
+import { add, eachDayOfInterval, endOfWeek, format, isEqual, setHours, startOfDay, startOfWeek, sub } from 'date-fns'
 import { debounce, DebouncedFunc, Dictionary } from 'lodash'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import SimpleBar from 'simplebar-react'
@@ -150,7 +150,12 @@ const HeaderCalendar = ({ parentRef, dayInWeek, handleChangeDate, onTop, setCurr
                 {dayInWeek.map((e) => (
                     <div
                         key={e.toISOString()}
-                        className='w-full h-12 border border-gray-300 border-r-0 [&:nth-child(7n)]:border-r flex justify-center items-center'
+                        className={cn(
+                            'w-full h-12 border border-gray-300 border-r-0 [&:nth-child(7n)]:border-r flex justify-center items-center',
+                            {
+                                'bg-orange-500 text-white': isEqual(startOfDay(new Date()), e)
+                            }
+                        )}
                     >
                         {format(e, 'EEEEEE dd-MM-yyyy')}
                     </div>
