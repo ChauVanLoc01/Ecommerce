@@ -1,8 +1,8 @@
 import { ChevronLeftIcon, ChevronRightIcon } from '@radix-ui/react-icons'
-import { Flex, Grid, IconButton, Tooltip } from '@radix-ui/themes'
+import { Button, Flex, Grid, IconButton, Tooltip } from '@radix-ui/themes'
 import { add, eachDayOfInterval, endOfWeek, format, setHours, startOfWeek, sub } from 'date-fns'
-import { Dictionary } from 'lodash'
-import { useMemo, useRef, useState } from 'react'
+import { debounce, DebouncedFunc, Dictionary } from 'lodash'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import SimpleBar from 'simplebar-react'
 import { SalePromotion, StoreWithProductSalePromotion } from 'src/types/sale.type'
 import { cn } from 'src/utils/utils'
@@ -16,7 +16,22 @@ type CalendarProps = {
 
 const Calendar = ({ promotionObjs, onSelectEvent, storePromotionObj }: CalendarProps) => {
     const parentRef = useRef<HTMLDivElement | null>(null)
-    const scrollableNodeRef = useRef<HTMLDivElement | null>(null)
+    const scrollableNodeRef = useRef<any>(null)
+    const [onTop, setOnTop] = useState<boolean>(true)
+
+    const handleCheckPositionScrollTop: DebouncedFunc<(isOnTop: boolean) => void> = debounce(
+        (isOnTop: boolean) => setOnTop(isOnTop),
+        200
+    )
+
+    useEffect(() => {
+        if (scrollableNodeRef?.current) {
+            scrollableNodeRef.current.addEventListener('scroll', () => {
+                handleCheckPositionScrollTop(!!!scrollableNodeRef.current.scrollTop)
+            })
+        }
+        return () => handleCheckPositionScrollTop.cancel()
+    }, [])
 
     const [currentDate, setCurrentDate] = useState<Date>(new Date())
 
@@ -56,10 +71,11 @@ const Calendar = ({ promotionObjs, onSelectEvent, storePromotionObj }: CalendarP
             >
                 <Flex direction={'column'}>
                     <HeaderCalendar
+                        onTop={onTop}
                         parentRef={parentRef}
-                        scrollableNodeRef={scrollableNodeRef}
                         dayInWeek={dayInWeek}
                         handleChangeDate={handleChangeDate}
+                        setCurrentDate={setCurrentDate}
                     />
                     <Flex>
                         <SideHour />
@@ -102,26 +118,30 @@ const Calendar = ({ promotionObjs, onSelectEvent, storePromotionObj }: CalendarP
 
 type HeaderCalendarProps = {
     parentRef: React.MutableRefObject<HTMLDivElement | null>
-    scrollableNodeRef: React.MutableRefObject<HTMLDivElement | null>
     dayInWeek: Date[]
     handleChangeDate: (type: 'previous' | 'next') => () => void
+    onTop: boolean
+    setCurrentDate: React.Dispatch<React.SetStateAction<Date>>
 }
 
-const HeaderCalendar = ({ parentRef, scrollableNodeRef, dayInWeek, handleChangeDate }: HeaderCalendarProps) => {
+const HeaderCalendar = ({ parentRef, dayInWeek, handleChangeDate, onTop, setCurrentDate }: HeaderCalendarProps) => {
     return (
         <Flex
             className={cn(`!w-[${parentRef.current?.offsetWidth}px] sticky top-0 bg-gray-200`, {
-                'shadow-md': scrollableNodeRef?.current?.scrollTop
+                'shadow-md': !onTop
             })}
         >
             <div className='w-36 h-12 border border-gray-300 border-r-0 [&:nth-child(7n)]:border-r flex justify-center items-center space-x-1'>
+                <Button size={'1'} onClick={() => setCurrentDate(new Date())}>
+                    Hôm nay
+                </Button>
                 <Tooltip content='Tuần vừa rồi'>
-                    <IconButton variant='soft' color='gray' onClick={handleChangeDate('previous')}>
+                    <IconButton variant='soft' color='gray' onClick={handleChangeDate('previous')} size={'1'}>
                         <ChevronLeftIcon />
                     </IconButton>
                 </Tooltip>
                 <Tooltip content='Tuần kế'>
-                    <IconButton variant='soft' color='gray' onClick={handleChangeDate('next')}>
+                    <IconButton variant='soft' color='gray' onClick={handleChangeDate('next')} size={'1'}>
                         <ChevronRightIcon />
                     </IconButton>
                 </Tooltip>

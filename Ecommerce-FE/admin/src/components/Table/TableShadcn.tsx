@@ -4,11 +4,16 @@ import SimpleBar from 'simplebar-react'
 
 import { cn } from 'src/utils/utils.ts'
 
-const Table = React.forwardRef<HTMLTableElement, React.HTMLAttributes<HTMLTableElement> & { maxHeight: string }>(
-    ({ className, maxHeight, ...props }, ref) => (
+const Table = React.forwardRef<
+    HTMLTableElement,
+    React.HTMLAttributes<HTMLTableElement> & { maxHeight: string; usingSimpleBar?: boolean }
+>(({ className, maxHeight, usingSimpleBar = true, ...props }, ref) =>
+    usingSimpleBar ? (
         <SimpleBar style={{ maxHeight: maxHeight, maxWidth: '100%', width: '100%', position: 'relative' }}>
             <table ref={ref} className={cn(`caption-bottom text-sm text-gray-600`, className)} {...props} />
         </SimpleBar>
+    ) : (
+        <table ref={ref} className={cn(`caption-bottom text-sm text-gray-600`, className)} {...props} />
     )
 )
 Table.displayName = 'Table'

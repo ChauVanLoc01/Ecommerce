@@ -1,7 +1,8 @@
-import { Cross2Icon, MixerHorizontalIcon } from '@radix-ui/react-icons'
+import { MixerHorizontalIcon } from '@radix-ui/react-icons'
 import { Box, Button, Checkbox, Flex, IconButton, Popover, Text, TextField, Tooltip } from '@radix-ui/themes'
 import { ColumnDef } from '@tanstack/react-table'
-import { useMemo } from 'react'
+import { debounce, DebouncedFunc } from 'lodash'
+import { useMemo, useRef } from 'react'
 import Table from 'src/components/Table'
 import { Product } from 'src/types/product.type'
 import { ProductSaleMix } from 'src/types/sale.type'
@@ -29,26 +30,37 @@ const ProductInFlashSale = ({
     handleCheckedAndUncheckedAll,
     onCheckedJoinProduct
 }: ProductInFlashSaleProps) => {
+    const debounceRef = useRef<DebouncedFunc<() => void> | undefined>(undefined)
+
     const handleFormatCurrency = (
         e: React.ChangeEvent<HTMLInputElement>,
         productId: string,
-        type: 'quantityInSale' | 'priceBeforeInSale' | 'priceAfterInSale',
+        type: 'quantityInSale' | 'priceAfterInSale',
         quantityMax?: number
     ) => {
         const value = e.target.value.replace(/[^0-9]/g, '')
+
+        if (debounceRef?.current) {
+            debounceRef.current.cancel()
+        }
+
         if (value || value === ' ') {
-            setSelectedProduct((pre) => {
-                return {
-                    ...pre,
-                    products: {
-                        ...pre.products,
-                        [productId]: {
-                            ...pre.products[productId],
-                            [type]: quantityMax && +value > quantityMax ? quantityMax : +value
+            let deboundFn = debounce(() => {
+                setSelectedProduct((pre) => {
+                    return {
+                        ...pre,
+                        products: {
+                            ...pre.products,
+                            [productId]: {
+                                ...pre.products[productId],
+                                [type]: type === 'quantityInSale' ? Math.min(+value, quantityMax as number) : value
+                            }
                         }
                     }
-                }
-            })
+                })
+            }, 200)
+            debounceRef.current = deboundFn
+            deboundFn()
         }
     }
 
@@ -78,6 +90,7 @@ const ProductInFlashSale = ({
                     <Flex align={'center'} className='px-4'>
                         <Checkbox
                             size={'3'}
+                            disabled={tab !== 2 && !!joinedProduct.products?.[row.original.id]}
                             checked={
                                 tab === 2
                                     ? row.original.isChecked
@@ -190,8 +203,27 @@ const ProductInFlashSale = ({
                     cell: ({ row }) => (
                         <Box maxWidth={'80px'}>
                             <TextField.Root
-                                value={convertCurrentcy(row.original.quantityInSale, false)}
-                                onChange={(e) => handleFormatCurrency(e, row.original.id, 'quantityInSale')}
+                                value={
+                                    tab === 2
+                                        ? convertCurrentcy(
+                                              joinedProduct.products[row.original.id].quantityInSale,
+                                              false
+                                          )
+                                        : convertCurrentcy(
+                                              selectedProduct.products?.[row.original.id].quantityInSale,
+                                              false
+                                          )
+                                }
+                                onChange={(e) =>
+                                    handleFormatCurrency(
+                                        e,
+                                        row.original.id,
+                                        'quantityInSale',
+                                        tab === 2
+                                            ? joinedProduct.products[row.original.id].initQuantity
+                                            : selectedProduct.products?.[row.original.id]?.initQuantity
+                                    )
+                                }
                             />
                         </Box>
                     )
@@ -202,7 +234,13 @@ const ProductInFlashSale = ({
                     cell: ({ row }) => (
                         <Box maxWidth={'150px'}>
                             <TextField.Root
-                                value={convertCurrentcy(row.original.priceAfterInSale, false)}
+                                value={
+                                    tab === 2
+                                        ? convertCurrentcy(joinedProduct.products[row.original.id].priceAfterInSale)
+                                        : convertCurrentcy(
+                                              selectedProduct.products?.[row.original.id]?.priceAfterInSale
+                                          )
+                                }
                                 onChange={(e) => handleFormatCurrency(e, row.original.id, 'priceAfterInSale')}
                             />
                         </Box>
@@ -214,7 +252,7 @@ const ProductInFlashSale = ({
         let columnsMerged = [...columns, ...columnInSelectedMode]
 
         return [columns, columnsMerged, columnsMerged][tab]
-    }, [tab, selectedProduct, products])
+    }, [tab, selectedProduct, joinedProduct])
 
     return (
         <Table<ProductSaleMix>
@@ -222,6 +260,7 @@ const ProductInFlashSale = ({
             data={products}
             tableMaxHeight='400px'
             className='w-[1300px] !max-w-[1300px]'
+            usingSimpleBar={false}
         />
     )
 }

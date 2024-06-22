@@ -23,7 +23,7 @@ type SaleAlertProps = {
     >
     selectedProduct: ProductSelected
     setSelectedProduct: React.Dispatch<React.SetStateAction<ProductSelected>>
-    productTab: ProductSaleMix[][]
+    productTab: ProductSaleMix[]
     refetchSalePromotion: (options?: RefetchOptions) => Promise<
         QueryObserverResult<
             {
@@ -34,7 +34,6 @@ type SaleAlertProps = {
         >
     >
     handleUpdateProduct: () => void
-    setIsJoin: React.Dispatch<React.SetStateAction<boolean>>
     isJoin: boolean
     onClear: () => void
     joinedProduct: JoinedProduct
@@ -119,7 +118,7 @@ const SaleAlert = ({
             if (tab === 0) {
                 if (checked) {
                     setSelectedProduct({
-                        products: productTab[tab].reduce((acum, e) => {
+                        products: productTab.reduce((acum, e) => {
                             return {
                                 ...acum,
                                 [e.id]: {
@@ -128,7 +127,7 @@ const SaleAlert = ({
                                 }
                             }
                         }, {}),
-                        size: productTab[tab].length
+                        size: productTab.length
                     })
                 } else {
                     setSelectedProduct({ products: {}, size: 0 })
@@ -243,7 +242,7 @@ const SaleAlert = ({
                                 </DataList.Label>
                                 <DataList.Value className='items-center w-full'>
                                     <ProductInFlashSale
-                                        products={productTab[tab]}
+                                        products={productTab}
                                         onSelectChange={onChecked}
                                         selectedProduct={selectedProduct}
                                         tab={tab}

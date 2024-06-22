@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { add, startOfDay } from 'date-fns'
 import { Dictionary, keyBy } from 'lodash'
-import { useContext, useEffect, useMemo, useState } from 'react'
+import { useContext, useMemo, useState } from 'react'
 import 'react-big-calendar/lib/css/react-big-calendar.css'
 import { toast } from 'sonner'
 import { ProductApi } from 'src/apis/product.api'
@@ -76,16 +76,40 @@ const FlashSale = () => {
         }
     })
 
-    const onSelectEvent = (event: any) => () => setSelectedEvent({ open: true, event })
+    const onSelectEvent = (event: SalePromotion) => () => {
+        setSelectedEvent({ open: true, event })
+        let salePromotionId = event.id
+        let productSale = data?.storePromotionObj?.[salePromotionId]
+        setIsJoin(!!productSale)
+        if (productSale?.ProductPromotion.length) {
+            setJoinedProduct({
+                products: productSale?.ProductPromotion.reduce((acum, product) => {
+                    return {
+                        ...acum,
+                        [product.productId]: {
+                            ...productList?.dataObj?.[product.productId],
+                            quantityInSale: product.quantity,
+                            priceBeforeInSale: product.priceBefore,
+                            priceAfterInSale: product.priceAfter,
+                            productSaleId: product.id,
+                            isChecked: true
+                        }
+                    }
+                }, {}),
+                size: productSale?.ProductPromotion.length,
+                checked: productSale?.ProductPromotion.length
+            })
+        }
+    }
 
-    const productTab = useMemo(
-        () => [
-            (productList?.dataArr || []) as ProductSaleMix[],
-            Object.values(selectedProduct.products),
-            Object.values(joinedProduct.products)
-        ],
-        [joinedProduct, selectedProduct, productList]
-    )
+    const productTab = useMemo(() => {
+        if (tab === 1) {
+            return Object.values(selectedProduct.products)
+        } else if (tab === 2) {
+            return Object.values(joinedProduct.products)
+        }
+        return (productList?.dataArr || []).filter((e) => !joinedProduct.products?.[e.id]) as ProductSaleMix[]
+    }, [productList, tab, joinedProduct, selectedProduct])
 
     const handleUpdateProduct = () => {
         updateProductSale({
@@ -108,32 +132,6 @@ const FlashSale = () => {
         setTab(0)
     }
 
-    useEffect(() => {
-        if (selectedEvent?.event) {
-            let salePromotionId = selectedEvent.event.id
-            setIsJoin(!!data?.storePromotionObj?.[salePromotionId])
-            if (data?.storePromotionObj?.[salePromotionId]?.ProductPromotion.length) {
-                setJoinedProduct({
-                    products: data.storePromotionObj?.[salePromotionId].ProductPromotion.reduce((acum, product) => {
-                        return {
-                            ...acum,
-                            [product.productId]: {
-                                ...productList?.dataObj?.[product.productId],
-                                quantityInSale: product.quantity,
-                                priceBeforeInSale: product.priceBefore,
-                                priceAfterInSale: product.priceAfter,
-                                productSaleId: product.id,
-                                isChecked: true
-                            }
-                        }
-                    }, {}),
-                    size: data?.storePromotionObj[salePromotionId].ProductPromotion.length,
-                    checked: data?.storePromotionObj[salePromotionId].ProductPromotion.length
-                })
-            }
-        }
-    }, [selectedEvent.open])
-
     return (
         <>
             <Calendar
@@ -148,7 +146,6 @@ const FlashSale = () => {
                 selectedProduct={selectedProduct}
                 setSelectedProduct={setSelectedProduct}
                 refetchSalePromotion={refetchSalePromotion}
-                setIsJoin={setIsJoin}
                 handleUpdateProduct={handleUpdateProduct}
                 isJoin={isJoin}
                 onClear={onClear}

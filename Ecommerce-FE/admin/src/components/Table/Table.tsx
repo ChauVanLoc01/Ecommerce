@@ -7,10 +7,11 @@ type TableProps<T> = {
     columns: ColumnDef<T>[]
     tableMaxHeight?: string
     className?: string
+    usingSimpleBar?: boolean
     onMouseOverInTableRow?: (orderId: string) => () => void
 } & Omit<TableOptions<T>, 'getCoreRowModel'>
 
-const Table = function <T>({ columns, data, className, tableMaxHeight }: TableProps<T>) {
+const Table = function <T>({ columns, data, className, tableMaxHeight, usingSimpleBar = true }: TableProps<T>) {
     const table = useReactTable<T>({
         data,
         columns,
@@ -18,7 +19,7 @@ const Table = function <T>({ columns, data, className, tableMaxHeight }: TablePr
     })
 
     return (
-        <TableShadcn className={className} maxHeight={tableMaxHeight ?? 'auto'}>
+        <TableShadcn className={className} maxHeight={tableMaxHeight ?? 'auto'} usingSimpleBar={usingSimpleBar}>
             <TableHeader className='bg-gray-100 sticky top-0 z-50 overflow-hidden'>
                 {table.getHeaderGroups().map((headerGroup) => (
                     <TableRow key={uuid()}>
