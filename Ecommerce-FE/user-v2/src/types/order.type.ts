@@ -4,6 +4,10 @@ import { Product } from './product.type'
 export type OrderBody = {
     orderParameters: {
         storeId: string
+        voucherId?: string
+        total: number
+        discount: number
+        pay: number
         orders: {
             productId: string
             price_after: number
@@ -11,6 +15,7 @@ export type OrderBody = {
         }[]
     }[]
     deliveryInformationId: string
+    globalVoucherId?: string
 }
 
 export type OrderQuery = {
