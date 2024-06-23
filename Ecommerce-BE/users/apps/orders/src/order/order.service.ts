@@ -330,8 +330,8 @@ export class OrderService {
             let tmp = []
 
             if (storeIdKeyByVoucher.voucherIds.length) {
-                tmp.push(
-                    storeIdKeyByVoucher.mixedVoucher.map((e) =>
+                tmp = [
+                    ...storeIdKeyByVoucher.mixedVoucher.map((e) =>
                         this.prisma.orderVoucher.create({
                             data: {
                                 id: uuidv4(),
@@ -341,7 +341,7 @@ export class OrderService {
                             }
                         })
                     )
-                )
+                ]
             }
 
             const [voucherReturn, ..._] = await Promise.all([
@@ -351,7 +351,7 @@ export class OrderService {
                         storeIdKeyByVoucher.voucherIds
                     )
                 ),
-                storeIdKeyByVoucher.orderIds.map((orderId) =>
+                ...storeIdKeyByVoucher.orderIds.map((orderId) =>
                     this.prisma.orderFlow.create({
                         data: {
                             id: uuidv4(),
@@ -374,7 +374,6 @@ export class OrderService {
                 result
             }
         } catch (err) {
-            console.log('error', err, typeof err)
             if (err instanceof Prisma.PrismaClientKnownRequestError) {
                 throw new BadRequestException('Đã có lỗi trong quá trình tạo đơn hàng')
             }
