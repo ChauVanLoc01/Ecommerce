@@ -13,7 +13,7 @@
         "product": "cross-env NODE_ENV=product nest start products --watch",
         "order": "cross-env NODE_ENV=order nest start orders --watch",
         "store": "cross-env NODE_ENV=store nest start store --watch",
-        "socket": "nest start socket --watch",
+        "socket": "cross-env NODE_ENV=socket nest start socket --watch",
         "dev": "nest start --watch",
         "debug": "nest start --debug --watch",
         "prod": "node dist/apps/users/main",
@@ -67,6 +67,7 @@
         "prisma": "^5.13.0",
         "reflect-metadata": "^0.1.13",
         "rxjs": "^7.8.1",
+        "socket.io": "^4.7.5",
         "uuid": "^9.0.1"
     },
     "devDependencies": {

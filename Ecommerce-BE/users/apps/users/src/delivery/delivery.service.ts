@@ -133,6 +133,8 @@ export class DeliveryService {
         userId: string,
         deliveryInformationId: string
     ): Promise<MessageReturn> {
+        console.log('userId', userId)
+        console.log('deliveryId', deliveryInformationId)
         const deliveryExist = await this.prisma.deliveryInformation.findUnique({
             where: {
                 id: deliveryInformationId,

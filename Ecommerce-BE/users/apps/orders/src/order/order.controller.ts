@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common'
-import { MessagePattern, Payload } from '@nestjs/microservices'
+import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices'
 import { ApiBearerAuth } from '@nestjs/swagger'
-import { checkVoucherExistInOrder, getOrderByRating } from 'common/constants/event.constant'
+import { getOrderByRating, processOrder } from 'common/constants/event.constant'
 import { CurrentUser } from 'common/decorators/current_user.decorator'
 import { Public } from 'common/decorators/public.decorator'
 import { Roles } from 'common/decorators/roles.decorator'
@@ -9,7 +9,7 @@ import { Role } from 'common/enums/role.enum'
 import { JwtGuard } from 'common/guards/jwt.guard'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
 import { AnalyticsOrderDTO } from '../dtos/analytics_order.dto'
-import { CreateOrderDTO } from '../dtos/create_order.dto'
+import { CreateOrderDTO, CreateOrderType } from '../dtos/create_order.dto'
 import { QueryOrderDTO } from '../dtos/query-order.dto'
 import { UpdateOrderDTO, UpdateStatusOrderDTO } from '../dtos/update_order.dto'
 import { OrderService } from './order.service'
@@ -19,6 +19,12 @@ import { OrderService } from './order.service'
 @Controller('order')
 export class OrderController {
     constructor(private readonly ordersService: OrderService) {}
+
+    @Public()
+    @Get('done')
+    doneTask() {
+        return this.ordersService.doneTask()
+    }
 
     @ApiBearerAuth()
     @Roles(Role.USER)
@@ -92,6 +98,12 @@ export class OrderController {
     @Post('user-order')
     createOrder(@CurrentUser() user: CurrentUserType, @Body() body: CreateOrderDTO) {
         return this.ordersService.createOrder(user, body)
+    }
+
+    @Public()
+    @EventPattern(processOrder)
+    processOrder(data: { user: CurrentUserType; body: CreateOrderType }) {
+        return this.ordersService.processOrder(data.user, data.body)
     }
 
     @Roles(Role.USER)

@@ -9,10 +9,8 @@ import * as cookieParser from 'cookie-parser'
 export async function bootstrap(mainModule: any) {
     try {
         const app = await NestFactory.create(mainModule)
-        console.log('1')
 
         const configService = app.get(ConfigService)
-        console.log('2')
 
         console.log('uri', configService.get<string>('rabbitmq.uri'))
         console.log('queue_name', configService.get<string>('rabbitmq.queue_name'))
@@ -48,20 +46,28 @@ export async function bootstrap(mainModule: any) {
                 transform: true,
                 whitelist: true,
                 exceptionFactory(errors: ValidationError[]) {
-                    const err = errors.map((err) => {
-                        if (err.constraints) {
-                            return [err.property, Object.values(err.constraints)] as [
-                                string,
-                                string[]
-                            ]
-                        }
-                        return [err.property, Object.values(err.children[0].constraints)]
-                    })
-                    throw new BadRequestException({
-                        message: err,
-                        error: 'Bad Request',
-                        statusCode: 400
-                    })
+                    try {
+                        const err = errors.map((err) => {
+                            if (err.constraints) {
+                                return [err.property, Object.values(err.constraints)] as [
+                                    string,
+                                    string[]
+                                ]
+                            }
+                            return [err.property, Object.values(err.children[0].constraints)]
+                        })
+                        throw new BadRequestException({
+                            message: err,
+                            error: 'Bad Request',
+                            statusCode: 400
+                        })
+                    } catch (err) {
+                        throw new BadRequestException({
+                            message: 'Lỗi dữ liệu đầu vào',
+                            error: 'Bad Request',
+                            statusCode: 400
+                        })
+                    }
                 }
             })
         )

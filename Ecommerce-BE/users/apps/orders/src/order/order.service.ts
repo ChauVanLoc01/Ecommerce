@@ -2,7 +2,6 @@ import { PrismaService } from '@app/common/prisma/prisma.service'
 import { CACHE_MANAGER } from '@nestjs/cache-manager'
 import {
     BadRequestException,
-    HttpException,
     Inject,
     Injectable,
     InternalServerErrorException,
@@ -10,13 +9,15 @@ import {
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { ClientProxy } from '@nestjs/microservices'
-import { Prisma, Product } from '@prisma/client'
+import { Product } from '@prisma/client'
 import { Cache } from 'cache-manager'
 import {
     checkDeliveryInformationId,
     checkStoreExist,
     checkVoucherExistToCreateOrder,
     getAllProductWithProductOrder,
+    processOrder,
+    statusOfOrder,
     updateQuantityProducts,
     updateQuantiyProductsWhenCancelOrder
 } from 'common/constants/event.constant'
@@ -38,9 +39,11 @@ export class OrderService {
         private readonly prisma: PrismaService,
         private readonly configService: ConfigService,
         @Inject(CACHE_MANAGER) private cacheManager: Cache,
+        @Inject('ORDER_SERVICE') private orderClient: ClientProxy,
         @Inject('PRODUCT_SERVICE') private productClient: ClientProxy,
         @Inject('USER_SERVICE') private userClient: ClientProxy,
-        @Inject('STORE_SERVICE') private storeClient: ClientProxy
+        @Inject('STORE_SERVICE') private storeClient: ClientProxy,
+        @Inject('SOCKET_SERVICE') private socketClient: ClientProxy
     ) {}
 
     async getAllOrderByUser(user: CurrentUserType, query: QueryOrderType): Promise<Return> {
@@ -218,6 +221,30 @@ export class OrderService {
 
     async createOrder(user: CurrentUserType, body: CreateOrderType): Promise<Return> {
         try {
+            this.orderClient.emit(processOrder, { user, body })
+            return {
+                msg: 'Đơn hàng đang được xử lý',
+                result: undefined
+            }
+        } catch (err) {
+            throw new InternalServerErrorException('Lỗi tạo đơn hàng')
+        }
+    }
+
+    async processOrder(user: CurrentUserType, body: CreateOrderType) {
+        var emitStatusOfOrder = (msg: string, action = false, result?: string[]) => {
+            this.socketClient.emit<
+                string,
+                { id: string; msg: string; action: boolean; result: string[] | null }
+            >(statusOfOrder, {
+                id: body.actionId,
+                msg,
+                action,
+                result: result || null
+            })
+            return
+        }
+        try {
             const { id } = user
             const { orderParameters, deliveryInformationId, globalVoucherId } = body
 
@@ -316,15 +343,15 @@ export class OrderService {
             ])
 
             if (!deliveryReturn.action) {
-                throw new NotFoundException(deliveryReturn.msg)
+                emitStatusOfOrder(deliveryReturn.msg)
             }
 
             if (!storeReturn.action) {
-                throw new BadRequestException(storeReturn.msg)
+                emitStatusOfOrder(storeReturn.msg)
             }
 
             if (!productReturn.action) {
-                throw new BadRequestException(productReturn.msg)
+                emitStatusOfOrder(productReturn.msg)
             }
 
             let tmp = []
@@ -366,18 +393,12 @@ export class OrderService {
             ])
 
             if (!voucherReturn.action) {
-                throw new BadRequestException(voucherReturn.msg)
+                emitStatusOfOrder(voucherReturn.msg)
             }
 
-            return {
-                msg: 'Tạo đơn hàng thành công',
-                result
-            }
+            emitStatusOfOrder('Đặt hàng thành công', true, storeIdKeyByVoucher.orderIds)
         } catch (err) {
-            if (err instanceof Prisma.PrismaClientKnownRequestError) {
-                throw new BadRequestException('Đã có lỗi trong quá trình tạo đơn hàng')
-            }
-            throw new HttpException(err.response.message, err.status)
+            emitStatusOfOrder('Lỗi Server')
         }
     }
 
@@ -648,5 +669,12 @@ export class OrderService {
                 status: OrderStatus.SUCCESS
             }
         })
+    }
+
+    async doneTask() {
+        setTimeout(() => {
+            this.socketClient.emit('done', 'ok')
+            console.log('ok')
+        }, 5000)
     }
 }

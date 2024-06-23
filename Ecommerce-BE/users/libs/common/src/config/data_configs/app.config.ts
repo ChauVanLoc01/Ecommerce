@@ -21,7 +21,5 @@ export default registerAs('app', () => ({
 
     aws_access_key_id: process.env.ACCESS_KEY_ID,
 
-    aws_secret_access_key: process.env.SECRET_ACCESS_KEY,
-
-    socket_port: process.env.APP_SOCKET_PORT
+    aws_secret_access_key: process.env.SECRET_ACCESS_KEY
 }))

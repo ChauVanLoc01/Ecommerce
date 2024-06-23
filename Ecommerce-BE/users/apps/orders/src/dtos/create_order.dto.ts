@@ -81,6 +81,11 @@ export class CreateOrderDTO {
     @IsString()
     @IsOptional()
     globalVoucherId: string
+
+    @ApiProperty()
+    @IsString()
+    @IsNotEmpty()
+    actionId: string
 }
 
 export type CreateOrderType = InstanceType<typeof CreateOrderDTO>
