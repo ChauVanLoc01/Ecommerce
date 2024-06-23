@@ -13,7 +13,8 @@ import { StoreFetching } from 'src/apis/store'
 import { VoucherFetching } from 'src/apis/voucher.api'
 import { AppContext } from 'src/contexts/AppContext'
 import useStep from 'src/hooks/useStep'
-import { ProductConvert } from 'src/types/context.type'
+import { ProductContextExtends, ProductConvert } from 'src/types/context.type'
+import { OrderBody } from 'src/types/order.type'
 import { VoucherWithCondition } from 'src/types/voucher.type'
 import CheckoutHeader from './CheckoutHeader'
 import CheckoutSummary from './CheckoutSummary'
@@ -26,7 +27,7 @@ const Checkout = () => {
     const { products, ids } = useContext(AppContext)
     const [addressId, setAddressId] = useState<string>('')
     const navigate = useNavigate()
-    const { step, handleNextStep, handlePreviousStep } = useStep()
+    const { step, handleNextStep, handlePreviousStep, setStep } = useStep()
     const [orderSuccess, setOrderSuccess] = useState<boolean>(false)
     const [voucherIds, setVoucherIds] = useState<{ [storeId: string]: string } | undefined>(undefined)
 
@@ -244,7 +245,46 @@ const Checkout = () => {
         }
     })
 
-    const handleOrder = () => {}
+    const handleOrder = () => {
+        let priceWithStore = priceLatest?.summary
+
+        if (!priceWithStore) {
+            toast.warning('Sản phẩm trống')
+            return
+        }
+
+        let earchOfStoreId = Object.keys(priceWithStore)
+
+        if (!earchOfStoreId) {
+            toast.warning('Sản phẩm trống')
+        }
+
+        const orderParameters: OrderBody['orderParameters'] = earchOfStoreId.map((storeId) => {
+            let { discount, pay, total } = priceWithStore[storeId]
+
+            return {
+                storeId,
+                total,
+                discount,
+                pay,
+                voucherId: voucherIds?.[storeId],
+                orders: Object.values(
+                    productLatest?.checked[storeId] as {
+                        [productId: string]: ProductContextExtends
+                    }
+                ).map<OrderBody['orderParameters'][number]['orders'][number]>(({ priceAfter, productId, buy }) => ({
+                    price_after: priceAfter,
+                    productId,
+                    quantity: buy
+                }))
+            }
+        })
+
+        mutate({
+            orderParameters,
+            deliveryInformationId: addressId
+        })
+    }
 
     const handleRemoveVoucher = (storeId: string, isUncheckedAll: boolean) => () => {
         if (voucherIds && voucherIds[storeId] && isUncheckedAll) {
@@ -312,7 +352,12 @@ const Checkout = () => {
                     )}
                 </>
             </motion.section>
-            <CreateOrder data={createdOrders?.data.result || []} open={orderSuccess} setOpen={setOrderSuccess} />
+            <CreateOrder
+                data={createdOrders?.data.result || []}
+                setStep={setStep}
+                open={orderSuccess}
+                setOpen={setOrderSuccess}
+            />
         </>
     )
 }

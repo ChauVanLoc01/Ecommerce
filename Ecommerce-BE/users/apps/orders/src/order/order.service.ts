@@ -2,6 +2,7 @@ import { PrismaService } from '@app/common/prisma/prisma.service'
 import { CACHE_MANAGER } from '@nestjs/cache-manager'
 import {
     BadRequestException,
+    HttpException,
     Inject,
     Injectable,
     InternalServerErrorException,
@@ -9,7 +10,7 @@ import {
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { ClientProxy } from '@nestjs/microservices'
-import { Prisma, Product, Store } from '@prisma/client'
+import { Prisma, Product } from '@prisma/client'
 import { Cache } from 'cache-manager'
 import {
     checkDeliveryInformationId,
@@ -21,7 +22,7 @@ import {
 } from 'common/constants/event.constant'
 import { OrderStatus } from 'common/enums/orderStatus.enum'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
-import { Return } from 'common/types/result.type'
+import { MessageReturn, Return } from 'common/types/result.type'
 import { addHours, subDays } from 'date-fns'
 import { isUndefined, max, omitBy, sumBy } from 'lodash'
 import { firstValueFrom } from 'rxjs'
@@ -220,37 +221,73 @@ export class OrderService {
             const { id } = user
             const { orderParameters, deliveryInformationId, globalVoucherId } = body
 
-            let storeVoucherIds = []
+            let productIds: {
+                storeId: string
+                note?: string
+                productId: string
+                quantity: number
+            }[] = []
+
+            let storeIdKeyByVoucher: {
+                orderIds: string[]
+                voucherIds: string[]
+                mixedVoucher: {
+                    orderId: string
+                    voucherId: string
+                }[]
+            } = { orderIds: [], mixedVoucher: [], voucherIds: [] }
             const stores = orderParameters.map((parameter) => {
-                storeVoucherIds.push(parameter.voucherId)
+                let orderId = uuidv4()
+                let arr = []
+                let mixed = []
+
+                if (globalVoucherId) {
+                    arr.push(globalVoucherId)
+                    mixed.push({
+                        orderId,
+                        voucherId: globalVoucherId
+                    })
+                }
+                if (parameter.voucherId) {
+                    arr.push(parameter.voucherId)
+                    mixed.push({
+                        orderId,
+                        voucherId: parameter.voucherId
+                    })
+                }
+
+                storeIdKeyByVoucher = {
+                    orderIds: [...storeIdKeyByVoucher.orderIds, orderId],
+                    voucherIds: [...storeIdKeyByVoucher.voucherIds, ...arr],
+                    mixedVoucher: [...storeIdKeyByVoucher.mixedVoucher, ...mixed]
+                }
+
+                parameter.orders.forEach((e) => {
+                    productIds.push({
+                        productId: e.productId,
+                        quantity: e.quantity,
+                        storeId: parameter.storeId
+                    })
+                })
+
                 return parameter.storeId
             })
 
-            const [
-                isDeliveryInformationExist,
-                isStoresExist,
-                updatedProducts,
-                updatedVoucher,
-                ...result
-            ] = await Promise.all([
-                firstValueFrom(
+            const [deliveryReturn, storeReturn, productReturn, ...result] = await Promise.all([
+                firstValueFrom<MessageReturn>(
                     this.userClient.send(checkDeliveryInformationId, {
-                        user,
+                        userId: id,
                         deliveryInformationId
                     })
                 ),
-                firstValueFrom(this.storeClient.send<Store[], string[]>(checkStoreExist, stores)),
-                firstValueFrom(this.productClient.send(updateQuantityProducts, orderParameters)),
+                firstValueFrom(this.storeClient.send<MessageReturn>(checkStoreExist, stores)),
                 firstValueFrom(
-                    this.storeClient.send(checkVoucherExistToCreateOrder, {
-                        global: globalVoucherId,
-                        store: storeVoucherIds
-                    })
+                    this.productClient.send<MessageReturn>(updateQuantityProducts, productIds)
                 ),
-                ...orderParameters.map((parameter) =>
+                ...orderParameters.map((parameter, idx) =>
                     this.prisma.order.create({
                         data: {
-                            id: uuidv4(),
+                            id: storeIdKeyByVoucher.orderIds[idx],
                             deliveryInformationId,
                             total: parameter.total,
                             discount: parameter.discount,
@@ -259,6 +296,7 @@ export class OrderService {
                             storeId: parameter.storeId,
                             note: parameter.note,
                             userId: id,
+                            createdAt: new Date(),
                             ProductOrder: {
                                 createMany: {
                                     data: parameter.orders.map((order) => {
@@ -277,47 +315,70 @@ export class OrderService {
                 )
             ])
 
-            if (!isDeliveryInformationExist) {
-                throw new NotFoundException('Không tồn tại thông tin vận chuyển')
+            if (!deliveryReturn.action) {
+                throw new NotFoundException(deliveryReturn.msg)
             }
 
-            const convertStoreExist = isStoresExist.filter((e) => e)
-
-            if (stores.length !== convertStoreExist.length) {
-                throw new BadRequestException('Lỗi cửa hàng không tồn tại')
+            if (!storeReturn.action) {
+                throw new BadRequestException(storeReturn.msg)
             }
 
-            if (typeof updatedProducts === 'string') {
-                throw new BadRequestException(updatedProducts)
+            if (!productReturn.action) {
+                throw new BadRequestException(productReturn.msg)
             }
 
-            if (!(updatedVoucher as Return).result) {
-                throw new BadRequestException((updatedVoucher as Return).msg)
+            let tmp = []
+
+            if (storeIdKeyByVoucher.voucherIds.length) {
+                tmp.push(
+                    storeIdKeyByVoucher.mixedVoucher.map((e) =>
+                        this.prisma.orderVoucher.create({
+                            data: {
+                                id: uuidv4(),
+                                orderId: e.orderId,
+                                voucherId: e.voucherId,
+                                createdAt: new Date()
+                            }
+                        })
+                    )
+                )
             }
 
-            await Promise.all(
-                result.map((e) =>
+            const [voucherReturn, ..._] = await Promise.all([
+                firstValueFrom<MessageReturn>(
+                    this.storeClient.send(
+                        checkVoucherExistToCreateOrder,
+                        storeIdKeyByVoucher.voucherIds
+                    )
+                ),
+                storeIdKeyByVoucher.orderIds.map((orderId) =>
                     this.prisma.orderFlow.create({
                         data: {
                             id: uuidv4(),
                             status: OrderStatus.WAITING_CONFIRM,
-                            createdBy: user.id,
-                            orderId: e.id,
-                            createdAt: new Date().toISOString()
+                            createdBy: id,
+                            orderId,
+                            createdAt: new Date()
                         }
                     })
-                )
-            )
+                ),
+                ...tmp
+            ])
+
+            if (!voucherReturn.action) {
+                throw new BadRequestException(voucherReturn.msg)
+            }
 
             return {
                 msg: 'Tạo đơn hàng thành công',
                 result
             }
         } catch (err) {
+            console.log('error', err, typeof err)
             if (err instanceof Prisma.PrismaClientKnownRequestError) {
                 throw new BadRequestException('Đã có lỗi trong quá trình tạo đơn hàng')
             }
-            throw new BadRequestException(err.message)
+            throw new HttpException(err.response.message, err.status)
         }
     }
 
@@ -499,19 +560,19 @@ export class OrderService {
         }
     }
 
-    async checkVoucherExistInVoucher(voucherId: string) {
-        const voucherExist = await this.prisma.order.findMany({
-            where: {
-                voucherId
-            }
-        })
+    // async checkVoucherExistInVoucher(voucherId: string) {
+    //     const voucherExist = await this.prisma.order.findMany({
+    //         where: {
+    //             voucherId
+    //         }
+    //     })
 
-        if (voucherExist.length > 0) {
-            return 'Voucher đã được sử dụng'
-        }
+    //     if (voucherExist.length > 0) {
+    //         return 'Voucher đã được sử dụng'
+    //     }
 
-        return ['ok']
-    }
+    //     return ['ok']
+    // }
 
     async receiptAnalyticByDate(user: CurrentStoreType, body: AnalyticsOrderDTO): Promise<Return> {
         const { dates } = body

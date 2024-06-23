@@ -73,16 +73,15 @@ model Order {
   discount              Float?              @db.Float
   pay                   Float               @db.Float
   note                  String?             @db.VarChar(200)
-  voucherId             String?             @db.VarChar(50)
   deliveryInformationId String              @db.VarChar(100)
   status                String              @db.Char(20)
   createdAt             DateTime?           @default(now()) @db.Timestamp(0)
   updatedAt             DateTime?           @db.Timestamp(0)
   User                  User                @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Order_ibfk_1")
-  Voucher               Voucher?            @relation(fields: [voucherId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Order_ibfk_2")
   Store                 Store               @relation(fields: [storeId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Order_ibfk_3")
   DeliveryInformation   DeliveryInformation @relation(fields: [deliveryInformationId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Order_ibfk_4")
   OrderFlow             OrderFlow[]
+  OrderVoucher          OrderVoucher[]
   Payment               Payment[]
   ProductOrder          ProductOrder[]
   Rating                Rating[]
@@ -90,7 +89,6 @@ model Order {
   @@index([deliveryInformationId], map: "deliveryInformationId")
   @@index([storeId], map: "storeId")
   @@index([userId], map: "userId")
-  @@index([voucherId], map: "voucherId")
 }
 
 model OrderFlow {
@@ -389,7 +387,7 @@ model Voucher {
   updatedAt                DateTime?                 @db.Timestamp(0)
   categoryConditionId      String?                   @db.VarChar(50)
   priceConditionId         String?                   @db.VarChar(50)
-  Order                    Order[]
+  OrderVoucher             OrderVoucher[]
   Product                  Product[]
   UserVoucher              UserVoucher[]
   Store                    Store?                    @relation(fields: [storeId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Voucher_ibfk_1")
@@ -469,4 +467,16 @@ model StorePromotion {
   @@index([createdBy], map: "createdBy")
   @@index([salePromotionId], map: "salePromotionId")
   @@index([storeId], map: "storeId")
+}
+
+model OrderVoucher {
+  id        String   @id @db.VarChar(50)
+  orderId   String   @db.VarChar(50)
+  voucherId String   @db.VarChar(50)
+  createdAt DateTime @db.Timestamp(0)
+  Order     Order    @relation(fields: [orderId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "OrderVoucher_ibfk_1")
+  Voucher   Voucher  @relation(fields: [voucherId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "OrderVoucher_ibfk_2")
+
+  @@index([orderId], map: "orderId")
+  @@index([voucherId], map: "voucherId")
 }

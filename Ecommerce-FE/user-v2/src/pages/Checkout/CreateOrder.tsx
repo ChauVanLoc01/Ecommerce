@@ -1,6 +1,7 @@
 import { AlertDialog, Badge, Button, Flex, Text } from '@radix-ui/themes'
 import { ColumnDef } from '@tanstack/react-table'
 import { format } from 'date-fns'
+import { useEffect } from 'react'
 import { BiSolidSortAlt } from 'react-icons/bi'
 import Table from 'src/components/Table'
 import { OrderStatus } from 'src/constants/order-status'
@@ -11,9 +12,10 @@ type CreateOrderProps = {
     open: boolean
     setOpen: React.Dispatch<React.SetStateAction<boolean>>
     data: Order[]
+    setStep: React.Dispatch<React.SetStateAction<number>>
 }
 
-const CreateOrder = ({ open, setOpen, data }: CreateOrderProps) => {
+const CreateOrder = ({ open, setOpen, data, setStep }: CreateOrderProps) => {
     const columns: ColumnDef<Order>[] = [
         {
             accessorKey: 'Mã đơn hàng',
@@ -97,6 +99,10 @@ const CreateOrder = ({ open, setOpen, data }: CreateOrderProps) => {
             )
         }
     ]
+
+    useEffect(() => {
+        return () => setStep(1)
+    }, [])
 
     return (
         <AlertDialog.Root open={open} onOpenChange={setOpen}>

@@ -65,7 +65,10 @@ export class VoucherController {
 
     @Public()
     @MessagePattern(checkVoucherExistToCreateOrder)
-    checkVoucherExistToCreateOrder(@Payload() payload: { global?: string; store?: string[] }) {
+    checkVoucherExistToCreateOrder(
+        @Payload()
+        payload: string[]
+    ) {
         return this.voucherService.checkVoucherExistToCreateOrder(payload)
     }
 }

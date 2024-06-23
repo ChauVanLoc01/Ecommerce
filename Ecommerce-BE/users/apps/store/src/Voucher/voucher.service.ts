@@ -8,12 +8,12 @@ import {
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { ClientProxy } from '@nestjs/microservices'
-import { Prisma, Voucher } from '@prisma/client'
+import { Prisma } from '@prisma/client'
 import { checkVoucherExistInOrder } from 'common/constants/event.constant'
 import { VoucherType } from 'common/constants/voucher.constant'
 import { Status } from 'common/enums/status.enum'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
-import { Return } from 'common/types/result.type'
+import { MessageReturn, Return } from 'common/types/result.type'
 import { addHours, addMinutes } from 'date-fns'
 import { isUndefined, omitBy } from 'lodash'
 import { firstValueFrom } from 'rxjs'
@@ -417,57 +417,30 @@ export class VoucherService {
         }
     }
 
-    async checkVoucherExistToCreateOrder(body: {
-        global?: string
-        store?: string[]
-    }): Promise<Return> {
+    async checkVoucherExistToCreateOrder(body: string[]): Promise<MessageReturn> {
         try {
-            const { global, store } = body
-
-            var voucherPromiseAll: Prisma.Prisma__VoucherClient<Voucher>[] = []
-
-            if (global) {
-                voucherPromiseAll.push(
-                    this.prisma.voucher.findUnique({
-                        where: {
-                            id: global,
-                            type: VoucherType.global
-                        }
-                    })
-                )
-            }
-
-            if (store.length) {
-                voucherPromiseAll.push(
-                    ...store.map((id) =>
+            const voucherExist = (
+                await Promise.all(
+                    body.map((id) =>
                         this.prisma.voucher.findUnique({
                             where: {
-                                id,
-                                type: VoucherType.store
+                                id
                             }
                         })
                     )
                 )
-            }
+            ).every((e) => e && e.currentQuantity >= 1)
 
-            const [globalVoucher, ...storeVoucher] = await Promise.all(voucherPromiseAll)
-
-            if (!globalVoucher.currentQuantity) {
+            if (!voucherExist) {
                 return {
-                    msg: 'Voucher Shopee đã hết',
-                    result: false
+                    msg: 'Mã giảm giá không tồn tại',
+                    action: false,
+                    result: null
                 }
             }
 
-            if (storeVoucher.every((e) => !e || !e.currentQuantity)) {
-                return {
-                    msg: 'Voucher của cửa hàng đã hết',
-                    result: false
-                }
-            }
-
-            await Promise.all(
-                [globalVoucher, ...storeVoucher].map(({ id }) =>
+            await Promise.all([
+                body.map((id) =>
                     this.prisma.voucher.update({
                         where: {
                             id
@@ -479,16 +452,18 @@ export class VoucherService {
                         }
                     })
                 )
-            )
+            ])
 
             return {
                 msg: 'ok',
-                result: true
+                action: true,
+                result: null
             }
         } catch (err) {
             return {
-                msg: 'Lỗi BE',
-                result: false
+                msg: 'Lỗi cập nhật voucher',
+                action: false,
+                result: null
             }
         }
     }

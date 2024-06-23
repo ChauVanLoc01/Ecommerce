@@ -7,77 +7,79 @@ import { ValidationError } from 'class-validator'
 import * as cookieParser from 'cookie-parser'
 
 export async function bootstrap(mainModule: any) {
-  try {
-    const app = await NestFactory.create(mainModule)
-    console.log('1')
+    try {
+        const app = await NestFactory.create(mainModule)
+        console.log('1')
 
-    const configService = app.get(ConfigService)
-    console.log('2')
+        const configService = app.get(ConfigService)
+        console.log('2')
 
-    console.log('uri', configService.get<string>('rabbitmq.uri'))
-    console.log('queue_name', configService.get<string>('rabbitmq.queue_name'))
+        console.log('uri', configService.get<string>('rabbitmq.uri'))
+        console.log('queue_name', configService.get<string>('rabbitmq.queue_name'))
 
-    app.connectMicroservice<MicroserviceOptions>({
-      transport: Transport.RMQ,
-      options: {
-        urls: [configService.get<string>('rabbitmq.uri')],
-        queue: configService.get<string>('rabbitmq.queue_name'),
-        queueOptions: {
-          durable: true
-        },
-        noAck: false
-      }
-    })
-
-    app.enableCors()
-
-    app.use(cookieParser())
-
-    const swaggerConfig = new DocumentBuilder()
-      .setTitle('Store Api')
-      .setDescription('The api for store')
-      .setVersion('1.0')
-      .addBearerAuth()
-      .build()
-
-    const document = SwaggerModule.createDocument(app, swaggerConfig)
-
-    SwaggerModule.setup('docs', app, document)
-
-    app.useGlobalPipes(
-      new ValidationPipe({
-        transform: true,
-        whitelist: true,
-        exceptionFactory(errors: ValidationError[]) {
-          const err = errors.map((err) => {
-            if (err.constraints) {
-              return [err.property, Object.values(err.constraints)] as [string, string[]]
+        app.connectMicroservice<MicroserviceOptions>({
+            transport: Transport.RMQ,
+            options: {
+                urls: [configService.get<string>('rabbitmq.uri')],
+                queue: configService.get<string>('rabbitmq.queue_name'),
+                queueOptions: {
+                    durable: true
+                }
             }
-            return [err.property, Object.values(err.children[0].constraints)]
-          })
-          throw new BadRequestException({
-            message: err,
-            error: 'Bad Request',
-            statusCode: 400
-          })
-        }
-      })
-    )
+        })
 
-    app.startAllMicroservices()
+        app.enableCors()
 
-    app.listen(configService.get('app.port'))
+        app.use(cookieParser())
 
-    console.log(
-      `App running with RMQ: ${configService.get<string>(
-        'rabbitmq.uri'
-      )} with ${configService.get<string>('rabbitmq.queue_name')}`
-    )
+        const swaggerConfig = new DocumentBuilder()
+            .setTitle('Store Api')
+            .setDescription('The api for store')
+            .setVersion('1.0')
+            .addBearerAuth()
+            .build()
 
-    console.log('Elasticsearch run at ', configService.get<string>('elasticsearch.node'))
+        const document = SwaggerModule.createDocument(app, swaggerConfig)
 
-    console.log(`App running at endpoint: http://localhost:${configService.get('app.port')}`)
-  } catch (err) {
-    console.log('Error:::', err.message)
-  }
+        SwaggerModule.setup('docs', app, document)
+
+        app.useGlobalPipes(
+            new ValidationPipe({
+                transform: true,
+                whitelist: true,
+                exceptionFactory(errors: ValidationError[]) {
+                    const err = errors.map((err) => {
+                        if (err.constraints) {
+                            return [err.property, Object.values(err.constraints)] as [
+                                string,
+                                string[]
+                            ]
+                        }
+                        return [err.property, Object.values(err.children[0].constraints)]
+                    })
+                    throw new BadRequestException({
+                        message: err,
+                        error: 'Bad Request',
+                        statusCode: 400
+                    })
+                }
+            })
+        )
+
+        app.startAllMicroservices()
+
+        app.listen(configService.get('app.port'))
+
+        console.log(
+            `App running with RMQ: ${configService.get<string>(
+                'rabbitmq.uri'
+            )} with ${configService.get<string>('rabbitmq.queue_name')}`
+        )
+
+        console.log('Elasticsearch run at ', configService.get<string>('elasticsearch.node'))
+
+        console.log(`App running at endpoint: http://localhost:${configService.get('app.port')}`)
+    } catch (err) {
+        console.log('Error:::', err.message)
+    }
 }

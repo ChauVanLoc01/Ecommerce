@@ -126,7 +126,8 @@ export class ProductController {
         data: {
             storeId: string
             note?: string
-            orders: { productId: string; quantity: number }[]
+            productId: string
+            quantity: number
         }[]
     ) {
         return this.productsService.updateQuantityProducts(data)
