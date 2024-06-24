@@ -440,7 +440,7 @@ export class VoucherService {
             }
 
             await Promise.all([
-                body.map((id) =>
+                ...body.map((id) =>
                     this.prisma.voucher.update({
                         where: {
                             id

@@ -9,3 +9,7 @@ export const exitEvent = 'exit-web'
 export const startLoadingLoader = 'startLoadingLoader'
 
 export const endLoadingLoader = 'endLoadingLoader'
+
+export const socket_connect = 'connect'
+
+export const socket_disconnection = 'disconnect'

@@ -1,5 +1,3 @@
-import { Inject } from '@nestjs/common'
-import { ClientProxy, MessagePattern } from '@nestjs/microservices'
 import {
     ConnectedSocket,
     MessageBody,
@@ -10,12 +8,17 @@ import {
     WebSocketServer
 } from '@nestjs/websockets'
 import { Server, Socket } from 'socket.io'
-import { v4 as uuidv4 } from 'uuid'
 
-@WebSocketGateway()
+@WebSocketGateway({
+    cors: {
+        origin: '*'
+    }
+})
 export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @WebSocketServer()
     server: Server
+
+    constructor() {}
 
     @SubscribeMessage('order')
     handleEvent(@ConnectedSocket() socket: Socket, @MessageBody() id: string) {

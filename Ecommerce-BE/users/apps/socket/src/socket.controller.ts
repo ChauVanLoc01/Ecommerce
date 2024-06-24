@@ -1,4 +1,4 @@
-import { Controller } from '@nestjs/common'
+import { Controller, Get } from '@nestjs/common'
 import { EventPattern } from '@nestjs/microservices'
 import { statusOfOrder } from 'common/constants/event.constant'
 import { SocketGateway } from './socket.gateway'
@@ -6,6 +6,11 @@ import { SocketGateway } from './socket.gateway'
 @Controller()
 export class SocketController {
     constructor(private readonly socketGateway: SocketGateway) {}
+
+    @Get()
+    healthyCheck() {
+        return 'Socket service is still working'
+    }
 
     @EventPattern(statusOfOrder)
     done(payload: { id: string; msg: string; action: boolean; result: string[] | null }) {
