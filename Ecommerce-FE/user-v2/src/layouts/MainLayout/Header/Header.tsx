@@ -64,7 +64,7 @@ const Header = () => {
                                     }
                                 )}
                             >
-                                {ids?.all && ids.all.length < 10 ? ids?.all.length : '9+'}
+                                {ids?.all && ids.all.length > 9 ? '9+' : ids?.all.length || 0}
                             </span>
                         </div>
                     }

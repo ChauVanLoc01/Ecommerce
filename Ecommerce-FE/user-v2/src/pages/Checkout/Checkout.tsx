@@ -1,254 +1,62 @@
-import { useContext, useMemo, useState } from 'react'
+import { useContext, useRef, useState } from 'react'
 
 import { motion } from 'framer-motion'
 
 import { Button, Spinner } from '@radix-ui/themes'
-import { useMutation, useQueries, useQuery } from '@tanstack/react-query'
-import { keyBy, sumBy } from 'lodash'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
-import { OrderFetching } from 'src/apis/order'
-import { productFetching } from 'src/apis/product'
-import { StoreFetching } from 'src/apis/store'
-import { VoucherFetching } from 'src/apis/voucher.api'
 import { AppContext } from 'src/contexts/AppContext'
 import useStep from 'src/hooks/useStep'
-import { ProductContextExtends, ProductConvert } from 'src/types/context.type'
+import { ProductContext } from 'src/types/context.type'
 import { OrderBody } from 'src/types/order.type'
-import { VoucherWithCondition } from 'src/types/voucher.type'
 import CheckoutHeader from './CheckoutHeader'
 import CheckoutSummary from './CheckoutSummary'
 import CreateOrder from './CreateOrder'
 import Step1 from './Step1'
 import Step2 from './Step2'
 import Step3 from './Step3'
+import useDataCheckout from './useDataCheckout'
+
+const CheckOutEmpty = () => {
+    const navigate = useNavigate()
+    return (
+        <div className='flex flex-col items-center gap-y-4'>
+            <div className='w-1/4'>
+                <img src='https://cdn-icons-png.flaticon.com/512/13637/13637462.png' className='object-cover' alt='' />
+            </div>
+            <Button variant='soft' size={'3'} onClick={() => navigate('/')}>
+                Tiếp tục mua hàng
+            </Button>
+        </div>
+    )
+}
 
 const Checkout = () => {
-    const { products, ids } = useContext(AppContext)
+    const { products, ids, isCanOrder, actionId, setProducts } = useContext(AppContext)
+
+    if (!ids) {
+        return <CheckOutEmpty />
+    }
     const [addressId, setAddressId] = useState<string>('')
-    const navigate = useNavigate()
     const { step, handleNextStep, handlePreviousStep, setStep } = useStep()
     const [orderSuccess, setOrderSuccess] = useState<boolean>(false)
     const [voucherIds, setVoucherIds] = useState<{ [storeId: string]: string } | undefined>(undefined)
 
-    if (!ids) {
-        return (
-            <div className='flex flex-col items-center gap-y-4'>
-                <div className='w-1/4'>
-                    <img
-                        src='https://cdn-icons-png.flaticon.com/512/13637/13637462.png'
-                        className='object-cover'
-                        alt=''
-                    />
-                </div>
-                <Button variant='soft' size={'3'} onClick={() => navigate('/')}>
-                    Tiếp tục mua hàng
-                </Button>
-            </div>
-        )
-    }
-
-    const { data: refreshProducts } = useQuery({
-        queryKey: ['refreshProduct', JSON.stringify(ids.all)],
-        queryFn: () => productFetching.refreshProduct(ids.all),
-        refetchInterval: 1000 * 10,
-        select: (data) => data.data.result,
-        placeholderData: (old) => old
-    })
-
-    const { data: refreshStores } = useQuery({
-        queryKey: ['refreshStore', JSON.stringify(ids.storeIds)],
-        queryFn: () => StoreFetching.refreshStore(ids.storeIds),
-        refetchInterval: 1000 * 10,
-        select: (data) => data.data.result,
-        placeholderData: (old) => old
-    })
-
-    const storeVouchers = useQueries({
-        queries: ids.storeCheckedIds.map((storeId) => ({
-            queryKey: ['storeVoucher', storeId],
-            queryFn: () => VoucherFetching.getVoucherByStoreId(storeId),
-            refetchInterval: 1000 * 5
-        }))
-    })
-
-    const productLatest = useMemo(() => {
-        if (!refreshProducts || !ids) return undefined
-        return ids.storeIds.reduce(
-            (
-                acum: {
-                    checked: ProductConvert
-                    all: ProductConvert
-                },
-                storeId
-            ) => {
-                let tmp = products.products[storeId].reduce(
-                    (
-                        subAcum: {
-                            checked: ProductConvert[string]
-                            all: ProductConvert[string]
-                        },
-                        product
-                    ) => {
-                        return {
-                            ...subAcum,
-                            [product.checked ? 'checked' : 'all']: {
-                                ...subAcum[product.checked ? 'checked' : 'all'],
-                                [product.productId]: {
-                                    ...product,
-                                    ...refreshProducts[product.productId],
-                                    buy:
-                                        product.buy > refreshProducts[product.productId].currentQuantity
-                                            ? refreshProducts[product.productId]['currentQuantity']
-                                            : product.buy
-                                }
-                            }
-                        }
-                    },
-                    { checked: {}, all: {} }
-                )
-
-                if (!Object.keys(tmp.checked).length) {
-                    return {
-                        checked: { ...acum.checked },
-                        all: { ...acum.all, [storeId]: { ...tmp.all } }
-                    }
-                }
-
-                return {
-                    checked: { ...acum.checked, [storeId]: { ...tmp.checked } },
-                    all: { ...acum.all, [storeId]: { ...tmp.all, ...tmp.checked } }
-                }
-            },
-            { checked: {}, all: {} }
-        )
-    }, [refreshProducts, products])
-
-    const voucherLatest = useMemo(() => {
-        if (!storeVouchers.length) return undefined
-
-        const voucher = storeVouchers.reduce(
-            (acum: { [storeId: string]: { [voucherId: string]: VoucherWithCondition } }, voucher, idx) => {
-                if (!voucher.data) {
-                    return { ...acum }
-                }
-                let vouchers = voucher.data.data.result
-                if (!vouchers.length) {
-                    return {
-                        ...acum
-                    }
-                }
-                return {
-                    ...acum,
-                    [ids.storeCheckedIds[idx]]: keyBy(voucher.data.data.result, 'id')
-                }
-            },
-            {}
-        )
-
-        if (!Object.keys(voucher).length) return undefined
-
-        return voucher
-    }, [storeVouchers])
-
-    const priceLatest = useMemo(() => {
-        if (!productLatest) return undefined
-
-        var tmp = {
-            total: 0,
-            discount: 0,
-            pay: 0
-        }
-
-        var summary: {
-            [storeId: string]: {
-                total: number
-                discount: number
-                pay: number
-            }
-        } = {}
-
-        if (!voucherLatest || !voucherIds) {
-            Object.keys(productLatest?.checked).forEach((storeId) => {
-                let total = sumBy(Object.values(productLatest.checked[storeId]), (o) => o.priceAfter * o.buy)
-                summary = {
-                    ...summary,
-                    [storeId]: {
-                        total,
-                        discount: 0,
-                        pay: total
-                    }
-                }
-                tmp.pay += summary[storeId].pay
-                tmp.total += summary[storeId].total
-            })
-
-            return {
-                summary,
-                allOrder: tmp
-            }
-        }
-
-        Object.keys(voucherIds).forEach((storeId) => {
-            let voucher = voucherLatest[storeId][voucherIds[storeId]]
-            if (!voucher) return
-            let categoryCondition = voucher.CategoryConditionVoucher
-            let priceCondition = voucher.PriceConditionVoucher
-            let remainingMaximum = voucher.maximum
-            let total = 0
-
-            Object.values(productLatest.checked[storeId]).forEach((product) => {
-                let isOk = true
-                total += product.priceAfter * product.buy
-                if (categoryCondition && product.category !== categoryCondition.categoryShortName) {
-                    isOk = false
-                }
-                if (priceCondition && priceCondition.priceMin && product.priceAfter < priceCondition.priceMin) {
-                    isOk = false
-                }
-                if (isOk && remainingMaximum > 0) {
-                    let productDiscount = (product.priceAfter * product.buy * voucher.percent) / 100
-                    if (productDiscount <= remainingMaximum) {
-                        remainingMaximum -= productDiscount
-                    } else {
-                        remainingMaximum = 0
-                    }
-                }
-            })
-            summary[storeId] = {
-                discount: voucher.maximum - remainingMaximum,
-                pay: total - voucher.maximum,
-                total
-            }
-            tmp.discount += summary[storeId].discount
-            tmp.total += summary[storeId].total
-            tmp.pay += tmp.total - tmp.discount
-        }, {})
-
-        return {
-            summary,
-            allOrder: tmp
-        }
-    }, [productLatest, voucherIds, voucherLatest])
-
     const {
-        mutate,
-        isPending,
-        data: createdOrders
-    } = useMutation({
-        mutationFn: OrderFetching.order,
-        onSuccess: () => {
-            setOrderSuccess(true)
-        },
-        onError: () => {
-            toast.error('Lỗi! Đặt hàng không thành công')
-        }
-    })
+        dataFromApi: { refreshStores },
+        orderFn: { isPending, orderDataMutate, orderMutate },
+        transform: { priceLatest, productLatest, voucherLatest }
+    } = useDataCheckout({ ids, products, voucherIds, setStep, setProducts })
 
     const handleOrder = () => {
+        if (!isCanOrder) {
+            toast.warning('Hệ thống đang gặp lỗi!')
+            return
+        }
+
         let priceWithStore = priceLatest?.summary
 
-        if (!priceWithStore) {
+        if (!priceWithStore || !productLatest) {
             toast.warning('Sản phẩm trống')
             return
         }
@@ -261,28 +69,29 @@ const Checkout = () => {
 
         const orderParameters: OrderBody['orderParameters'] = earchOfStoreId.map((storeId) => {
             let { discount, pay, total } = priceWithStore[storeId]
-
+            let orders = Object.values(productLatest?.checked[storeId] as (typeof productLatest.checked)[string]).map(
+                ({ priceAfter, productId, buy }) => {
+                    return {
+                        price_after: priceAfter,
+                        productId,
+                        quantity: buy
+                    }
+                }
+            )
             return {
                 storeId,
                 total,
                 discount,
                 pay,
                 voucherId: voucherIds?.[storeId],
-                orders: Object.values(
-                    productLatest?.checked[storeId] as {
-                        [productId: string]: ProductContextExtends
-                    }
-                ).map<OrderBody['orderParameters'][number]['orders'][number]>(({ priceAfter, productId, buy }) => ({
-                    price_after: priceAfter,
-                    productId,
-                    quantity: buy
-                }))
+                orders
             }
         })
 
-        mutate({
+        orderMutate({
             orderParameters,
-            deliveryInformationId: addressId
+            deliveryInformationId: addressId,
+            actionId
         })
     }
 
@@ -353,7 +162,7 @@ const Checkout = () => {
                 </>
             </motion.section>
             <CreateOrder
-                data={createdOrders?.data.result || []}
+                data={orderDataMutate?.data.result || []}
                 setStep={setStep}
                 open={orderSuccess}
                 setOpen={setOrderSuccess}

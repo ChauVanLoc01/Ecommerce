@@ -13,3 +13,9 @@ export const endLoadingLoader = 'endLoadingLoader'
 export const socket_connect = 'connect'
 
 export const socket_disconnection = 'disconnect'
+
+export const order_channel_socket = 'order'
+
+export const product_channel_socket = 'product'
+
+export const voucher_channel_socket = 'voucher'

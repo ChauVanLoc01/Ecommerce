@@ -16,6 +16,7 @@ export type OrderBody = {
     }[]
     deliveryInformationId: string
     globalVoucherId?: string
+    actionId: string
 }
 
 export type OrderQuery = {

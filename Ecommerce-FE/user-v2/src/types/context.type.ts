@@ -38,4 +38,6 @@ export type AppContext = {
               storeCheckedIds: string[]
           }
         | undefined
+    isCanOrder: boolean
+    actionId: string
 }
