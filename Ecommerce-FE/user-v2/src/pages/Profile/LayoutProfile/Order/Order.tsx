@@ -1,4 +1,4 @@
-import { ChevronLeftIcon, ChevronRightIcon, Cross2Icon, InfoCircledIcon, Pencil1Icon } from '@radix-ui/react-icons'
+import { ChevronLeftIcon, ChevronRightIcon, Cross2Icon, InfoCircledIcon, Pencil1Icon, StarIcon } from '@radix-ui/react-icons'
 import { AlertDialog, Badge, Button, Flex, IconButton, Select, Text, TextField, Tooltip } from '@radix-ui/themes'
 import { useQuery } from '@tanstack/react-query'
 import { ColumnDef } from '@tanstack/react-table'
@@ -17,6 +17,7 @@ import LayoutProfile from '../LayoutProfile'
 import OrderCancel from './OrderCancel'
 import OrderDetail from './OrderDetail'
 import OrderEdit from './OrderEdit'
+import OrderRating from './OrderRating'
 
 const Order = () => {
     const [date, setDate] = useState<DateRange | undefined>(undefined)
@@ -24,7 +25,10 @@ const Order = () => {
     const [openDetail, setOpenDetail] = useState<boolean>(false)
     const [openEdit, setOpenEdit] = useState<boolean>(false)
     const [openCancel, setOpenCancel] = useState<boolean>(false)
+    const [openRating, setOpenRating] = useState<boolean>(false)
+
     const [orderId, setOrderId] = useState<string>('')
+    const [ratingData, setRatingData] = useState<string>('')
 
     const columns: ColumnDef<OrderType>[] = [
         {
@@ -141,6 +145,17 @@ const Order = () => {
                             disabled={['CANCEL', 'SUCCESS'].includes(row.original.status)}
                         >
                             <Cross2Icon />
+                        </IconButton>
+                    </Tooltip>
+                    <Tooltip content='Đánh giá'>
+                        <IconButton
+                            variant='soft'
+                            color='green'
+                            onClick={() => setOpenRating(!openRating)}
+                            onMouseEnter={handleFetchOrderDetailWhenHovering(row.original.id)}
+                            disabled={['CANCEL', 'SUCCESS'].includes(row.original.status)}
+                        >
+                            <StarIcon />
                         </IconButton>
                     </Tooltip>
                 </Flex>
@@ -349,6 +364,11 @@ const Order = () => {
                 orderData={orderDetailData?.data.result}
             />
             <OrderCancel isOpen={openCancel} setIsOpen={setOpenCancel} orderId={orderId} refetch={refetch} />
+            <OrderRating isOpen={openRating}  
+                setIsOpen={setOpenRating}  
+                productData={orderDetailData?.data.result.ProductOrder || []}
+                orderData={orderDetailData?.data.result}
+            />
         </LayoutProfile>
     )
 }
