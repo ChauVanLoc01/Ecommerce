@@ -1,7 +1,9 @@
-import { ReactNode, createContext, useMemo, useState } from 'react'
+import { ReactNode, createContext, useMemo, useRef, useState } from 'react'
+import useSocket from 'src/hooks/useSocket'
 import { LoginResponse } from 'src/types/auth.type'
 import { AppContext as AppContextType, ProductContext } from 'src/types/context.type'
 import { ls } from 'src/utils/localStorage'
+import { v7 as uuidv7 } from 'uuid'
 
 const defaultValueContext: AppContextType = {
     profile: ls.getItem('profile') ? (JSON.parse(ls.getItem('profile') as string) as LoginResponse) : undefined,
@@ -12,7 +14,9 @@ const defaultValueContext: AppContextType = {
     setProducts: () => {},
     previousPage: '/',
     setPreviousPage: () => {},
-    ids: undefined
+    ids: undefined,
+    isCanOrder: false,
+    actionId: ''
 }
 
 export const AppContext = createContext<AppContextType>(defaultValueContext)
@@ -21,6 +25,8 @@ const ContextWrap = ({ children }: { children: ReactNode }) => {
     const [previousPage, setPreviousPage] = useState<string>('/')
     const [profile, setProfile] = useState<AppContextType['profile']>(defaultValueContext.profile)
     const [products, setProducts] = useState<AppContextType['products']>(defaultValueContext.products)
+    const { current: actionId } = useRef<string>(uuidv7())
+    const { isCanOrder } = useSocket({ actionId })
 
     const ids = useMemo(() => {
         if (!products.products || !Object.keys(products.products).length) {
@@ -85,7 +91,9 @@ const ContextWrap = ({ children }: { children: ReactNode }) => {
                 setProducts,
                 previousPage,
                 setPreviousPage,
-                ids
+                ids,
+                isCanOrder,
+                actionId
             }}
         >
             {children}
