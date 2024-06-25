@@ -10,12 +10,12 @@ export const startLoadingLoader = 'startLoadingLoader'
 
 export const endLoadingLoader = 'endLoadingLoader'
 
-export const socket_connect = 'connect'
+export const join_room = 'join-room'
 
-export const socket_disconnection = 'disconnect'
+export const leave_room = 'leave-room'
 
-export const order_channel_socket = 'order'
-
-export const product_channel_socket = 'product'
-
-export const voucher_channel_socket = 'voucher'
+export const channel = {
+    order: 'order',
+    product: 'product',
+    voucher: 'voucher'
+}

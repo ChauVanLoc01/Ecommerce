@@ -1,4 +1,5 @@
 import { PrismaService } from '@app/common/prisma/prisma.service'
+import { CACHE_MANAGER } from '@nestjs/cache-manager'
 import {
     BadRequestException,
     Inject,
@@ -9,11 +10,14 @@ import {
 import { ConfigService } from '@nestjs/config'
 import { ClientProxy } from '@nestjs/microservices'
 import { Prisma } from '@prisma/client'
-import { checkVoucherExistInOrder } from 'common/constants/event.constant'
+import { Cache } from 'cache-manager'
+import { checkVoucherExistInOrder, updateQuantityVoucher } from 'common/constants/event.constant'
+import { room_obj } from 'common/constants/socket.constant'
 import { VoucherType } from 'common/constants/voucher.constant'
 import { Status } from 'common/enums/status.enum'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
 import { MessageReturn, Return } from 'common/types/result.type'
+import { hash } from 'common/utils/helper'
 import { addHours, addMinutes } from 'date-fns'
 import { isUndefined, omitBy } from 'lodash'
 import { firstValueFrom } from 'rxjs'
@@ -22,13 +26,18 @@ import { CreateVoucherDTO } from './dtos/CreateVoucher.dto'
 import { VoucherQueryDTO } from './dtos/QueryVoucher.dto'
 import { UpdateVoucherDTO } from './dtos/UpdateVoucher.dto'
 import { SearchCodeDTO } from './dtos/search-code.dto'
+import { CronJob } from 'cron'
+import { CronExpression, SchedulerRegistry } from '@nestjs/schedule'
 
 @Injectable()
 export class VoucherService {
     constructor(
         private readonly prisma: PrismaService,
         @Inject('ORDER_SERVICE') private orderClient: ClientProxy,
-        private readonly configService: ConfigService
+        private readonly configService: ConfigService,
+        @Inject(CACHE_MANAGER) private cacheManager: Cache,
+        @Inject('SOCKET_SERVICE') private socketClient: ClientProxy,
+        private schedulerRegistry: SchedulerRegistry
     ) {}
 
     async createVoucher(user: CurrentStoreType, body: CreateVoucherDTO): Promise<Return> {
@@ -465,6 +474,115 @@ export class VoucherService {
                 action: false,
                 result: null
             }
+        }
+    }
+
+    async updateQuantityVoucher(id: string) {
+        const hashValue = hash('voucher', id)
+        const timeToLife = 1000 * 60 * 5
+        const quantityVoucher = await this.cacheManager.get(hashValue)
+
+        if (quantityVoucher) {
+            if (quantityVoucher === 1) {
+                this.schedulerRegistry.deleteCronJob(hashValue)
+                this.socketClient.emit(updateQuantityVoucher, {
+                    type: room_obj.voucher,
+                    id,
+                    quantity: 0
+                })
+                await Promise.all([
+                    await this.prisma.voucher.update({
+                        where: {
+                            id
+                        },
+                        data: {
+                            currentQuantity: 0
+                        }
+                    }),
+                    await this.cacheManager.del(hashValue)
+                ])
+            } else {
+                let remainingQuantity = +quantityVoucher - 1
+                this.socketClient.emit(updateQuantityVoucher, {
+                    type: room_obj.voucher,
+                    id,
+                    quantity: remainingQuantity
+                })
+                await this.cacheManager.set(hashValue, remainingQuantity, timeToLife)
+            }
+
+            return {
+                msg: 'ok',
+                action: true,
+                result: null
+            }
+        }
+
+        const voucherExist = await this.prisma.voucher.findUnique({
+            where: {
+                id
+            }
+        })
+
+        if (!voucherExist) {
+            throw new Error('Mã giảm giá không tồn tại')
+        }
+
+        if (!voucherExist.currentQuantity) {
+            throw new Error('Mã giảm đã hết')
+        }
+
+        if (voucherExist.currentQuantity === 1) {
+            this.socketClient.emit(updateQuantityVoucher, {
+                type: room_obj.voucher,
+                id,
+                quantity: 0
+            })
+
+            await this.prisma.voucher.update({
+                where: {
+                    id
+                },
+                data: {
+                    currentQuantity: 0
+                }
+            })
+
+            return {
+                msg: 'ok',
+                action: true,
+                result: null
+            }
+        }
+
+        let remainingQuantity = voucherExist.currentQuantity - 1
+
+        this.socketClient.emit(updateQuantityVoucher, {
+            type: room_obj.voucher,
+            id,
+            quantity: remainingQuantity
+        })
+
+        await this.cacheManager.set(hashValue, remainingQuantity, timeToLife)
+
+        const cronJob = new CronJob(CronExpression.EVERY_5_MINUTES, async () => {
+            const currentQuantity = await this.cacheManager.get(hashValue)
+            await this.prisma.voucher.update({
+                where: {
+                    id
+                },
+                data: {
+                    currentQuantity
+                }
+            })
+        })
+
+        this.schedulerRegistry.addCronJob(hashValue, cronJob)
+
+        return {
+            msg: 'ok',
+            action: true,
+            result: null
         }
     }
 }

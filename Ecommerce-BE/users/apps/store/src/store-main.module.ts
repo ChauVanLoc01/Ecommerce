@@ -9,77 +9,99 @@ import { RatingModule } from './Rating/rating.module'
 import { SaleModule } from './Sale/sale.module'
 import { StoreModule } from './Store/store.module'
 import { VoucherModule } from './Voucher/voucher.module'
+import { CacheModule } from '@nestjs/cache-manager'
 
 @Module({
-  imports: [
-    ClientsModule.registerAsync({
-      isGlobal: true,
-      clients: [
-        {
-          name: 'USER_SERVICE',
-          imports: [ConfigModule],
-          useFactory: (configService: ConfigService) => ({
-            transport: Transport.RMQ,
-            options: {
-              urls: [configService.get<string>('rabbitmq.uri')],
-              queue: QueueName.user,
-              queueOptions: {
-                durable: true
-              }
-            }
-          }),
-          inject: [ConfigService]
-        }
-      ]
-    }),
-    ClientsModule.registerAsync({
-      isGlobal: true,
-      clients: [
-        {
-          name: 'ORDER_SERVICE',
-          imports: [ConfigModule],
-          useFactory: (configService: ConfigService) => ({
-            transport: Transport.RMQ,
-            options: {
-              urls: [configService.get<string>('rabbitmq.uri')],
-              queue: QueueName.order,
-              queueOptions: {
-                durable: true
-              }
-            }
-          }),
-          inject: [ConfigService]
-        }
-      ]
-    }),
-    ClientsModule.registerAsync({
-      isGlobal: true,
-      clients: [
-        {
-          name: 'PRODUCT_SERVICE',
-          imports: [ConfigModule],
-          useFactory: (configService: ConfigService) => ({
-            transport: Transport.RMQ,
-            options: {
-              urls: [configService.get<string>('rabbitmq.uri')],
-              queue: QueueName.product,
-              queueOptions: {
-                durable: true
-              }
-            }
-          }),
-          inject: [ConfigService]
-        }
-      ]
-    }),
-    ScheduleModule.forRoot(),
-    ConfigModule,
-    StoreModule,
-    VoucherModule,
-    RatingModule,
-    SaleModule
-  ],
-  controllers: [],
-  providers: [PrismaService]
+    imports: [
+        CacheModule.register(),
+        ClientsModule.registerAsync({
+            isGlobal: true,
+            clients: [
+                {
+                    name: 'SOCKET_SERVICE',
+                    imports: [ConfigModule],
+                    useFactory: (configService: ConfigService) => ({
+                        transport: Transport.RMQ,
+                        options: {
+                            urls: [configService.get<string>('rabbitmq.uri')],
+                            queue: QueueName.socket,
+                            queueOptions: {
+                                durable: true
+                            }
+                        }
+                    }),
+                    inject: [ConfigService]
+                }
+            ]
+        }),
+        ClientsModule.registerAsync({
+            isGlobal: true,
+            clients: [
+                {
+                    name: 'USER_SERVICE',
+                    imports: [ConfigModule],
+                    useFactory: (configService: ConfigService) => ({
+                        transport: Transport.RMQ,
+                        options: {
+                            urls: [configService.get<string>('rabbitmq.uri')],
+                            queue: QueueName.user,
+                            queueOptions: {
+                                durable: true
+                            }
+                        }
+                    }),
+                    inject: [ConfigService]
+                }
+            ]
+        }),
+        ClientsModule.registerAsync({
+            isGlobal: true,
+            clients: [
+                {
+                    name: 'ORDER_SERVICE',
+                    imports: [ConfigModule],
+                    useFactory: (configService: ConfigService) => ({
+                        transport: Transport.RMQ,
+                        options: {
+                            urls: [configService.get<string>('rabbitmq.uri')],
+                            queue: QueueName.order,
+                            queueOptions: {
+                                durable: true
+                            }
+                        }
+                    }),
+                    inject: [ConfigService]
+                }
+            ]
+        }),
+        ClientsModule.registerAsync({
+            isGlobal: true,
+            clients: [
+                {
+                    name: 'PRODUCT_SERVICE',
+                    imports: [ConfigModule],
+                    useFactory: (configService: ConfigService) => ({
+                        transport: Transport.RMQ,
+                        options: {
+                            urls: [configService.get<string>('rabbitmq.uri')],
+                            queue: QueueName.product,
+                            queueOptions: {
+                                durable: true
+                            }
+                        }
+                    }),
+                    inject: [ConfigService]
+                }
+            ]
+        }),
+        ScheduleModule.forRoot(),
+        ConfigModule,
+        StoreModule,
+        VoucherModule,
+        RatingModule,
+        SaleModule
+    ],
+    controllers: [],
+    providers: [PrismaService]
 })
 export class StoreMainModule {}

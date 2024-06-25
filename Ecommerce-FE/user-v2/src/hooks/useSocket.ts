@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { io } from 'socket.io-client'
 import { toast } from 'sonner'
-import { order_channel_socket } from 'src/constants/event'
+import { channel, join_room, leave_room } from 'src/constants/event'
 
 type UseSocketProps = {
     actionId: string
@@ -24,9 +24,10 @@ const useSocket = ({ actionId }: UseSocketProps) => {
     }, [])
 
     useEffect(() => {
-        socket.on(order_channel_socket, (data) => {
+        socket.on(join_room, (data) => {
             if (typeof data === 'string') {
                 setIsCanOrder(true)
+                toast.info(data)
             } else {
                 const { action } = data as { msg: string; action: boolean; result: any }
                 if (action) {
@@ -37,10 +38,11 @@ const useSocket = ({ actionId }: UseSocketProps) => {
             }
         })
 
-        socket.emit(order_channel_socket, actionId)
+        socket.emit(join_room, { type: channel.order, id: actionId })
 
         return () => {
-            socket.off(order_channel_socket, () => toast.info('Đã ngắt kết nối với order channel'))
+            socket.off(join_room, () => toast.info('Đã ngắt kết nối với order channel'))
+            socket.emit(leave_room, { type: channel.order, id: actionId })
         }
     }, [])
 

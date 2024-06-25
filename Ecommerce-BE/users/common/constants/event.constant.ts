@@ -35,3 +35,7 @@ export const processOrder = 'process::order'
 export const statusOfProduct = 'status::of::product'
 
 export const statusOfVoucher = 'status::of::voucher'
+
+export const updateQuantityProduct = 'update::quantity::product'
+
+export const updateQuantityVoucher = 'update::quantity::voucher'
