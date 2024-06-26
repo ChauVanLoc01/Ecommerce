@@ -210,8 +210,7 @@ model Rating {
   storeId     String        @db.VarChar(50)
   orderId     String        @db.VarChar(50)
   stars       Float
-  title       String        @db.TinyText
-  detail      String        @db.Text
+  comment     String        @db.Text
   isReply     Boolean?      @default(false)
   createdBy   String        @db.VarChar(50)
   createdAt   DateTime      @db.Timestamp(0)
