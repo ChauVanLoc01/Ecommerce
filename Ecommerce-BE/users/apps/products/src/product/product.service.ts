@@ -25,6 +25,7 @@ import { CreateProductType } from './dtos/create-product.dto'
 import { QueryProductType } from './dtos/query-product.dto'
 import { RefreshCartDTO } from './dtos/refresh-cart.dto'
 import { UpdateProductType } from './dtos/update-product.dto'
+import { Product } from '@prisma/client'
 
 @Injectable()
 export class ProductService {
@@ -266,13 +267,14 @@ export class ProductService {
     }
 
     async getProductDetail(productId: string): Promise<Return> {
-        const [productExist, imgs] = await Promise.all([
+        const [productExist, cached, imgs] = await Promise.all([
             this.prisma.product.findUnique({
                 where: {
                     id: productId,
                     status: Status.ACTIVE
                 }
             }),
+            this.cacheManager.get(hash('product', productId)),
             this.prisma.productImage.findMany({
                 where: {
                     productId
@@ -286,8 +288,9 @@ export class ProductService {
             msg: 'Lấy thông tin chi tiết sản phẩm thành công',
             result: {
                 ...productExist,
-                productImages: imgs
-            }
+                productImages: imgs,
+                currentQuantity: cached || productExist.currentQuantity
+            } as Product
         }
     }
 
@@ -505,10 +508,9 @@ export class ProductService {
         }[]
     ): Promise<MessageReturn> {
         try {
-            const productsExist = await Promise.all(
+            await Promise.all(
                 data.map((e) => this.updateQuantity(e.productId, e.storeId, e.quantity))
             )
-
             return {
                 msg: 'ok',
                 action: true,
@@ -525,7 +527,7 @@ export class ProductService {
 
     async updateQuantity(productId: string, storeId: string, buy: number) {
         const hashValue = hash('product', productId)
-        const timeToLife = 1000 * 60 * 5
+        const timeToLife = 60 * 5
         const cachedQuantity = await this.cacheManager.get(hashValue)
 
         if (!cachedQuantity) {
@@ -558,11 +560,11 @@ export class ProductService {
                         currentQuantity: 0
                     }
                 })
-                return Promise.resolve({
+                return {
                     msg: 'ok',
                     action: true,
                     result: null
-                })
+                }
             }
 
             let remainingQuantity = productExist.currentQuantity - buy
@@ -590,6 +592,8 @@ export class ProductService {
 
             this.schedulerRegistry.addCronJob(hashValue, updateQuantityJob)
 
+            updateQuantityJob.start()
+
             return {
                 msg: 'ok',
                 action: true,
@@ -615,6 +619,12 @@ export class ProductService {
                     }
                 })
             ])
+
+            return {
+                msg: 'ok',
+                action: true,
+                result: null
+            }
         }
 
         let remainingQuantity = +cachedQuantity - buy
@@ -627,11 +637,11 @@ export class ProductService {
 
         await this.cacheManager.set(hashValue, remainingQuantity, timeToLife)
 
-        return Promise.resolve({
+        return {
             msg: 'ok',
             action: true,
             result: null
-        })
+        }
     }
 
     async updateQuantiyProductsWhenCancelOrder(orderId: string) {

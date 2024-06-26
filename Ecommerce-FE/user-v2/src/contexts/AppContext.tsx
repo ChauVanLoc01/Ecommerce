@@ -16,7 +16,8 @@ const defaultValueContext: AppContextType = {
     setPreviousPage: () => {},
     ids: undefined,
     isCanOrder: false,
-    actionId: ''
+    actionId: '',
+    socket: undefined
 }
 
 export const AppContext = createContext<AppContextType>(defaultValueContext)
@@ -26,7 +27,7 @@ const ContextWrap = ({ children }: { children: ReactNode }) => {
     const [profile, setProfile] = useState<AppContextType['profile']>(defaultValueContext.profile)
     const [products, setProducts] = useState<AppContextType['products']>(defaultValueContext.products)
     const { current: actionId } = useRef<string>(uuidv7())
-    const { isCanOrder } = useSocket({ actionId })
+    const { isCanOrder, socket } = useSocket({ actionId })
 
     const ids = useMemo(() => {
         if (!products.products || !Object.keys(products.products).length) {
@@ -93,7 +94,8 @@ const ContextWrap = ({ children }: { children: ReactNode }) => {
                 setPreviousPage,
                 ids,
                 isCanOrder,
-                actionId
+                actionId,
+                socket
             }}
         >
             {children}

@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { ClientProxy } from '@nestjs/microservices'
+import { CronExpression, SchedulerRegistry } from '@nestjs/schedule'
 import { Prisma } from '@prisma/client'
 import { Cache } from 'cache-manager'
 import { checkVoucherExistInOrder, updateQuantityVoucher } from 'common/constants/event.constant'
@@ -18,6 +19,7 @@ import { Status } from 'common/enums/status.enum'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
 import { MessageReturn, Return } from 'common/types/result.type'
 import { hash } from 'common/utils/helper'
+import { CronJob } from 'cron'
 import { addHours, addMinutes } from 'date-fns'
 import { isUndefined, omitBy } from 'lodash'
 import { firstValueFrom } from 'rxjs'
@@ -26,8 +28,6 @@ import { CreateVoucherDTO } from './dtos/CreateVoucher.dto'
 import { VoucherQueryDTO } from './dtos/QueryVoucher.dto'
 import { UpdateVoucherDTO } from './dtos/UpdateVoucher.dto'
 import { SearchCodeDTO } from './dtos/search-code.dto'
-import { CronJob } from 'cron'
-import { CronExpression, SchedulerRegistry } from '@nestjs/schedule'
 
 @Injectable()
 export class VoucherService {
@@ -428,40 +428,7 @@ export class VoucherService {
 
     async checkVoucherExistToCreateOrder(body: string[]): Promise<MessageReturn> {
         try {
-            const voucherExist = (
-                await Promise.all(
-                    body.map((id) =>
-                        this.prisma.voucher.findUnique({
-                            where: {
-                                id
-                            }
-                        })
-                    )
-                )
-            ).every((e) => e && e.currentQuantity >= 1)
-
-            if (!voucherExist) {
-                return {
-                    msg: 'Mã giảm giá không tồn tại',
-                    action: false,
-                    result: null
-                }
-            }
-
-            await Promise.all([
-                ...body.map((id) =>
-                    this.prisma.voucher.update({
-                        where: {
-                            id
-                        },
-                        data: {
-                            currentQuantity: {
-                                decrement: 1
-                            }
-                        }
-                    })
-                )
-            ])
+            await Promise.all(body.map((voucherId) => this.updateQuantityVoucher(voucherId)))
 
             return {
                 msg: 'ok',
@@ -470,7 +437,7 @@ export class VoucherService {
             }
         } catch (err) {
             return {
-                msg: 'Lỗi cập nhật voucher',
+                msg: (err as Error).message,
                 action: false,
                 result: null
             }
@@ -479,7 +446,7 @@ export class VoucherService {
 
     async updateQuantityVoucher(id: string) {
         const hashValue = hash('voucher', id)
-        const timeToLife = 1000 * 60 * 5
+        const timeToLife = 60 * 5
         const quantityVoucher = await this.cacheManager.get(hashValue)
 
         if (quantityVoucher) {
@@ -578,6 +545,8 @@ export class VoucherService {
         })
 
         this.schedulerRegistry.addCronJob(hashValue, cronJob)
+
+        cronJob.start()
 
         return {
             msg: 'ok',

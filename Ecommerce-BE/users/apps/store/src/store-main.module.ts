@@ -13,7 +13,6 @@ import { CacheModule } from '@nestjs/cache-manager'
 
 @Module({
     imports: [
-        CacheModule.register(),
         ClientsModule.registerAsync({
             isGlobal: true,
             clients: [
@@ -94,6 +93,7 @@ import { CacheModule } from '@nestjs/cache-manager'
                 }
             ]
         }),
+        CacheModule.register(),
         ScheduleModule.forRoot(),
         ConfigModule,
         StoreModule,

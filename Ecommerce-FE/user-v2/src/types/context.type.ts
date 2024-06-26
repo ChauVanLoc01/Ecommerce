@@ -1,3 +1,4 @@
+import { Socket } from 'socket.io-client'
 import { LoginResponse } from './auth.type'
 import { Product } from './product.type'
 
@@ -40,4 +41,5 @@ export type AppContext = {
         | undefined
     isCanOrder: boolean
     actionId: string
+    socket?: Socket<any, any>
 }

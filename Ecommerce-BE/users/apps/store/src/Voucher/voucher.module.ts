@@ -1,12 +1,13 @@
 import { PrismaService } from '@app/common/prisma/prisma.service'
+import { CacheModule } from '@nestjs/cache-manager'
 import { Module } from '@nestjs/common'
+import { JwtService } from '@nestjs/jwt'
 import { VoucherController } from './voucher.controller'
 import { VoucherService } from './voucher.service'
-import { JwtService } from '@nestjs/jwt'
 
 @Module({
-  imports: [],
-  controllers: [VoucherController],
-  providers: [VoucherService, PrismaService, JwtService]
+    imports: [CacheModule.register()],
+    controllers: [VoucherController],
+    providers: [VoucherService, PrismaService, JwtService]
 })
 export class VoucherModule {}

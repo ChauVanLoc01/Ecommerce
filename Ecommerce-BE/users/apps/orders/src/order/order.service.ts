@@ -300,18 +300,34 @@ export class OrderService {
                 return parameter.storeId
             })
 
-            const [deliveryReturn, storeReturn, productReturn, ...result] = await Promise.all([
+            const [deliveryReturn, storeReturn] = await Promise.all([
                 firstValueFrom<MessageReturn>(
                     this.userClient.send(checkDeliveryInformationId, {
                         userId: id,
                         deliveryInformationId
                     })
                 ),
-                firstValueFrom(this.storeClient.send<MessageReturn>(checkStoreExist, stores)),
-                firstValueFrom(
-                    this.productClient.send<MessageReturn>(updateQuantityProducts, productIds)
-                ),
-                ...orderParameters.map((parameter, idx) =>
+                firstValueFrom(this.storeClient.send<MessageReturn>(checkStoreExist, stores))
+            ])
+
+            if (!deliveryReturn.action) {
+                emitStatusOfOrder(deliveryReturn.msg)
+            }
+
+            if (!storeReturn.action) {
+                emitStatusOfOrder(storeReturn.msg)
+            }
+
+            const productReturn = await firstValueFrom(
+                this.productClient.send<MessageReturn>(updateQuantityProducts, productIds)
+            )
+
+            if (!productReturn.action) {
+                emitStatusOfOrder(productReturn.msg)
+            }
+
+            await Promise.all(
+                orderParameters.map((parameter, idx) =>
                     this.prisma.order.create({
                         data: {
                             id: storeIdKeyByVoucher.orderIds[idx],
@@ -340,18 +356,17 @@ export class OrderService {
                         }
                     })
                 )
-            ])
+            )
 
-            if (!deliveryReturn.action) {
-                emitStatusOfOrder(deliveryReturn.msg)
-            }
+            const voucherReturn = await firstValueFrom<MessageReturn>(
+                this.storeClient.send(
+                    checkVoucherExistToCreateOrder,
+                    storeIdKeyByVoucher.voucherIds
+                )
+            )
 
-            if (!storeReturn.action) {
-                emitStatusOfOrder(storeReturn.msg)
-            }
-
-            if (!productReturn.action) {
-                emitStatusOfOrder(productReturn.msg)
+            if (!voucherReturn.action) {
+                emitStatusOfOrder(voucherReturn.msg)
             }
 
             let tmp = []
@@ -371,13 +386,7 @@ export class OrderService {
                 ]
             }
 
-            const [voucherReturn, ..._] = await Promise.all([
-                firstValueFrom<MessageReturn>(
-                    this.storeClient.send(
-                        checkVoucherExistToCreateOrder,
-                        storeIdKeyByVoucher.voucherIds
-                    )
-                ),
+            await Promise.all([
                 ...storeIdKeyByVoucher.orderIds.map((orderId) =>
                     this.prisma.orderFlow.create({
                         data: {
@@ -391,10 +400,6 @@ export class OrderService {
                 ),
                 ...tmp
             ])
-
-            if (!voucherReturn.action) {
-                emitStatusOfOrder(voucherReturn.msg)
-            }
 
             emitStatusOfOrder('Đặt hàng thành công', true, storeIdKeyByVoucher.orderIds)
         } catch (err) {
