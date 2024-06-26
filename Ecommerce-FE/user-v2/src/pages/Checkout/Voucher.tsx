@@ -1,3 +1,4 @@
+import { ArrowBottomLeftIcon, Cross2Icon } from '@radix-ui/react-icons'
 import { AlertDialog, Badge, Button, Card, Flex, IconButton, Spinner, Text, TextField, Tooltip } from '@radix-ui/themes'
 import { useMutation } from '@tanstack/react-query'
 import { useContext, useState } from 'react'
@@ -7,9 +8,8 @@ import { VoucherFetching } from 'src/apis/voucher.api'
 import { AppContext } from 'src/contexts/AppContext'
 import { RefreshStore } from 'src/types/store.type'
 import { VoucherWithCondition } from 'src/types/voucher.type'
-import VoucherCard from './VoucherCard'
-import { ArrowBottomLeftIcon, Cross2Icon } from '@radix-ui/react-icons'
 import { convertCurrentcy } from 'src/utils/utils.ts'
+import VoucherCard from './VoucherCard'
 
 type VoucherProps = {
     refreshStores: RefreshStore
@@ -122,7 +122,13 @@ const Voucher = ({ refreshStores, voucherLatest, setVoucherIds, voucherIds }: Vo
                                             {convertCurrentcy(voucherLatest[storeId][voucherIds[storeId]].maximum)}
                                         </Text>
                                     </Flex>
-                                    <Flex mt={'2'}>
+                                    <Flex mt={'2'} justify={'between'} align={'center'}>
+                                        <Flex align={'center'} gapX={'1'}>
+                                            <Text size={'2'}>Số lượng:</Text>
+                                            <Text color='yellow' size={'2'}>
+                                                {voucherLatest[storeId][voucherIds[storeId]].currentQuantity}
+                                            </Text>
+                                        </Flex>
                                         <Text size={'1'} color='blue'>
                                             Chi tiết
                                         </Text>
@@ -167,15 +173,6 @@ const Voucher = ({ refreshStores, voucherLatest, setVoucherIds, voucherIds }: Vo
                                 Áp dụng
                             </Button>
                         </div>
-                        {/* <div className='space-y-2'>
-                            {calVoucherSearch && <Text color='red'>Kết quả tìm kiếm: {calVoucherSearch.lenght}</Text>}
-                            {calVoucherSearch && calVoucherSearch.lenght > 0 && (
-                                <SearchVoucherResult
-                                    vouchers={calVoucherSearch.vouchers || []}
-                                    refreshStores={refreshStores || {}}
-                                />
-                            )}
-                        </div> */}
                     </div>
                     {voucherLatest && (
                         <SimpleBar style={{ maxHeight: '317px', paddingBottom: '5px' }}>

@@ -1,12 +1,15 @@
 import { useMutation, useQueries, useQuery } from '@tanstack/react-query'
-import { keyBy, sumBy } from 'lodash'
-import { useMemo } from 'react'
+import { sumBy } from 'lodash'
+import { useEffect, useMemo, useState } from 'react'
+import { Socket } from 'socket.io-client'
 import { toast } from 'sonner'
 import { OrderFetching } from 'src/apis/order'
 import { productFetching } from 'src/apis/product'
 import { StoreFetching } from 'src/apis/store'
 import { VoucherFetching } from 'src/apis/voucher.api'
+import { channel, join_room, leave_room } from 'src/constants/event'
 import { ProductContext, ProductConvert } from 'src/types/context.type'
+import { ProductSocket, SocketReturn, VoucherSocket } from 'src/types/socket.type'
 import { VoucherWithCondition } from 'src/types/voucher.type'
 
 type UseDataCheckoutProps = {
@@ -24,13 +27,25 @@ type UseDataCheckoutProps = {
         | undefined
     setStep: React.Dispatch<React.SetStateAction<number>>
     setProducts: React.Dispatch<React.SetStateAction<ProductContext>>
+    socket: Socket<any, any> | undefined
 }
 
-const useDataCheckout = ({ ids, products, voucherIds, setStep, setProducts }: UseDataCheckoutProps) => {
+const useDataCheckout = ({ ids, products, voucherIds, setStep, setProducts, socket }: UseDataCheckoutProps) => {
+    const [productSocket, setProductSocket] = useState<{
+        [storeId: string]: {
+            [productId: string]: {
+                quantity: number
+                priceAfter: number
+            }
+        }
+    }>({})
+    const [voucherSocket, setVoucherSocket] = useState<{
+        [voucherId: string]: number
+    }>({})
     const { data: refreshProducts } = useQuery({
         queryKey: ['refreshProduct', JSON.stringify(ids.all)],
         queryFn: () => productFetching.refreshProduct(ids.all),
-        refetchInterval: 1000 * 10,
+        refetchInterval: 1000 * 30,
         select: (data) => data.data.result,
         placeholderData: (old) => old
     })
@@ -38,7 +53,7 @@ const useDataCheckout = ({ ids, products, voucherIds, setStep, setProducts }: Us
     const { data: refreshStores } = useQuery({
         queryKey: ['refreshStore', JSON.stringify(ids.storeIds)],
         queryFn: () => StoreFetching.refreshStore(ids.storeIds),
-        refetchInterval: 1000 * 10,
+        refetchInterval: 1000 * 60,
         select: (data) => data.data.result,
         placeholderData: (old) => old
     })
@@ -47,7 +62,7 @@ const useDataCheckout = ({ ids, products, voucherIds, setStep, setProducts }: Us
         queries: ids.storeCheckedIds.map((storeId) => ({
             queryKey: ['storeVoucher', storeId],
             queryFn: () => VoucherFetching.getVoucherByStoreId(storeId),
-            refetchInterval: 1000 * 5
+            refetchInterval: 1000 * 30
         }))
     })
 
@@ -89,6 +104,7 @@ const useDataCheckout = ({ ids, products, voucherIds, setStep, setProducts }: Us
 
     const productLatest = useMemo(() => {
         if (!refreshProducts || !ids) return undefined
+        console.log('productLatest')
         return ids.storeIds.reduce(
             (
                 acum: {
@@ -97,14 +113,11 @@ const useDataCheckout = ({ ids, products, voucherIds, setStep, setProducts }: Us
                 },
                 storeId
             ) => {
-                let tmp = products.products[storeId].reduce(
-                    (
-                        subAcum: {
-                            checked: ProductConvert[string]
-                            all: ProductConvert[string]
-                        },
-                        product
-                    ) => {
+                let tmp = products.products[storeId].reduce<{
+                    checked: ProductConvert[string]
+                    all: ProductConvert[string]
+                }>(
+                    (subAcum, product) => {
                         return {
                             ...subAcum,
                             [product.checked ? 'checked' : 'all']: {
@@ -112,6 +125,12 @@ const useDataCheckout = ({ ids, products, voucherIds, setStep, setProducts }: Us
                                 [product.productId]: {
                                     ...product,
                                     ...refreshProducts[product.productId],
+                                    currentQuantity:
+                                        productSocket?.[storeId]?.[product.productId]?.quantity ||
+                                        refreshProducts[product.productId].currentQuantity,
+                                    priceAfter:
+                                        productSocket?.[storeId]?.[product.productId]?.priceAfter ||
+                                        refreshProducts[product.productId].priceAfter,
                                     buy:
                                         product.buy > refreshProducts[product.productId].currentQuantity
                                             ? refreshProducts[product.productId]['currentQuantity']
@@ -125,10 +144,13 @@ const useDataCheckout = ({ ids, products, voucherIds, setStep, setProducts }: Us
 
                 if (!Object.keys(tmp.checked).length) {
                     return {
-                        checked: { ...acum.checked },
+                        ...acum,
                         all: { ...acum.all, [storeId]: { ...tmp.all } }
                     }
                 }
+
+                console.log('test', { ...tmp.checked })
+                console.log('test2', { ...acum.checked, [storeId]: { ...tmp.checked } })
 
                 return {
                     checked: { ...acum.checked, [storeId]: { ...tmp.checked } },
@@ -137,25 +159,29 @@ const useDataCheckout = ({ ids, products, voucherIds, setStep, setProducts }: Us
             },
             { checked: {}, all: {} }
         )
-    }, [refreshProducts, products])
+    }, [refreshProducts, products, productSocket])
 
     const voucherLatest = useMemo(() => {
         if (!storeVouchers.length) return undefined
 
         const voucher = storeVouchers.reduce(
             (acum: { [storeId: string]: { [voucherId: string]: VoucherWithCondition } }, voucher, idx) => {
-                if (!voucher.data) {
+                let tmp = voucher?.data?.data?.result
+                if (!voucher?.data?.data?.result.length || !tmp?.length) {
                     return { ...acum }
                 }
-                let vouchers = voucher.data.data.result
-                if (!vouchers.length) {
-                    return {
-                        ...acum
-                    }
-                }
+
                 return {
                     ...acum,
-                    [ids.storeCheckedIds[idx]]: keyBy(voucher.data.data.result, 'id')
+                    [tmp[0].storeId]: tmp.reduce<{ [voucherId: string]: VoucherWithCondition }>((subAcum, e) => {
+                        return {
+                            ...subAcum,
+                            [e.id]: {
+                                ...e,
+                                currentQuantity: voucherSocket?.[e.id] || e.currentQuantity
+                            }
+                        }
+                    }, {})
                 }
             },
             {}
@@ -164,7 +190,7 @@ const useDataCheckout = ({ ids, products, voucherIds, setStep, setProducts }: Us
         if (!Object.keys(voucher).length) return undefined
 
         return voucher
-    }, [storeVouchers])
+    }, [storeVouchers, voucherSocket])
 
     const priceLatest = useMemo(() => {
         if (!productLatest) return undefined
@@ -245,6 +271,69 @@ const useDataCheckout = ({ ids, products, voucherIds, setStep, setProducts }: Us
             allOrder: tmp
         }
     }, [productLatest, voucherIds, voucherLatest])
+
+    useEffect(() => {
+        if (ids.checked && socket) {
+            socket.on(channel.product, (res: SocketReturn<ProductSocket>) => {
+                if (res.action) {
+                    let { productId, storeId, ...rest } = res.result
+                    setProductSocket((pre) => ({
+                        ...pre,
+                        [storeId]: {
+                            ...pre[storeId],
+                            [productId]: { ...rest }
+                        }
+                    }))
+                }
+            })
+            Object.keys(products.products).forEach((storeId) => {
+                Object.values(products.products[storeId]).forEach(({ productId, checked }) => {
+                    if (checked) {
+                        socket.emit(join_room, { type: channel.product, id: productId })
+                    }
+                })
+            })
+        }
+
+        return () => {
+            if (socket) {
+                socket.off(channel.product)
+                Object.keys(products.products).forEach((storeId) => {
+                    Object.values(products.products[storeId]).forEach(({ productId, checked }) => {
+                        if (checked) {
+                            socket.emit(leave_room, { type: channel.product, id: productId })
+                        }
+                    })
+                })
+            }
+        }
+    }, [ids.checked])
+
+    useEffect(() => {
+        if (socket && voucherIds && Object.values(voucherIds).length) {
+            socket.on(channel.voucher, (res: SocketReturn<VoucherSocket>) => {
+                if (res.action) {
+                    let { voucherId, quantity } = res.result
+                    setVoucherSocket((pre) => ({
+                        ...pre,
+                        [voucherId]: quantity
+                    }))
+                }
+            })
+            Object.values(voucherIds).forEach((id) => {
+                socket.emit(join_room, { type: channel.product, id })
+            })
+        }
+
+        return () => {
+            if (socket && voucherIds) {
+                socket.off(channel.voucher)
+                Object.values(voucherIds).forEach((id) => {
+                    socket.emit(leave_room, { type: channel.product, id })
+                })
+            }
+        }
+    }, [voucherIds])
 
     return {
         orderFn: {

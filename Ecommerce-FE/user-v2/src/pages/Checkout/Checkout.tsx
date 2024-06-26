@@ -1,11 +1,10 @@
-import { useContext, useEffect, useState } from 'react'
+import { useContext, useState } from 'react'
 
 import { motion } from 'framer-motion'
 
 import { Button, Spinner } from '@radix-ui/themes'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
-import { channel, join_room } from 'src/constants/event'
 import { AppContext } from 'src/contexts/AppContext'
 import useStep from 'src/hooks/useStep'
 import { OrderBody } from 'src/types/order.type'
@@ -46,7 +45,7 @@ const Checkout = () => {
         dataFromApi: { refreshStores },
         orderFn: { isPending, orderDataMutate, orderMutate },
         transform: { priceLatest, productLatest, voucherLatest }
-    } = useDataCheckout({ ids, products, voucherIds, setStep, setProducts })
+    } = useDataCheckout({ ids, products, voucherIds, setStep, setProducts, socket })
 
     const handleOrder = () => {
         if (!isCanOrder) {
@@ -107,26 +106,6 @@ const Checkout = () => {
             }
         }
     }
-
-    useEffect(() => {
-        if (productLatest?.checked && socket) {
-            socket.on(join_room, (data: string | { msg: string; action: boolean; result: number }) => {
-                if (typeof data === 'string') {
-                    toast.info(data)
-                } else {
-                    const { msg, result } = data
-                    toast.info(`${msg} :::::: ${result}`)
-                }
-            })
-            Object.values(products.products)
-                .flat()
-                .forEach(({ productId, checked }) => {
-                    if (checked) {
-                        socket.emit(join_room, { type: channel.product, id: productId })
-                    }
-                })
-        }
-    }, [productLatest?.checked])
 
     return (
         <>

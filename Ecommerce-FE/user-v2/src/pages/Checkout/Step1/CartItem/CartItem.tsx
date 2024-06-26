@@ -17,7 +17,7 @@ type CartItemProps = {
 }
 
 const CartItem = ({ products, productIds, store, isCheckedAll, handleRemoveVoucher }: CartItemProps) => {
-    const { setProducts, ids } = useContext(AppContext)
+    const { setProducts } = useContext(AppContext)
     const [productOrder, setProductOrder] = useState<string[]>(productIds)
 
     const handleCheckedAll = () => {

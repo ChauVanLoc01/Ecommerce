@@ -96,30 +96,10 @@ export class RatingService {
             })
         ])
 
-        const [users, ...materials] = await Promise.all([
-            firstValueFrom(
-                this.userClient.send(
-                    getInfoUserInRating,
-                    ratings.map((rating) => rating.createdBy)
-                )
-            ),
-            ...ratings.map((rating) =>
-                this.prisma.ratingMaterial.findMany({
-                    where: {
-                        ratingId: rating.id
-                    }
-                })
-            )
-        ])
-
         return {
             msg: 'ok',
             result: {
-                data: ratings.map((rating, idx) => ({
-                    rating,
-                    material: materials[idx],
-                    user: users[idx]
-                })),
+                data: ratings,
                 query: omitBy(
                     {
                         ...query,
@@ -156,6 +136,13 @@ export class RatingService {
                     },
                     storeId,
                     isReply: reply
+                },
+                include: {
+                    RatingReply: {
+                        where: {
+                            createdBy: replier
+                        }
+                    }
                 },
                 orderBy: {
                     createdAt
@@ -288,7 +275,7 @@ export class RatingService {
                         ratingId
                     }
                 }),
-                urls.map(({ url, isPrimary = false }) =>
+                ...urls.map(({ url, isPrimary = false }) =>
                     tx.ratingMaterial.create({
                         data: {
                             id: uuidv4(),

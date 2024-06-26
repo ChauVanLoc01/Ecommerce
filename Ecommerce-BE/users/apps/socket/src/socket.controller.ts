@@ -1,6 +1,10 @@
 import { Controller, Get } from '@nestjs/common'
 import { EventPattern } from '@nestjs/microservices'
-import { statusOfOrder, updateQuantityProduct } from 'common/constants/event.constant'
+import {
+    statusOfOrder,
+    updateQuantityProduct,
+    updateQuantityVoucher
+} from 'common/constants/event.constant'
 import { SocketGateway } from './socket.gateway'
 
 @Controller()
@@ -18,9 +22,20 @@ export class SocketController {
         this.socketGateway.checkStatusOfOrder(id, msg, action, result)
     }
 
+    @EventPattern(updateQuantityVoucher)
+    updateQuantityVoucher(payload: { voucherId: string; storeId: string; quantity: number }) {
+        let { quantity, voucherId, storeId } = payload
+        this.socketGateway.updateQuantityVoucher(voucherId, storeId, quantity)
+    }
+
     @EventPattern(updateQuantityProduct)
-    updateQuantityProduct(payload: { type: string; id: string; quantity: number }) {
-        let { id, quantity, type } = payload
-        this.socketGateway.updateQuantity(type, id, quantity)
+    updateProduct(payload: {
+        productId: string
+        storeId: string
+        quantity: number
+        priceAfter: number
+    }) {
+        let { quantity, productId, storeId, priceAfter } = payload
+        this.socketGateway.updateProduct(productId, storeId, quantity, priceAfter)
     }
 }

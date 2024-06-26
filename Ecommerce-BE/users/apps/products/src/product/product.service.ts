@@ -5,6 +5,7 @@ import { BadRequestException, Inject, Injectable, NotFoundException } from '@nes
 import { ConfigService } from '@nestjs/config'
 import { ClientProxy } from '@nestjs/microservices'
 import { CronExpression, SchedulerRegistry } from '@nestjs/schedule'
+import { Product } from '@prisma/client'
 import { Queue } from 'bull'
 import { Cache } from 'cache-manager'
 import { BackgroundName } from 'common/constants/background-job.constant'
@@ -25,7 +26,6 @@ import { CreateProductType } from './dtos/create-product.dto'
 import { QueryProductType } from './dtos/query-product.dto'
 import { RefreshCartDTO } from './dtos/refresh-cart.dto'
 import { UpdateProductType } from './dtos/update-product.dto'
-import { Product } from '@prisma/client'
 
 @Injectable()
 export class ProductService {
@@ -527,25 +527,26 @@ export class ProductService {
 
     async updateQuantity(productId: string, storeId: string, buy: number) {
         const hashValue = hash('product', productId)
-        const timeToLife = 60 * 5
+        const timeToLife = 60 * 4
+
+        const productExist = await this.prisma.product.findUnique({
+            where: {
+                id: productId,
+                storeId
+            }
+        })
+
+        if (!productExist) {
+            throw new Error('Sản phẩm không tồn tại')
+        }
+
+        if (productExist.currentQuantity < buy) {
+            throw new Error(`Sản phẩm ${productId} không đủ số lượng`)
+        }
+
         const cachedQuantity = await this.cacheManager.get(hashValue)
 
         if (!cachedQuantity) {
-            const productExist = await this.prisma.product.findUnique({
-                where: {
-                    id: productId,
-                    storeId
-                }
-            })
-
-            if (!productExist) {
-                throw new Error('Sản phẩm không tồn tại')
-            }
-
-            if (productExist.currentQuantity < buy) {
-                throw new Error(`Sản phẩm ${productId} không đủ số lượng`)
-            }
-
             if (productExist.currentQuantity === buy) {
                 this.socket_client.emit(updateQuantityProduct, {
                     type: room_obj.product,
@@ -570,24 +571,30 @@ export class ProductService {
             let remainingQuantity = productExist.currentQuantity - buy
 
             this.socket_client.emit(updateQuantityProduct, {
-                type: room_obj.product,
-                id: productId,
-                quantity: remainingQuantity
+                productId,
+                storeId,
+                quantity: remainingQuantity,
+                priceAfter: productExist.priceAfter
             })
 
             await this.cacheManager.set(hashValue, remainingQuantity, timeToLife)
 
             const updateQuantityJob = new CronJob(CronExpression.EVERY_5_MINUTES, async () => {
                 const currentQuantity = await this.cacheManager.get(hashValue)
-                await this.prisma.product.update({
-                    where: {
-                        id: productId,
-                        storeId
-                    },
-                    data: {
-                        currentQuantity
-                    }
-                })
+                if (currentQuantity) {
+                    await this.prisma.product.update({
+                        where: {
+                            id: productId,
+                            storeId
+                        },
+                        data: {
+                            currentQuantity
+                        }
+                    })
+                    return
+                } else {
+                    this.schedulerRegistry.deleteCronJob(hashValue)
+                }
             })
 
             this.schedulerRegistry.addCronJob(hashValue, updateQuantityJob)
@@ -603,9 +610,10 @@ export class ProductService {
 
         if (+cachedQuantity === buy) {
             this.socket_client.emit(updateQuantityProduct, {
-                type: room_obj.product,
-                id: productId,
-                quantity: 0
+                productId,
+                storeId,
+                quantity: 0,
+                priceAfter: productExist.priceAfter
             })
             this.schedulerRegistry.deleteCronJob(hashValue)
             await Promise.all([
@@ -630,9 +638,10 @@ export class ProductService {
         let remainingQuantity = +cachedQuantity - buy
 
         this.socket_client.emit(updateQuantityProduct, {
-            type: room_obj.product,
-            id: productId,
-            quantity: remainingQuantity
+            productId,
+            storeId,
+            quantity: remainingQuantity,
+            priceAfter: productExist.priceAfter
         })
 
         await this.cacheManager.set(hashValue, remainingQuantity, timeToLife)
@@ -767,12 +776,16 @@ export class ProductService {
                 body.productsId.map((id) =>
                     this.prisma.product.findUnique({
                         where: {
-                            id
+                            id,
+                            status: Status.ACTIVE,
+                            currentQuantity: {
+                                gt: 0
+                            }
                         }
                     })
                 )
             )
-        ).filter((e) => e)
+        ).filter(Boolean)
 
         if (!products.length) {
             return {
