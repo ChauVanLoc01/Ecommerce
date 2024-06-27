@@ -314,6 +314,7 @@ const useDataCheckout = ({ ids, products, voucherIds, setStep, setProducts, sock
 
     useEffect(() => {
         if (socket && voucherIds && Object.values(voucherIds).length) {
+            console.log('voucherIds')
             socket.on(channel.voucher, (res: SocketReturn<VoucherSocket>) => {
                 if (res.action) {
                     let { voucherId, quantity } = res.result
@@ -324,7 +325,7 @@ const useDataCheckout = ({ ids, products, voucherIds, setStep, setProducts, sock
                 }
             })
             Object.values(voucherIds).forEach((id) => {
-                socket.emit(join_room, { type: channel.product, id })
+                socket.emit(join_room, { type: channel.voucher, id })
             })
         }
 
@@ -332,7 +333,7 @@ const useDataCheckout = ({ ids, products, voucherIds, setStep, setProducts, sock
             if (socket && voucherIds) {
                 socket.off(channel.voucher)
                 Object.values(voucherIds).forEach((id) => {
-                    socket.emit(leave_room, { type: channel.product, id })
+                    socket.emit(leave_room, { type: channel.voucher, id })
                 })
             }
         }

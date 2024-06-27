@@ -12,7 +12,11 @@ import { ClientProxy } from '@nestjs/microservices'
 import { CronExpression, SchedulerRegistry } from '@nestjs/schedule'
 import { Prisma } from '@prisma/client'
 import { Cache } from 'cache-manager'
-import { checkVoucherExistInOrder, updateQuantityVoucher } from 'common/constants/event.constant'
+import {
+    checkVoucherExistInOrder,
+    processHandleVoucher,
+    updateQuantityVoucher
+} from 'common/constants/event.constant'
 import { VoucherType } from 'common/constants/voucher.constant'
 import { Status } from 'common/enums/status.enum'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
@@ -33,6 +37,7 @@ export class VoucherService {
     constructor(
         private readonly prisma: PrismaService,
         @Inject('ORDER_SERVICE') private orderClient: ClientProxy,
+        @Inject('STORE_SERVICE') private storeClient: ClientProxy,
         private readonly configService: ConfigService,
         @Inject(CACHE_MANAGER) private cacheManager: Cache,
         @Inject('SOCKET_SERVICE') private socketClient: ClientProxy,
@@ -425,9 +430,9 @@ export class VoucherService {
         }
     }
 
-    async checkVoucherExistToCreateOrder(body: string[]): Promise<MessageReturn> {
+    async checkVoucherExistToCreateOrder(body: string[][]): Promise<MessageReturn> {
         try {
-            await Promise.all(body.map((voucherId) => this.updateQuantityVoucher(voucherId)))
+            await Promise.all(body.map((ids) => this.updateQuantityVoucher(ids[0], ids[1])))
 
             return {
                 msg: 'ok',
@@ -443,34 +448,18 @@ export class VoucherService {
         }
     }
 
-    async updateQuantityVoucher(id: string) {
+    async updateQuantityVoucher(storeId: string, id: string) {
         const hashValue = hash('voucher', id)
-        const [voucherExist, quantityVoucher] = await Promise.all([
-            this.prisma.voucher.findUnique({
-                where: {
-                    id,
-                    status: {
-                        not: Status.BLOCK
-                    }
-                }
-            }),
-            this.cacheManager.get(hashValue)
-        ])
 
-        if (!voucherExist) {
-            throw new Error('Mã giảm giá không tồn tại')
-        }
-
-        if (!voucherExist.currentQuantity) {
-            throw new Error('Mã giảm đã hết')
-        }
+        const quantityVoucher = await this.cacheManager.get(hashValue)
 
         if (+quantityVoucher) {
+            console.log('ton tai cache')
             if (+quantityVoucher === 1) {
                 this.schedulerRegistry.deleteCronJob(hashValue)
                 this.socketClient.emit(updateQuantityVoucher, {
                     voucherId: id,
-                    storeId: voucherExist.storeId,
+                    storeId,
                     quantity: 0
                 })
                 await Promise.all([
@@ -485,13 +474,13 @@ export class VoucherService {
                     this.cacheManager.del(hashValue)
                 ])
             } else {
+                console.log('ben trong ton tai cache')
                 let remainingQuantity = +quantityVoucher - 1
                 this.socketClient.emit(updateQuantityVoucher, {
                     voucherId: id,
-                    storeId: voucherExist.storeId,
+                    storeId,
                     quantity: remainingQuantity
                 })
-
                 await this.cacheManager.set(hashValue, remainingQuantity)
             }
             return {
@@ -500,6 +489,17 @@ export class VoucherService {
                 result: null
             }
         }
+
+        console.log('chưa có cache')
+
+        const voucherExist = await this.prisma.voucher.findUnique({
+            where: {
+                id,
+                status: {
+                    not: Status.BLOCK
+                }
+            }
+        })
 
         if (voucherExist.currentQuantity === 1) {
             this.socketClient.emit(updateQuantityVoucher, {
@@ -549,6 +549,8 @@ export class VoucherService {
                 await this.cacheManager.del(hashValue)
                 return
             }
+
+            console.log('cron job update quantity', currentQuantity, 'id', id)
 
             await this.prisma.voucher.update({
                 where: {

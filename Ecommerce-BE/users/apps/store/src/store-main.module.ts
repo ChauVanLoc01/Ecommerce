@@ -93,6 +93,26 @@ import { CacheModule } from '@nestjs/cache-manager'
                 }
             ]
         }),
+        ClientsModule.registerAsync({
+            isGlobal: true,
+            clients: [
+                {
+                    name: 'STORE_SERVICE',
+                    imports: [ConfigModule],
+                    useFactory: (configService: ConfigService) => ({
+                        transport: Transport.RMQ,
+                        options: {
+                            urls: [configService.get<string>('rabbitmq.uri')],
+                            queue: QueueName.store,
+                            queueOptions: {
+                                durable: true
+                            }
+                        }
+                    }),
+                    inject: [ConfigService]
+                }
+            ]
+        }),
         CacheModule.register(),
         ScheduleModule.forRoot(),
         ConfigModule,

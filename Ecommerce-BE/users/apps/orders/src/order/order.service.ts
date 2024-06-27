@@ -257,7 +257,7 @@ export class OrderService {
 
             let storeIdKeyByVoucher: {
                 orderIds: string[]
-                voucherIds: string[]
+                voucherIds: string[][]
                 mixedVoucher: {
                     orderId: string
                     voucherId: string
@@ -269,14 +269,14 @@ export class OrderService {
                 let mixed = []
 
                 if (globalVoucherId) {
-                    arr.push(globalVoucherId)
+                    arr.push(['global', globalVoucherId])
                     mixed.push({
                         orderId,
                         voucherId: globalVoucherId
                     })
                 }
                 if (parameter.voucherId) {
-                    arr.push(parameter.voucherId)
+                    arr.push([parameter.storeId, parameter.voucherId])
                     mixed.push({
                         orderId,
                         voucherId: parameter.voucherId
@@ -285,7 +285,7 @@ export class OrderService {
 
                 storeIdKeyByVoucher = {
                     orderIds: [...storeIdKeyByVoucher.orderIds, orderId],
-                    voucherIds: [...storeIdKeyByVoucher.voucherIds, ...arr],
+                    voucherIds: [...storeIdKeyByVoucher.voucherIds, arr],
                     mixedVoucher: [...storeIdKeyByVoucher.mixedVoucher, ...mixed]
                 }
 
