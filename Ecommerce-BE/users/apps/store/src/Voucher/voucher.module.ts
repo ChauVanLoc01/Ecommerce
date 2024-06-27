@@ -6,7 +6,7 @@ import { VoucherController } from './voucher.controller'
 import { VoucherService } from './voucher.service'
 
 @Module({
-    imports: [CacheModule.register()],
+    imports: [],
     controllers: [VoucherController],
     providers: [VoucherService, PrismaService, JwtService]
 })

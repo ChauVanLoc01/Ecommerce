@@ -10,7 +10,6 @@ import { PaymentModule } from './payment/payment.module'
 
 @Module({
     imports: [
-        CacheModule.register(),
         ClientsModule.registerAsync({
             isGlobal: true,
             clients: [
