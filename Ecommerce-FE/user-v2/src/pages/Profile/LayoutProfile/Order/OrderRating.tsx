@@ -19,8 +19,6 @@ type OrderRatingProps = {
 }
 
 function OrderRating({ isOpen, setIsOpen, ratingData, refetch }: OrderRatingProps) {
-    console.log('ratingData', ratingData)
-
     const [ratingValue, setRatingValue] = useState(ratingData?.stars)
     const [commentValue, setCommentValue] = useState(ratingData?.comment)
 
@@ -36,11 +34,11 @@ function OrderRating({ isOpen, setIsOpen, ratingData, refetch }: OrderRatingProp
     //xử lý api
     const { mutate, isSuccess, isPending } = useMutation({
         mutationFn: (body: RatingBody) => RatingApi.createNewRating(body),
-        onSuccess: (result) => {
-            console.log('Đánh giá thành công')
 
+        onSuccess: (result) => {
             refetch()
             toast.success('Đánh giá thành công')
+            setIsOpen(false)
         },
         onError: (error) => {
             if (axios.isAxiosError<Reject>(error) && error.response?.status === 401) {
@@ -52,7 +50,6 @@ function OrderRating({ isOpen, setIsOpen, ratingData, refetch }: OrderRatingProp
     const onSubmit = () => {
         setRatingValue(0)
         setCommentValue('')
-        console.log(ratingData)
         mutate(ratingData)
     }
 
@@ -98,11 +95,10 @@ function OrderRating({ isOpen, setIsOpen, ratingData, refetch }: OrderRatingProp
                                     Trở về
                                 </Button>
                             </AlertDialog.Cancel>
-                            <AlertDialog.Action>
-                                <Button onClick={onSubmit} variant='solid' color='green' type='submit'>
-                                    Lưu đánh giá
-                                </Button>
-                            </AlertDialog.Action>
+                            <Button onClick={onSubmit} variant='solid' color='green' type='button'>
+                                {isPending && <Spinner />}
+                                Lưu đánh giá
+                            </Button>
                         </Flex>
                     </div>
                 </form>
