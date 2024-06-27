@@ -53,3 +53,8 @@ export type ProductSearch = Return<{
     total: number
     data: Product[]
 }>
+
+
+export type ProductRating = {
+    
+}

@@ -21,16 +21,16 @@ type OrderRatingProps = {
 function OrderRating({ isOpen, setIsOpen, ratingData, refetch }: OrderRatingProps) {
     console.log('ratingData', ratingData)
 
-    const [ratingValue, setRatingValue] = useState(ratingData?.rating)
+    const [ratingValue, setRatingValue] = useState(ratingData?.stars)
     const [commentValue, setCommentValue] = useState(ratingData?.comment)
 
     const handleRating = (rateNum: number) => {
         setRatingValue(rateNum)
-        if (ratingData && ratingData.rating) ratingData.rating = rateNum
+        ratingData.stars = rateNum
     }
     const handleComment = (e: any) => {
         setCommentValue(e.target.value)
-        if (ratingData && ratingData.comment) ratingData.comment = commentValue
+        ratingData.comment = commentValue
     }
 
     //xử lý api
