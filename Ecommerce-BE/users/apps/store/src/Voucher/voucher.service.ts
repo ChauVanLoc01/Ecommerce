@@ -445,7 +445,6 @@ export class VoucherService {
 
     async updateQuantityVoucher(id: string) {
         const hashValue = hash('voucher', id)
-        const timeToLife = 60 * 4
         const [voucherExist, quantityVoucher] = await Promise.all([
             this.prisma.voucher.findUnique({
                 where: {
@@ -466,8 +465,8 @@ export class VoucherService {
             throw new Error('Mã giảm đã hết')
         }
 
-        if (quantityVoucher) {
-            if (quantityVoucher === 1) {
+        if (+quantityVoucher) {
+            if (+quantityVoucher === 1) {
                 this.schedulerRegistry.deleteCronJob(hashValue)
                 this.socketClient.emit(updateQuantityVoucher, {
                     voucherId: id,
@@ -492,7 +491,8 @@ export class VoucherService {
                     storeId: voucherExist.storeId,
                     quantity: remainingQuantity
                 })
-                await this.cacheManager.set(hashValue, remainingQuantity, timeToLife)
+
+                await this.cacheManager.set(hashValue, remainingQuantity)
             }
             return {
                 msg: 'ok',
@@ -532,23 +532,32 @@ export class VoucherService {
             quantity: remainingQuantity
         })
 
-        await this.cacheManager.set(hashValue, remainingQuantity, timeToLife)
+        await this.cacheManager.set(hashValue, remainingQuantity)
 
         const cronJob = new CronJob(CronExpression.EVERY_5_MINUTES, async () => {
-            const currentQuantity = await this.cacheManager.get(hashValue)
-            if (currentQuantity) {
-                await this.prisma.voucher.update({
+            const [currentQuantity, voucherExist] = await Promise.all([
+                this.cacheManager.get(hashValue),
+                this.prisma.voucher.findUnique({
                     where: {
                         id
-                    },
-                    data: {
-                        currentQuantity
                     }
                 })
-                return
-            } else {
+            ])
+
+            if (voucherExist.currentQuantity === +currentQuantity) {
                 this.schedulerRegistry.deleteCronJob(hashValue)
+                await this.cacheManager.del(hashValue)
+                return
             }
+
+            await this.prisma.voucher.update({
+                where: {
+                    id
+                },
+                data: {
+                    currentQuantity: +currentQuantity
+                }
+            })
         })
 
         this.schedulerRegistry.addCronJob(hashValue, cronJob)

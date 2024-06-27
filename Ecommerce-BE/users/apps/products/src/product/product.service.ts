@@ -527,7 +527,6 @@ export class ProductService {
 
     async updateQuantity(productId: string, storeId: string, buy: number) {
         const hashValue = hash('product', productId)
-        const timeToLife = 60 * 4
 
         const productExist = await this.prisma.product.findUnique({
             where: {
@@ -577,24 +576,33 @@ export class ProductService {
                 priceAfter: productExist.priceAfter
             })
 
-            await this.cacheManager.set(hashValue, remainingQuantity, timeToLife)
+            await this.cacheManager.set(hashValue, remainingQuantity)
 
             const updateQuantityJob = new CronJob(CronExpression.EVERY_5_MINUTES, async () => {
-                const currentQuantity = await this.cacheManager.get(hashValue)
-                if (currentQuantity) {
-                    await this.prisma.product.update({
+                const [currentQuantity, productIn] = await Promise.all([
+                    this.cacheManager.get(hashValue),
+                    this.prisma.product.findUnique({
                         where: {
-                            id: productId,
-                            storeId
-                        },
-                        data: {
-                            currentQuantity
+                            id: productId
                         }
                     })
-                    return
-                } else {
+                ])
+
+                if (+currentQuantity === productIn.currentQuantity) {
                     this.schedulerRegistry.deleteCronJob(hashValue)
+                    await this.cacheManager.del(hashValue)
+                    return
                 }
+
+                await this.prisma.product.update({
+                    where: {
+                        id: productId,
+                        storeId
+                    },
+                    data: {
+                        currentQuantity: +currentQuantity
+                    }
+                })
             })
 
             this.schedulerRegistry.addCronJob(hashValue, updateQuantityJob)
@@ -644,7 +652,7 @@ export class ProductService {
             priceAfter: productExist.priceAfter
         })
 
-        await this.cacheManager.set(hashValue, remainingQuantity, timeToLife)
+        await this.cacheManager.set(hashValue, remainingQuantity)
 
         return {
             msg: 'ok',
@@ -771,32 +779,44 @@ export class ProductService {
     }
 
     async refreshCart(body: RefreshCartDTO): Promise<Return> {
-        const products = (
-            await Promise.all(
-                body.productsId.map((id) =>
-                    this.prisma.product.findUnique({
-                        where: {
-                            id,
-                            status: Status.ACTIVE,
-                            currentQuantity: {
-                                gt: 0
-                            }
-                        }
-                    })
-                )
-            )
-        ).filter(Boolean)
-
-        if (!products.length) {
-            return {
-                msg: 'ok',
-                result: []
-            }
-        }
+        const products = await Promise.all(
+            body.productsId.map((productId) => this.findProductUnique(productId))
+        )
 
         return {
             msg: 'ok',
-            result: keyBy(products, 'id')
+            result: body.productsId.reduce<Record<string, Product>>(
+                (acum, productId, idx) => ({ ...acum, [productId]: products[idx] }),
+                {}
+            )
+        }
+    }
+
+    async findProductUnique(id: string): Promise<Product | undefined> {
+        try {
+            const [product, cached] = await Promise.all([
+                this.prisma.product.findUnique({
+                    where: {
+                        id,
+                        status: Status.ACTIVE,
+                        currentQuantity: {
+                            gt: 0
+                        }
+                    }
+                }),
+                this.cacheManager.get(hash('product', id))
+            ])
+
+            if (!product) {
+                return undefined
+            }
+
+            return {
+                ...product,
+                currentQuantity: +cached || product.currentQuantity
+            }
+        } catch (error) {
+            throw new BadRequestException('Lỗi')
         }
     }
 }

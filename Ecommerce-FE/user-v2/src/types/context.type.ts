@@ -12,6 +12,7 @@ export type ProductContext = {
             image: string
             priceAfter: number
             checked: boolean
+            isExist: boolean
         }[]
     }
 }

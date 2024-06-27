@@ -25,7 +25,12 @@ const CartItem = ({ products, productIds, store, isCheckedAll, handleRemoveVouch
             ...pre,
             products: {
                 ...pre.products,
-                [store.id]: Object.values(products).map((product) => ({ ...product, checked: !isCheckedAll }))
+                [store.id]: Object.values(products).map((product) => {
+                    if (products[product.productId].isExist) {
+                        return { ...product, checked: !isCheckedAll }
+                    }
+                    return product
+                })
             }
         }))
         handleRemoveVoucher()

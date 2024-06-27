@@ -104,7 +104,6 @@ const useDataCheckout = ({ ids, products, voucherIds, setStep, setProducts, sock
 
     const productLatest = useMemo(() => {
         if (!refreshProducts || !ids) return undefined
-        console.log('productLatest')
         return ids.storeIds.reduce(
             (
                 acum: {
@@ -124,17 +123,21 @@ const useDataCheckout = ({ ids, products, voucherIds, setStep, setProducts, sock
                                 ...subAcum[product.checked ? 'checked' : 'all'],
                                 [product.productId]: {
                                     ...product,
-                                    ...refreshProducts[product.productId],
+                                    ...refreshProducts?.[product.productId],
                                     currentQuantity:
                                         productSocket?.[storeId]?.[product.productId]?.quantity ||
-                                        refreshProducts[product.productId].currentQuantity,
+                                        refreshProducts?.[product.productId]?.currentQuantity ||
+                                        0,
                                     priceAfter:
                                         productSocket?.[storeId]?.[product.productId]?.priceAfter ||
-                                        refreshProducts[product.productId].priceAfter,
-                                    buy:
-                                        product.buy > refreshProducts[product.productId].currentQuantity
-                                            ? refreshProducts[product.productId]['currentQuantity']
+                                        refreshProducts?.[product.productId]?.priceAfter ||
+                                        0,
+                                    buy: refreshProducts?.[product.productId]
+                                        ? product.buy > refreshProducts[product.productId].currentQuantity
+                                            ? refreshProducts[product.productId].currentQuantity
                                             : product.buy
+                                        : 0,
+                                    isExist: !!refreshProducts?.[product.productId]
                                 }
                             }
                         }

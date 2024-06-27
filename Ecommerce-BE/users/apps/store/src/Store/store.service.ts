@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { ClientProxy } from '@nestjs/microservices'
+import { Store } from '@prisma/client'
 import { S3 } from 'aws-sdk'
 import { updateStoreRoleId } from 'common/constants/event.constant'
 import { Role } from 'common/enums/role.enum'
@@ -232,22 +233,33 @@ export class StoreService {
     }
 
     async getStoreByUser(body: StoreByUserDTO): Promise<Return> {
-        const stores = (
-            await Promise.all(
-                body.storesId.map((id) => this.prisma.store.findUnique({ where: { id } }))
-            )
-        ).filter((e) => e)
-
-        if (!stores.length) {
-            return {
-                msg: 'ok',
-                result: []
-            }
-        }
+        const stores = await Promise.all(body.storesId.map((id) => this.findStoreUnique(id)))
 
         return {
             msg: 'ok',
-            result: keyBy(stores, 'id')
+            result: body.storesId.reduce<Record<string, Store>>(
+                (acum, storeId, idx) => ({ ...acum, [storeId]: stores[idx] }),
+                {}
+            )
+        }
+    }
+
+    async findStoreUnique(id: string): Promise<Store> {
+        try {
+            const store = await this.prisma.store.findUnique({
+                where: {
+                    id,
+                    status: Status.ACTIVE
+                }
+            })
+
+            if (!store) {
+                return undefined
+            }
+
+            return store
+        } catch (err) {
+            throw new BadRequestException('Lỗi Server')
         }
     }
 }
