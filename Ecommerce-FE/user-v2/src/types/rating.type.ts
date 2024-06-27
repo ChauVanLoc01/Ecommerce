@@ -14,6 +14,14 @@ export type Rating = {
     updatedAt?: Date
 }
 
+export type RatingBody = {
+    orderId: string,
+    userId: string,
+    storeId: string,
+    rating: number,
+    comment: string
+}
+
 export type RatingMaterial = {
     id: string
     url: string
