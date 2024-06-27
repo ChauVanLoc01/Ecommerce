@@ -19,6 +19,7 @@ import { v4 as uuidv4 } from 'uuid'
 import { CreateRatingDto } from './dtos/create-rating.dto'
 import { RatingQueryDTO } from './dtos/rating-query.dto'
 import { CreateReplyRatingDTO } from './dtos/reply-rating.dto'
+import { OrderStatus } from 'common/enums/orderStatus.enum'
 
 @Injectable()
 export class RatingService {
@@ -242,7 +243,8 @@ export class RatingService {
                 this.prisma.order.findUnique({
                     where: {
                         id: orderId,
-                        userId: user.id
+                        userId: user.id,
+                        status: OrderStatus.SUCCESS
                     }
                 }),
                 this.prisma.store.findUnique({
@@ -259,7 +261,7 @@ export class RatingService {
 
             if (!orderExist) {
                 throw new BadRequestException(
-                    'Mã đơn hàng không đúng hoặc bạn chưa thực hiện đơn hàng này'
+                    'Chưa đủ điều kiện để thực hiện đánh giá cho đơn hàng này'
                 )
             }
             if (!storeExist) {

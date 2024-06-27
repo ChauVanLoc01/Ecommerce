@@ -152,9 +152,6 @@ const useDataCheckout = ({ ids, products, voucherIds, setStep, setProducts, sock
                     }
                 }
 
-                console.log('test', { ...tmp.checked })
-                console.log('test2', { ...acum.checked, [storeId]: { ...tmp.checked } })
-
                 return {
                     checked: { ...acum.checked, [storeId]: { ...tmp.checked } },
                     all: { ...acum.all, [storeId]: { ...tmp.all, ...tmp.checked } }
@@ -314,7 +311,6 @@ const useDataCheckout = ({ ids, products, voucherIds, setStep, setProducts, sock
 
     useEffect(() => {
         if (socket && voucherIds && Object.values(voucherIds).length) {
-            console.log('voucherIds')
             socket.on(channel.voucher, (res: SocketReturn<VoucherSocket>) => {
                 if (res.action) {
                     let { voucherId, quantity } = res.result
