@@ -285,7 +285,7 @@ export class OrderService {
 
                 storeIdKeyByVoucher = {
                     orderIds: [...storeIdKeyByVoucher.orderIds, orderId],
-                    voucherIds: [...storeIdKeyByVoucher.voucherIds, arr],
+                    voucherIds: [...storeIdKeyByVoucher.voucherIds, ...arr],
                     mixedVoucher: [...storeIdKeyByVoucher.mixedVoucher, ...mixed]
                 }
 

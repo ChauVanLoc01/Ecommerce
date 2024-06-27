@@ -454,7 +454,6 @@ export class VoucherService {
         const quantityVoucher = await this.cacheManager.get(hashValue)
 
         if (+quantityVoucher) {
-            console.log('ton tai cache')
             if (+quantityVoucher === 1) {
                 this.schedulerRegistry.deleteCronJob(hashValue)
                 this.socketClient.emit(updateQuantityVoucher, {
@@ -474,7 +473,6 @@ export class VoucherService {
                     this.cacheManager.del(hashValue)
                 ])
             } else {
-                console.log('ben trong ton tai cache')
                 let remainingQuantity = +quantityVoucher - 1
                 this.socketClient.emit(updateQuantityVoucher, {
                     voucherId: id,
@@ -489,8 +487,6 @@ export class VoucherService {
                 result: null
             }
         }
-
-        console.log('chưa có cache')
 
         const voucherExist = await this.prisma.voucher.findUnique({
             where: {
@@ -549,8 +545,6 @@ export class VoucherService {
                 await this.cacheManager.del(hashValue)
                 return
             }
-
-            console.log('cron job update quantity', currentQuantity, 'id', id)
 
             await this.prisma.voucher.update({
                 where: {

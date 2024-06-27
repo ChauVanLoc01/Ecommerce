@@ -1,15 +1,16 @@
 import { ConfigModule } from '@app/common'
 import { PrismaService } from '@app/common/prisma/prisma.service'
+import { CacheModule } from '@nestjs/cache-manager'
 import { Module } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { ClientsModule, Transport } from '@nestjs/microservices'
 import { ScheduleModule } from '@nestjs/schedule'
+import * as redisStore from 'cache-manager-redis-store'
 import { QueueName } from 'common/constants/queue.constant'
 import { RatingModule } from './Rating/rating.module'
 import { SaleModule } from './Sale/sale.module'
 import { StoreModule } from './Store/store.module'
 import { VoucherModule } from './Voucher/voucher.module'
-import { CacheModule } from '@nestjs/cache-manager'
 
 @Module({
     imports: [
@@ -113,7 +114,17 @@ import { CacheModule } from '@nestjs/cache-manager'
                 }
             ]
         }),
-        CacheModule.register(),
+        CacheModule.registerAsync({
+            isGlobal: true,
+            imports: [ConfigModule],
+            inject: [ConfigService],
+            useFactory: async (configService: ConfigService) => ({
+                isGlobal: true,
+                store: redisStore,
+                host: configService.get<string>('bullqueue.host'),
+                port: configService.get<number>('bullqueue.port')
+            })
+        }),
         ScheduleModule.forRoot(),
         ConfigModule,
         StoreModule,
