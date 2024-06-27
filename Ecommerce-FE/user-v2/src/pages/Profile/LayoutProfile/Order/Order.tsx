@@ -187,7 +187,10 @@ const Order = () => {
                             color='green'
                             onClick={onOpenRatingClick(row.original.id, row.original.storeId)}
                             onMouseEnter={handleFetchOrderDetailWhenHovering(row.original.id)}
-                            disabled={row.original.isRated == 1}
+                            disabled={
+                                row.original.isRated == 1 ||
+                                ['CANCEL', 'WAITING_CONFIRM', 'SHIPPING'].includes(row.original.status)
+                            }
                         >
                             <StarIcon />
                         </IconButton>
