@@ -11,6 +11,7 @@ import { ClientProxy } from '@nestjs/microservices'
 import { Order, Prisma } from '@prisma/client'
 import { getOrderByRating, getProductOrderByRating } from 'common/constants/event.constant'
 import { PaginationDTO } from 'common/decorators/pagination.dto'
+import { OrderStatus } from 'common/enums/orderStatus.enum'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
 import { Return } from 'common/types/result.type'
 import { flatten, isUndefined, omitBy } from 'lodash'
@@ -19,7 +20,6 @@ import { v4 as uuidv4 } from 'uuid'
 import { CreateRatingDto } from './dtos/create-rating.dto'
 import { RatingQueryDTO } from './dtos/rating-query.dto'
 import { CreateReplyRatingDTO } from './dtos/reply-rating.dto'
-import { OrderStatus } from 'common/enums/orderStatus.enum'
 
 @Injectable()
 export class RatingService {
@@ -279,12 +279,26 @@ export class RatingService {
             if (!storeRating) {
                 let storeRatingId = uuidv4()
 
-                await this.prisma.$transaction([
-                    this.prisma.storeRating.create({
+                await this.prisma.storeRating.create({
+                    data: {
+                        id: storeRatingId,
+                        storeId,
+                        [tmp[stars]]: 1,
+                        total: 1,
+                        average: stars
+                    }
+                })
+            } else {
+                await Promise.all([
+                    this.prisma.storeRating.update({
+                        where: {
+                            id: storeRating.id
+                        },
                         data: {
-                            id: storeRatingId,
-                            storeId,
-                            [tmp[stars]]: 1
+                            [tmp[stars]]: +storeRating?.[tmp[stars]] + 1,
+                            total: storeRating.total + 1,
+                            average: (storeRating.average + stars) / 2,
+                            updatedAt: new Date()
                         }
                     }),
                     this.prisma.order.update({
@@ -296,18 +310,6 @@ export class RatingService {
                         }
                     })
                 ])
-            } else {
-                await this.prisma.storeRating.update({
-                    where: {
-                        id: storeRating.id
-                    },
-                    data: {
-                        [tmp[stars]]: +storeRating?.[tmp[stars]] + 1,
-                        total: storeRating.total + 1,
-                        average: (storeRating.average + stars) / 2,
-                        updatedAt: new Date()
-                    }
-                })
             }
 
             await this.prisma.$transaction(async (tx) => {

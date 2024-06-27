@@ -34,7 +34,6 @@ function OrderRating({ isOpen, setIsOpen, ratingData, refetch }: OrderRatingProp
     //xử lý api
     const { mutate, isSuccess, isPending } = useMutation({
         mutationFn: (body: RatingBody) => RatingApi.createNewRating(body),
-
         onSuccess: (result) => {
             refetch()
             toast.success('Đánh giá thành công')

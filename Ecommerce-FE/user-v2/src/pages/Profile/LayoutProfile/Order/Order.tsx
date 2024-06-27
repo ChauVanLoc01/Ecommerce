@@ -35,12 +35,6 @@ const Order = () => {
     const [openCancel, setOpenCancel] = useState<boolean>(false)
     const [openRating, setOpenRating] = useState<boolean>(false)
 
-    // const [isRatedRecently, setIsRatedRecently] = useState<boolean>(false)
-
-    // const checkIsRatedRecently = (rateingChildStatus: boolean) => {
-    //     setIsRatedRecently(rateingChildStatus)
-    // }
-
     const [orderId, setOrderId] = useState<string>('')
     const [selectedForRating, setSelectedForRating] = useState<RatingBody>({
         orderId: '',
