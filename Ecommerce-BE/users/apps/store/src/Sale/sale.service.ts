@@ -1,5 +1,5 @@
 import { PrismaService } from '@app/common/prisma/prisma.service'
-import { BadRequestException, Injectable } from '@nestjs/common'
+import { BadRequestException, Injectable, InternalServerErrorException } from '@nestjs/common'
 import { Status } from 'common/enums/status.enum'
 import { CurrentStoreType } from 'common/types/current.type'
 import { Return } from 'common/types/result.type'
@@ -37,42 +37,46 @@ export class SaleService {
     }
 
     async getSalePromotion(user: CurrentStoreType, query: QuerySalePromotionDTO): Promise<Return> {
-        const { storeId } = user
-        const { date } = query
-        const promotions = await this.prisma.salePromotion.findMany({
-            where: {
-                startDate: {
-                    gte: startOfDay(add(date, { days: 1 }))
+        try {
+            const { storeId } = user
+            const { date } = query
+            const promotions = await this.prisma.salePromotion.findMany({
+                where: {
+                    startDate: {
+                        gte: startOfDay(add(date, { days: 1 }))
+                    }
                 }
-            }
-        })
+            })
 
-        const storePromotions = (
-            await Promise.all(
-                promotions.map((promotion) =>
-                    this.prisma.storePromotion.findFirst({
-                        where: {
-                            salePromotionId: promotion.id,
-                            storeId
-                        },
-                        include: {
-                            ProductPromotion: {
-                                where: {
-                                    isDelete: false
+            const storePromotions = (
+                await Promise.all(
+                    promotions.map((promotion) =>
+                        this.prisma.storePromotion.findFirst({
+                            where: {
+                                salePromotionId: promotion.id,
+                                storeId
+                            },
+                            include: {
+                                ProductPromotion: {
+                                    where: {
+                                        isDelete: false
+                                    }
                                 }
                             }
-                        }
-                    })
+                        })
+                    )
                 )
-            )
-        ).filter(Boolean)
+            ).filter(Boolean)
 
-        return {
-            msg: 'ok',
-            result: {
-                promotions,
-                storePromotions
+            return {
+                msg: 'ok',
+                result: {
+                    promotions,
+                    storePromotions
+                }
             }
+        } catch (err) {
+            throw new InternalServerErrorException('Lỗi Server')
         }
     }
 

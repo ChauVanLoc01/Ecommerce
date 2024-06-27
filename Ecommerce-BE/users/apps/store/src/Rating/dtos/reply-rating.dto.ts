@@ -1,12 +1,12 @@
-import { ApiProperty } from "@nestjs/swagger";
-import { CreateRatingMaterialDto } from "./rating-relatived.dto";
-import { IsNotEmpty, IsString } from "class-validator";
+import { ApiProperty } from '@nestjs/swagger'
+import { IsNotEmpty, IsString } from 'class-validator'
+import { CreateRatingMaterialDto } from './rating-relatived.dto'
 
 export class CreateReplyRatingDTO extends CreateRatingMaterialDto {
     @ApiProperty()
     @IsNotEmpty()
     @IsString()
-    ratingId: string
+    parentRatingId: string
 
     @ApiProperty()
     @IsNotEmpty()

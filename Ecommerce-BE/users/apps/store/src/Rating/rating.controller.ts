@@ -8,47 +8,57 @@ import { JwtGuard } from 'common/guards/jwt.guard'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
 import { CreateRatingDto } from './dtos/create-rating.dto'
 import { RatingQueryDTO } from './dtos/rating-query.dto'
-import { RatingService } from './rating.service'
 import { CreateReplyRatingDTO } from './dtos/reply-rating.dto'
+import { RatingService } from './rating.service'
 
 @UseGuards(JwtGuard)
 @Controller('rating')
 export class RatingController {
-  constructor(private readonly ratingService: RatingService) {}
+    constructor(private readonly ratingService: RatingService) {}
 
-  @Roles(Role.USER)
-  @Post()
-  createNewRating(@CurrentUser() user: CurrentUserType, @Body() body: CreateRatingDto) {
-    return this.ratingService.createNewRating(user, body)
-  }
+    @Roles(Role.USER)
+    @Post()
+    createNewRating(@CurrentUser() user: CurrentUserType, @Body() body: CreateRatingDto) {
+        return this.ratingService.createNewRating(user, body)
+    }
 
-  @Roles(Role.STORE_OWNER, Role.EMPLOYEE)
-  @Post('reply')
-  updateRating(@CurrentUser() store: CurrentStoreType, @Body() body: CreateReplyRatingDTO) {
-    return this.ratingService.replyRating(store, body)
-  }
+    @Roles(Role.STORE_OWNER, Role.EMPLOYEE)
+    @Post('reply')
+    updateRating(@CurrentUser() store: CurrentStoreType, @Body() body: CreateReplyRatingDTO) {
+        return this.ratingService.replyRating(store, body)
+    }
 
-  @Roles(Role.STORE_OWNER, Role.EMPLOYEE)
-  @Get('store-rating')
-  getAllRatingByStore(@CurrentUser() store: CurrentStoreType, @Query() query: RatingQueryDTO) {
-    return this.ratingService.getAllRatingByStore(store, query)
-  }
+    @Roles(Role.STORE_OWNER, Role.EMPLOYEE)
+    @Get('store-rating')
+    getAllRatingByStore(@CurrentUser() store: CurrentStoreType, @Query() query: RatingQueryDTO) {
+        return this.ratingService.getAllRatingByStore(store, query)
+    }
 
-  @Public()
-  @Get('product-rating/:productId')
-  getAllRatingByProduct(@Param('productId') productId: string, @Query() query: PaginationDTO) {
-    return this.ratingService.getAllRatingByProduct(productId, query)
-  }
+    @Public()
+    @Get('product-rating/:productId/store/:storeId')
+    getAllRatingByProduct(
+        @Param('productId') productId: string,
+        @Param('storeId') storeId: string,
+        @Query() query: PaginationDTO
+    ) {
+        return this.ratingService.getAllRatingByProduct(productId, storeId, query)
+    }
 
-  @Roles(Role.USER)
-  @Get('is-can-create-rating/:productId')
-  ratingExist(@CurrentUser() user: CurrentUserType, @Param('productId') productId: string) {
-    return this.ratingService.ratingExist(user, productId)
-  }
+    @Roles(Role.USER)
+    @Get('is-can-create-rating/:productId')
+    ratingExist(@CurrentUser() user: CurrentUserType, @Param('productId') productId: string) {
+        return this.ratingService.ratingExist(user, productId)
+    }
 
-  @Public()
-  @Get(':ratingId')
-  getDetail(@Param('ratingId') ratingId: string) {
-    return this.ratingService.getDetail(ratingId)
-  }
+    @Roles(Role.USER)
+    @Get('more-rating/:parentRatingId')
+    moreRating(@Param('parentRatingId') parentRatingId: string) {
+        return this.ratingService.moreRating(parentRatingId)
+    }
+
+    // @Public()
+    // @Get(':ratingId')
+    // getDetail(@Param('ratingId') ratingId: string) {
+    //     return this.ratingService.getDetail(ratingId)
+    // }
 }

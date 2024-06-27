@@ -1,17 +1,19 @@
 import { PrismaService } from '@app/common/prisma/prisma.service'
-import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common'
+import {
+    BadRequestException,
+    Inject,
+    Injectable,
+    InternalServerErrorException,
+    NotFoundException
+} from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { ClientProxy } from '@nestjs/microservices'
-import { Order } from '@prisma/client'
-import {
-    getInfoUserInRating,
-    getOrderByRating,
-    getProductOrderByRating
-} from 'common/constants/event.constant'
+import { Order, Prisma } from '@prisma/client'
+import { getOrderByRating, getProductOrderByRating } from 'common/constants/event.constant'
 import { PaginationDTO } from 'common/decorators/pagination.dto'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
 import { Return } from 'common/types/result.type'
-import { flatten, isUndefined, keyBy, omitBy } from 'lodash'
+import { flatten, isUndefined, omitBy } from 'lodash'
 import { firstValueFrom } from 'rxjs'
 import { v4 as uuidv4 } from 'uuid'
 import { CreateRatingDto } from './dtos/create-rating.dto'
@@ -23,88 +25,119 @@ export class RatingService {
     constructor(
         private readonly prisma: PrismaService,
         private readonly configService: ConfigService,
-        @Inject('USER_SERVICE') private userClient: ClientProxy,
         @Inject('ORDER_SERVICE') private orderClient: ClientProxy,
         @Inject('PRODUCT_SERVICE') private productClient: ClientProxy
     ) {}
 
-    async getDetail(ratingId: string): Promise<Return> {
-        const ratingExist = await this.prisma.rating.findUnique({
-            where: {
-                id: ratingId
-            }
-        })
+    // async getDetail(ratingId: string): Promise<Return> {
+    //     const ratingExist = await this.prisma.rating.findUnique({
+    //         where: {
+    //             id: ratingId
+    //         }
+    //     })
 
-        if (!ratingExist) {
-            throw new NotFoundException('Đánh giá không tồn tại')
-        }
-        const materialsRating = await this.prisma.ratingMaterial.findMany({
-            where: {
-                ratingId: ratingExist.id
-            }
-        })
+    //     if (!ratingExist) {
+    //         throw new NotFoundException('Đánh giá không tồn tại')
+    //     }
+    //     const materialsRating = await this.prisma.ratingMaterial.findMany({
+    //         where: {
+    //             ratingId: ratingExist.id
+    //         }
+    //     })
 
-        const reply = await this.prisma.ratingReply.findMany({
-            where: {
-                ratingId: ratingExist.id
-            }
-        })
+    //     const reply = await this.prisma.ratingReply.findMany({
+    //         where: {
+    //             ratingId: ratingExist.id
+    //         }
+    //     })
 
-        const materialsReply = keyBy(
-            await Promise.all(
-                reply.map((re) =>
-                    this.prisma.ratingMaterial.findMany({
-                        where: {
-                            ratingReplyId: re.id
-                        }
-                    })
-                )
-            ),
-            'ratingReplyId'
-        )
+    //     const materialsReply = keyBy(
+    //         await Promise.all(
+    //             reply.map((re) =>
+    //                 this.prisma.ratingMaterial.findMany({
+    //                     where: {
+    //                         ratingReplyId: re.id
+    //                     }
+    //                 })
+    //             )
+    //         ),
+    //         'ratingReplyId'
+    //     )
 
-        return {
-            msg: 'ok',
-            result: {
-                rating: ratingExist,
-                ratingMaterial: materialsRating,
-                reply: reply,
-                replyMaterial: materialsReply
-            }
-        }
-    }
+    //     return {
+    //         msg: 'ok',
+    //         result: {
+    //             rating: ratingExist,
+    //             ratingMaterial: materialsRating,
+    //             reply: reply,
+    //             replyMaterial: materialsReply
+    //         }
+    //     }
+    // }
 
-    async getAllRatingByProduct(productId: string, query: PaginationDTO): Promise<Return> {
+    async getAllRatingByProduct(
+        productId: string,
+        storeId: string,
+        query: PaginationDTO
+    ): Promise<Return> {
         const { limit, page } = query
         const limitExist = limit | this.configService.get('app.limit_default')
 
-        const [length, ratings] = await Promise.all([
-            this.prisma.rating.count({
+        const [orderIdsRelatived, storeRating] = await Promise.all([
+            this.prisma.productOrder.findMany({
                 where: {
                     productId
+                },
+                distinct: 'orderId',
+                select: {
+                    orderId: true
                 }
             }),
-            this.prisma.rating.findMany({
+            this.prisma.storeRating.findFirst({
                 where: {
-                    productId
-                },
-                orderBy: {
-                    createdAt: 'desc'
-                },
-                take: limitExist,
-                skip: page && page > 1 ? (page - 1) * limitExist : 0
+                    storeId
+                }
             })
         ])
+
+        const convertedStoreRating = orderIdsRelatived.map((e) => e.orderId)
+
+        let { id, storeId: a, createdAt, updatedAt, ...rest } = storeRating
+
+        const ratings = await this.prisma.rating.findMany({
+            where: {
+                orderId: {
+                    in: convertedStoreRating
+                }
+            },
+            orderBy: {
+                createdAt: 'desc'
+            },
+            include: {
+                RatingReply: {
+                    take: 1
+                }
+            },
+            take: limitExist,
+            skip: page && page > 1 ? (page - 1) * limitExist : 0
+        })
 
         return {
             msg: 'ok',
             result: {
-                data: ratings,
+                data: {
+                    totalRatingData: {
+                        rest
+                    },
+                    detailRatingData: ratings
+                },
                 query: omitBy(
                     {
                         ...query,
                         page: page || 1,
-                        page_size: Math.ceil(length / limitExist)
+                        page_size: storeRating?.total
+                            ? Math.ceil(storeRating.total / limitExist)
+                            : 0
                     },
                     isUndefined
                 )
@@ -112,10 +145,24 @@ export class RatingService {
         }
     }
 
+    async moreRating(parentRatingId: string): Promise<Return> {
+        return {
+            msg: 'ok',
+            result: await this.prisma.ratingReply.findMany({
+                where: {
+                    parentRatingId
+                },
+                orderBy: {
+                    createdAt: 'asc'
+                }
+            })
+        }
+    }
+
     async getAllRatingByStore(store: CurrentStoreType, query: RatingQueryDTO): Promise<Return> {
         const { storeId } = store
         const { createdAt, endDate, startDate, limit, page, replier, reply } = query
-        const limitExist = limit | this.configService.get('app.limit_default')
+        const limitExist = limit || this.configService.get<number>('app.limit_default')
 
         const [length, ratings] = await Promise.all([
             this.prisma.rating.count({
@@ -155,7 +202,12 @@ export class RatingService {
         return {
             msg: 'ok',
             result: {
-                data: ratings,
+                data: {
+                    totalRatingData: {
+                        ratingValue: 1,
+                        numOfRating: 1
+                    }
+                },
                 query: omitBy(
                     {
                         ...query,
@@ -169,84 +221,135 @@ export class RatingService {
     }
 
     async createNewRating(user: CurrentUserType, body: CreateRatingDto): Promise<Return> {
-        const { id } = user
-        const { comment, orderId, productId, storeId, stars, urls } = body
-        const ratingId = uuidv4()
+        try {
+            const { id } = user
+            const { comment, orderId, storeId, stars, urls } = body
+            const ratingId = uuidv4()
 
-        const [orderExist, productExist, storeExist] = await Promise.all([
-            this.prisma.order.findUnique({
+            const ratingExist = await this.prisma.rating.findFirst({
                 where: {
-                    id: orderId,
-                    userId: user.id
-                }
-            }),
-            this.prisma.product.findUnique({
-                where: {
-                    id: productId
-                }
-            }),
-            this.prisma.store.findUnique({
-                where: {
-                    id: storeId
+                    orderId,
+                    storeId,
+                    createdBy: id
                 }
             })
-        ])
 
-        if (!orderExist) {
-            throw new BadRequestException(
-                'Mã đơn hàng không đúng hoặc bạn chưa thực hiện đơn hàng này'
-            )
-        }
-        if (!productExist) {
-            throw new BadRequestException('Mã sản phẩm không đúng')
-        }
-        if (!storeExist) {
-            throw new BadRequestException('Mã cửa hàng không đúng')
-        }
+            if (ratingExist) {
+                throw new BadRequestException('Đã tồn tại đánh giá cho đơn hàng này')
+            }
 
-        const [cratedRating, materials] = await this.prisma.$transaction(async (tx) => {
-            return await Promise.all([
-                tx.rating.create({
-                    data: {
-                        id: ratingId,
-                        productId,
-                        storeId,
-                        orderId,
-                        stars,
-                        comment,
-                        createdAt: new Date(),
-                        createdBy: id,
-                        isReply: false
+            const [orderExist, storeExist, storeRating] = await Promise.all([
+                this.prisma.order.findUnique({
+                    where: {
+                        id: orderId,
+                        userId: user.id
                     }
                 }),
-                ...urls.map(({ url, isPrimary }) =>
-                    tx.ratingMaterial.create({
+                this.prisma.store.findUnique({
+                    where: {
+                        id: storeId
+                    }
+                }),
+                this.prisma.storeRating.findFirst({
+                    where: {
+                        storeId
+                    }
+                })
+            ])
+
+            if (!orderExist) {
+                throw new BadRequestException(
+                    'Mã đơn hàng không đúng hoặc bạn chưa thực hiện đơn hàng này'
+                )
+            }
+            if (!storeExist) {
+                throw new BadRequestException('Mã cửa hàng không đúng')
+            }
+
+            const tmp: Record<number, keyof Prisma.StoreRatingCreateInput> = {
+                1: 'one',
+                2: 'two',
+                3: 'three',
+                4: 'four',
+                5: 'five'
+            }
+
+            if (!storeRating) {
+                let storeRatingId = uuidv4()
+
+                await this.prisma.$transaction([
+                    this.prisma.storeRating.create({
                         data: {
-                            id: uuidv4(),
-                            isPrimary: isPrimary || false,
-                            url,
-                            ratingId
+                            id: storeRatingId,
+                            storeId,
+                            [tmp[stars]]: 1
+                        }
+                    }),
+                    this.prisma.order.update({
+                        where: {
+                            id: orderId
+                        },
+                        data: {
+                            isRated: true
                         }
                     })
-                )
-            ])
-        })
-
-        return {
-            msg: 'ok',
-            result: {
-                cratedRating,
-                materials
+                ])
+            } else {
+                await this.prisma.storeRating.update({
+                    where: {
+                        id: storeRating.id
+                    },
+                    data: {
+                        [tmp[stars]]: +storeRating?.[tmp[stars]] + 1,
+                        total: storeRating.total + 1,
+                        average: (storeRating.average + stars) / 2,
+                        updatedAt: new Date()
+                    }
+                })
             }
+
+            await this.prisma.$transaction(async (tx) => {
+                return await Promise.all([
+                    tx.rating.create({
+                        data: {
+                            id: ratingId,
+                            storeId,
+                            orderId,
+                            stars,
+                            comment,
+                            createdAt: new Date(),
+                            createdBy: id,
+                            isReply: false
+                        }
+                    }),
+                    ...urls.map(({ url, isPrimary }) =>
+                        tx.ratingMaterial.create({
+                            data: {
+                                id: uuidv4(),
+                                isPrimary: isPrimary || false,
+                                url,
+                                ratingId
+                            }
+                        })
+                    )
+                ])
+            })
+
+            return {
+                msg: 'ok',
+                result: undefined
+            }
+        } catch (err) {
+            throw new InternalServerErrorException('Lỗi Server')
         }
     }
 
     async replyRating(store: CurrentStoreType, body: CreateReplyRatingDTO): Promise<Return> {
         const { userId } = store
-        const { detail, ratingId, urls } = body
+        const { detail, parentRatingId, urls } = body
         const ratingExist = await this.prisma.rating.findUnique({
             where: {
-                id: ratingId
+                id: parentRatingId
             }
         })
 
@@ -260,7 +363,7 @@ export class RatingService {
             return await Promise.all([
                 tx.rating.update({
                     where: {
-                        id: ratingId
+                        id: parentRatingId
                     },
                     data: {
                         isReply: true
@@ -272,7 +375,7 @@ export class RatingService {
                         createdAt: new Date(),
                         createdBy: userId,
                         detail,
-                        ratingId
+                        parentRatingId
                     }
                 }),
                 ...urls.map(({ url, isPrimary = false }) =>
@@ -281,7 +384,6 @@ export class RatingService {
                             id: uuidv4(),
                             url,
                             isPrimary,
-                            ratingId,
                             ratingReplyId: replyId
                         }
                     })
