@@ -1,4 +1,11 @@
-import { ChevronLeftIcon, ChevronRightIcon, Cross2Icon, InfoCircledIcon, Pencil1Icon, StarIcon } from '@radix-ui/react-icons'
+import {
+    ChevronLeftIcon,
+    ChevronRightIcon,
+    Cross2Icon,
+    InfoCircledIcon,
+    Pencil1Icon,
+    StarIcon
+} from '@radix-ui/react-icons'
 import { AlertDialog, Badge, Button, Flex, IconButton, Select, Text, TextField, Tooltip } from '@radix-ui/themes'
 import { useQuery } from '@tanstack/react-query'
 import { ColumnDef } from '@tanstack/react-table'
@@ -18,6 +25,7 @@ import OrderCancel from './OrderCancel'
 import OrderDetail from './OrderDetail'
 import OrderEdit from './OrderEdit'
 import OrderRating from './OrderRating'
+import { RatingBody } from 'src/types/rating.type'
 
 const Order = () => {
     const [date, setDate] = useState<DateRange | undefined>(undefined)
@@ -28,7 +36,18 @@ const Order = () => {
     const [openRating, setOpenRating] = useState<boolean>(false)
 
     const [orderId, setOrderId] = useState<string>('')
-    const [ratingData, setRatingData] = useState<string>('')
+    const [selectedForRating, setSelectedForRating] = useState<RatingBody>({
+        orderId: '',
+        userId: '',
+        storeId: '',
+        rating: 0,
+        comment: ''
+    })
+
+    const onRatingClick = (orderId: string, userId: string, storeId: string) => () => {
+        setSelectedForRating({ orderId, userId, storeId, rating: 0, comment: '' })
+        setOpenRating(!openRating)
+    }
 
     const columns: ColumnDef<OrderType>[] = [
         {
@@ -151,7 +170,7 @@ const Order = () => {
                         <IconButton
                             variant='soft'
                             color='green'
-                            onClick={() => setOpenRating(!openRating)}
+                            onClick={onRatingClick(row.original.id, row.original.userId, row.original.storeId)}
                             onMouseEnter={handleFetchOrderDetailWhenHovering(row.original.id)}
                             disabled={['CANCEL', 'SUCCESS'].includes(row.original.status)}
                         >
@@ -364,11 +383,7 @@ const Order = () => {
                 orderData={orderDetailData?.data.result}
             />
             <OrderCancel isOpen={openCancel} setIsOpen={setOpenCancel} orderId={orderId} refetch={refetch} />
-            <OrderRating isOpen={openRating}  
-                setIsOpen={setOpenRating}  
-                productData={orderDetailData?.data.result.ProductOrder || []}
-                orderData={orderDetailData?.data.result}
-            />
+            <OrderRating isOpen={openRating} setIsOpen={setOpenRating} ratingData={selectedForRating} />
         </LayoutProfile>
     )
 }
