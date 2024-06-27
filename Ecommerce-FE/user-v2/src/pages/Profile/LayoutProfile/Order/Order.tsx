@@ -38,14 +38,15 @@ const Order = () => {
     const [orderId, setOrderId] = useState<string>('')
     const [selectedForRating, setSelectedForRating] = useState<RatingBody>({
         orderId: '',
-        userId: '',
+        productId: '',
         storeId: '',
         rating: 0,
-        comment: ''
+        comment: '',
+        urls: ['']
     })
 
-    const onRatingClick = (orderId: string, userId: string, storeId: string) => () => {
-        setSelectedForRating({ orderId, userId, storeId, rating: 0, comment: '' })
+    const onOpenRatingClick = (orderId: string, productId: string, storeId: string) => () => {
+        setSelectedForRating({ orderId, productId, storeId, rating: 0, comment: '', urls: [''] })
         setOpenRating(!openRating)
     }
 
@@ -170,7 +171,7 @@ const Order = () => {
                         <IconButton
                             variant='soft'
                             color='green'
-                            onClick={onRatingClick(row.original.id, row.original.userId, row.original.storeId)}
+                            onClick={onOpenRatingClick(row.original.id, row.original.userId, row.original.storeId)}
                             onMouseEnter={handleFetchOrderDetailWhenHovering(row.original.id)}
                             disabled={['CANCEL', 'SUCCESS'].includes(row.original.status)}
                         >
@@ -383,7 +384,12 @@ const Order = () => {
                 orderData={orderDetailData?.data.result}
             />
             <OrderCancel isOpen={openCancel} setIsOpen={setOpenCancel} orderId={orderId} refetch={refetch} />
-            <OrderRating isOpen={openRating} setIsOpen={setOpenRating} ratingData={selectedForRating} />
+            <OrderRating
+                refetch={refetch}
+                isOpen={openRating}
+                setIsOpen={setOpenRating}
+                ratingData={selectedForRating}
+            />
         </LayoutProfile>
     )
 }

@@ -16,10 +16,11 @@ export type Rating = {
 
 export type RatingBody = {
     orderId: string,
-    userId: string,
+    productId: string,
     storeId: string,
     rating: number,
-    comment: string
+    comment: string,
+    urls: string[]
 }
 
 export type RatingMaterial = {

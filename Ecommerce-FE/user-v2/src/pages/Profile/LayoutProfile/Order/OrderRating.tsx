@@ -1,20 +1,24 @@
 import { AlertDialog, Box, Button, Flex, Spinner, Text, TextArea } from '@radix-ui/themes'
-import { useMutation } from '@tanstack/react-query'
-import axios from 'axios'
+import { QueryObserverResult, RefetchOptions, useMutation } from '@tanstack/react-query'
+import axios, { AxiosResponse } from 'axios'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { RatingApi } from 'src/apis/rating.api'
 import Rating from 'src/components/Rating/Rating'
+import { OrderResponse } from 'src/types/order.type'
 import { RatingBody } from 'src/types/rating.type'
-import { Reject } from 'src/types/return.type'
+import { Reject, Return } from 'src/types/return.type'
 
 type OrderRatingProps = {
     isOpen: boolean
     setIsOpen: React.Dispatch<React.SetStateAction<boolean>>
     ratingData: RatingBody
+    refetch: (
+        options?: RefetchOptions | undefined
+    ) => Promise<QueryObserverResult<AxiosResponse<Return<OrderResponse>, any>, Error>>
 }
 
-function OrderRating({ isOpen, setIsOpen, ratingData }: OrderRatingProps) {
+function OrderRating({ isOpen, setIsOpen, ratingData, refetch }: OrderRatingProps) {
     console.log('ratingData', ratingData)
 
     const [ratingValue, setRatingValue] = useState(ratingData?.rating)
@@ -33,6 +37,9 @@ function OrderRating({ isOpen, setIsOpen, ratingData }: OrderRatingProps) {
     const { mutate, isSuccess, isPending } = useMutation({
         mutationFn: (body: RatingBody) => RatingApi.createNewRating(body),
         onSuccess: (result) => {
+            console.log('Đánh giá thành công')
+
+            refetch()
             toast.success('Đánh giá thành công')
         },
         onError: (error) => {
@@ -45,8 +52,8 @@ function OrderRating({ isOpen, setIsOpen, ratingData }: OrderRatingProps) {
     const onSubmit = () => {
         setRatingValue(0)
         setCommentValue('')
+        console.log(ratingData)
         mutate(ratingData)
-        console.log('ratingValue', ratingValue)
     }
 
     if (!ratingData) {
