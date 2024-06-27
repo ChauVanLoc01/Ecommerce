@@ -17,8 +17,8 @@ export type OrderBody = {
     deliveryInformationId: string
     globalVoucherId?: string
     actionId: string
+    
 }
-
 export type OrderQuery = {
     product_name?: string
     status?: string
@@ -40,6 +40,7 @@ export type Order = {
     note?: string
     voucherId?: string
     deliveryInformationId: string
+    isRated: number
     status: string
     createdAt: string
     updatedAt?: string

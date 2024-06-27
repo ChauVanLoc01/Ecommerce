@@ -28,6 +28,7 @@ const Rating = () => {
         ratingValue: number
         ratingComment: string
         userAvtURL: string
+        listReviewImg: string[]
         reply: RatingReply[]
     }
 
@@ -61,6 +62,11 @@ const Rating = () => {
                 ratingValue: 4,
                 ratingComment: 'Sản phẩm dùng rất tốt',
                 userAvtURL: 'https://cdn-icons-png.flaticon.com/512/2202/2202112.png',
+                listReviewImg: [
+                    'https://photo2.tinhte.vn/data/attachment-files/2022/12/6242141_image.jpg',
+                    'https://photo2.tinhte.vn/data/attachment-files/2022/12/6242141_image.jpg',
+                    'https://photo2.tinhte.vn/data/attachment-files/2022/12/6242141_image.jpg'
+                ],
                 reply: []
             },
             {
@@ -71,6 +77,11 @@ const Rating = () => {
                 ratingValue: 5,
                 ratingComment: 'Tuyệt vời',
                 userAvtURL: 'https://cdn-icons-png.flaticon.com/512/2202/2202112.png',
+                listReviewImg: [
+                    'https://photo2.tinhte.vn/data/attachment-files/2022/12/6242141_image.jpg',
+                    'https://photo2.tinhte.vn/data/attachment-files/2022/12/6242141_image.jpg',
+                    'https://photo2.tinhte.vn/data/attachment-files/2022/12/6242141_image.jpg'
+                ],
                 reply: [
                     {
                         parentRatingId: '2',
@@ -85,15 +96,6 @@ const Rating = () => {
             }
         ]
     }
-
-    const handleRating = () => {}
-
-    const { isPending: isRatingPending, data: ratingsData } = useQuery({
-        queryKey: ['ratingList', productId],
-        queryFn: () => RatingApi.getAllRating({ productId }),
-        staleTime: 1000 * 60 * 2,
-        select: (data) => data.data.result
-    })
 
     return (
         <section className='bg-[#FFFFFF] rounded-12 border border-border/30 p-[24px] basis-2/3 space-y-4 sticky top-0'>
@@ -125,6 +127,16 @@ const Rating = () => {
                                             <p className='text-md'>{rating.ratingComment}</p>
                                         </div>
                                     </div>
+                                    <div className='review-img-list flex flex-row w-full items-center justify-start gap-2'>
+                                        {rating.listReviewImg &&
+                                            rating.listReviewImg.length > 0 &&
+                                            rating.listReviewImg.map((reviewImg: string) => (
+                                                <div className='img-container flex w-40 h-40 border-2 border-gray-300 rounded-md'>
+                                                    <img src={reviewImg} alt='' sizes='' className='flex rounded-sm' />
+                                                </div>
+                                            ))}
+                                    </div>
+
                                     <div className='ml-12 reply'>
                                         {rating.reply &&
                                             rating.reply.length > 0 &&
@@ -162,10 +174,6 @@ const Rating = () => {
                         {isCanCreateRating !== false && <CreateRating />}
                         <SimpleBar style={{ maxHeight: 708 }}>
                             {ratingData?.detailRatingData.length == 0 ? (
-                                <div className='space-y-4'>
-                                    {ratingsData?.data.map((rating) => <Review data={rating} />)}
-                                </div>
-                            ) : (
                                 <Flex justify={'center'} align={'center'} className='!py-28'>
                                     <img
                                         className='w-36 object-cover'
@@ -174,6 +182,8 @@ const Rating = () => {
                                         loading='lazy'
                                     />
                                 </Flex>
+                            ) : (
+                                ''
                             )}
                         </SimpleBar>
                     </Flex>

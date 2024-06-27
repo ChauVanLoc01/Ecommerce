@@ -16,10 +16,15 @@ export type Rating = {
 
 export type RatingBody = {
     orderId: string,
-    userId: string,
     storeId: string,
-    rating: number,
-    comment: string
+    stars: number,
+    comment: string,
+    urls: UrlObj[]
+}
+
+export type UrlObj = {
+    url: string
+    isPrimary: boolean
 }
 
 export type RatingMaterial = {
