@@ -46,88 +46,55 @@ const RatingTable = ({ data }: RatingTableProps) => {
             cell: ({ row }) => <Text className='flex justify-center'>{row.original.userName}</Text>
         },
         {
+
             accessorKey: 'detail',
             header: () => {
                 return (
-                    <div className='flex items-center justify-evenly gap-x-2'>
-                        Nội dung
+                    <Flex align={'center'} justify={'center'} className='space-x-2'>
+                        <Text>Nội dung</Text>
                         <BiSolidSortAlt />
-                    </div>
+                    </Flex>
                 )
             },
-            cell: ({ row }) => <Text className='flex justify-center'>{row.original.detail}</Text>
+            cell: ({ row }) => <Text className='flex justify-center'>{row.original.comment}</Text>
         },
         {
             accessorKey: 'status',
             header: () => {
                 return (
-                    <div className='flex items-center justify-evenly gap-x-2'>
-                        Trạng thái
+                    <Flex align={'center'} justify={'center'} className='space-x-2'>
+                        <Text>Trạng thái</Text>
                         <BiSolidSortAlt />
-                    </div>
+                    </Flex>
                 )
             },
             cell: ({ row }) => (
-                <Badge color={RatingStatus[Number(row.original.isReply)].color as any} className='flex justify-center'>
-                    {RatingStatus[Number(row.original.isReply)].lable}
-                </Badge>
+                <Flex justify={'center'} align={'center'}>
+                    <Badge color={RatingStatus[Number(row.original.isReply)].color as any} className='mx-auto'>
+                        {RatingStatus[Number(row.original.isReply)].lable}
+                    </Badge>
+                </Flex>
             )
         },
         {
             accessorKey: 'status',
             header: () => {
                 return (
-                    <div className='flex items-center justify-evenly gap-x-2'>
-                        Phản hồi bởi
+                    <Flex align={'center'} justify={'center'} className='space-x-2 max-w-32 mx-auto'>
+                        <Text>Mã đơn hàng</Text>
                         <BiSolidSortAlt />
-                    </div>
+                    </Flex>
                 )
             },
-            cell: ({ row }) => (
-                <Badge color={RatingStatus[Number(row.original.isReply)].color as any} className='flex justify-center'>
-                    {RatingStatus[Number(row.original.isReply)].lable}
-                </Badge>
-            )
-        },
-        {
-            accessorKey: 'status',
-            header: () => {
-                return (
-                    <div className='flex items-center justify-evenly gap-x-2'>
-                        Mã đơn hàng
-                        <BiSolidSortAlt />
-                    </div>
-                )
-            },
-            cell: ({ row }) => (
-                <Badge color={RatingStatus[Number(row.original.isReply)].color as any} className='flex justify-center'>
-                    {RatingStatus[Number(row.original.isReply)].lable}
-                </Badge>
-            )
-        },
-        {
-            accessorKey: 'status',
-            header: () => {
-                return (
-                    <div className='flex items-center justify-evenly gap-x-2'>
-                        Mã sản phẩm
-                        <BiSolidSortAlt />
-                    </div>
-                )
-            },
-            cell: ({ row }) => (
-                <Badge color={RatingStatus[Number(row.original.isReply)].color as any} className='flex justify-center'>
-                    {RatingStatus[Number(row.original.isReply)].lable}
-                </Badge>
-            )
+            cell: ({ row }) => <Text className='line-clamp-1 w-full max-w-32 mx-auto'>{row.original.orderId}</Text>
         },
         {
             accessorKey: 'createdAt',
             header: () => (
-                <div className='flex items-center justify-evenly gap-x-2'>
-                    Thời gian tạo
+                <Flex align={'center'} justify={'center'} className='space-x-2'>
+                    <Text>Thời gian tạo</Text>
                     <BiSolidSortAlt />
-                </div>
+                </Flex>
             ),
             cell: ({ row }) => (
                 <div className='lowercase flex flex-col items-center'>
@@ -144,10 +111,10 @@ const RatingTable = ({ data }: RatingTableProps) => {
         {
             accessorKey: 'createdAt',
             header: () => (
-                <div className='flex items-center justify-evenly gap-x-2'>
-                    Cập nhật lúc
+                <Flex align={'center'} justify={'center'} className='space-x-2'>
+                    <Text>Cập nhật lúc</Text>
                     <BiSolidSortAlt />
-                </div>
+                </Flex>
             ),
             cell: ({ row }) => (
                 <div className='lowercase flex flex-col items-center'>
@@ -179,6 +146,7 @@ const RatingTable = ({ data }: RatingTableProps) => {
             )
         }
     ]
+
     return (
         <div>
             <Table<RatingTableType> columns={columns} data={data} tableMaxHeight='500px' className='w-[2200px]' />
@@ -189,6 +157,7 @@ const RatingTable = ({ data }: RatingTableProps) => {
             ></ReplyRatingCreate>
         </div>
     )
+
 }
 
 export default RatingTable

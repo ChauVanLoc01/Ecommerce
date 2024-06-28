@@ -26,6 +26,8 @@ export const getProductOrderByRating = 'get::product::order::by::rating'
 
 export const checkVoucherExistToCreateOrder = 'checkVoucherExistToCreateOrder'
 
+export const processHandleVoucher = 'process::handle::voucher'
+
 export const productDetailPromotion = 'product::detail::promotion'
 
 export const statusOfOrder = 'status::of::order'
@@ -35,3 +37,7 @@ export const processOrder = 'process::order'
 export const statusOfProduct = 'status::of::product'
 
 export const statusOfVoucher = 'status::of::voucher'
+
+export const updateQuantityProduct = 'update::quantity::product'
+
+export const updateQuantityVoucher = 'update::quantity::voucher'

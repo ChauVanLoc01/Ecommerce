@@ -3,39 +3,28 @@ import { IsNotEmpty, IsNumber, IsOptional, IsString, MaxLength } from 'class-val
 import { CreateRatingMaterialDto } from './rating-relatived.dto'
 
 export class CreateRatingDto extends CreateRatingMaterialDto {
-  @ApiProperty({ description: 'Unique identifier for the product', example: 'product-123' })
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(50)
-  productId: string
+    @ApiProperty({ description: 'Unique identifier for the store', example: 'store-123' })
+    @IsString()
+    @IsNotEmpty()
+    @MaxLength(50)
+    storeId: string
 
-  @ApiProperty({ description: 'Unique identifier for the store', example: 'store-123' })
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(50)
-  storeId: string
+    @ApiProperty({ description: 'Unique identifier for the order', example: 'order-123' })
+    @IsString()
+    @IsNotEmpty()
+    @MaxLength(50)
+    orderId: string
 
-  @ApiProperty({ description: 'Unique identifier for the order', example: 'order-123' })
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(50)
-  orderId: string
+    @ApiProperty({ description: 'Rating stars', example: 4.5 })
+    @IsNumber()
+    @IsNotEmpty()
+    stars: number
 
-  @ApiProperty({ description: 'Rating stars', example: 4.5 })
-  @IsNumber()
-  @IsNotEmpty()
-  stars: number
-
-  @ApiProperty({ description: 'Title of the rating', example: 'Great product!' })
-  @IsString()
-  @IsNotEmpty()
-  title: string
-
-  @ApiProperty({
-    description: 'Detail of the rating',
-    example: 'I really liked this product because...'
-  })
-  @IsString()
-  @IsNotEmpty()
-  detail: string
+    @ApiProperty({
+        description: 'Detail of the rating',
+        example: 'I really liked this product because...'
+    })
+    @IsString()
+    @IsNotEmpty()
+    comment: string
 }

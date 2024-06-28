@@ -7,6 +7,7 @@ import {
     WebSocketGateway,
     WebSocketServer
 } from '@nestjs/websockets'
+import { join_room, leave_room, room_obj } from 'common/constants/socket.constant'
 import { Server, Socket } from 'socket.io'
 
 @WebSocketGateway({
@@ -20,17 +21,59 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     constructor() {}
 
-    @SubscribeMessage('order')
-    handleEvent(@ConnectedSocket() socket: Socket, @MessageBody() id: string) {
-        let hash = `order::${id}`
+    hash(type: string, id: string) {
+        return `${type}::${id}`
+    }
+
+    @SubscribeMessage(join_room)
+    joinRoom(@ConnectedSocket() socket: Socket, @MessageBody() body: { type: string; id: string }) {
+        const { id, type } = body
+        let hash = this.hash(type, id)
         socket.join(hash)
-        this.server.to(hash).emit('order', 'Theo dõi trạng thái đơn hàng')
+        socket.emit(join_room, true)
+    }
+
+    @SubscribeMessage(leave_room)
+    leaveRoom(
+        @ConnectedSocket() socket: Socket,
+        @MessageBody() body: { type: string; id: string }
+    ) {
+        const { id, type } = body
+        let hash = this.hash(type, id)
+        socket.emit(leave_room, false)
+        socket.leave(hash)
     }
 
     checkStatusOfOrder(id: string, msg: string, action: boolean, result: string[] | null) {
-        let hash = `order::${id}`
-        this.server.to(hash).emit('order', { msg, action, result })
-        this.server.socketsLeave(hash)
+        let hash = this.hash(room_obj.order, id)
+        this.server.to(hash).emit(room_obj.order, { msg, action, result })
+    }
+
+    updateProduct(productId: string, storeId: string, quantity: number, priceAfter: number) {
+        const hash = this.hash(room_obj.product, productId)
+        this.server.to(hash).emit(room_obj.product, {
+            msg: 'Cập nhật số lượng',
+            action: true,
+            result: {
+                storeId,
+                productId,
+                quantity,
+                priceAfter
+            }
+        })
+    }
+
+    updateQuantityVoucher(voucherId: string, storeId: string, quantity: number) {
+        const hash = this.hash(room_obj.voucher, voucherId)
+        this.server.to(hash).emit(room_obj.voucher, {
+            msg: 'Cập nhật số lượng',
+            action: true,
+            result: {
+                storeId,
+                voucherId,
+                quantity
+            }
+        })
     }
 
     handleConnection(@ConnectedSocket() socket: Socket) {

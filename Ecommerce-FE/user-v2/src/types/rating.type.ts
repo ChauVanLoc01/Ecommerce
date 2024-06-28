@@ -15,10 +15,10 @@ export type Rating = {
 }
 
 export type RatingBody = {
-    orderId: string,
-    storeId: string,
-    stars: number,
-    comment: string,
+    orderId: string
+    storeId: string
+    stars: number
+    comment: string
     urls: UrlObj[]
 }
 
@@ -64,3 +64,14 @@ export type CreateRatingResponse = Return<{
 }>
 
 export type IsCreateRatingResponse = Return<boolean | ProductOrder[]>
+
+export type CreateRatingBody = {
+    orderId: string
+    storeId: string
+    comment: string
+    stars: number
+    urls: {
+        url: string
+        isPrimary?: boolean
+    }[]
+}

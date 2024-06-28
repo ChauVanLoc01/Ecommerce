@@ -74,6 +74,7 @@ model Order {
   pay                   Float               @db.Float
   note                  String?             @db.VarChar(200)
   deliveryInformationId String              @db.VarChar(100)
+  isRated               Boolean?            @default(false)
   status                String              @db.Char(20)
   createdAt             DateTime?           @default(now()) @db.Timestamp(0)
   updatedAt             DateTime?           @db.Timestamp(0)
@@ -165,7 +166,6 @@ model Product {
   ProductImage                 ProductImage[]
   ProductOrder                 ProductOrder[]
   ProductPromotion             ProductPromotion[]
-  Rating                       Rating[]
   UserAddProductToCart         UserAddProductToCart[]
   UserViewProduct              UserViewProduct[]
 
@@ -206,26 +206,22 @@ model ProductOrder {
 
 model Rating {
   id          String        @id @db.VarChar(50)
-  productId   String        @db.VarChar(50)
   storeId     String        @db.VarChar(50)
   orderId     String        @db.VarChar(50)
   stars       Float
-  title       String        @db.TinyText
-  detail      String        @db.Text
+  comment     String        @db.Text
   isReply     Boolean?      @default(false)
   createdBy   String        @db.VarChar(50)
   createdAt   DateTime      @db.Timestamp(0)
   updatedBy   String?       @db.VarChar(50)
   updatedAt   DateTime?     @db.Timestamp(0)
   User        User          @relation(fields: [createdBy], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Rating_ibfk_1")
-  Product     Product       @relation(fields: [productId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Rating_ibfk_2")
   Order       Order         @relation(fields: [orderId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Rating_ibfk_3")
   Store       Store         @relation(fields: [storeId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Rating_ibfk_4")
   RatingReply RatingReply[]
 
   @@index([createdBy], map: "createdBy")
   @@index([orderId], map: "orderId")
-  @@index([productId], map: "productId")
   @@index([storeId], map: "storeId")
 }
 
@@ -240,18 +236,18 @@ model RatingMaterial {
 }
 
 model RatingReply {
-  id        String    @id @db.VarChar(50)
-  ratingId  String    @db.VarChar(50)
-  detail    String    @db.Text
-  createdAt DateTime  @db.Timestamp(0)
-  createdBy String    @db.VarChar(50)
-  updatedAt DateTime? @db.Timestamp(0)
-  updatedBy String?   @db.VarChar(50)
-  Rating    Rating    @relation(fields: [ratingId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "RatingReply_ibfk_1")
-  User      User      @relation(fields: [createdBy], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "RatingReply_ibfk_2")
+  id             String    @id @db.VarChar(50)
+  parentRatingId String    @db.VarChar(50)
+  detail         String    @db.Text
+  createdAt      DateTime  @db.Timestamp(0)
+  createdBy      String    @db.VarChar(50)
+  updatedAt      DateTime? @db.Timestamp(0)
+  updatedBy      String?   @db.VarChar(50)
+  User           User      @relation(fields: [createdBy], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "RatingReply_ibfk_2")
+  Rating         Rating    @relation(fields: [parentRatingId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "RatingReply_ibfk_3")
 
   @@index([createdBy], map: "createdBy")
-  @@index([ratingId], map: "ratingId")
+  @@index([parentRatingId], map: "parentRatingId")
 }
 
 model Store {
@@ -461,8 +457,8 @@ model StorePromotion {
   updatedBy                                   String?            @db.VarChar(50)
   ProductPromotion                            ProductPromotion[]
   Store_StorePromotion_storeIdToStore         Store              @relation("StorePromotion_storeIdToStore", fields: [storeId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "StorePromotion_ibfk_1")
-  User                                        User               @relation(fields: [createdBy], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "StorePromotion_ibfk_3")
   Store_StorePromotion_salePromotionIdToStore SalePromotion      @relation("StorePromotion_salePromotionIdToStore", fields: [salePromotionId], references: [id], onUpdate: Restrict, map: "StorePromotion_ibfk_2")
+  User                                        User               @relation(fields: [createdBy], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "StorePromotion_ibfk_3")
 
   @@index([createdBy], map: "createdBy")
   @@index([salePromotionId], map: "salePromotionId")
@@ -479,4 +475,18 @@ model OrderVoucher {
 
   @@index([orderId], map: "orderId")
   @@index([voucherId], map: "voucherId")
+}
+
+model StoreRating {
+  id        String    @id @db.VarChar(50)
+  storeId   String    @db.VarChar(50)
+  one       Int       @default(0)
+  two       Int       @default(0)
+  three     Int       @default(0)
+  four      Int       @default(0)
+  five      Int       @default(0)
+  total     Int       @default(0)
+  average   Float     @default(0)
+  createdAt DateTime? @db.Timestamp(0)
+  updatedAt DateTime? @db.Timestamp(0)
 }

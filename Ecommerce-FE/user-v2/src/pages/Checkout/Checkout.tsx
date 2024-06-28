@@ -1,4 +1,4 @@
-import { useContext, useRef, useState } from 'react'
+import { useContext, useState } from 'react'
 
 import { motion } from 'framer-motion'
 
@@ -7,7 +7,6 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { AppContext } from 'src/contexts/AppContext'
 import useStep from 'src/hooks/useStep'
-import { ProductContext } from 'src/types/context.type'
 import { OrderBody } from 'src/types/order.type'
 import CheckoutHeader from './CheckoutHeader'
 import CheckoutSummary from './CheckoutSummary'
@@ -32,7 +31,7 @@ const CheckOutEmpty = () => {
 }
 
 const Checkout = () => {
-    const { products, ids, isCanOrder, actionId, setProducts } = useContext(AppContext)
+    const { products, ids, isCanOrder, actionId, setProducts, socket } = useContext(AppContext)
 
     if (!ids) {
         return <CheckOutEmpty />
@@ -46,7 +45,7 @@ const Checkout = () => {
         dataFromApi: { refreshStores },
         orderFn: { isPending, orderDataMutate, orderMutate },
         transform: { priceLatest, productLatest, voucherLatest }
-    } = useDataCheckout({ ids, products, voucherIds, setStep, setProducts })
+    } = useDataCheckout({ ids, products, voucherIds, setStep, setProducts, socket })
 
     const handleOrder = () => {
         if (!isCanOrder) {

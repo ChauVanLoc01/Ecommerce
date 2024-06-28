@@ -77,20 +77,24 @@ const ProductList = () => {
                 <section className='basis-1/5 flex-shrink-0'>
                     <Filter data={categoryResponse} />
                 </section>
-                <section className='grow space-y-3 mb-10'>
-                    <div className='p-[16px] bg-[#FFFFFF] rounded-12 border border-border/30 flex justify-between'>
-                        <ProductSearch />
-                        <Dropdown
-                            data={{
-                                createdAt_desc: 'Mới nhất',
-                                sold_desc: 'Bán chạy nhất',
-                                price_asc: 'Giá từ thấp đến cao',
-                                price_desc: 'Giá từ cao đến thấp'
-                            }}
-                            title='Sắp xếp theo ...'
-                            rootClassNames='basis-1/4'
-                        />
+                <section className='grow pb-10'>
+                    <div className='sticky top-0 z-50 bg-[#F8F9FA]'>
+                        <div className='p-[16px] z-50 bg-[#FFFFFF] rounded-12 border border-border/30 flex justify-between overflow-hidden'>
+                            <ProductSearch />
+                            <Dropdown
+                                data={{
+                                    createdAt_desc: 'Mới nhất',
+                                    sold_desc: 'Bán chạy nhất',
+                                    price_asc: 'Giá từ thấp đến cao',
+                                    price_desc: 'Giá từ cao đến thấp'
+                                }}
+                                title='Sắp xếp theo ...'
+                                rootClassNames='basis-1/4'
+                            />
+                        </div>
+                        <div className='h-4 w-full z-50 bg-[#F8F9FA]' />
                     </div>
+
                     <div className='space-y-8'>
                         <div className='grid grid-cols-3 gap-3'>
                             {data?.data.result.data.map((product) => (

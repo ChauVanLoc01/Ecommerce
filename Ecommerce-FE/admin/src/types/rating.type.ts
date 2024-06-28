@@ -2,11 +2,12 @@ import { Pagination } from './pagination.type'
 import { Return } from './return.type'
 
 export type RatingTableType = {
+
     productId: string
     storeId: string
     userName: string
     stars: number
-    detail: string
+    comment: string
     isReply: boolean
     createdBy: string
     createdAt: Date

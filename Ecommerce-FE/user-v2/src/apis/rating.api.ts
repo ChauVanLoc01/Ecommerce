@@ -1,9 +1,14 @@
-import { CreateRatingResponse, IsCreateRatingResponse, RatingListResponse, RatingQuery } from 'src/types/rating.type'
-import { CreateRating } from 'src/utils/rating.schema'
+import {
+    CreateRatingBody,
+    CreateRatingResponse,
+    IsCreateRatingResponse,
+    RatingListResponse,
+    RatingQuery
+} from 'src/types/rating.type'
 import { http } from './http'
 
 export const RatingApi = {
-    createNewRating: (body: CreateRating) => {
+    createNewRating: (body: CreateRatingBody) => {
         return http.post<CreateRatingResponse>('/store/rating', body)
     },
     getProductRating: (body: { productId: string, storeId: string, limit: number, page: number }) => {

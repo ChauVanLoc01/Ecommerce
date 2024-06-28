@@ -17,7 +17,7 @@ type CartItemProps = {
 }
 
 const CartItem = ({ products, productIds, store, isCheckedAll, handleRemoveVoucher }: CartItemProps) => {
-    const { setProducts, ids } = useContext(AppContext)
+    const { setProducts } = useContext(AppContext)
     const [productOrder, setProductOrder] = useState<string[]>(productIds)
 
     const handleCheckedAll = () => {
@@ -25,7 +25,12 @@ const CartItem = ({ products, productIds, store, isCheckedAll, handleRemoveVouch
             ...pre,
             products: {
                 ...pre.products,
-                [store.id]: Object.values(products).map((product) => ({ ...product, checked: !isCheckedAll }))
+                [store.id]: Object.values(products).map((product) => {
+                    if (products[product.productId].isExist) {
+                        return { ...product, checked: !isCheckedAll }
+                    }
+                    return product
+                })
             }
         }))
         handleRemoveVoucher()

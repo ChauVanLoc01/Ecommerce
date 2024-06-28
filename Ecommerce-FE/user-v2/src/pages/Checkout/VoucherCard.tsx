@@ -35,7 +35,11 @@ const VoucherCard = ({ vouchers, voucherId, store, handleSelectVoucher, select }
                                 </Flex>
                                 <Text size={'1'}>Tối đa {convertCurrentcy(voucher.maximum)}</Text>
                             </Flex>
-                            <Flex mt={'2'}>
+                            <Flex mt={'2'} justify={'between'} align={'center'}>
+                                <Flex align={'center'} gapX={'1'}>
+                                    <Text>Số lượng:</Text>
+                                    <Text color='yellow'>{voucher.currentQuantity}</Text>
+                                </Flex>
                                 <Text size={'1'} color='blue'>
                                     Chi tiết
                                 </Text>

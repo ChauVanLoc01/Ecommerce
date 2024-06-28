@@ -28,11 +28,15 @@ const ProductIncart = ({ product, handleChecked, handleChangeQuantity, handleDel
     }, [quantity])
 
     return (
-        <motion.div className='px-24 pt-24 [&:last-child]:pb-24 space-x-5 flex items-center max-h-[130px]'>
+        <motion.div
+            data-exist={product.isExist}
+            className='data-[exist=false]:bg-gray-100 px-24 pt-24 [&:last-child]:pb-24 space-x-5 flex items-center max-h-[130px]'
+        >
             <Checkbox
                 checked={product.checked}
                 onCheckedChange={handleChecked(product.productId, !product.checked)}
                 id={product.productId}
+                disabled={!product.isExist}
             />
             <Link
                 to={`/${removeSpecialCharacter(product.name)}-0-${product.productId}`}
