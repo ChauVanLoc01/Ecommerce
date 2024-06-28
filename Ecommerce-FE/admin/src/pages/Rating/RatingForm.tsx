@@ -4,14 +4,16 @@ import axios, { AxiosResponse } from 'axios'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { RatingAPI } from 'src/apis/rating.api'
+import MultiUploadFile from 'src/components/MultiUploadFile/MultiUploadFile'
 import RatingReadOnly from 'src/components/Rating/RatingReadOnly'
-import { RatingFromUser, RatingReplyBody, RatingTableResponse } from 'src/types/rating.type'
-import { Reject, Return } from 'src/types/return.type'
+import { RatingFromUser, RatingReplyBody } from 'src/types/rating.type'
+import { Reject } from 'src/types/return.type'
 
 type ReplyRatingCreateProps = {
     ratingFromUser: RatingFromUser
     openReplyRating: boolean
     setOpenReplyRating: React.Dispatch<React.SetStateAction<boolean>>
+
     // refetch: (
     //     options?: RefetchOptions | undefined
     // ) => Promise<QueryObserverResult<AxiosResponse<Return<RatingTableResponse>, any>, Error>>
@@ -23,6 +25,8 @@ function ReplyRatingCreate({ ratingFromUser, openReplyRating, setOpenReplyRating
         comment: '',
         urls: ['']
     })
+
+    const [files, setFiles] = useState<{ files: Map<number, File>; primary?: number }>({ files: new Map() })
 
     const handleComment = (e: any) => {
         replyData.comment = e.target.value
@@ -83,14 +87,22 @@ function ReplyRatingCreate({ ratingFromUser, openReplyRating, setOpenReplyRating
                                 </div>
                             </div>
                         </Flex>
-
                         <Flex direction='column' gap='3'>
                             <Text as='p'>Phản hồi khách hàng (có thể để trống)</Text>
                             <Box maxWidth='100%'>
                                 <TextArea onInput={handleComment} size='3' placeholder='Nhận xét' />
                             </Box>
+                            <MultiUploadFile files={files} setFiles={setFiles} min={1}>
+                                {(total, current, min) => (
+                                    <Flex className='space-x-1 mt-2'>
+                                        <Text>Ít nhất {min} hình ảnh</Text>
+                                        <Flex>
+                                            (<Text color={current < min ? 'red' : 'blue'}>{current}</Text>/{total})
+                                        </Flex>
+                                    </Flex>
+                                )}
+                            </MultiUploadFile>
                         </Flex>
-
                         <Flex gap='3' mt='4' justify='end'>
                             <AlertDialog.Cancel>
                                 <Button type='button' variant='solid' color='red'>
