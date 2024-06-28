@@ -7,25 +7,28 @@ import {
     StarIcon
 } from '@radix-ui/react-icons'
 import { AlertDialog, Badge, Button, Flex, IconButton, Select, Text, TextField, Tooltip } from '@radix-ui/themes'
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { ColumnDef } from '@tanstack/react-table'
 import { add, endOfDay, format, startOfDay } from 'date-fns'
 import { isUndefined, omit, omitBy } from 'lodash'
 import { useEffect, useState } from 'react'
 import { DateRange } from 'react-day-picker'
 import { BiSolidSortAlt } from 'react-icons/bi'
+import { toast } from 'sonner'
 import { OrderFetching } from 'src/apis/order'
+import { RatingApi } from 'src/apis/rating.api'
+import { UploadApi } from 'src/apis/upload_file.api'
 import { DatePickerWithRange } from 'src/components/Shadcn/dateRange'
 import Table from 'src/components/Table'
 import { OrderStatus } from 'src/constants/order-status'
 import { OrderQuery, Order as OrderType } from 'src/types/order.type'
+import { RatingBody } from 'src/types/rating.type'
 import { convertCurrentcy } from 'src/utils/utils.ts'
 import LayoutProfile from '../LayoutProfile'
 import OrderCancel from './OrderCancel'
 import OrderDetail from './OrderDetail'
 import OrderEdit from './OrderEdit'
 import OrderRating from './OrderRating'
-import { RatingBody } from 'src/types/rating.type'
 
 const Order = () => {
     const [date, setDate] = useState<DateRange | undefined>(undefined)
@@ -34,9 +37,9 @@ const Order = () => {
     const [openEdit, setOpenEdit] = useState<boolean>(false)
     const [openCancel, setOpenCancel] = useState<boolean>(false)
     const [openRating, setOpenRating] = useState<boolean>(false)
+    const [files, setFiles] = useState<{ files: Map<number, File>; primary?: number }>({ files: new Map() })
 
-    const [orderId, setOrderId] = useState<string>('')
-    const [selectedForRating, setSelectedForRating] = useState<RatingBody>({
+    const [ratingData, setRatingData] = useState<RatingBody>({
         orderId: '',
         storeId: '',
         stars: 0,
@@ -44,24 +47,40 @@ const Order = () => {
         urls: []
     })
 
+    const [orderId, setOrderId] = useState<string>('')
+
     const onOpenRatingClick = (orderId: string, storeId: string) => () => {
-        setSelectedForRating({
-            orderId,
-            storeId,
-            stars: 0,
-            comment: '',
-            urls: [
-                {
-                    url: 'https://nuocuongthanhtam.com/wp-content/uploads/2023/02/IMG20230212113007-scaled.jpg',
-                    isPrimary: true
-                },
-                {
-                    url: 'https://nuocsuoi.vn/storage/2018/08/victory-250ml-gef52.jpg',
-                    isPrimary: false
-                }
-            ]
+        setTimeout(() => {
+            setRatingData((pre) => ({
+                ...pre,
+                storeId,
+                orderId
+            }))
+            setOpenRating(true)
+        }, 500)
+    }
+
+    const hanldeCreateRating = () => {
+        if (!ratingData.stars) {
+            toast.warning('Số sao không được để trống')
+            return
+        }
+
+        if (!ratingData.comment) {
+            toast.warning('Bình luận không được để trống')
+            return
+        }
+
+        if (files.files.size < 1) {
+            toast.warning('Tối thiểu 1 hình ảnh')
+            return
+        }
+
+        const formData = new FormData()
+        files.files.forEach((value, _) => {
+            formData.append('files', value)
         })
-        setOpenRating(!openRating)
+        uploadMultiFile(formData)
     }
 
     const columns: ColumnDef<OrderType>[] = [
@@ -212,6 +231,28 @@ const Order = () => {
         queryFn: ({ signal }) => OrderFetching.getOrderDetail(orderId, signal),
         enabled: false,
         staleTime: 1000 * 60 * 5
+    })
+
+    const { mutate: createRatingMutation, isPending: createRatingPending } = useMutation({
+        mutationFn: RatingApi.createNewRating,
+        onSuccess: () => {
+            refetch()
+            toast.success('Đánh giá thành công')
+            setTimeout(() => setOpenRating(false), 1000)
+        }
+    })
+
+    const { mutate: uploadMultiFile } = useMutation({
+        mutationFn: UploadApi.updateMultipleFile,
+        onSuccess: (urls) => {
+            createRatingMutation({
+                ...ratingData,
+                urls: urls.data.result.map((url) => ({ url }))
+            })
+        },
+        onError: () => {
+            toast.error('Upload hình ảnh thất bại')
+        }
     })
 
     const handleSelectChange = (value: string) => {
@@ -402,11 +443,14 @@ const Order = () => {
             />
             <OrderCancel isOpen={openCancel} setIsOpen={setOpenCancel} orderId={orderId} refetch={refetch} />
             <OrderRating
-                refetch={refetch}
+                isPending={createRatingPending}
+                setRatingData={setRatingData}
                 isOpen={openRating}
                 setIsOpen={setOpenRating}
-                ratingData={selectedForRating}
-                // setIsRatedRecently={setIsRatedRecently}
+                ratingData={ratingData}
+                files={files}
+                setFiles={setFiles}
+                hanldeCreateRating={hanldeCreateRating}
             />
         </LayoutProfile>
     )

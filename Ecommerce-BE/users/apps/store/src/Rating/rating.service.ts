@@ -84,22 +84,28 @@ export class RatingService {
         const { limit, page } = query
         const limitExist = limit | this.configService.get('app.limit_default')
 
-        const [orderIdsRelatived, storeRating] = await Promise.all([
-            this.prisma.productOrder.findMany({
-                where: {
-                    productId
-                },
-                distinct: 'orderId',
-                select: {
-                    orderId: true
-                }
-            }),
-            this.prisma.storeRating.findFirst({
-                where: {
-                    storeId
-                }
-            })
-        ])
+        const storeRating = await this.prisma.storeRating.findFirst({
+            where: {
+                storeId
+            }
+        })
+
+        if (!storeRating) {
+            return {
+                msg: 'ok',
+                result: []
+            }
+        }
+
+        const orderIdsRelatived = await this.prisma.productOrder.findMany({
+            where: {
+                productId
+            },
+            distinct: 'orderId',
+            select: {
+                orderId: true
+            }
+        })
 
         const convertedStoreRating = orderIdsRelatived.map((e) => e.orderId)
 
@@ -243,7 +249,6 @@ export class RatingService {
                 this.prisma.order.findUnique({
                     where: {
                         id: orderId,
-                        userId: user.id,
                         status: OrderStatus.SUCCESS
                     }
                 }),
@@ -276,40 +281,18 @@ export class RatingService {
                 5: 'five'
             }
 
-            if (!storeRating) {
-                let storeRatingId = uuidv4()
-
-                await this.prisma.storeRating.create({
+            if (storeRating) {
+                await this.prisma.storeRating.update({
+                    where: {
+                        id: storeRating.id
+                    },
                     data: {
-                        id: storeRatingId,
-                        storeId,
-                        [tmp[stars]]: 1,
-                        total: 1,
-                        average: stars
+                        [tmp[stars]]: +storeRating?.[tmp[stars]] + 1,
+                        total: storeRating.total + 1,
+                        average: (storeRating.average + stars) / 2,
+                        updatedAt: new Date()
                     }
                 })
-            } else {
-                await Promise.all([
-                    this.prisma.storeRating.update({
-                        where: {
-                            id: storeRating.id
-                        },
-                        data: {
-                            [tmp[stars]]: +storeRating?.[tmp[stars]] + 1,
-                            total: storeRating.total + 1,
-                            average: (storeRating.average + stars) / 2,
-                            updatedAt: new Date()
-                        }
-                    }),
-                    this.prisma.order.update({
-                        where: {
-                            id: orderId
-                        },
-                        data: {
-                            isRated: true
-                        }
-                    })
-                ])
             }
 
             await this.prisma.$transaction(async (tx) => {
@@ -324,6 +307,24 @@ export class RatingService {
                             createdAt: new Date(),
                             createdBy: id,
                             isReply: false
+                        }
+                    }),
+                    !storeRating &&
+                        tx.storeRating.create({
+                            data: {
+                                id: uuidv4(),
+                                storeId,
+                                [tmp[stars]]: 1,
+                                total: 1,
+                                average: stars
+                            }
+                        }),
+                    tx.order.update({
+                        where: {
+                            id: orderId
+                        },
+                        data: {
+                            isRated: true
                         }
                     }),
                     ...urls.map(({ url, isPrimary }) =>

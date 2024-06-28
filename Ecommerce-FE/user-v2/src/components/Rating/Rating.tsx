@@ -1,25 +1,53 @@
-const Rating = ({ rating, setRating }: any) => {
+import { Flex, IconButton } from '@radix-ui/themes'
+import { useState } from 'react'
+import { FaStar } from 'react-icons/fa6'
+
+type RatingProps = {
+    defaultValue?: number
+    handleRating?: (rateNum: number) => void
+}
+
+const Rating = ({ defaultValue, handleRating }: RatingProps) => {
+    const [position, setPosition] = useState<{ click?: number; hover?: number }>({})
+
+    const handleMouse = (type: 'click' | 'hover', index: number) => () => {
+        setPosition((pre) => ({ ...pre, [type]: index }))
+        if (type === 'click' && handleRating) {
+            handleRating(index + 1)
+        }
+    }
+
+    const handleMouseLeave = () =>
+        setPosition((pre) => {
+            delete pre.hover
+            return {
+                ...pre
+            }
+        })
+
     return (
-        <div>
-            {[1, 2, 3, 4, 5].map((star) => {
-                return (
-                    <span
-                        className='start'
-                        style={{
-                            cursor: 'pointer',
-                            color: rating >= star ? 'gold' : 'gray',
-                            fontSize: `35px`
-                        }}
-                        onClick={() => {
-                            setRating(star)
-                        }}
+        <Flex className='space-x-1'>
+            {Array(5)
+                .fill(0)
+                .map((_, idx) => (
+                    <IconButton
+                        key={idx}
+                        onClick={handleMouse('click', idx)}
+                        onMouseEnter={handleMouse('hover', idx)}
+                        onMouseLeave={handleMouseLeave}
+                        variant='ghost'
+                        color='yellow'
+                        className='hover:bg-[#FFFFFF] hover:cursor-pointer'
+                        type='button'
                     >
-                        {' '}
-                        ★{' '}
-                    </span>
-                )
-            })}
-        </div>
+                        <FaStar
+                            data-click={idx <= (position?.click || -1)}
+                            data-hover={idx <= (position?.hover || -1)}
+                            className='size-6 fill-gray-300 data-[click=true]:fill-yellow-400 data-[hover=true]:fill-yellow-400'
+                        />
+                    </IconButton>
+                ))}
+        </Flex>
     )
 }
 

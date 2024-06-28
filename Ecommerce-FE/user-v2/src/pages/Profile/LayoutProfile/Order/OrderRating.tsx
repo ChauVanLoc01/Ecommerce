@@ -1,90 +1,91 @@
 import { AlertDialog, Box, Button, Flex, Spinner, Text, TextArea } from '@radix-ui/themes'
-import { QueryObserverResult, RefetchOptions, useMutation } from '@tanstack/react-query'
-import axios, { AxiosResponse } from 'axios'
-import { useState } from 'react'
-import { toast } from 'sonner'
-import { RatingApi } from 'src/apis/rating.api'
+import { debounce, DebouncedFunc } from 'lodash'
+import { useRef } from 'react'
+import MultiUploadFile from 'src/components/MultiUploadFile/MultiUploadFile'
 import Rating from 'src/components/Rating/Rating'
-import { OrderResponse } from 'src/types/order.type'
 import { RatingBody } from 'src/types/rating.type'
-import { Reject, Return } from 'src/types/return.type'
 
 type OrderRatingProps = {
     isOpen: boolean
     setIsOpen: React.Dispatch<React.SetStateAction<boolean>>
+    setRatingData: React.Dispatch<React.SetStateAction<RatingBody>>
+    isPending: boolean
     ratingData: RatingBody
-    refetch: (
-        options?: RefetchOptions | undefined
-    ) => Promise<QueryObserverResult<AxiosResponse<Return<OrderResponse>, any>, Error>>
+    files: {
+        files: Map<number, File>
+        primary?: number
+    }
+    setFiles: React.Dispatch<
+        React.SetStateAction<{
+            files: Map<number, File>
+            primary?: number
+        }>
+    >
+    hanldeCreateRating: () => void
 }
 
-function OrderRating({ isOpen, setIsOpen, ratingData, refetch }: OrderRatingProps) {
-    const [ratingValue, setRatingValue] = useState(ratingData?.stars)
-    const [commentValue, setCommentValue] = useState(ratingData?.comment)
+function OrderRating({
+    isOpen,
+    setIsOpen,
+    isPending,
+    setRatingData,
+    ratingData,
+    files,
+    setFiles,
+    hanldeCreateRating
+}: OrderRatingProps) {
+    const debounceRef = useRef<DebouncedFunc<(value: string) => void>>()
 
-    const handleRating = (rateNum: number) => {
-        setRatingValue(rateNum)
-        ratingData.stars = rateNum
-    }
-    const handleComment = (e: any) => {
-        setCommentValue(e.target.value)
-        ratingData.comment = commentValue
+    const handleRating = (stars: number) => {
+        setRatingData((pre) => ({ ...pre, stars }))
     }
 
-    //xử lý api
-    const { mutate, isSuccess, isPending } = useMutation({
-        mutationFn: (body: RatingBody) => RatingApi.createNewRating(body),
-        onSuccess: (result) => {
-            refetch()
-            toast.success('Đánh giá thành công')
-            setIsOpen(false)
-        },
-        onError: (error) => {
-            if (axios.isAxiosError<Reject>(error) && error.response?.status === 401) {
-                toast.error(error.response.data.message)
-            }
+    const handleChangeComment = (comment: string) => setRatingData((pre) => ({ ...pre, comment }))
+
+    const debounceComment = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        if (debounceRef?.current) {
+            debounceRef.current.cancel()
         }
-    })
-
-    const onSubmit = () => {
-        setRatingValue(0)
-        setCommentValue('')
-        mutate(ratingData)
-    }
-
-    if (!ratingData) {
-        return (
-            <AlertDialog.Root>
-                <AlertDialog.Content>
-                    <AlertDialog.Title>Đánh giá đơn hàng</AlertDialog.Title>
-                    <Spinner />
-                </AlertDialog.Content>
-            </AlertDialog.Root>
-        )
+        let value = e.target.value
+        debounceRef.current = debounce(handleChangeComment, 300)
+        debounceRef.current(value)
     }
 
     return (
         <AlertDialog.Root open={isOpen} onOpenChange={setIsOpen}>
-            <AlertDialog.Content maxWidth='900px' className='!rounded-8'>
+            <AlertDialog.Content maxWidth='700px' className='!rounded-8'>
                 <form>
                     <div className='space-y-5'>
                         <AlertDialog.Title>Đánh giá đơn hàng</AlertDialog.Title>
-                        <Flex justify='center' direction='row'>
-                            {/* set initial value */}
-                            {/* <StarRating /> */}
-                        </Flex>
 
-                        <Flex direction='column' gap='3'>
+                        <MultiUploadFile files={files} setFiles={setFiles} min={1}>
+                            {(total, current, min) => (
+                                <Flex className='space-x-1 mt-2'>
+                                    <Text>Ít nhất {min} hình ảnh</Text>
+                                    <Flex>
+                                        (<Text color={current < min ? 'red' : 'blue'}>{current}</Text>/{total})
+                                    </Flex>
+                                </Flex>
+                            )}
+                        </MultiUploadFile>
+
+                        <Flex direction='column' className='space-y-1'>
                             <Text as='p'>Đánh giá</Text>
-                            <Flex direction={'row'} gap='3' width='100%'>
-                                <Rating rating={ratingValue} setRating={handleRating} />
+                            <Flex direction={'row'} width='100%'>
+                                <Rating handleRating={handleRating} />
                             </Flex>
                         </Flex>
 
                         <Flex direction='column' gap='3'>
-                            <Text as='p'>Nhận xét (có thể để trống)</Text>
+                            <Text as='p'>Nhận xét (Bắt buộc)</Text>
                             <Box maxWidth='100%'>
-                                <TextArea onInput={handleComment} size='3' placeholder='Nhận xét' />
+                                <TextArea
+                                    onChange={debounceComment}
+                                    value={ratingData.comment}
+                                    size='3'
+                                    rows={5}
+                                    placeholder='Nhận xét'
+                                />
                             </Box>
                         </Flex>
 
@@ -94,7 +95,7 @@ function OrderRating({ isOpen, setIsOpen, ratingData, refetch }: OrderRatingProp
                                     Trở về
                                 </Button>
                             </AlertDialog.Cancel>
-                            <Button onClick={onSubmit} variant='solid' color='green' type='button'>
+                            <Button onClick={hanldeCreateRating} variant='solid' color='green' type='button'>
                                 {isPending && <Spinner />}
                                 Lưu đánh giá
                             </Button>
