@@ -1,9 +1,19 @@
 import { PrismaService } from '@app/common/prisma/prisma.service'
-import { BadRequestException, Injectable, InternalServerErrorException } from '@nestjs/common'
+import {
+    BadRequestException,
+    Inject,
+    Injectable,
+    InternalServerErrorException
+} from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
+import { ClientProxy } from '@nestjs/microservices'
+import { getProductBySalePromotion } from 'common/constants/event.constant'
+import { PaginationDTO } from 'common/decorators/pagination.dto'
 import { Status } from 'common/enums/status.enum'
 import { CurrentStoreType } from 'common/types/current.type'
-import { Return } from 'common/types/result.type'
-import { add, startOfDay } from 'date-fns'
+import { MessageReturn, Return } from 'common/types/result.type'
+import { add, endOfHour, startOfDay } from 'date-fns'
+import { firstValueFrom } from 'rxjs'
 import { v4 as uuidv4 } from 'uuid'
 import { CreateProductSalePromotionDTO } from './dtos/create-product-sale.dto'
 import { QuerySalePromotionDTO } from './dtos/query-promotion.dto'
@@ -11,7 +21,11 @@ import { UpdateProductsSalePromotion } from './dtos/update-product-sale.dto'
 
 @Injectable()
 export class SaleService {
-    constructor(private readonly prisma: PrismaService) {}
+    constructor(
+        private readonly prisma: PrismaService,
+        private readonly configService: ConfigService,
+        @Inject('PRODUCT_SERVICE') private productClient: ClientProxy
+    ) {}
 
     async getSalePromotionDetail(storePromotionId: string): Promise<Return> {
         const storePromotion = await this.prisma.storePromotion.findUnique({
@@ -151,6 +165,83 @@ export class SaleService {
         return {
             msg: 'ok',
             result
+        }
+    }
+
+    async getAllProduct(promotionId: string, pagination: PaginationDTO) {
+        try {
+            const { limit, page } = pagination
+
+            let take = limit || this.configService.get<number>('app.limit_default') || 10
+
+            const promotionExist = await this.prisma.salePromotion.findUnique({
+                where: {
+                    id: promotionId,
+                    status: Status.ACTIVE,
+                    startDate: {
+                        gte: endOfHour(new Date())
+                    }
+                },
+                select: {
+                    id: true,
+                    title: true,
+                    description: true,
+                    startDate: true,
+                    endDate: true,
+                    type: true
+                }
+            })
+
+            if (!promotionExist) {
+                throw new BadRequestException('Chương trình giảm giá không tồn tại')
+            }
+
+            const products = await this.prisma.productPromotion.findMany({
+                where: {
+                    storePromotionId: promotionId,
+                    isDelete: false,
+                    quantity: {
+                        gt: 0
+                    }
+                },
+                take,
+                skip: take * (page - 1),
+                select: {
+                    id: true,
+                    priceAfter: true,
+                    productId: true,
+                    quantity: true
+                }
+            })
+
+            if (!products.length) {
+                return {
+                    msg: 'ok',
+                    result: []
+                }
+            }
+
+            const productDetails = await firstValueFrom<MessageReturn>(
+                this.productClient.send(
+                    getProductBySalePromotion,
+                    products.map((product) => product.productId)
+                )
+            )
+
+            if (!productDetails.action) {
+                throw new Error(productDetails.msg)
+            }
+
+            return {
+                msg: 'ok',
+                result: {
+                    sale: promotionExist,
+                    productSales: products,
+                    productDetails: productDetails.result
+                }
+            }
+        } catch (err) {
+            throw new InternalServerErrorException('Lỗi Server')
         }
     }
 }

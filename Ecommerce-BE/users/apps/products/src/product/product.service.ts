@@ -819,4 +819,42 @@ export class ProductService {
             throw new BadRequestException('Lỗi')
         }
     }
+
+    async getAllProductBySalePromotion(productIds: string[]) {
+        try {
+            const products = await Promise.all(
+                productIds.map((id) =>
+                    this.prisma.product.findUnique({
+                        where: {
+                            id,
+                            status: Status.ACTIVE,
+                            currentQuantity: {
+                                gt: 0
+                            },
+                            isDelete: false
+                        },
+                        select: {
+                            id: true,
+                            name: true,
+                            priceAfter: true,
+                            priceBefore: true,
+                            currentQuantity: true
+                        }
+                    })
+                )
+            )
+
+            return {
+                msg: 'ok',
+                action: true,
+                result: products
+            }
+        } catch (_) {
+            return {
+                msg: 'Lỗi Server',
+                action: false,
+                result: null
+            }
+        }
+    }
 }

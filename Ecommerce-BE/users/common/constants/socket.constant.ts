@@ -1,7 +1,8 @@
 export const room_obj = {
     product: 'product',
     voucher: 'voucher',
-    order: 'order'
+    order: 'order',
+    sale_promotion: 'sale-promotion'
 }
 
 export const join_room = 'join-room'

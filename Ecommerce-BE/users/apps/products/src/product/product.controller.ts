@@ -4,6 +4,7 @@ import { ApiBearerAuth, ApiProperty } from '@nestjs/swagger'
 import {
     createProductOrder,
     getAllProductWithProductOrder,
+    getProductBySalePromotion,
     getProductOrderByRating,
     productDetailPromotion,
     updateQuantityProducts,
@@ -161,5 +162,11 @@ export class ProductController {
     @MessagePattern(getProductOrderByRating)
     getProductOrderByRating(@Payload() payload: { productId: string; orders: string[] }) {
         return this.productsService.getProductOrderByRating(payload.productId, payload.orders)
+    }
+
+    @Public()
+    @MessagePattern(getProductBySalePromotion)
+    getAllProductBySalePromotion(@Payload() payload: string[]) {
+        return this.productsService.getAllProductBySalePromotion(payload)
     }
 }
