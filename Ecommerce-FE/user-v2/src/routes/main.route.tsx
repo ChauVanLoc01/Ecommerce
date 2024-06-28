@@ -1,5 +1,4 @@
 import loadable from '@loadable/component'
-import { Flex } from '@radix-ui/themes'
 import { QueryClient } from '@tanstack/react-query'
 import { useContext } from 'react'
 import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom'
@@ -15,6 +14,7 @@ import { profileLoader } from 'src/loaders/profile.loader'
 import { storeLoader } from 'src/loaders/store.loader'
 import Checkout from 'src/pages/Checkout'
 import Error from 'src/pages/Error/Error'
+import FlashSale from 'src/pages/FlashSale/FlashSale'
 import NotFound from 'src/pages/NotFound'
 import Profile from 'src/pages/Profile'
 import Address from 'src/pages/Profile/LayoutProfile/Address'
@@ -72,6 +72,10 @@ const routes = createBrowserRouter([
                 path: ':productId',
                 element: <Product />,
                 loader: productDetailLoader
+            },
+            {
+                path: route.flashSale,
+                element: <FlashSale />
             },
             {
                 loader: privateLoader,

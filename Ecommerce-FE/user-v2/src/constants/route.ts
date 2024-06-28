@@ -9,5 +9,6 @@ export const route = {
     changePassword: 'change-password',
     payment: 'payment',
     checkout: 'checkout',
-    address: 'address'
+    address: 'address',
+    flashSale: 'flash-sale'
 }

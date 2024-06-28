@@ -4,6 +4,7 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 
 import { ArrowRightIcon } from '@radix-ui/react-icons'
 import { Flex } from '@radix-ui/themes'
+import { route } from 'src/constants/route'
 import { Product } from 'src/types/product.type'
 import Countdown from './Countdown'
 import ProductFlashSale from './ProductFlashSale'
@@ -24,7 +25,7 @@ const FlashSale = ({ products, isHiddenMore = false }: FlashSaleProps) => {
                     <Countdown targetTime={new Date(2024, 3, 6, 23, 59)} />
                 </div>
                 {!isHiddenMore && (
-                    <Link to={'/'} className='flex items-center space-x-1 text-red-500 hover:text-red-600'>
+                    <Link to={route.flashSale} className='flex items-center space-x-1 text-red-500 hover:text-red-600'>
                         <span>Xem thêm</span>
                         <ArrowRightIcon width={18} height={18} />
                     </Link>
