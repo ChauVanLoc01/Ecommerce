@@ -1,10 +1,10 @@
 import { Pagination } from './pagination.type'
 import { Return } from './return.type'
 
-export type Rating = {
+export type RatingTableType = {
     productId: string
     storeId: string
-    title: string
+    userName: string
     stars: number
     detail: string
     isReply: boolean
@@ -12,6 +12,19 @@ export type Rating = {
     createdAt: Date
     updatedAt?: Date
 }
+
+
+export type RatingFromUser = {
+    userId: string
+    username: string
+    ratingId: string
+    email: string
+    stars: number
+    comment: string
+    replyCreatedTime: Date
+
+}
+
 
 export type RatingMaterial = {
     id: string
@@ -21,13 +34,10 @@ export type RatingMaterial = {
     ratingReplyId?: string
 }
 
-export type RatingReply = {
-    id: string
-    ratingId: string
-    detail: string
-    createdAt: Date
-    updatedAt?: Date
-    updatedBy?: string
+export type RatingReplyBody = {
+    parentRatingId: string
+    comment: string
+    urls: string[]
 }
 
 export type RatingQuery = {
@@ -37,7 +47,7 @@ export type RatingQuery = {
     endDate?: string
 } & Pagination
 
-export type RatingListResponse = Return<{
-    data: Rating[]
+export type RatingTableResponse = Return<{
+    data: RatingTableType[]
     query: Omit<RatingQuery, 'page'> & { page: number; page_size: number }
 }>

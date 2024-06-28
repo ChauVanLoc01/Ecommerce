@@ -3,29 +3,47 @@ import { Badge, Flex, IconButton, Text, Tooltip } from '@radix-ui/themes'
 import { ColumnDef } from '@tanstack/react-table'
 import { format, formatDistance } from 'date-fns'
 import { vi } from 'date-fns/locale'
+import { useState } from 'react'
 import { BiSolidSortAlt } from 'react-icons/bi'
 import Table from 'src/components/Table'
 import { RatingStatus } from 'src/constants/rating.constants'
-import { Rating } from 'src/types/rating.type'
+import { RatingTableType, RatingFromUser } from 'src/types/rating.type'
+import ReplyRatingCreate from './RatingForm'
 
 type RatingTableProps = {
-    data: Rating[]
+    data: RatingTableType[]
     refetchDataAll: () => Promise<any>
 }
 
 const RatingTable = ({ data }: RatingTableProps) => {
-    const columns: ColumnDef<Rating>[] = [
+    const [openReplyRating, setOpenReplyRating] = useState<boolean>(false)
+
+    const ratingFromUser: RatingFromUser | undefined = {
+        ratingId: '123123',
+        userId: '123123',
+        username: 'Test',
+        email: 'abc@example.com',
+        comment: 'Amazing Good job em',
+        replyCreatedTime: new Date('1/1/2024'),
+        stars: 4
+    }
+
+    const handleOpenReplyForm = () => {
+        setOpenReplyRating(!openReplyRating)
+    }
+
+    const columns: ColumnDef<RatingTableType>[] = [
         {
             accessorKey: 'title',
             header: () => {
                 return (
                     <div className='flex items-center justify-evenly gap-x-2'>
-                        Tiêu đề
+                        Tên khách hàng
                         <BiSolidSortAlt />
                     </div>
                 )
             },
-            cell: ({ row }) => <Text className='flex justify-center'>{row.original.title}</Text>
+            cell: ({ row }) => <Text className='flex justify-center'>{row.original.userName}</Text>
         },
         {
             accessorKey: 'detail',
@@ -154,14 +172,23 @@ const RatingTable = ({ data }: RatingTableProps) => {
                     </Tooltip>
                     <Tooltip content='Chỉnh sửa'>
                         <IconButton variant='soft' color='orange'>
-                            <Pencil1Icon />
+                            <Pencil1Icon onClick={handleOpenReplyForm} />
                         </IconButton>
                     </Tooltip>
                 </Flex>
             )
         }
     ]
-    return <Table<Rating> columns={columns} data={data} tableMaxHeight='500px' className='w-[2200px]' />
+    return (
+        <div>
+            <Table<RatingTableType> columns={columns} data={data} tableMaxHeight='500px' className='w-[2200px]' />
+            <ReplyRatingCreate
+                ratingFromUser={ratingFromUser}
+                openReplyRating={openReplyRating}
+                setOpenReplyRating={setOpenReplyRating}
+            ></ReplyRatingCreate>
+        </div>
+    )
 }
 
 export default RatingTable

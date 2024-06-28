@@ -1,13 +1,12 @@
 import { Flex, Text } from '@radix-ui/themes'
-import { useQuery } from '@tanstack/react-query'
 import { useLoaderData } from 'react-router-dom'
 import SimpleBar from 'simplebar-react'
-import { RatingApi } from 'src/apis/rating.api'
 import RatingReadOnly from 'src/components/Rating/RatingReadOnly'
 import { ProductDetailResponse } from 'src/types/product.type'
 import { IsCreateRatingResponse } from 'src/types/rating.type'
 import CreateRating from './CreateRating'
-import Review from './Review'
+import { OrderQuery } from 'src/types/order.type'
+import { useState } from 'react'
 
 const Rating = () => {
     type RatingReply = {
@@ -38,6 +37,8 @@ const Rating = () => {
         ratingValue: number
         numOfRating: number
     }
+
+    const [query, setQuery] = useState<Partial<OrderQuery>>({ createdAt: 'desc' })
 
     const [{ id: productId }, , , isCanCreateRating] = useLoaderData() as [
         ProductDetailResponse,

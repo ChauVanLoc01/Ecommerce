@@ -2,7 +2,7 @@ import Button from 'src/components/Button'
 import InputNumber from 'src/components/InputNumber'
 
 import { Avatar, Flex, Text } from '@radix-ui/themes'
-import { useMutation } from '@tanstack/react-query'
+import { Query, useMutation, useQuery } from '@tanstack/react-query'
 import classNames from 'classnames'
 import { motion } from 'framer-motion'
 import { useContext, useEffect, useState } from 'react'
@@ -32,6 +32,16 @@ const Product = () => {
     const { mutate: createViewAddToCart } = useMutation({
         mutationFn: productFetching.createViewAddToCart
     })
+
+    // const [query, setQuery] = useState<Partial<Rating>>({ createdAt: 'desc' })
+
+    // const { refetch, ratingsData } = useQuery({
+    //     queryKey: ['ratings', JSON.stringify(query)],
+    //     queryFn: ({ signal }) =>
+    //         RatingApi.getProductRating({ productId: '', storeId: '' , limit: 1, page: 1 }),
+    //     enabled: true,
+    //     staleTime: 1000 * 60 * 5
+    // })
 
     const handleAddToCart = (checked: boolean) => () => {
         if (!profile) {
