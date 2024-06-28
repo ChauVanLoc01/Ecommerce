@@ -1,5 +1,10 @@
 import { PrismaService } from '@app/common/prisma/prisma.service'
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
+import {
+    BadRequestException,
+    Injectable,
+    InternalServerErrorException,
+    NotFoundException
+} from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { Role } from 'common/enums/role.enum'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
@@ -156,6 +161,34 @@ export class UserService {
                 action: false,
                 result: null
             }
+        }
+    }
+
+    async getProfileUser(userId: string) {
+        try {
+            const userExist = await this.prisma.user.findUnique({
+                where: {
+                    id: userId
+                }
+            })
+
+            if (!userExist) {
+                throw new NotFoundException('Người dùng không tồn tại')
+            }
+
+            let { email, full_name, image, id } = userExist
+
+            return {
+                msg: 'ok',
+                result: {
+                    email,
+                    full_name,
+                    image,
+                    id
+                }
+            }
+        } catch (err) {
+            throw new InternalServerErrorException('Lỗi Server')
         }
     }
 }

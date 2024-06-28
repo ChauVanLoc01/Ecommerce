@@ -309,7 +309,7 @@ const SaleAlert = ({
                                 onClick={
                                     tab === 2
                                         ? handleUpdateProduct
-                                        : handleJoin(storePromotionObj?.[selectedEvent?.event?.id as any].id)
+                                        : handleJoin(storePromotionObj?.[selectedEvent?.event?.id as any]?.id)
                                 }
                                 variant='solid'
                                 className='bg-blue text-white'

@@ -1,13 +1,17 @@
-import { InfoCircledIcon, Pencil1Icon } from '@radix-ui/react-icons'
-import { Badge, Flex, IconButton, Text, Tooltip } from '@radix-ui/themes'
+import { PaperPlaneIcon } from '@radix-ui/react-icons'
+import { Badge, Flex, IconButton, Spinner, Text, Tooltip } from '@radix-ui/themes'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { ColumnDef } from '@tanstack/react-table'
 import { format, formatDistance } from 'date-fns'
 import { vi } from 'date-fns/locale'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { BiSolidSortAlt } from 'react-icons/bi'
+import { toast } from 'sonner'
+import { RatingAPI } from 'src/apis/rating.api'
+import { UploadApi } from 'src/apis/upload_file.api'
 import Table from 'src/components/Table'
 import { RatingStatus } from 'src/constants/rating.constants'
-import { RatingTableType, RatingFromUser } from 'src/types/rating.type'
+import { RatingReplyBody, RatingTableType } from 'src/types/rating.type'
 import ReplyRatingCreate from './RatingForm'
 
 type RatingTableProps = {
@@ -16,35 +20,83 @@ type RatingTableProps = {
 }
 
 const RatingTable = ({ data }: RatingTableProps) => {
+    const [isReplyRating, setIsReplyRating] = useState<boolean>(false)
+    const [userId, setUserId] = useState<string>('')
+    const commentRef = useRef<() => void>()
+    const [files, setFiles] = useState<{ files: Map<number, File>; primary?: number }>({ files: new Map() })
     const [openReplyRating, setOpenReplyRating] = useState<boolean>(false)
+    const [isCreating, setIsCreating] = useState<boolean>(false)
+    const [selectedRating, setSelectedRating] = useState<RatingTableType | undefined>(undefined)
+    const [replyData, setReplyData] = useState<RatingReplyBody>({
+        parentRatingId: '',
+        comment: ''
+    })
 
-    const ratingFromUser: RatingFromUser | undefined = {
-        ratingId: '123123',
-        userId: '123123',
-        username: 'Test',
-        email: 'abc@example.com',
-        comment: 'Amazing Good job em',
-        replyCreatedTime: new Date('1/1/2024'),
-        stars: 4
+    const { mutate: createReplyRating } = useMutation({
+        mutationFn: RatingAPI.replyRating,
+        onSuccess: () => {
+            toast.success('Đánh giá thành công')
+            setIsReplyRating(false)
+            setTimeout(() => setOpenReplyRating(false), 500)
+        }
+    })
+
+    const { data: userProfileDetail, isFetching } = useQuery({
+        queryKey: ['user-profile-in-rating', userId],
+        queryFn: RatingAPI.getProfileUserInRating(userId),
+        enabled: !!userId,
+        staleTime: 1000 * 60 * 3,
+        select: (data) => data.data.result
+    })
+
+    const { mutate: uploadMultipleFile } = useMutation({
+        mutationFn: UploadApi.updateMultipleFile,
+        onSuccess: (urls) => {
+            toast.success('Upload hình ảnh thành công')
+            createReplyRating({ ...replyData, urls: urls.data.result.map((url) => ({ url })) })
+        }
+    })
+
+    const handleOpenReplyForm = (parentRatingId: string, row: RatingTableType) => () => {
+        setOpenReplyRating(true)
+        setReplyData((pre) => ({
+            ...pre,
+            parentRatingId
+        }))
+        setSelectedRating(row)
     }
 
-    const handleOpenReplyForm = () => {
-        setOpenReplyRating(!openReplyRating)
+    const handleChangeComment = (comment: string) => () => setReplyData((pre) => ({ ...pre, comment }))
+
+    const handleComment = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        let value = e.target.value
+        if (commentRef.current) {
+            document.removeEventListener('focusout', commentRef.current)
+        }
+        commentRef.current = handleChangeComment(value)
+        document.addEventListener('focusout', commentRef.current)
+    }
+
+    const onMouseEnter = (id: string) => () => setUserId(id)
+
+    const onCreateReplyRating = () => {
+        if (!replyData.comment) {
+            toast.warning('Nhận xét là bắt buộc')
+            return
+        }
+        setIsCreating(true)
+        if (!files.files.size) {
+            createReplyRating(replyData)
+            return
+        }
+        const formData = new FormData()
+        files.files.forEach((file, _) => {
+            formData.append('files', file)
+        })
+        uploadMultipleFile(formData)
     }
 
     const columns: ColumnDef<RatingTableType>[] = [
-        {
-            accessorKey: 'title',
-            header: () => {
-                return (
-                    <div className='flex items-center justify-evenly gap-x-2'>
-                        Tên khách hàng
-                        <BiSolidSortAlt />
-                    </div>
-                )
-            },
-            cell: ({ row }) => <Text className='flex justify-center'>{row.original.userName}</Text>
-        },
         {
             accessorKey: 'detail',
             header: () => {
@@ -129,16 +181,15 @@ const RatingTable = ({ data }: RatingTableProps) => {
         },
         {
             accessorKey: ' ',
-            cell: () => (
+            cell: ({ row }) => (
                 <Flex gapX={'2'} align={'center'}>
-                    <Tooltip content='Xem chi tiết'>
-                        <IconButton variant='soft'>
-                            <InfoCircledIcon />
-                        </IconButton>
-                    </Tooltip>
-                    <Tooltip content='Chỉnh sửa'>
-                        <IconButton variant='soft' color='orange'>
-                            <Pencil1Icon onClick={handleOpenReplyForm} />
+                    <Tooltip content='Phản hồi'>
+                        <IconButton variant='soft' color='orange' onMouseEnter={onMouseEnter(row.original.createdBy)}>
+                            {isFetching && row.original.id === replyData.parentRatingId ? (
+                                <Spinner />
+                            ) : (
+                                <PaperPlaneIcon onClick={handleOpenReplyForm(row.original.id, row.original)} />
+                            )}
                         </IconButton>
                     </Tooltip>
                 </Flex>
@@ -146,14 +197,29 @@ const RatingTable = ({ data }: RatingTableProps) => {
         }
     ]
 
+    useEffect(() => {
+        if (userProfileDetail && userId) {
+            setOpenReplyRating(true)
+        }
+    }, [userProfileDetail])
+
     return (
         <div>
-            <Table<RatingTableType> columns={columns} data={data} tableMaxHeight='500px' className='w-[2200px]' />
-            <ReplyRatingCreate
-                ratingFromUser={ratingFromUser}
-                openReplyRating={openReplyRating}
-                setOpenReplyRating={setOpenReplyRating}
-            ></ReplyRatingCreate>
+            <Table<RatingTableType> columns={columns} data={data} tableMaxHeight='500px' className='w-[1500px]' />
+            {selectedRating && userProfileDetail && (
+                <ReplyRatingCreate
+                    rating={selectedRating}
+                    user={userProfileDetail}
+                    openReplyRating={openReplyRating}
+                    setOpenReplyRating={setOpenReplyRating}
+                    handleComment={handleComment}
+                    files={files}
+                    setFiles={setFiles}
+                    isCreating={isCreating}
+                    setUserId={setUserId}
+                    onCreateReplyRating={onCreateReplyRating}
+                />
+            )}
         </div>
     )
 }
