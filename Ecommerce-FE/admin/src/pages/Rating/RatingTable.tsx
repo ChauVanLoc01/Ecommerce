@@ -46,7 +46,6 @@ const RatingTable = ({ data }: RatingTableProps) => {
             cell: ({ row }) => <Text className='flex justify-center'>{row.original.userName}</Text>
         },
         {
-
             accessorKey: 'detail',
             header: () => {
                 return (
@@ -157,7 +156,6 @@ const RatingTable = ({ data }: RatingTableProps) => {
             ></ReplyRatingCreate>
         </div>
     )
-
 }
 
 export default RatingTable
