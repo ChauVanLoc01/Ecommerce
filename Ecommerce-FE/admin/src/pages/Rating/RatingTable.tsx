@@ -4,7 +4,7 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 import { ColumnDef } from '@tanstack/react-table'
 import { format, formatDistance } from 'date-fns'
 import { vi } from 'date-fns/locale'
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { BiSolidSortAlt } from 'react-icons/bi'
 import { toast } from 'sonner'
 import { RatingAPI } from 'src/apis/rating.api'
@@ -196,12 +196,6 @@ const RatingTable = ({ data }: RatingTableProps) => {
             )
         }
     ]
-
-    useEffect(() => {
-        if (userProfileDetail && userId) {
-            setOpenReplyRating(true)
-        }
-    }, [userProfileDetail])
 
     return (
         <div>
