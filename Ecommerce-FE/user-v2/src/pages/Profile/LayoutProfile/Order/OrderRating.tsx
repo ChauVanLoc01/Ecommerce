@@ -9,7 +9,6 @@ type OrderRatingProps = {
     setIsOpen: React.Dispatch<React.SetStateAction<boolean>>
     setRatingData: React.Dispatch<React.SetStateAction<RatingBody>>
     isPending: boolean
-    ratingData: RatingBody
     files: {
         files: Map<number, File>
         primary?: number
@@ -28,7 +27,6 @@ function OrderRating({
     setIsOpen,
     isPending,
     setRatingData,
-    ratingData,
     files,
     setFiles,
     hanldeCreateRating

@@ -1,8 +1,8 @@
-import { ApiProperty } from '@nestjs/swagger'
+import { ApiProperty, PartialType } from '@nestjs/swagger'
 import { IsNotEmpty, IsString } from 'class-validator'
 import { CreateRatingMaterialDto } from './rating-relatived.dto'
 
-export class CreateReplyRatingDTO extends CreateRatingMaterialDto {
+export class CreateReplyRatingDTO extends PartialType(CreateRatingMaterialDto) {
     @ApiProperty()
     @IsNotEmpty()
     @IsString()

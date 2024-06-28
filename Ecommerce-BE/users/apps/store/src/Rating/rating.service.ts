@@ -9,11 +9,15 @@ import {
 import { ConfigService } from '@nestjs/config'
 import { ClientProxy } from '@nestjs/microservices'
 import { Order, Prisma } from '@prisma/client'
-import { getOrderByRating, getProductOrderByRating } from 'common/constants/event.constant'
+import {
+    getInfoUserInRating,
+    getOrderByRating,
+    getProductOrderByRating
+} from 'common/constants/event.constant'
 import { PaginationDTO } from 'common/decorators/pagination.dto'
 import { OrderStatus } from 'common/enums/orderStatus.enum'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
-import { Return } from 'common/types/result.type'
+import { MessageReturn, Return } from 'common/types/result.type'
 import { flatten, isUndefined, omitBy } from 'lodash'
 import { firstValueFrom } from 'rxjs'
 import { v4 as uuidv4 } from 'uuid'
@@ -27,7 +31,8 @@ export class RatingService {
         private readonly prisma: PrismaService,
         private readonly configService: ConfigService,
         @Inject('ORDER_SERVICE') private orderClient: ClientProxy,
-        @Inject('PRODUCT_SERVICE') private productClient: ClientProxy
+        @Inject('PRODUCT_SERVICE') private productClient: ClientProxy,
+        @Inject('USER_SERVICE') private userClient: ClientProxy
     ) {}
 
     // async getDetail(ratingId: string): Promise<Return> {
@@ -81,74 +86,128 @@ export class RatingService {
         storeId: string,
         query: PaginationDTO
     ): Promise<Return> {
-        const { limit, page } = query
-        const limitExist = limit | this.configService.get('app.limit_default')
+        try {
+            const { limit, page } = query
+            const limitExist = limit | this.configService.get('app.limit_default')
 
-        const storeRating = await this.prisma.storeRating.findFirst({
-            where: {
-                storeId
+            const storeRating = await this.prisma.storeRating.findFirst({
+                where: {
+                    storeId
+                }
+            })
+
+            if (!storeRating) {
+                return {
+                    msg: 'ok',
+                    result: []
+                }
             }
-        })
 
-        if (!storeRating) {
+            const orderIdsRelatived = await this.prisma.productOrder.findMany({
+                where: {
+                    productId
+                },
+                distinct: 'orderId',
+                select: {
+                    orderId: true
+                }
+            })
+
+            const convertedStoreRating = orderIdsRelatived.map((e) => e.orderId)
+
+            let { id, storeId: a, createdAt, updatedAt, ...rest } = storeRating
+
+            const ratings = await this.prisma.rating.findMany({
+                where: {
+                    orderId: {
+                        in: convertedStoreRating
+                    }
+                },
+                orderBy: {
+                    createdAt: 'desc'
+                },
+                include: {
+                    RatingReply: {
+                        take: 1
+                    }
+                },
+                take: limitExist,
+                skip: page && page > 1 ? (page - 1) * limitExist : 0
+            })
+
+            const ratingReplysTmp = ratings.reduce((acum, rating) => {
+                if (!rating.RatingReply.length) {
+                    return acum
+                }
+                return [...acum, rating.id, ...rating.RatingReply.map((e) => e.id)]
+            }, [])
+
+            const userNames = await firstValueFrom<MessageReturn>(
+                this.userClient.send(
+                    getInfoUserInRating,
+                    ratings.map((e) => e.createdBy)
+                )
+            )
+
+            if (!userNames.action) {
+                throw new InternalServerErrorException('Lỗi Server')
+            }
+
+            const ratingMaterial = (
+                await Promise.all(
+                    ratingReplysTmp.map((id) =>
+                        this.prisma.ratingMaterial.findMany({
+                            where: {
+                                OR: [
+                                    {
+                                        ratingId: id
+                                    },
+                                    {
+                                        ratingReplyId: id
+                                    }
+                                ]
+                            }
+                        })
+                    )
+                )
+            ).reduce((acum, e) => {
+                if (e[0]?.ratingId) {
+                    return {
+                        ...acum,
+                        [e[0].ratingId]: e
+                    }
+                }
+                return {
+                    ...acum,
+                    [e[0].ratingReplyId]: e
+                }
+            }, {})
+
             return {
                 msg: 'ok',
-                result: []
-            }
-        }
-
-        const orderIdsRelatived = await this.prisma.productOrder.findMany({
-            where: {
-                productId
-            },
-            distinct: 'orderId',
-            select: {
-                orderId: true
-            }
-        })
-
-        const convertedStoreRating = orderIdsRelatived.map((e) => e.orderId)
-
-        let { id, storeId: a, createdAt, updatedAt, ...rest } = storeRating
-
-        const ratings = await this.prisma.rating.findMany({
-            where: {
-                orderId: {
-                    in: convertedStoreRating
-                }
-            },
-            orderBy: {
-                createdAt: 'desc'
-            },
-            include: {
-                RatingReply: {
-                    take: 1
-                }
-            },
-            take: limitExist,
-            skip: page && page > 1 ? (page - 1) * limitExist : 0
-        })
-
-        return {
-            msg: 'ok',
-            result: {
-                data: {
-                    totalRatingData: {
-                        rest
+                result: {
+                    data: {
+                        summary: {
+                            ...rest
+                        },
+                        ratings,
+                        userNames: userNames.result,
+                        ratingMaterial
                     },
-                    detailRatingData: ratings
-                },
-                query: omitBy(
-                    {
-                        ...query,
-                        page: page || 1,
-                        page_size: storeRating?.total
-                            ? Math.ceil(storeRating.total / limitExist)
-                            : 0
-                    },
-                    isUndefined
-                )
+                    query: omitBy(
+                        {
+                            ...query,
+                            page: page || 1,
+                            page_size: storeRating?.total
+                                ? Math.ceil(storeRating.total / limitExist)
+                                : 0
+                        },
+                        isUndefined
+                    )
+                }
             }
+        } catch (err) {
+            throw new InternalServerErrorException('Lỗi server')
         }
     }
 

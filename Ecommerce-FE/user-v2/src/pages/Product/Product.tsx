@@ -6,7 +6,7 @@ import { useMutation } from '@tanstack/react-query'
 import classNames from 'classnames'
 import { motion } from 'framer-motion'
 import { useContext, useEffect, useState } from 'react'
-import { Link, ScrollRestoration, useLoaderData, useNavigate } from 'react-router-dom'
+import { Link, useLoaderData, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { productFetching } from 'src/apis/product'
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from 'src/components/Shadcn/carousel'
@@ -178,7 +178,7 @@ const Product = () => {
                 </div>
             </section>
             <div className='flex gap-4'>
-                <Rating />
+                <Rating storeId={storeDetail.id} />
                 <ProductRecomend />
             </div>
         </motion.div>

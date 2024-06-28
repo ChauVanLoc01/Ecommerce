@@ -1,17 +1,17 @@
 import { ProductOrder } from './order.type'
-import { ProfileResponse } from './profile.type'
 import { Return } from './return.type'
 
 export type Rating = {
-    productId: string
+    id: string
     storeId: string
-    title: string
+    orderId: string
     stars: number
-    detail: string
+    comment: string
     isReply: boolean
     createdBy: string
     createdAt: Date
-    updatedAt?: Date
+    updatedBy: null
+    updatedAt: null
 }
 
 export type RatingBody = {
@@ -49,14 +49,27 @@ export type RatingQuery = {
     limit?: number
 }
 
-export type RatingListResponse = Return<{
+export type SummaryRating = {
+    one: number
+    two: number
+    three: number
+    four: number
+    five: number
+    total: number
+    average: number
+}
+
+export type DataRatingListResponse = {
     data: {
-        rating: Rating
-        material: RatingMaterial[]
-        user: ProfileResponse
-    }[]
+        summary: SummaryRating
+        ratings: Rating[]
+        userNames: Record<string, { full_name: string; image: string }>
+        ratingMaterial: Record<string, { url: string; isPrimary?: boolean }[]>
+    }
     query: { page: number; page_size: number }
-}>
+}
+
+export type RatingListResponse = Return<DataRatingListResponse | any[]>
 
 export type CreateRatingResponse = Return<{
     cratedRating: Rating

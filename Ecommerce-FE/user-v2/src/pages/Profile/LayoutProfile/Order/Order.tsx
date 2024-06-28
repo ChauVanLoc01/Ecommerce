@@ -449,7 +449,6 @@ const Order = () => {
                 setRatingData={setRatingData}
                 isOpen={openRating}
                 setIsOpen={setOpenRating}
-                ratingData={ratingData}
                 files={files}
                 setFiles={setFiles}
                 hanldeCreateRating={hanldeCreateRating}

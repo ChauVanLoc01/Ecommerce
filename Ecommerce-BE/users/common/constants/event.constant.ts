@@ -20,6 +20,8 @@ export const checkVoucherExistInOrder = 'voucher::exist::in::voucher'
 
 export const getInfoUserInRating = 'get::Info::User::In::Rating'
 
+export const getUserNameForRating = 'get::username::for::rating'
+
 export const getOrderByRating = 'get::order::valid::by::rating'
 
 export const getProductOrderByRating = 'get::product::order::by::rating'

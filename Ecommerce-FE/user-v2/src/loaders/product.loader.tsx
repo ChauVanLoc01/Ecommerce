@@ -1,18 +1,15 @@
 import { isUndefined, omitBy } from 'lodash'
 import { LoaderFunction } from 'react-router-dom'
 import { productFetching } from 'src/apis/product'
-import { RatingApi } from 'src/apis/rating.api'
 import { StoreFetching } from 'src/apis/store'
 import { queryClient } from 'src/routes/main.route'
 import { ProductListQuery } from 'src/types/product.type'
-import { ls } from 'src/utils/localStorage'
 import { loadingEvent } from 'src/utils/utils.ts'
 
 export const productDetailLoader: LoaderFunction = async ({ params }) => {
     loadingEvent.start(false)
 
     const productId = params.productId?.split('-0-')[1]
-    const isAuth = ls.getItem('profile')
 
     const productDetail = await queryClient.fetchQuery({
         queryKey: ['productDetail', productId],
@@ -21,7 +18,7 @@ export const productDetailLoader: LoaderFunction = async ({ params }) => {
         gcTime: 1000 * 60 * 50
     })
 
-    const [storeDetail, relativedProducts, isCanCreateRating] = await Promise.all([
+    const [storeDetail, relativedProducts] = await Promise.all([
         queryClient.fetchQuery({
             queryKey: ['storeDetail', productDetail.data.result.storeId],
             queryFn: () => StoreFetching.getStoreDetail(productDetail.data.result.storeId),
@@ -31,23 +28,12 @@ export const productDetailLoader: LoaderFunction = async ({ params }) => {
             queryKey: ['relativedProducts', productDetail.data.result.category],
             queryFn: () => productFetching.productList({ category: productDetail.data.result.category, sold: 'desc' }),
             staleTime: 1000 * 60 * 2
-        }),
-        isAuth
-            ? queryClient.fetchQuery({
-                  queryKey: ['isCanCreateRating', productId],
-                  queryFn: () => RatingApi.canCreateRating(productId as string)
-              })
-            : Promise.resolve(false)
+        })
     ])
 
     loadingEvent.end()
 
-    return [
-        productDetail.data.result,
-        relativedProducts.data.result,
-        storeDetail.data.result,
-        typeof isCanCreateRating === 'boolean' ? isCanCreateRating : isCanCreateRating.data.result
-    ]
+    return [productDetail.data.result, relativedProducts.data.result, storeDetail.data.result]
 }
 
 export const productListLoader: LoaderFunction = async ({ request }) => {

@@ -1,0 +1,33 @@
+{
+    "summary": {
+        "one": 0,
+        "two": 0,
+        "three": 0,
+        "four": 6,
+        "five": 0,
+        "total": 6,
+        "average": 4
+    },
+    "ratings": [
+        {
+            "id": "6b690cec-ffdd-45ef-b900-e6745705d56c",
+            "storeId": "6748c5c1-a1c7-468a-a779-0d5e0be487c4",
+            "orderId": "2dc0b73c-9fc7-4995-a38b-07a44d48fd42",
+            "stars": 4,
+            "comment": "Ok Lấm",
+            "isReply": false,
+            "createdBy": "a226f227-c629-4c75-98ca-e56a3dab016e",
+            "createdAt": "2024-06-28T13:08:17.000Z",
+            "updatedBy": null,
+            "updatedAt": null,
+            "RatingReply": []
+        }
+    ],
+    "userNames": {
+        "msg": "ok",
+        "action": true,
+        "result": {
+            "a226f227-c629-4c75-98ca-e56a3dab016e": "Van Loc"
+        }
+    }
+}
