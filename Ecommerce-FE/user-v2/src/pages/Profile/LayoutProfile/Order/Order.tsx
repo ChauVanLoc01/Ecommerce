@@ -38,6 +38,7 @@ const Order = () => {
     const [openCancel, setOpenCancel] = useState<boolean>(false)
     const [openRating, setOpenRating] = useState<boolean>(false)
     const [files, setFiles] = useState<{ files: Map<number, File>; primary?: number }>({ files: new Map() })
+    const [isPendingCreateRating, setIsPendingCreateRating] = useState<boolean>(false)
 
     const [ratingData, setRatingData] = useState<RatingBody>({
         orderId: '',
@@ -75,7 +76,7 @@ const Order = () => {
             toast.warning('Tối thiểu 1 hình ảnh')
             return
         }
-
+        setIsPendingCreateRating(true)
         const formData = new FormData()
         files.files.forEach((value, _) => {
             formData.append('files', value)
@@ -233,10 +234,11 @@ const Order = () => {
         staleTime: 1000 * 60 * 5
     })
 
-    const { mutate: createRatingMutation, isPending: createRatingPending } = useMutation({
+    const { mutate: createRatingMutation } = useMutation({
         mutationFn: RatingApi.createNewRating,
         onSuccess: () => {
             refetch()
+            setIsPendingCreateRating(false)
             toast.success('Đánh giá thành công')
             setTimeout(() => setOpenRating(false), 1000)
         }
@@ -443,7 +445,7 @@ const Order = () => {
             />
             <OrderCancel isOpen={openCancel} setIsOpen={setOpenCancel} orderId={orderId} refetch={refetch} />
             <OrderRating
-                isPending={createRatingPending}
+                isPending={isPendingCreateRating}
                 setRatingData={setRatingData}
                 isOpen={openRating}
                 setIsOpen={setOpenRating}

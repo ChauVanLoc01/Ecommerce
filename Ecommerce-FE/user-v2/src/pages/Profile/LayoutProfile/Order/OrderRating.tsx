@@ -1,5 +1,4 @@
 import { AlertDialog, Box, Button, Flex, Spinner, Text, TextArea } from '@radix-ui/themes'
-import { debounce, DebouncedFunc } from 'lodash'
 import { useRef } from 'react'
 import MultiUploadFile from 'src/components/MultiUploadFile/MultiUploadFile'
 import Rating from 'src/components/Rating/Rating'
@@ -34,21 +33,20 @@ function OrderRating({
     setFiles,
     hanldeCreateRating
 }: OrderRatingProps) {
-    const debounceRef = useRef<DebouncedFunc<(value: string) => void>>()
+    const focusoutEventRef = useRef<() => void>()
 
     const handleRating = (stars: number) => {
         setRatingData((pre) => ({ ...pre, stars }))
     }
 
-    const handleChangeComment = (comment: string) => setRatingData((pre) => ({ ...pre, comment }))
+    const handleChangeComment = (comment: string) => () => setRatingData((pre) => ({ ...pre, comment }))
 
     const debounceComment = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-        if (debounceRef?.current) {
-            debounceRef.current.cancel()
+        if (focusoutEventRef?.current) {
+            document.removeEventListener('focusout', focusoutEventRef.current)
         }
-        let value = e.target.value
-        debounceRef.current = debounce(handleChangeComment, 300)
-        debounceRef.current(value)
+        focusoutEventRef.current = handleChangeComment(e.target.value)
+        document.addEventListener('focusout', focusoutEventRef.current)
     }
 
     return (
@@ -79,13 +77,7 @@ function OrderRating({
                         <Flex direction='column' gap='3'>
                             <Text as='p'>Nhận xét (Bắt buộc)</Text>
                             <Box maxWidth='100%'>
-                                <TextArea
-                                    onChange={debounceComment}
-                                    value={ratingData.comment}
-                                    size='3'
-                                    rows={5}
-                                    placeholder='Nhận xét'
-                                />
+                                <TextArea onChange={debounceComment} size='3' rows={5} placeholder='Nhận xét' />
                             </Box>
                         </Flex>
 

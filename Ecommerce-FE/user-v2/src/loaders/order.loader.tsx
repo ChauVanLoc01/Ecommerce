@@ -17,8 +17,7 @@ export const ordersLoader: LoaderFunction = async () => {
             OrderFetching.getAllOrder({
                 createdAt: 'desc'
             }),
-        staleTime: 1000 * 60 * 2,
-        gcTime: 1000 * 60 * 50
+        staleTime: 1000 * 60 * 3
     })
 
     loadingEvent.end()
