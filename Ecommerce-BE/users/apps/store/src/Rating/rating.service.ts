@@ -171,6 +171,25 @@ export class RatingService {
         const { createdAt, endDate, startDate, limit, page, replier, reply } = query
         const limitExist = limit || this.configService.get<number>('app.limit_default')
 
+        const storeRating = await this.prisma.storeRating.findFirst({
+            where: {
+                storeId
+            }
+        })
+
+        if (!storeRating) {
+            return {
+                msg: 'ok',
+                result: {
+                    data: [],
+                    query: {
+                        page: 0,
+                        page_size: 0
+                    }
+                }
+            }
+        }
+
         const [length, ratings] = await Promise.all([
             this.prisma.rating.count({
                 where: {
@@ -209,12 +228,7 @@ export class RatingService {
         return {
             msg: 'ok',
             result: {
-                data: {
-                    totalRatingData: {
-                        ratingValue: 1,
-                        numOfRating: 1
-                    }
-                },
+                data: ratings,
                 query: omitBy(
                     {
                         ...query,

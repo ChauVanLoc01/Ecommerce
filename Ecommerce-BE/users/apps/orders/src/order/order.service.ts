@@ -155,7 +155,17 @@ export class OrderService {
     async getAllOrderByStore(user: CurrentStoreType, query: QueryOrderType): Promise<Return> {
         const { storeId } = user
 
-        const { product_name, createdAt, total, start_date, end_date, limit, page, status } = query
+        const {
+            product_name,
+            createdAt,
+            total,
+            start_date,
+            end_date,
+            limit,
+            page,
+            status,
+            orderId
+        } = query
 
         const take = limit | this.configService.get('app.limit_default')
 
@@ -176,7 +186,10 @@ export class OrderService {
                         lte: end_date,
                         gte: start_date
                     },
-                    status
+                    status,
+                    id: {
+                        contains: orderId
+                    }
                 },
                 orderBy: {
                     createdAt,
