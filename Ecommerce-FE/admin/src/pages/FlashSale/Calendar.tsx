@@ -1,6 +1,17 @@
 import { ChevronLeftIcon, ChevronRightIcon } from '@radix-ui/react-icons'
 import { Button, Flex, Grid, IconButton, Tooltip } from '@radix-ui/themes'
-import { add, eachDayOfInterval, endOfWeek, format, isEqual, setHours, startOfDay, startOfWeek, sub } from 'date-fns'
+import {
+    add,
+    eachDayOfInterval,
+    eachHourOfInterval,
+    endOfWeek,
+    format,
+    isEqual,
+    setHours,
+    startOfDay,
+    startOfWeek,
+    sub
+} from 'date-fns'
 import { debounce, DebouncedFunc, Dictionary } from 'lodash'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import SimpleBar from 'simplebar-react'
@@ -18,6 +29,10 @@ const Calendar = ({ promotionObjs, onSelectEvent, storePromotionObj }: CalendarP
     const parentRef = useRef<HTMLDivElement | null>(null)
     const scrollableNodeRef = useRef<any>(null)
     const [onTop, setOnTop] = useState<boolean>(true)
+
+    console.log('startOfWeek', startOfWeek(new Date()))
+    console.log('endOfWeek', endOfWeek(new Date()))
+    console.log('eachOfHour', eachHourOfInterval({ start: startOfWeek(new Date()), end: endOfWeek(new Date()) }))
 
     const handleCheckPositionScrollTop: DebouncedFunc<(isOnTop: boolean) => void> = debounce(
         (isOnTop: boolean) => setOnTop(isOnTop),

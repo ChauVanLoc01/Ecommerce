@@ -7,9 +7,21 @@ import { currentSalePromotion } from 'common/constants/event.constant'
 import { SalePromotion } from 'common/constants/sale-promotion.constant'
 import { Status } from 'common/enums/status.enum'
 import { CronJob } from 'cron'
-import { add, eachHourOfInterval, endOfWeek, format, startOfHour, startOfWeek, sub } from 'date-fns'
+import {
+    add,
+    eachHourOfInterval,
+    endOfWeek,
+    format,
+    setDefaultOptions,
+    startOfHour,
+    startOfWeek,
+    sub
+} from 'date-fns'
+import { vi } from 'date-fns/locale'
 import { chunk } from 'lodash'
 import { v4 as uuidv4 } from 'uuid'
+
+setDefaultOptions({ locale: vi })
 
 @Injectable()
 export class ScheduleService {
@@ -23,7 +35,7 @@ export class ScheduleService {
         return eachHourOfInterval({ start: startOfWeek(new Date()), end: endOfWeek(new Date()) })
     }
 
-    @Cron('1 46 * * * *', {
+    @Cron('1 30 3 * * 1', {
         name: 'auto creating sale promotion'
     })
     async autoCreatingSalePromotion() {
@@ -33,17 +45,17 @@ export class ScheduleService {
     }
 
     async createSalePromotion(name: string, second: number, data: Date[]) {
-        const cron_job = new CronJob(`${second} 47 * * * *`, async () => {
+        const cron_job = new CronJob(`${second} 31 3 * * 1`, async () => {
             await Promise.all(
                 data.map((date) => {
-                    let formatDate = format(sub(date, { hours: 7 }), 'HH:mm dd-MM-yyyy')
+                    let formatDate = format(date, 'HH:mm dd-MM-yyyy')
                     return this.prisma.salePromotion.create({
                         data: {
                             id: uuidv4(),
                             title: `Daily Sale ${formatDate}`,
                             description: `Chương trình giảm giá hằng ngày kích cầu mua sắm ${formatDate}`,
-                            startDate: date,
-                            endDate: add(date, { hours: 1 }),
+                            startDate: add(date, { hours: 7 }).toISOString(),
+                            endDate: add(date, { hours: 8 }).toISOString(),
                             createdAt: new Date(),
                             status: Status.BLOCK,
                             type: SalePromotion.NORMAL,
