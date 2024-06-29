@@ -26,7 +26,7 @@ const MultiUploadFile = ({ size = 5, files, min, setFiles, children }: MultiUplo
                     {Array(size)
                         .fill(0)
                         .map((_, idx) => (
-                            <div key={idx} className='basis-1/3 mr-5 last:mr-0 flex-shrink-0'>
+                            <div key={idx} className='basis-1/6  last:mr-0 flex-shrink-0'>
                                 <UploadFile id={idx} files={files} setFiles={setFiles} key={idx} />
                             </div>
                         ))}

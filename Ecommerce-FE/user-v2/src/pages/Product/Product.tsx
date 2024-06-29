@@ -62,7 +62,8 @@ const Product = () => {
                                 name: productDetail.name,
                                 image: productDetail.image,
                                 priceAfter: productDetail.priceAfter,
-                                checked
+                                checked,
+                                isExist: false
                             }
                         ]
                     }
@@ -85,7 +86,8 @@ const Product = () => {
                         image: productDetail.image,
                         name: productDetail.name,
                         priceAfter: productDetail.priceAfter,
-                        checked
+                        checked,
+                        isExist: false
                     })
                 productsTmp = {
                     ...productsTmp,

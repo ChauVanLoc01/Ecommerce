@@ -5,7 +5,9 @@ import {
     ProductListQuery,
     ProductListResponse,
     ProductSearch,
-    RefreshProduct
+    RefreshProduct,
+    SalesPromotion,
+    SalesPromotionAndProduct
 } from 'src/types/product.type'
 import { Return } from 'src/types/return.type'
 import { http } from './http'
@@ -42,5 +44,18 @@ export const productFetching = {
         return http.get<ProductSearch>('/product/search-product', {
             params
         })
+    },
+    getAllSalePromotionProduct: (salesPromotionId: string ,query: ProductListQuery) => {
+        return http.get<Return<ProductListQuery>, ProductListQuery>(`store/sale-promotion/${salesPromotionId}/product`), {
+            query
+        } 
+    },
+    getSalePromotionsInDay: () => {
+        return http.get<SalesPromotion>(`store/sale-promotion/sale-promotion-in-day`)
+    },
+    getCurrentSaleInfo: () => {
+        return http.get<SalesPromotionAndProduct>(`store/sale-promotion/current-sale`)
     }
+    
+
 }
