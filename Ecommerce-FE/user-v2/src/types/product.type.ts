@@ -28,6 +28,18 @@ export type Product = {
 
 export type Order = 'asc' | 'desc'
 
+export type SalesPromotionType = {
+    salePromotionId: string
+    title: string
+    description: string
+    type: string
+    startDate: string
+    endDate: string
+    createdAt?: string
+    updateAt?: string
+    updatedBy?: string
+}
+
 export type ProductListQuery = {
     category?: string
     createdAt?: Order
@@ -54,6 +66,12 @@ export type ProductSearch = Return<{
     data: Product[]
 }>
 
+export type SalesPromotion = Return<SalesPromotionType[]>
+
+export type SalesPromotionAndProduct = {
+    salesPromotion: SalesPromotionType
+    productPromotion: []
+}
 
 export type ProductRating = {
     
