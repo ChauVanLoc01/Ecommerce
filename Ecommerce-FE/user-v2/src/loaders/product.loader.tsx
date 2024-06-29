@@ -1,6 +1,7 @@
 import { isUndefined, omitBy } from 'lodash'
 import { LoaderFunction } from 'react-router-dom'
 import { productFetching } from 'src/apis/product'
+import { sale_api } from 'src/apis/sale_promotion.api'
 import { StoreFetching } from 'src/apis/store'
 import { queryClient } from 'src/routes/main.route'
 import { ProductListQuery } from 'src/types/product.type'
@@ -41,37 +42,43 @@ export const productListLoader: LoaderFunction = async ({ request }) => {
 
     const queryParams = new URL(request.url).searchParams as Partial<Record<keyof ProductListQuery, string>>
 
-    const productList = await queryClient.fetchQuery({
-        queryKey: [
-            'productList',
-            JSON.stringify(
-                omitBy(
-                    {
-                        ...queryParams,
-                        page: Number(queryParams?.page) || undefined
-                    },
-                    isUndefined
-                ) as ProductListQuery
-            )
-        ],
-        queryFn: () =>
-            productFetching.productList(
-                omitBy(
-                    {
-                        ...queryParams,
-                        page: Number(queryParams?.page) || undefined
-                    },
-                    isUndefined
-                ) as ProductListQuery
-            ),
-        staleTime: 1000 * 60 * 2
-    })
-
-    const categories = await queryClient.fetchQuery({
-        queryKey: ['categories'],
-        queryFn: () => productFetching.categoryList(),
-        staleTime: Infinity
-    })
+    const [productList, categories] = await Promise.all([
+        queryClient.fetchQuery({
+            queryKey: [
+                'productList',
+                JSON.stringify(
+                    omitBy(
+                        {
+                            ...queryParams,
+                            page: Number(queryParams?.page) || undefined
+                        },
+                        isUndefined
+                    ) as ProductListQuery
+                )
+            ],
+            queryFn: () =>
+                productFetching.productList(
+                    omitBy(
+                        {
+                            ...queryParams,
+                            page: Number(queryParams?.page) || undefined
+                        },
+                        isUndefined
+                    ) as ProductListQuery
+                ),
+            staleTime: 1000 * 60 * 2
+        }),
+        queryClient.fetchQuery({
+            queryKey: ['categories'],
+            queryFn: () => productFetching.categoryList(),
+            staleTime: Infinity
+        }),
+        queryClient.fetchQuery({
+            queryKey: ['current-sale-promotion'],
+            queryFn: sale_api.current_sale_promotin,
+            staleTime: 1000 * 60 * 5
+        })
+    ])
 
     loadingEvent.end()
 

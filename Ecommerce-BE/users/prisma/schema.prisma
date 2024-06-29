@@ -431,6 +431,7 @@ model ProductPromotion {
   id               String         @id @db.VarChar(50)
   productId        String         @db.VarChar(50)
   quantity         Int
+  bought           Int?           @default(0)
   priceAfter       Float          @db.Float
   isDelete         Boolean        @default(false)
   createdAt        DateTime       @db.Timestamp(0)

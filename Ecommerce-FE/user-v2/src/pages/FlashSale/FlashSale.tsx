@@ -1,12 +1,9 @@
 import { Flex } from '@radix-ui/themes'
 import { useQuery } from '@tanstack/react-query'
-import { addHours, format, setMilliseconds, setMinutes, setSeconds } from 'date-fns'
 import { useState } from 'react'
 import { productFetching } from 'src/apis/product'
 import { Carousel, CarouselContent, CarouselNext, CarouselPrevious } from 'src/components/Shadcn/carousel'
-import Timestamp from './Timestamp'
 
-import { isUndefined, omitBy } from 'lodash'
 import {
     Pagination,
     PaginationContent,
@@ -15,18 +12,8 @@ import {
     PaginationPrevious
 } from 'src/components/Shadcn/pagination'
 import useQueryParams from 'src/hooks/useQueryParams'
-import { Product, ProductListQuery } from 'src/types/product.type'
-import ProductCard from '../ProductList/ProductCard'
+import { ProductListQuery } from 'src/types/product.type'
 import PromotionProductCard from '../ProductList/PromotionProductCard/PromotionProductCard'
-
-type hourEl = {
-    hourNum: number
-    hourText: string
-    isActive: boolean
-}
-const currentDate = new Date()
-const currentHour = currentDate.getHours()
-const startDate = setMilliseconds(setSeconds(setMinutes(currentDate, 0), 0), 0)
 
 const FlashSale = () => {
     // const currentSalePromotionId = useQuery({

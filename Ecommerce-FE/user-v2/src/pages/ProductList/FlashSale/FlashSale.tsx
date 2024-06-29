@@ -4,8 +4,11 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 
 import { ArrowRightIcon } from '@radix-ui/react-icons'
 import { Flex } from '@radix-ui/themes'
+import { AxiosResponse } from 'axios'
 import { route } from 'src/constants/route'
+import { queryClient } from 'src/routes/main.route'
 import { Product } from 'src/types/product.type'
+import { CurrentSalePromotion } from 'src/types/sale.type'
 import Countdown from './Countdown'
 import ProductFlashSale from './ProductFlashSale'
 
@@ -15,6 +18,9 @@ type FlashSaleProps = {
 }
 
 const FlashSale = ({ products, isHiddenMore = false }: FlashSaleProps) => {
+    const current_sale_promotino = queryClient.getQueryData<AxiosResponse<CurrentSalePromotion>>([
+        'current-sale-promotion'
+    ])?.data.result
     return (
         <div className='space-y-3'>
             <Flex justify={'between'} align={'baseline'}>
@@ -33,7 +39,7 @@ const FlashSale = ({ products, isHiddenMore = false }: FlashSaleProps) => {
             </Flex>
             <Carousel className='w-full'>
                 <CarouselContent className=''>
-                    {products.map((product, idx) => (
+                    {current_sale_promotino?.productPromotions.map((product, idx) => (
                         <CarouselItem key={idx} className='basis-1/6'>
                             <ProductFlashSale product={product} />
                         </CarouselItem>

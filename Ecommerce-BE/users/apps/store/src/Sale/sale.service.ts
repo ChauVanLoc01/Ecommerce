@@ -314,13 +314,12 @@ export class SaleService {
                         gt: 0
                     }
                 },
-                select: {
-                    id: true,
-                    productId: true,
-                    quantity: true,
-                    priceAfter: true,
-                    storePromotionId: true,
-                    salePromotionId: true
+                omit: {
+                    createdAt: true,
+                    createdBy: true,
+                    isDelete: true,
+                    updatedAt: true,
+                    updatedBy: true
                 },
                 take: 20
             })
