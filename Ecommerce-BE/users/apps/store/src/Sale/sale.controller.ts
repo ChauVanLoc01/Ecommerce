@@ -6,11 +6,35 @@ import { CreateProductSalePromotionDTO } from './dtos/create-product-sale.dto'
 import { QuerySalePromotionDTO } from './dtos/query-promotion.dto'
 import { UpdateProductsSalePromotion } from './dtos/update-product-sale.dto'
 import { SaleService } from './sale.service'
+import { Public } from 'common/decorators/public.decorator'
+import { PaginationDTO } from 'common/decorators/pagination.dto'
 
 @UseGuards(JwtGuard)
 @Controller('sale-promotion')
 export class SaleController {
     constructor(private readonly saleService: SaleService) {}
+
+    @Public()
+    @Get('sale-promotion-in-day')
+    getSalePromotionsInDay() {
+        return this.saleService.getSalePromotionsInDay()
+    }
+
+    @Public()
+    @Get('current-sale')
+    getCurrentSale() {
+        return this.saleService.getCurrentSale()
+    }
+
+    @Public()
+    @Get(':salePromotionId/product')
+    getAllProduct(
+        @CurrentUser() store: CurrentStoreType,
+        @Param('salePromotionId') salePromotionId: string,
+        @Query() query: PaginationDTO
+    ) {
+        return this.saleService.getAllProduct(store, salePromotionId, query)
+    }
 
     @Get(':storePromotionId')
     getSalePromotionDetail(@Param('storePromotionId') storePromotionId: string) {

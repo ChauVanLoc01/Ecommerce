@@ -34,6 +34,15 @@ export class RatingController {
         return this.ratingService.getAllRatingByStore(store, query)
     }
 
+    @Roles(Role.STORE_OWNER, Role.EMPLOYEE)
+    @Get('rating-detail/:ratingId/store')
+    getDetailRatingByStore(
+        @CurrentUser() store: CurrentStoreType,
+        @Param('ratingId') ratingId: string
+    ) {
+        return this.ratingService.getDetailRatingByStore(store, ratingId)
+    }
+
     @Public()
     @Get('product-rating/:productId/store/:storeId')
     getAllRatingByProduct(

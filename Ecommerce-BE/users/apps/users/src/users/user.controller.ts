@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Put, Query, UseGuards } from '@nestjs/common'
+import { Body, Controller, Get, Param, Put, Query, UseGuards } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
 import { getInfoUserInRating, updateStoreRoleId } from 'common/constants/event.constant'
 import { CurrentUser } from 'common/decorators/current_user.decorator'
@@ -61,5 +61,11 @@ export class UserController {
     @MessagePattern(getInfoUserInRating)
     getInfoUserInRating(@Payload() payload: string[]) {
         return this.userService.getInfoUserInRating(payload)
+    }
+
+    @Roles(Role.ADMIN, Role.STORE_OWNER, Role.STORE_OWNER)
+    @Get('/user-profile/:userId')
+    getProfileUser(@Param('userId') userId: string) {
+        return this.userService.getProfileUser(userId)
     }
 }

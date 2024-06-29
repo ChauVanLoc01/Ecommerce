@@ -26,6 +26,11 @@ export const getOrderByRating = 'get::order::valid::by::rating'
 
 export const getProductOrderByRating = 'get::product::order::by::rating'
 
+export const getProductImageByProductSalePromotion =
+    'get::product::image::by::product::sale::promotion'
+
+export const getProductBySalePromotion = 'get::product::by::sale::promotion'
+
 export const checkVoucherExistToCreateOrder = 'checkVoucherExistToCreateOrder'
 
 export const processHandleVoucher = 'process::handle::voucher'
@@ -43,3 +48,7 @@ export const statusOfVoucher = 'status::of::voucher'
 export const updateQuantityProduct = 'update::quantity::product'
 
 export const updateQuantityVoucher = 'update::quantity::voucher'
+
+export const updateQuantityProductSalePromotion = 'update::quantitty::product::sale::promotion'
+
+export const currentSalePromotion = 'current::sale::promotino'

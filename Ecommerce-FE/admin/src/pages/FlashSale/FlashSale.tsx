@@ -70,7 +70,8 @@ const FlashSale = () => {
         select: (data) => ({
             promotionObjs: keyBy(data.data.result.promotions, (e) => e.startDate),
             storePromotionObj: keyBy(data.data.result.storePromotions, 'salePromotionId')
-        })
+        }),
+        staleTime: 1000 * 60 * 10
     })
 
     const { mutate: updateProductSale } = useMutation({

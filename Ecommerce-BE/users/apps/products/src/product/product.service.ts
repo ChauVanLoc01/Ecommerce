@@ -1,14 +1,17 @@
 import { PrismaService } from '@app/common/prisma/prisma.service'
-import { InjectQueue } from '@nestjs/bull'
 import { CACHE_MANAGER } from '@nestjs/cache-manager'
-import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common'
+import {
+    BadRequestException,
+    Inject,
+    Injectable,
+    InternalServerErrorException,
+    NotFoundException
+} from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { ClientProxy } from '@nestjs/microservices'
 import { CronExpression, SchedulerRegistry } from '@nestjs/schedule'
 import { Product } from '@prisma/client'
-import { Queue } from 'bull'
 import { Cache } from 'cache-manager'
-import { BackgroundName } from 'common/constants/background-job.constant'
 import { getStoreDetail, updateQuantityProduct } from 'common/constants/event.constant'
 import { room_obj } from 'common/constants/socket.constant'
 import { Status } from 'common/enums/status.enum'
@@ -34,115 +37,125 @@ export class ProductService {
         @Inject('SOCKET_SERVICE') private readonly socket_client: ClientProxy,
         @Inject('STORE_SERVICE') private readonly store_service: ClientProxy,
         private readonly configService: ConfigService,
-        @InjectQueue(BackgroundName.product) private productBullQueue: Queue,
         @Inject(CACHE_MANAGER) private cacheManager: Cache,
         private schedulerRegistry: SchedulerRegistry
     ) {}
 
     async getALlProductForUser(query: QueryProductType): Promise<Return> {
-        const {
-            category,
-            createdAt,
-            price_max,
-            price_min,
-            sold,
-            price,
-            limit,
-            page,
-            max_date,
-            min_date
-        } = query
+        try {
+            const {
+                category,
+                createdAt,
+                price_max,
+                price_min,
+                sold,
+                price,
+                limit,
+                page,
+                max_date,
+                min_date
+            } = query
 
-        if (
-            Object.keys(
-                omitBy(
-                    {
+            if (
+                Object.keys(
+                    omitBy(
+                        {
+                            createdAt,
+                            sold,
+                            price
+                        },
+                        isUndefined
+                    )
+                ).length > 1
+            ) {
+                throw new BadRequestException('Tối đa 1 field order')
+            }
+
+            const [productAllLength, products] = await Promise.all([
+                this.prisma.product.count({
+                    where: {
+                        category,
+                        priceAfter: {
+                            lte: price_max,
+                            gte: price_min
+                        },
+                        status: 'ACTIVE',
+                        createdAt: {
+                            gte: min_date,
+                            lte: max_date
+                        },
+                        currentQuantity: {
+                            gt: 0
+                        }
+                    }
+                }),
+                this.prisma.product.findMany({
+                    where: {
+                        category,
+                        priceAfter: {
+                            lte: price_max,
+                            gte: price_min
+                        },
+                        status: 'ACTIVE',
+                        createdAt: {
+                            gte: min_date,
+                            lte: max_date
+                        },
+                        currentQuantity: {
+                            gt: 0
+                        }
+                    },
+                    orderBy: {
                         createdAt,
                         sold,
-                        price
+                        priceAfter: price
                     },
-                    isUndefined
-                )
-            ).length > 1
-        ) {
-            throw new BadRequestException('Tối đa 1 field order')
-        }
+                    take: limit || this.configService.get<number>('app.limit_default'),
+                    skip:
+                        page && page > 0
+                            ? (page - 1) *
+                              (limit || this.configService.get<number>('app.limit_default'))
+                            : 0
+                })
+            ])
 
-        const [productAllLength, products] = await Promise.all([
-            this.prisma.product.count({
-                where: {
-                    category,
-                    priceAfter: {
-                        lte: price_max,
-                        gte: price_min
-                    },
-                    status: 'ACTIVE',
-                    createdAt: {
-                        gte: min_date,
-                        lte: max_date
-                    },
-                    currentQuantity: {
-                        gt: 0
-                    }
+            const storeIdList = products.map((product) => product.storeId)
+
+            const storeList = await firstValueFrom<MessageReturn>(
+                this.store_service.send(getStoreDetail, storeIdList)
+            )
+
+            if (!storeList.action) {
+                throw new Error(storeList.msg)
+            }
+
+            const result = products.map((product) => {
+                return {
+                    ...product,
+                    store: storeList.result[product.storeId]
                 }
-            }),
-            this.prisma.product.findMany({
-                where: {
-                    category,
-                    priceAfter: {
-                        lte: price_max,
-                        gte: price_min
-                    },
-                    status: 'ACTIVE',
-                    createdAt: {
-                        gte: min_date,
-                        lte: max_date
-                    },
-                    currentQuantity: {
-                        gt: 0
-                    }
-                },
-                orderBy: {
-                    createdAt,
-                    sold,
-                    priceAfter: price
-                },
-                take: limit || this.configService.get<number>('app.limit_default'),
-                skip:
-                    page && page > 0
-                        ? (page - 1) *
-                          (limit || this.configService.get<number>('app.limit_default'))
-                        : 0
             })
-        ])
 
-        const storeIdList = products.map((product) => product.storeId)
-
-        const storeList = await firstValueFrom(this.store_service.send(getStoreDetail, storeIdList))
-
-        const result = products.map((product) => {
             return {
-                ...product,
-                store: storeList[product.storeId]
+                msg: 'Lấy danh sách sản phẩm thành công',
+                result: {
+                    data: result,
+                    query: omitBy(
+                        {
+                            ...query,
+                            page: page || 1,
+                            page_size: Math.ceil(
+                                productAllLength /
+                                    (limit || this.configService.get<number>('app.limit_default'))
+                            )
+                        },
+                        isUndefined
+                    )
+                }
             }
-        })
-
-        return {
-            msg: 'Lấy danh sách sản phẩm thành công',
-            result: {
-                data: result,
-                query: omitBy(
-                    {
-                        ...query,
-                        page: page || 1,
-                        page_size: Math.ceil(
-                            productAllLength /
-                                (limit || this.configService.get<number>('app.limit_default'))
-                        )
-                    },
-                    isUndefined
-                )
-            }
+        } catch (err) {
+            console.log('error', err)
+            throw new InternalServerErrorException(err.message)
         }
     }
 
@@ -817,6 +830,74 @@ export class ProductService {
             }
         } catch (error) {
             throw new BadRequestException('Lỗi')
+        }
+    }
+
+    async getAllProductBySalePromotion(productIds: string[]) {
+        try {
+            const products = await Promise.all(
+                productIds.map((id) =>
+                    this.prisma.product.findUnique({
+                        where: {
+                            id,
+                            status: Status.ACTIVE,
+                            currentQuantity: {
+                                gt: 0
+                            },
+                            isDelete: false
+                        },
+                        select: {
+                            id: true,
+                            name: true,
+                            priceAfter: true,
+                            priceBefore: true,
+                            currentQuantity: true
+                        }
+                    })
+                )
+            )
+
+            return {
+                msg: 'ok',
+                action: true,
+                result: products
+            }
+        } catch (_) {
+            return {
+                msg: 'Lỗi Server',
+                action: false,
+                result: null
+            }
+        }
+    }
+
+    async getProductImageByProductSalePromotion(productIds: string[]) {
+        try {
+            const products = await Promise.all(
+                productIds.map((id) =>
+                    this.prisma.product.findUnique({
+                        where: {
+                            id
+                        },
+                        select: {
+                            name: true,
+                            image: true
+                        }
+                    })
+                )
+            )
+
+            return {
+                msg: 'ok',
+                action: true,
+                result: products
+            }
+        } catch (err) {
+            return {
+                msg: 'Lỗi lấy dữ liệu từ product',
+                action: false,
+                result: null
+            }
         }
     }
 }

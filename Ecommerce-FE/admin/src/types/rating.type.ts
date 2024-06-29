@@ -2,6 +2,7 @@ import { Pagination } from './pagination.type'
 import { Return } from './return.type'
 
 export type RatingTableType = {
+    id: string
     orderId: string
     productId: string
     storeId: string
@@ -14,7 +15,6 @@ export type RatingTableType = {
     updatedAt?: Date
 }
 
-
 export type RatingFromUser = {
     userId: string
     username: string
@@ -23,9 +23,8 @@ export type RatingFromUser = {
     stars: number
     comment: string
     replyCreatedTime: Date
-
+    image: string
 }
-
 
 export type RatingMaterial = {
     id: string
@@ -37,8 +36,7 @@ export type RatingMaterial = {
 
 export type RatingReplyBody = {
     parentRatingId: string
-    comment: string
-    urls: string[]
+    detail: string
 }
 
 export type RatingQuery = {

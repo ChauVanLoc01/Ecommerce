@@ -1,26 +1,38 @@
 import { PrismaService } from '@app/common/prisma/prisma.service'
-import { Injectable } from '@nestjs/common'
-import { Cron, SchedulerRegistry } from '@nestjs/schedule'
+import { CACHE_MANAGER } from '@nestjs/cache-manager'
+import { Inject, Injectable } from '@nestjs/common'
+import { Cron, CronExpression, SchedulerRegistry } from '@nestjs/schedule'
+import { Cache } from 'cache-manager'
+import { currentSalePromotion } from 'common/constants/event.constant'
 import { SalePromotion } from 'common/constants/sale-promotion.constant'
 import { Status } from 'common/enums/status.enum'
 import { CronJob } from 'cron'
-import { add, eachHourOfInterval, endOfDay, format, nextMonday, startOfDay } from 'date-fns'
+import {
+    add,
+    eachHourOfInterval,
+    endOfWeek,
+    format,
+    setDefaultOptions,
+    startOfHour,
+    startOfWeek,
+    sub
+} from 'date-fns'
+import { vi } from 'date-fns/locale'
 import { chunk } from 'lodash'
 import { v4 as uuidv4 } from 'uuid'
+
+setDefaultOptions({ locale: vi })
 
 @Injectable()
 export class ScheduleService {
     constructor(
         private readonly prisma: PrismaService,
-        private readonly scheduleRegister: SchedulerRegistry
+        private readonly scheduleRegister: SchedulerRegistry,
+        @Inject(CACHE_MANAGER) private cacheManager: Cache
     ) {}
 
     calDate() {
-        const nextMon = startOfDay(nextMonday(new Date()))
-        const nextMontoTo7Days = endOfDay(add(nextMon, { days: 6 }))
-        const duration = eachHourOfInterval({ start: nextMon, end: nextMontoTo7Days })
-
-        return duration
+        return eachHourOfInterval({ start: startOfWeek(new Date()), end: endOfWeek(new Date()) })
     }
 
     @Cron('1 30 3 * * 1', {
@@ -42,12 +54,12 @@ export class ScheduleService {
                             id: uuidv4(),
                             title: `Daily Sale ${formatDate}`,
                             description: `Chương trình giảm giá hằng ngày kích cầu mua sắm ${formatDate}`,
-                            startDate: date,
-                            endDate: add(date, { hours: 1 }),
+                            startDate: add(date, { hours: 7 }).toISOString(),
+                            endDate: add(date, { hours: 8 }).toISOString(),
                             createdAt: new Date(),
                             status: Status.BLOCK,
                             type: SalePromotion.NORMAL,
-                            createdBy: 'auto'
+                            createdBy: 'system'
                         }
                     })
                 })
@@ -57,5 +69,50 @@ export class ScheduleService {
         this.scheduleRegister.addCronJob(name, cron_job)
 
         cron_job.start()
+
+        console.log('ok')
+    }
+
+    @Cron(CronExpression.EVERY_HOUR)
+    async setCurrentSalePromotion() {
+        let currentDate = startOfHour(new Date()).toISOString()
+
+        let preDate = startOfHour(sub(new Date(), { hours: 12 })).toISOString()
+
+        let currentSaleId = await this.cacheManager.get<string>(currentSalePromotion)
+
+        if (currentSaleId && preDate === currentSaleId) {
+            const saleExist = await this.prisma.salePromotion.findUnique({
+                where: {
+                    id: currentSaleId
+                }
+            })
+
+            if (saleExist) {
+                await Promise.all([
+                    this.prisma.salePromotion.update({
+                        where: {
+                            id: currentSaleId
+                        },
+                        data: {
+                            status: Status.BLOCK,
+                            updatedAt: new Date(),
+                            updatedBy: 'system'
+                        }
+                    }),
+                    this.prisma.salePromotion.update({
+                        where: {
+                            id: currentDate
+                        },
+                        data: {
+                            status: Status.ACTIVE,
+                            updatedAt: new Date(),
+                            updatedBy: 'system'
+                        }
+                    })
+                ])
+            }
+        }
+        await this.cacheManager.set(currentSalePromotion, currentDate)
     }
 }

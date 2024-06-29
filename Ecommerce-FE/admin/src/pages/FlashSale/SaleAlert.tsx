@@ -1,6 +1,6 @@
 import { AlertDialog, Button, DataList, Flex, Portal, SegmentedControl, Spinner, Text } from '@radix-ui/themes'
 import { QueryObserverResult, RefetchOptions, useMutation } from '@tanstack/react-query'
-import { format, formatDistance } from 'date-fns'
+import { format, formatDistance, sub } from 'date-fns'
 import { Dictionary } from 'lodash'
 import { toast } from 'sonner'
 import { sale_api } from 'src/apis/sale.api'
@@ -257,15 +257,23 @@ const SaleAlert = ({
                                 <DataList.Label>Bắt đầu</DataList.Label>
                                 <DataList.Value className='items-center'>
                                     <Text>
-                                        {format((selectedEvent.event as SalePromotion).startDate, formatDefault)}(
-                                        {formatDistance(new Date(), (selectedEvent.event as SalePromotion).endDate)})
+                                        {format(
+                                            sub((selectedEvent.event as SalePromotion).startDate, { hours: 7 }),
+                                            formatDefault
+                                        )}
+                                        ({formatDistance(new Date(), (selectedEvent.event as SalePromotion).endDate)})
                                     </Text>
                                 </DataList.Value>
                             </DataList.Item>
                             <DataList.Item>
                                 <DataList.Label>Kết thúc</DataList.Label>
                                 <DataList.Value className='items-center'>
-                                    <Text>{format((selectedEvent.event as SalePromotion).endDate, formatDefault)}</Text>
+                                    <Text>
+                                        {format(
+                                            sub((selectedEvent.event as SalePromotion).endDate, { hours: 7 }),
+                                            formatDefault
+                                        )}
+                                    </Text>
                                 </DataList.Value>
                             </DataList.Item>
                             <DataList.Item className='!flex !flex-col'>
@@ -309,7 +317,7 @@ const SaleAlert = ({
                                 onClick={
                                     tab === 2
                                         ? handleUpdateProduct
-                                        : handleJoin(storePromotionObj?.[selectedEvent?.event?.id as any].id)
+                                        : handleJoin(storePromotionObj?.[selectedEvent?.event?.id as any]?.id)
                                 }
                                 variant='solid'
                                 className='bg-blue text-white'

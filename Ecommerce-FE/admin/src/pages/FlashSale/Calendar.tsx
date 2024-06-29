@@ -1,6 +1,17 @@
 import { ChevronLeftIcon, ChevronRightIcon } from '@radix-ui/react-icons'
 import { Button, Flex, Grid, IconButton, Tooltip } from '@radix-ui/themes'
-import { add, eachDayOfInterval, endOfWeek, format, isEqual, setHours, startOfDay, startOfWeek, sub } from 'date-fns'
+import {
+    add,
+    eachDayOfInterval,
+    endOfWeek,
+    format,
+    isEqual,
+    setHours,
+    startOfDay,
+    startOfHour,
+    startOfWeek,
+    sub
+} from 'date-fns'
 import { debounce, DebouncedFunc, Dictionary } from 'lodash'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import SimpleBar from 'simplebar-react'
@@ -18,6 +29,8 @@ const Calendar = ({ promotionObjs, onSelectEvent, storePromotionObj }: CalendarP
     const parentRef = useRef<HTMLDivElement | null>(null)
     const scrollableNodeRef = useRef<any>(null)
     const [onTop, setOnTop] = useState<boolean>(true)
+
+    console.log('startOfWeek', startOfHour(new Date()))
 
     const handleCheckPositionScrollTop: DebouncedFunc<(isOnTop: boolean) => void> = debounce(
         (isOnTop: boolean) => setOnTop(isOnTop),
@@ -38,24 +51,24 @@ const Calendar = ({ promotionObjs, onSelectEvent, storePromotionObj }: CalendarP
     const dayInWeek = useMemo(
         () =>
             eachDayOfInterval({
-                start: add(startOfWeek(currentDate), { hours: 7 }),
-                end: add(endOfWeek(currentDate), { hours: 7 })
-            }).slice(0, -1),
+                start: startOfWeek(currentDate),
+                end: endOfWeek(currentDate)
+            }),
         [currentDate]
     )
 
     const totalDate = useMemo(() => {
         return hours.reduce((acum: string[], _, hour) => {
-            return [...acum, ...dayInWeek.map((e) => setHours(e, hour).toISOString())]
+            return [...acum, ...dayInWeek.map((e) => setHours(e, hour + 7).toISOString())]
         }, [])
     }, [dayInWeek])
 
     const handleChangeDate = (type: 'previous' | 'next') => () => {
         setCurrentDate((pre) => {
             if (type === 'previous') {
-                return sub(pre, { days: 7 })
+                return startOfDay(sub(pre, { days: 4 }))
             }
-            return add(pre, { days: 7 })
+            return startOfDay(add(pre, { days: 4 }))
         })
     }
 
@@ -86,9 +99,11 @@ const Calendar = ({ promotionObjs, onSelectEvent, storePromotionObj }: CalendarP
                                     className={cn(
                                         'p-2 h-16 border border-gray-300 border-r-0 border-b-0 [&:nth-child(7n)]:border-r',
                                         {
-                                            'border-b': idx > 7 * 24 - 8
+                                            'border-b': idx > 7 * 24 - 8,
+                                            'bg-orange-200': isEqual(startOfHour(new Date()), sub(date, { hours: 7 }))
                                         }
                                     )}
+                                    data-date={date}
                                 >
                                     <button
                                         type='button'
@@ -150,6 +165,7 @@ const HeaderCalendar = ({ parentRef, dayInWeek, handleChangeDate, onTop, setCurr
                 {dayInWeek.map((e) => (
                     <div
                         key={e.toISOString()}
+                        data-date={e}
                         className={cn(
                             'w-full h-12 border border-gray-300 border-r-0 [&:nth-child(7n)]:border-r flex justify-center items-center',
                             {

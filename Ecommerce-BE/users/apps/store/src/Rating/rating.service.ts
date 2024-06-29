@@ -424,7 +424,7 @@ export class RatingService {
 
     async replyRating(store: CurrentStoreType, body: CreateReplyRatingDTO): Promise<Return> {
         const { userId } = store
-        const { detail, parentRatingId, urls } = body
+        const { detail, parentRatingId } = body
         const ratingExist = await this.prisma.rating.findUnique({
             where: {
                 id: parentRatingId
@@ -432,12 +432,14 @@ export class RatingService {
         })
 
         if (!ratingExist) {
-            throw new NotFoundException('Đánh giá không tồn tại')
+            throw new NotFoundException(
+                'Không thể tạo phản hồi khi đánh giá của khách hàng không tồn tại'
+            )
         }
 
         const replyId = uuidv4()
 
-        const [_, createdReply, ...materials] = await this.prisma.$transaction(async (tx) => {
+        await this.prisma.$transaction(async (tx) => {
             return await Promise.all([
                 tx.rating.update({
                     where: {
@@ -455,26 +457,13 @@ export class RatingService {
                         detail,
                         parentRatingId
                     }
-                }),
-                ...urls.map(({ url, isPrimary = false }) =>
-                    tx.ratingMaterial.create({
-                        data: {
-                            id: uuidv4(),
-                            url,
-                            isPrimary,
-                            ratingReplyId: replyId
-                        }
-                    })
-                )
+                })
             ])
         })
 
         return {
             msg: 'ok',
-            result: {
-                reply: createdReply,
-                materials
-            }
+            result: undefined
         }
     }
 
@@ -522,6 +511,54 @@ export class RatingService {
             }
         } catch (err) {
             throw new BadRequestException('Lỗi BE')
+        }
+    }
+
+    async getDetailRatingByStore(store: CurrentStoreType, ratingId: string) {
+        try {
+            const { storeId } = store
+
+            const ratingExist = await this.prisma.rating.findUnique({
+                where: {
+                    id: ratingId,
+                    storeId
+                }
+            })
+
+            if (!ratingExist) {
+                throw new NotFoundException('Đánh giá không tồn tại')
+            }
+
+            const ratingReply = await this.prisma.ratingReply.findFirst({
+                where: {
+                    parentRatingId: ratingId
+                }
+            })
+
+            const [materialOfRating, materialOfReply] = await Promise.all([
+                this.prisma.ratingMaterial.findMany({
+                    where: {
+                        ratingId
+                    }
+                }),
+                this.prisma.ratingMaterial.findMany({
+                    where: {
+                        ratingReplyId: ratingReply.id
+                    }
+                })
+            ])
+
+            return {
+                msg: 'ok',
+                result: {
+                    rating: ratingExist,
+                    reply: ratingReply,
+                    materialOfRating,
+                    materialOfReply
+                }
+            }
+        } catch (err) {
+            throw new InternalServerErrorException('Lỗi Server')
         }
     }
 }
