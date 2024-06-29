@@ -3,12 +3,12 @@ import { Button, Flex, Grid, IconButton, Tooltip } from '@radix-ui/themes'
 import {
     add,
     eachDayOfInterval,
-    eachHourOfInterval,
     endOfWeek,
     format,
     isEqual,
     setHours,
     startOfDay,
+    startOfHour,
     startOfWeek,
     sub
 } from 'date-fns'
@@ -30,9 +30,7 @@ const Calendar = ({ promotionObjs, onSelectEvent, storePromotionObj }: CalendarP
     const scrollableNodeRef = useRef<any>(null)
     const [onTop, setOnTop] = useState<boolean>(true)
 
-    console.log('startOfWeek', startOfWeek(new Date()))
-    console.log('endOfWeek', endOfWeek(new Date()))
-    console.log('eachOfHour', eachHourOfInterval({ start: startOfWeek(new Date()), end: endOfWeek(new Date()) }))
+    console.log('startOfWeek', startOfHour(new Date()))
 
     const handleCheckPositionScrollTop: DebouncedFunc<(isOnTop: boolean) => void> = debounce(
         (isOnTop: boolean) => setOnTop(isOnTop),
@@ -101,9 +99,11 @@ const Calendar = ({ promotionObjs, onSelectEvent, storePromotionObj }: CalendarP
                                     className={cn(
                                         'p-2 h-16 border border-gray-300 border-r-0 border-b-0 [&:nth-child(7n)]:border-r',
                                         {
-                                            'border-b': idx > 7 * 24 - 8
+                                            'border-b': idx > 7 * 24 - 8,
+                                            'bg-orange-200': isEqual(startOfHour(new Date()), sub(date, { hours: 7 }))
                                         }
                                     )}
+                                    data-date={date}
                                 >
                                     <button
                                         type='button'
