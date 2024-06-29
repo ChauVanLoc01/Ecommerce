@@ -1,4 +1,4 @@
-import { PaperPlaneIcon } from '@radix-ui/react-icons'
+import { InfoCircledIcon, PaperPlaneIcon } from '@radix-ui/react-icons'
 import { Badge, Flex, IconButton, Spinner, Text, Tooltip } from '@radix-ui/themes'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { ColumnDef } from '@tanstack/react-table'
@@ -8,10 +8,9 @@ import { useRef, useState } from 'react'
 import { BiSolidSortAlt } from 'react-icons/bi'
 import { toast } from 'sonner'
 import { RatingAPI } from 'src/apis/rating.api'
-import { UploadApi } from 'src/apis/upload_file.api'
 import Table from 'src/components/Table'
 import { RatingStatus } from 'src/constants/rating.constants'
-import { RatingReplyBody, RatingTableType } from 'src/types/rating.type'
+import { RatingTableType } from 'src/types/rating.type'
 import ReplyRatingCreate from './RatingForm'
 
 type RatingTableProps = {
@@ -27,7 +26,7 @@ const RatingTable = ({ data }: RatingTableProps) => {
     const [openReplyRating, setOpenReplyRating] = useState<boolean>(false)
     const [isCreating, setIsCreating] = useState<boolean>(false)
     const [selectedRating, setSelectedRating] = useState<RatingTableType | undefined>(undefined)
-    const [replyData, setReplyData] = useState<RatingReplyBody>({
+    const [replyData, setReplyData] = useState<{ parentRatingId: string; comment: string }>({
         parentRatingId: '',
         comment: ''
     })
@@ -40,20 +39,23 @@ const RatingTable = ({ data }: RatingTableProps) => {
         select: (data) => data.data.result
     })
 
+    const { refetch: ratingListRefetch } = useQuery({
+        queryKey: ['ratingList', JSON.stringify({ limit: import.meta.env.VITE_LIMIT })],
+        queryFn: () => RatingAPI.getAllRating({ limit: import.meta.env.VITE_LIMIT }),
+        staleTime: 1000 * 60 * 2
+    })
+
     const { mutate: createReplyRating } = useMutation({
         mutationFn: RatingAPI.replyRating,
         onSuccess: () => {
+            ratingListRefetch()
             toast.success('Đánh giá thành công')
             setIsReplyRating(false)
             setTimeout(() => setOpenReplyRating(false), 500)
-        }
-    })
-
-    const { mutate: uploadMultipleFile } = useMutation({
-        mutationFn: UploadApi.updateMultipleFile,
-        onSuccess: (urls) => {
-            toast.success('Upload hình ảnh thành công')
-            createReplyRating({ ...replyData, urls: urls.data.result.map((url) => ({ url })) })
+        },
+        onError: () => {
+            setIsReplyRating(false)
+            toast.error('Đã có lỗi xảy ra')
         }
     })
 
@@ -85,15 +87,7 @@ const RatingTable = ({ data }: RatingTableProps) => {
             return
         }
         setIsCreating(true)
-        if (!files.files.size) {
-            createReplyRating(replyData)
-            return
-        }
-        const formData = new FormData()
-        files.files.forEach((file, _) => {
-            formData.append('files', file)
-        })
-        uploadMultipleFile(formData)
+        createReplyRating({ parentRatingId: replyData.parentRatingId, detail: replyData.comment })
     }
 
     const columns: ColumnDef<RatingTableType>[] = [
@@ -183,13 +177,23 @@ const RatingTable = ({ data }: RatingTableProps) => {
             accessorKey: ' ',
             cell: ({ row }) => (
                 <Flex gapX={'2'} align={'center'}>
-                    <Tooltip content='Phản hồi'>
-                        <IconButton variant='soft' color='orange' onMouseEnter={onMouseEnter(row.original.createdBy)}>
-                            {isFetching && row.original.id === replyData.parentRatingId ? (
-                                <Spinner />
-                            ) : (
-                                <PaperPlaneIcon onClick={handleOpenReplyForm(row.original.id, row.original)} />
-                            )}
+                    <Tooltip content={['Phản hồi', 'Xem chi tiết'][+row.original.isReply]}>
+                        <IconButton
+                            variant='soft'
+                            color='orange'
+                            onClick={handleOpenReplyForm(row.original.id, row.original)}
+                            onMouseEnter={onMouseEnter(row.original.createdBy)}
+                        >
+                            {
+                                [
+                                    isFetching && row.original.id === replyData.parentRatingId ? (
+                                        <Spinner />
+                                    ) : (
+                                        <PaperPlaneIcon />
+                                    ),
+                                    <InfoCircledIcon />
+                                ][+row.original.isReply]
+                            }
                         </IconButton>
                     </Tooltip>
                 </Flex>

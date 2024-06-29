@@ -424,7 +424,7 @@ export class RatingService {
 
     async replyRating(store: CurrentStoreType, body: CreateReplyRatingDTO): Promise<Return> {
         const { userId } = store
-        const { detail, parentRatingId, urls } = body
+        const { detail, parentRatingId } = body
         const ratingExist = await this.prisma.rating.findUnique({
             where: {
                 id: parentRatingId
@@ -457,17 +457,7 @@ export class RatingService {
                         detail,
                         parentRatingId
                     }
-                }),
-                ...urls.map(({ url, isPrimary = false }) =>
-                    tx.ratingMaterial.create({
-                        data: {
-                            id: uuidv4(),
-                            url,
-                            isPrimary,
-                            ratingReplyId: replyId
-                        }
-                    })
-                )
+                })
             ])
         })
 

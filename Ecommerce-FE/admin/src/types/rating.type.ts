@@ -36,8 +36,7 @@ export type RatingMaterial = {
 
 export type RatingReplyBody = {
     parentRatingId: string
-    comment: string
-    urls?: { url: string; isPrimary?: boolean }[]
+    detail: string
 }
 
 export type RatingQuery = {
