@@ -870,4 +870,34 @@ export class ProductService {
             }
         }
     }
+
+    async getProductImageByProductSalePromotion(productIds: string[]) {
+        try {
+            const products = await Promise.all(
+                productIds.map((id) =>
+                    this.prisma.product.findUnique({
+                        where: {
+                            id
+                        },
+                        select: {
+                            name: true,
+                            image: true
+                        }
+                    })
+                )
+            )
+
+            return {
+                msg: 'ok',
+                action: true,
+                result: products
+            }
+        } catch (err) {
+            return {
+                msg: 'Lỗi lấy dữ liệu từ product',
+                action: false,
+                result: null
+            }
+        }
+    }
 }

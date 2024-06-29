@@ -1,17 +1,20 @@
 import { PrismaService } from '@app/common/prisma/prisma.service'
 import {
     BadRequestException,
+    HttpException,
     Inject,
     Injectable,
     InternalServerErrorException
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { ClientProxy } from '@nestjs/microservices'
+import { getProductImageByProductSalePromotion } from 'common/constants/event.constant'
 import { PaginationDTO } from 'common/decorators/pagination.dto'
 import { Status } from 'common/enums/status.enum'
 import { CurrentStoreType } from 'common/types/current.type'
-import { Return } from 'common/types/result.type'
+import { MessageReturn, Return } from 'common/types/result.type'
 import { add, endOfHour, startOfHour } from 'date-fns'
+import { firstValueFrom } from 'rxjs'
 import { v4 as uuidv4 } from 'uuid'
 import { CreateProductSalePromotionDTO } from './dtos/create-product-sale.dto'
 import { QuerySalePromotionDTO } from './dtos/query-promotion.dto'
@@ -293,6 +296,13 @@ export class SaleService {
                     endDate: {
                         equals: add(current, { hours: 1 })
                     }
+                },
+                omit: {
+                    createdAt: true,
+                    createdBy: true,
+                    updatedAt: true,
+                    updatedBy: true,
+                    status: true
                 }
             })
 
@@ -304,18 +314,54 @@ export class SaleService {
                         gt: 0
                     }
                 },
+                select: {
+                    id: true,
+                    productId: true,
+                    quantity: true,
+                    priceAfter: true,
+                    storePromotionId: true,
+                    salePromotionId: true
+                },
                 take: 20
             })
+
+            if (!products.length) {
+                return {
+                    msg: 'ok',
+                    result: {
+                        salePromotion,
+                        productPromotions: []
+                    }
+                }
+            }
+
+            const productInfors = await firstValueFrom<
+                MessageReturn<{ name: string; image: string }[]>
+            >(
+                this.productClient.send(
+                    getProductImageByProductSalePromotion,
+                    products.map((e) => e.productId)
+                )
+            )
+
+            if (!productInfors.action) {
+                throw new BadRequestException(productInfors.msg)
+            }
 
             return {
                 msg: 'ok',
                 result: {
                     salePromotion,
-                    productPromotions: products
+                    productPromotions: products.map((e, idx) => ({
+                        ...e,
+                        name: productInfors.result[idx].name,
+                        image: productInfors.result[idx].image
+                    }))
                 }
             }
         } catch (err) {
-            throw new InternalServerErrorException(err.message)
+            console.log('error', err)
+            throw new HttpException(err.message || 'Lỗi Server', err.status || 500)
         }
     }
 }
