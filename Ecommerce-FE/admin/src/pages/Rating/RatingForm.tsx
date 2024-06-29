@@ -66,7 +66,7 @@ function ReplyRatingCreate({
                             <Box maxWidth='100%'>
                                 <TextArea onChange={handleComment} size='3' placeholder='Nhận xét' />
                             </Box>
-                            <MultiUploadFile files={files} setFiles={setFiles} min={0}>
+                            <MultiUploadFile files={files} setFiles={setFiles} min={0} cols={5}>
                                 {(total, current, min) => (
                                     <Flex className='space-x-1 mt-2'>
                                         <Text>Đã tải lên</Text>

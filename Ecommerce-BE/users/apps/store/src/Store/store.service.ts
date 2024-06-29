@@ -209,16 +209,29 @@ export class StoreService {
     }
 
     async getStoresDetail(storeIds: string[]) {
-        const storeList = await Promise.all(
-            storeIds.map((id) =>
-                this.prisma.store.findUnique({
-                    where: {
-                        id
-                    }
-                })
+        try {
+            const storeList = await Promise.all(
+                storeIds.map((id) =>
+                    this.prisma.store.findUnique({
+                        where: {
+                            id,
+                            status: Status.ACTIVE
+                        }
+                    })
+                )
             )
-        )
-        return keyBy(storeList, 'id')
+            return {
+                msg: 'ok',
+                action: true,
+                result: keyBy(storeList, 'id')
+            }
+        } catch (err) {
+            return {
+                msg: 'Lỗi lấy data từ store',
+                action: false,
+                result: null
+            }
+        }
     }
 
     async getStoreDetail(storeId: string): Promise<Return> {
