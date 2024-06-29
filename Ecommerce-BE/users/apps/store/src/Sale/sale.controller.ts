@@ -15,12 +15,25 @@ export class SaleController {
     constructor(private readonly saleService: SaleService) {}
 
     @Public()
+    @Get('sale-promotion-in-day')
+    getSalePromotionsInDay() {
+        return this.saleService.getSalePromotionsInDay()
+    }
+
+    @Public()
+    @Get('current-sale')
+    getCurrentSale() {
+        return this.saleService.getCurrentSale()
+    }
+
+    @Public()
     @Get(':salePromotionId/product')
     getAllProduct(
+        @CurrentUser() store: CurrentStoreType,
         @Param('salePromotionId') salePromotionId: string,
         @Query() query: PaginationDTO
     ) {
-        return this.saleService.getAllProduct(salePromotionId, query)
+        return this.saleService.getAllProduct(store, salePromotionId, query)
     }
 
     @Get(':storePromotionId')

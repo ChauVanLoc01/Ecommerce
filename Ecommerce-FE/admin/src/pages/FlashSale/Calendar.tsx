@@ -38,24 +38,24 @@ const Calendar = ({ promotionObjs, onSelectEvent, storePromotionObj }: CalendarP
     const dayInWeek = useMemo(
         () =>
             eachDayOfInterval({
-                start: add(startOfWeek(currentDate), { hours: 7 }),
-                end: add(endOfWeek(currentDate), { hours: 7 })
-            }).slice(0, -1),
+                start: startOfWeek(currentDate),
+                end: endOfWeek(currentDate)
+            }),
         [currentDate]
     )
 
     const totalDate = useMemo(() => {
         return hours.reduce((acum: string[], _, hour) => {
-            return [...acum, ...dayInWeek.map((e) => setHours(e, hour).toISOString())]
+            return [...acum, ...dayInWeek.map((e) => setHours(e, hour + 7).toISOString())]
         }, [])
     }, [dayInWeek])
 
     const handleChangeDate = (type: 'previous' | 'next') => () => {
         setCurrentDate((pre) => {
             if (type === 'previous') {
-                return sub(pre, { days: 7 })
+                return startOfDay(sub(pre, { days: 4 }))
             }
-            return add(pre, { days: 7 })
+            return startOfDay(add(pre, { days: 4 }))
         })
     }
 
@@ -150,6 +150,7 @@ const HeaderCalendar = ({ parentRef, dayInWeek, handleChangeDate, onTop, setCurr
                 {dayInWeek.map((e) => (
                     <div
                         key={e.toISOString()}
+                        data-date={e}
                         className={cn(
                             'w-full h-12 border border-gray-300 border-r-0 [&:nth-child(7n)]:border-r flex justify-center items-center',
                             {

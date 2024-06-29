@@ -7,13 +7,11 @@ import {
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { ClientProxy } from '@nestjs/microservices'
-import { getProductBySalePromotion } from 'common/constants/event.constant'
 import { PaginationDTO } from 'common/decorators/pagination.dto'
 import { Status } from 'common/enums/status.enum'
 import { CurrentStoreType } from 'common/types/current.type'
-import { MessageReturn, Return } from 'common/types/result.type'
-import { add, endOfHour, startOfDay } from 'date-fns'
-import { firstValueFrom } from 'rxjs'
+import { Return } from 'common/types/result.type'
+import { add, endOfHour, startOfHour } from 'date-fns'
 import { v4 as uuidv4 } from 'uuid'
 import { CreateProductSalePromotionDTO } from './dtos/create-product-sale.dto'
 import { QuerySalePromotionDTO } from './dtos/query-promotion.dto'
@@ -54,13 +52,7 @@ export class SaleService {
         try {
             const { storeId } = user
             const { date } = query
-            const promotions = await this.prisma.salePromotion.findMany({
-                where: {
-                    startDate: {
-                        gte: startOfDay(add(date, { days: 1 }))
-                    }
-                }
-            })
+            const promotions = await this.prisma.salePromotion.findMany({})
 
             const storePromotions = (
                 await Promise.all(
@@ -98,44 +90,49 @@ export class SaleService {
         user: CurrentStoreType,
         body: CreateProductSalePromotionDTO
     ): Promise<Return> {
-        const { userId, storeId } = user
-        const { salePromotionId, products, storePromotionId } = body
+        try {
+            const { userId, storeId } = user
+            const { salePromotionId, products, storePromotionId } = body
 
-        let id = uuidv4()
+            let id = uuidv4()
 
-        if (!storePromotionId) {
-            await this.prisma.storePromotion.create({
-                data: {
-                    id,
-                    salePromotionId,
-                    storeId,
-                    createdAt: new Date(),
-                    status: Status.ACTIVE,
-                    createdBy: userId
-                }
-            })
-        }
-
-        const result = await Promise.all(
-            products.map(({ priceAfter, productId, quantity }) =>
-                this.prisma.productPromotion.create({
+            if (!storePromotionId) {
+                await this.prisma.storePromotion.create({
                     data: {
-                        id: uuidv4(),
-                        storePromotionId: storePromotionId || id,
-                        productId,
-                        isDelete: false,
+                        id,
+                        salePromotionId,
+                        storeId,
                         createdAt: new Date(),
-                        priceAfter,
-                        quantity,
+                        status: Status.ACTIVE,
                         createdBy: userId
                     }
                 })
-            )
-        )
+            }
 
-        return {
-            msg: 'ok',
-            result
+            const result = await Promise.all(
+                products.map(({ priceAfter, productId, quantity }) =>
+                    this.prisma.productPromotion.create({
+                        data: {
+                            id: uuidv4(),
+                            storePromotionId: storePromotionId || id,
+                            productId,
+                            isDelete: false,
+                            createdAt: new Date(),
+                            priceAfter,
+                            quantity,
+                            createdBy: userId,
+                            salePromotionId
+                        }
+                    })
+                )
+            )
+
+            return {
+                msg: 'ok',
+                result
+            }
+        } catch (err) {
+            throw new InternalServerErrorException(err.message)
         }
     }
 
@@ -168,7 +165,7 @@ export class SaleService {
         }
     }
 
-    async getAllProduct(promotionId: string, pagination: PaginationDTO) {
+    async getAllProduct(store: CurrentStoreType, promotionId: string, pagination: PaginationDTO) {
         try {
             const { limit, page } = pagination
 
@@ -196,9 +193,25 @@ export class SaleService {
                 throw new BadRequestException('Chương trình giảm giá không tồn tại')
             }
 
+            const storePromotion = await this.prisma.storePromotion.findFirst({
+                where: {
+                    storeId: store.storeId
+                }
+            })
+
+            if (!storePromotion) {
+                return {
+                    msg: 'ok',
+                    result: {
+                        sale: promotionExist,
+                        productSales: []
+                    }
+                }
+            }
+
             const products = await this.prisma.productPromotion.findMany({
                 where: {
-                    storePromotionId: promotionId,
+                    storePromotionId: storePromotion.id,
                     isDelete: false,
                     quantity: {
                         gt: 0
@@ -217,31 +230,92 @@ export class SaleService {
             if (!products.length) {
                 return {
                     msg: 'ok',
-                    result: []
+                    result: {
+                        sale: promotionExist,
+                        productSales: []
+                    }
                 }
-            }
-
-            const productDetails = await firstValueFrom<MessageReturn>(
-                this.productClient.send(
-                    getProductBySalePromotion,
-                    products.map((product) => product.productId)
-                )
-            )
-
-            if (!productDetails.action) {
-                throw new Error(productDetails.msg)
             }
 
             return {
                 msg: 'ok',
                 result: {
                     sale: promotionExist,
-                    productSales: products,
-                    productDetails: productDetails.result
+                    productSales: products
                 }
             }
         } catch (err) {
+            throw new InternalServerErrorException(err.message)
+        }
+    }
+
+    async getSalePromotionsInDay() {
+        try {
+            let current = startOfHour(new Date())
+
+            const saleIds = await this.prisma.salePromotion.findMany({
+                where: {
+                    startDate: {
+                        gte: current
+                    },
+                    endDate: add(current, { hours: 24 })
+                },
+                orderBy: {
+                    startDate: 'asc'
+                }
+            })
+
+            if (!saleIds.length) {
+                return {
+                    msg: 'ok',
+                    data: []
+                }
+            }
+
+            return {
+                msg: 'ok',
+                data: saleIds
+            }
+        } catch (err) {
             throw new InternalServerErrorException('Lỗi Server')
+        }
+    }
+
+    async getCurrentSale() {
+        try {
+            const current = startOfHour(new Date())
+
+            const salePromotion = await this.prisma.salePromotion.findFirst({
+                where: {
+                    startDate: {
+                        gte: current
+                    },
+                    endDate: {
+                        equals: add(current, { hours: 1 })
+                    }
+                }
+            })
+
+            const products = await this.prisma.productPromotion.findMany({
+                where: {
+                    salePromotionId: salePromotion.id,
+                    isDelete: false,
+                    quantity: {
+                        gt: 0
+                    }
+                },
+                take: 20
+            })
+
+            return {
+                msg: 'ok',
+                result: {
+                    salePromotion,
+                    productPromotions: products
+                }
+            }
+        } catch (err) {
+            throw new InternalServerErrorException(err.message)
         }
     }
 }

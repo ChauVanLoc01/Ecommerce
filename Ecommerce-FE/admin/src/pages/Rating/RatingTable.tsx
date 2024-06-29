@@ -32,6 +32,14 @@ const RatingTable = ({ data }: RatingTableProps) => {
         comment: ''
     })
 
+    const { data: userProfileDetail, isFetching } = useQuery({
+        queryKey: ['user-profile-in-rating', userId],
+        queryFn: RatingAPI.getProfileUserInRating(userId),
+        enabled: !!userId,
+        staleTime: 1000 * 60 * 3,
+        select: (data) => data.data.result
+    })
+
     const { mutate: createReplyRating } = useMutation({
         mutationFn: RatingAPI.replyRating,
         onSuccess: () => {
@@ -39,14 +47,6 @@ const RatingTable = ({ data }: RatingTableProps) => {
             setIsReplyRating(false)
             setTimeout(() => setOpenReplyRating(false), 500)
         }
-    })
-
-    const { data: userProfileDetail, isFetching } = useQuery({
-        queryKey: ['user-profile-in-rating', userId],
-        queryFn: RatingAPI.getProfileUserInRating(userId),
-        enabled: !!userId,
-        staleTime: 1000 * 60 * 3,
-        select: (data) => data.data.result
     })
 
     const { mutate: uploadMultipleFile } = useMutation({

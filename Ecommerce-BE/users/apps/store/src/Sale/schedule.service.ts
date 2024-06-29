@@ -7,16 +7,7 @@ import { currentSalePromotion } from 'common/constants/event.constant'
 import { SalePromotion } from 'common/constants/sale-promotion.constant'
 import { Status } from 'common/enums/status.enum'
 import { CronJob } from 'cron'
-import {
-    add,
-    eachHourOfInterval,
-    endOfDay,
-    format,
-    nextMonday,
-    startOfDay,
-    startOfHour,
-    sub
-} from 'date-fns'
+import { add, eachHourOfInterval, endOfWeek, format, startOfHour, startOfWeek, sub } from 'date-fns'
 import { chunk } from 'lodash'
 import { v4 as uuidv4 } from 'uuid'
 
@@ -29,11 +20,7 @@ export class ScheduleService {
     ) {}
 
     calDate() {
-        const nextMon = startOfDay(nextMonday(new Date()))
-        const nextMontoTo7Days = endOfDay(add(nextMon, { days: 6 }))
-        const duration = eachHourOfInterval({ start: nextMon, end: nextMontoTo7Days })
-
-        return duration
+        return eachHourOfInterval({ start: startOfWeek(new Date()), end: endOfWeek(new Date()) })
     }
 
     @Cron('1 30 3 * * 1', {
@@ -60,7 +47,7 @@ export class ScheduleService {
                             createdAt: new Date(),
                             status: Status.BLOCK,
                             type: SalePromotion.NORMAL,
-                            createdBy: 'auto'
+                            createdBy: 'system'
                         }
                     })
                 })
