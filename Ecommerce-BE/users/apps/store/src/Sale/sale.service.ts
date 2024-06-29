@@ -283,7 +283,7 @@ export class SaleService {
 
     async getCurrentSale() {
         try {
-            const current = startOfHour(new Date())
+            const current = add(startOfHour(new Date()), { hours: 7 })
 
             const salePromotion = await this.prisma.salePromotion.findFirst({
                 where: {
