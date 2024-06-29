@@ -23,7 +23,7 @@ export class ScheduleService {
         return eachHourOfInterval({ start: startOfWeek(new Date()), end: endOfWeek(new Date()) })
     }
 
-    @Cron('1 30 3 * * 1', {
+    @Cron('1 46 * * * *', {
         name: 'auto creating sale promotion'
     })
     async autoCreatingSalePromotion() {
@@ -33,10 +33,10 @@ export class ScheduleService {
     }
 
     async createSalePromotion(name: string, second: number, data: Date[]) {
-        const cron_job = new CronJob(`${second} 31 3 * * 1`, async () => {
+        const cron_job = new CronJob(`${second} 47 * * * *`, async () => {
             await Promise.all(
                 data.map((date) => {
-                    let formatDate = format(date, 'HH:mm dd-MM-yyyy')
+                    let formatDate = format(sub(date, { hours: 7 }), 'HH:mm dd-MM-yyyy')
                     return this.prisma.salePromotion.create({
                         data: {
                             id: uuidv4(),
@@ -57,6 +57,8 @@ export class ScheduleService {
         this.scheduleRegister.addCronJob(name, cron_job)
 
         cron_job.start()
+
+        console.log('ok')
     }
 
     @Cron(CronExpression.EVERY_HOUR)
