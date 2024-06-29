@@ -446,7 +446,8 @@ export class RatingService {
                         id: parentRatingId
                     },
                     data: {
-                        isReply: true
+                        isReply: true,
+                        updatedAt: new Date()
                     }
                 }),
                 tx.ratingReply.create({

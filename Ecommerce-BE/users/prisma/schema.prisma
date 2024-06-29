@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
   previewFeatures = ["omitApi"]
 }
 
@@ -129,7 +129,7 @@ model PriceConditionVoucher {
   createdAt DateTime  @db.Timestamp(0)
   createdBy String    @db.VarChar(50)
   updatedAt DateTime? @db.Timestamp(0)
-  updatedBy DateTime? @db.Timestamp(0)
+  updatedBy String?   @db.VarChar(50)
   User      User      @relation(fields: [createdBy], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "PriceConditionVoucher_ibfk_1")
   Voucher   Voucher[]
 

@@ -2,6 +2,8 @@ import { PrismaService } from '@app/common/prisma/prisma.service'
 import { CACHE_MANAGER } from '@nestjs/cache-manager'
 import {
     BadRequestException,
+    HttpException,
+    HttpStatus,
     Inject,
     Injectable,
     InternalServerErrorException,
@@ -10,13 +12,8 @@ import {
 import { ConfigService } from '@nestjs/config'
 import { ClientProxy } from '@nestjs/microservices'
 import { CronExpression, SchedulerRegistry } from '@nestjs/schedule'
-import { Prisma } from '@prisma/client'
 import { Cache } from 'cache-manager'
-import {
-    checkVoucherExistInOrder,
-    processHandleVoucher,
-    updateQuantityVoucher
-} from 'common/constants/event.constant'
+import { updateQuantityVoucher } from 'common/constants/event.constant'
 import { VoucherType } from 'common/constants/voucher.constant'
 import { Status } from 'common/enums/status.enum'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
@@ -25,7 +22,6 @@ import { hash } from 'common/utils/helper'
 import { CronJob } from 'cron'
 import { addHours, addMinutes } from 'date-fns'
 import { isUndefined, omitBy } from 'lodash'
-import { firstValueFrom } from 'rxjs'
 import { v4 as uuidv4 } from 'uuid'
 import { CreateVoucherDTO } from './dtos/CreateVoucher.dto'
 import { VoucherQueryDTO } from './dtos/QueryVoucher.dto'
@@ -139,14 +135,6 @@ export class VoucherService {
         body: UpdateVoucherDTO
     ): Promise<Return> {
         try {
-            const usedToVoucher = await firstValueFrom(
-                this.orderClient.send(checkVoucherExistInOrder, voucherId)
-            )
-
-            if (typeof usedToVoucher === 'string') {
-                throw new Error('Không thể cập nhật mã giảm giá khi đã sử dụng')
-            }
-
             const {
                 initQuantity,
                 maximum,
@@ -168,10 +156,14 @@ export class VoucherService {
             })
 
             if (!voucherExist) {
-                throw new Error('Mã giảm giá không tồn tại')
+                throw new NotFoundException('Mã giảm giá không tồn tại')
             }
 
-            const updatedVoucher = await this.prisma.voucher.update({
+            if (voucherExist.currentQuantity !== voucherExist.initQuantity) {
+                throw new BadRequestException('Không thể cập nhật mã giảm giá đã sử dụng')
+            }
+
+            await this.prisma.voucher.update({
                 where: {
                     id: voucherId,
                     storeId: user.storeId
@@ -188,33 +180,38 @@ export class VoucherService {
                     startDate,
                     updatedAt: new Date().toISOString(),
                     updatedBy: user.userId,
-                    CategoryConditionVoucher: {
-                        update: {
-                            categoryShortName: category,
-                            updatedBy: user.userId,
-                            updatedAt: new Date().toISOString()
-                        }
-                    },
-                    PriceConditionVoucher: {
-                        update: {
-                            priceMin,
-                            totalMin,
-                            updatedBy: user.userId,
-                            updatedAt: new Date().toISOString()
-                        }
-                    }
+                    CategoryConditionVoucher: voucherExist?.categoryConditionId
+                        ? {
+                              update: {
+                                  categoryShortName: category,
+                                  updatedBy: user.userId,
+                                  updatedAt: new Date().toISOString()
+                              }
+                          }
+                        : undefined,
+                    PriceConditionVoucher: voucherExist?.priceConditionId
+                        ? {
+                              update: {
+                                  priceMin,
+                                  totalMin,
+                                  updatedBy: user.userId,
+                                  updatedAt: new Date().toISOString()
+                              }
+                          }
+                        : undefined
                 }
             })
 
             return {
                 msg: 'ok',
-                result: updatedVoucher
+                result: undefined
             }
         } catch (err) {
-            if (err instanceof Prisma.PrismaClientKnownRequestError) {
-                throw new BadRequestException('Lỗi xảy ra trong quá trình cập nhật')
-            }
-            throw new BadRequestException(err.message)
+            console.log('error', err)
+            throw new HttpException(
+                err.message || 'Lỗi Server',
+                err.status || HttpStatus.INTERNAL_SERVER_ERROR
+            )
         }
     }
 

@@ -7,9 +7,11 @@ import {
     eachMonthOfInterval,
     eachWeekOfInterval,
     isAfter,
+    isPast,
     startOfMonth,
     startOfYear
 } from 'date-fns'
+import { ProductStatus, Status } from 'src/constants/product.status'
 import { Voucher } from 'src/types/voucher.type'
 import { twMerge } from 'tailwind-merge'
 
@@ -45,11 +47,8 @@ export const checkAxiosError = (
     return isAxiosError(response)
 }
 
-export const checkExpired = (row: Row<Voucher>) => {
-    return (
-        (row.original.currentQuantity > 0 && isAfter(row.original.endDate, new Date())) ||
-        (row.original.currentQuantity <= 0 && isAfter(row.original.endDate, new Date()))
-    )
+export const checkExpired = ({ original: { status, endDate } }: Row<Voucher>) => {
+    return status === Status.block ? 'Không thể sử dụng' : isPast(endDate) ? 'Hết hạn' : 'Có thể sử dụng'
 }
 
 export const timeInterval: () => {

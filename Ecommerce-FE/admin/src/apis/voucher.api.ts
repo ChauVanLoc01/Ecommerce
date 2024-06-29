@@ -21,7 +21,7 @@ export const VoucherApi = {
     getAnalytics: () => {
         return http.get<Return<{ all: number; active: number; block: number }>>('store/voucher/analytics')
     },
-    updateStatus: (status: 'ACTIVE' | 'BLOCK') => {
-        return http.put('store/voucher', { status })
+    updateStatus: (voucherId: string, status: 'ACTIVE' | 'BLOCK') => () => {
+        return http.put(`store/voucher/${voucherId}`, { status })
     }
 }

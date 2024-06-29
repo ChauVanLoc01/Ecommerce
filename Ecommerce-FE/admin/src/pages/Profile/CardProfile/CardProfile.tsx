@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useContext, useRef } from 'react'
 
 import classNames from 'classnames'
 import { AiOutlineCloudUpload } from 'react-icons/ai'
@@ -13,12 +13,15 @@ import { SlLock } from 'react-icons/sl'
 import { resolvePath, useLocation, useNavigate } from 'react-router-dom'
 import Button from 'src/components/Button'
 import { route } from 'src/constants/route'
+import { AppContext } from 'src/contexts/AppContext'
 
 type CardProps = {
     rootClassName?: string
 }
 
 const CardProfile = ({ rootClassName }: CardProps) => {
+    const { store } = useContext(AppContext)
+
     const fileRef = useRef<HTMLInputElement>(null)
     const navigate = useNavigate()
     const location = useLocation()
@@ -40,7 +43,7 @@ const CardProfile = ({ rootClassName }: CardProps) => {
                     onClick={handleOpenFile}
                 >
                     <img
-                        src='https://cdn-icons-png.flaticon.com/512/2202/2202112.png'
+                        src={store?.image}
                         alt='background'
                         className='group-hover:opacity-0 transition-all duration-100 ease-linear rounded-full'
                     />
@@ -49,8 +52,8 @@ const CardProfile = ({ rootClassName }: CardProps) => {
                     </span>
                 </button>
                 <input type='file' ref={fileRef} name='' id='' className='hidden' />
-                <h4 className='font-semibold'>Stebin Ben</h4>
-                <p>Admin</p>
+                <h4 className='font-semibold'>{store?.name}</h4>
+                <p>{store?.role}</p>
                 <article className='flex items-center justify-center gap-x-2'>
                     <FaGoogle color='#FF4528' />
                     <FaFacebookSquare color='blue' />

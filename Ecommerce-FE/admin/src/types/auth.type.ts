@@ -22,6 +22,7 @@ export type Store = {
     updatedBy?: string
     createdAt: string
     updatedAt?: string
+    role: 'ADMIN' | 'EMPLOYEE'
 }
 
 export type LoginResponse = {

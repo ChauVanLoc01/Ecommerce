@@ -1,7 +1,7 @@
 import { InfoCircledIcon, Pencil1Icon } from '@radix-ui/react-icons'
 import { Badge, Flex, IconButton, Text, Tooltip } from '@radix-ui/themes'
 import { ColumnDef } from '@tanstack/react-table'
-import { format, formatDistance, isAfter } from 'date-fns'
+import { format, formatDistance, isAfter, isPast } from 'date-fns'
 import { vi } from 'date-fns/locale'
 import { BiSolidSortAlt } from 'react-icons/bi'
 import Table from 'src/components/Table'
@@ -9,6 +9,7 @@ import { UserStatus } from 'src/constants/order.status'
 import { Voucher } from 'src/types/voucher.type'
 import { checkExpired, convertCurrentcy } from 'src/utils/utils'
 import VoucherUpdateStatus from './VoucherUpdateStatus'
+import { order_status } from 'src/constants/product.status'
 
 type VoucherTableProps = {
     data: Voucher[]
@@ -71,8 +72,8 @@ const VoucherTable = ({ data, refetchDataAll }: VoucherTableProps) => {
             },
             cell: ({ row }) => (
                 <div className='flex justify-center'>
-                    <Badge size={'3'} color={checkExpired(row) ? 'green' : 'red'}>
-                        {checkExpired(row) ? 'Có thể sử dụng' : 'Hết hạn'}
+                    <Badge size={'3'} color={order_status[checkExpired(row)] as any}>
+                        {checkExpired(row)}
                     </Badge>
                 </div>
             )
@@ -203,7 +204,11 @@ const VoucherTable = ({ data, refetchDataAll }: VoucherTableProps) => {
                             <Pencil1Icon />
                         </IconButton>
                     </Tooltip>
-                    <VoucherUpdateStatus row={row} refetchAll={refetchDataAll} />
+                    <VoucherUpdateStatus
+                        row={row}
+                        refetchAll={refetchDataAll}
+                        isDisable={isPast(row.original.endDate)}
+                    />
                 </Flex>
             )
         }

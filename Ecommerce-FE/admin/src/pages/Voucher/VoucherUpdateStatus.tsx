@@ -9,11 +9,14 @@ import { Voucher } from 'src/types/voucher.type'
 type VoucherUpdateStatusProps = {
     row: Row<Voucher>
     refetchAll: () => void
+    isDisable?: boolean
 }
 
-const VoucherUpdateStatus = ({ row, refetchAll }: VoucherUpdateStatusProps) => {
+const VoucherUpdateStatus = ({ row, refetchAll, isDisable }: VoucherUpdateStatusProps) => {
+    const isActive = row.original.status === 'ACTIVE'
+
     const { mutate } = useMutation({
-        mutationFn: VoucherApi.updateStatus,
+        mutationFn: VoucherApi.updateStatus(row.original.id, isActive ? 'BLOCK' : 'ACTIVE'),
         onSuccess: () => {
             refetchAll()
             toast.success('Cập nhật trạng thái thành công')
@@ -23,19 +26,9 @@ const VoucherUpdateStatus = ({ row, refetchAll }: VoucherUpdateStatusProps) => {
         }
     })
 
-    const isActive = row.original.status === 'ACTIVE'
-
-    const handleBlockStatus = () => mutate('BLOCK')
-
-    const handleActiveStatus = () => mutate('ACTIVE')
-
     return (
         <Tooltip content={isActive ? 'Khóa' : 'Mở'}>
-            <IconButton
-                variant='soft'
-                color={isActive ? 'red' : 'green'}
-                onClick={isActive ? handleBlockStatus : handleActiveStatus}
-            >
+            <IconButton variant='soft' color={isActive ? 'red' : 'green'} onClick={mutate as any} disabled={isDisable}>
                 {isActive ? <Cross2Icon /> : <LockOpen1Icon />}
             </IconButton>
         </Tooltip>
