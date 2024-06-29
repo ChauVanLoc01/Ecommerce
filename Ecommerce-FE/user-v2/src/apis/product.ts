@@ -45,17 +45,12 @@ export const productFetching = {
             params
         })
     },
-    getAllSalePromotionProduct: (salesPromotionId: string ,query: ProductListQuery) => {
-        return http.get<Return<ProductListQuery>, ProductListQuery>(`store/sale-promotion/${salesPromotionId}/product`), {
-            query
-        } 
-    },
-    getSalePromotionsInDay: () => {
-        return http.get<SalesPromotion>(`store/sale-promotion/sale-promotion-in-day`)
-    },
-    getCurrentSaleInfo: () => {
-        return http.get<SalesPromotionAndProduct>(`store/sale-promotion/current-sale`)
+    getAllSalePromotionProduct: (salesPromotionId: string, query: ProductListQuery) => {
+        return (
+            http.get<Return<ProductListQuery>, ProductListQuery>(`store/sale-promotion/${salesPromotionId}/product`),
+            {
+                query
+            }
+        )
     }
-    
-
 }

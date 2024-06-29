@@ -430,6 +430,8 @@ model SalePromotion {
 model ProductPromotion {
   id               String         @id @db.VarChar(50)
   productId        String         @db.VarChar(50)
+  name             String         @db.VarChar(1000)
+  image            String         @db.VarChar(500)
   quantity         Int
   bought           Int?           @default(0)
   priceAfter       Float          @db.Float

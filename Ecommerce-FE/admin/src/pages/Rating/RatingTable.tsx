@@ -164,16 +164,17 @@ const RatingTable = ({ data }: RatingTableProps) => {
             cell: ({ row }) => (
                 <div className='lowercase flex flex-col items-center'>
                     {row.original?.updatedAt ? (
-                        <Text>
-                            ?{' '}
-                            {formatDistance(row.original.updatedAt, new Date().toISOString(), {
-                                addSuffix: true,
-                                locale: vi
-                            })}
-                            <span>{format(row.original.createdAt, 'hh:mm dd-MM-yyyy')}</span>?{' '}
-                        </Text>
+                        <div className='lowercase flex flex-col items-center'>
+                            <span className='italic text-gray-400 text-[14px]'>
+                                {formatDistance(row.original.updatedAt, new Date().toISOString(), {
+                                    addSuffix: true,
+                                    locale: vi
+                                })}
+                            </span>
+                            <span>{format(row.original.updatedAt, 'hh:mm dd-MM-yyyy')}</span>
+                        </div>
                     ) : (
-                        '_'
+                        ''
                     )}
                 </div>
             )

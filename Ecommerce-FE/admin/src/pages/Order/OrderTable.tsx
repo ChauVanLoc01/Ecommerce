@@ -197,11 +197,11 @@ const OrderTable = ({ data, orderListRefetch, analyticOrderStoreRefetching }: Or
             cell: ({ row }) => {
                 row.original.updatedAt ? (
                     <div className='lowercase flex flex-col items-center'>
-                        <span>{format(row.original.updatedAt, 'hh:mm')}</span>
-                        <span>{format(row.original.updatedAt, 'dd-MM-yyyy')}</span>
+                        <Text>{format(row.original.updatedAt, 'hh:mm')}</Text>
+                        <Text>{format(row.original.updatedAt, 'dd-MM-yyyy')}</Text>
                     </div>
                 ) : (
-                    <Text>_</Text>
+                    <Text></Text>
                 )
             }
         },

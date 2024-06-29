@@ -72,7 +72,7 @@ const ProductList = () => {
             exit={'close'}
             className='space-y-5'
         >
-            <FlashSale products={data?.data.result.data ?? []} />
+            <FlashSale />
             <div className='flex gap-x-5'>
                 <section className='basis-1/5 flex-shrink-0'>
                     <Filter data={categoryResponse} />

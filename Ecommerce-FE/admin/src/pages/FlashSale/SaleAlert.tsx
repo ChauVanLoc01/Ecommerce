@@ -179,6 +179,8 @@ const SaleAlert = ({
             salePromotionId: (selectedEvent.event as SalePromotion).id,
             storePromotionId,
             products: Object.keys(selectedProduct.products).map((e) => ({
+                name: selectedProduct.products[e].name,
+                image: selectedProduct.products[e].image,
                 productId: e,
                 priceAfter: selectedProduct.products[e].priceAfterInSale,
                 quantity: selectedProduct.products[e].quantityInSale

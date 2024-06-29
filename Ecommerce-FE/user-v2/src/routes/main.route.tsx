@@ -7,6 +7,7 @@ import { route } from 'src/constants/route'
 import { AppContext } from 'src/contexts/AppContext'
 import { checkoutLoader } from 'src/loaders/checkout.loader'
 import { deliveryLoader } from 'src/loaders/delivery.loader'
+import { flashSaleLoader } from 'src/loaders/flash_sale.loader'
 import { ordersLoader } from 'src/loaders/order.loader'
 import { privateLoader } from 'src/loaders/private.loader'
 import { productDetailLoader, productListLoader } from 'src/loaders/product.loader'
@@ -74,8 +75,9 @@ const routes = createBrowserRouter([
                 loader: productDetailLoader
             },
             {
-                path: route.flashSale,
-                element: <FlashSale />
+                path: `${route.flashSale}/:salePromotionId`,
+                element: <FlashSale />,
+                loader: flashSaleLoader
             },
             {
                 loader: privateLoader,

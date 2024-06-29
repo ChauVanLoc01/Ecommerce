@@ -28,20 +28,29 @@ export type StorePromotion = {
 
 export type ProductPromotion = {
     id: string
+    name: string
     productId: string
+    image: string
     quantity: number
     bought: number
     priceAfter: number
-    isDelete: boolean
-    createdAt: string
-    createdBy: string
-    updatedAt?: Date
-    updatedBy?: string
-    storePromotionId: string
-    salePromotionId: string
 }
 
 export type CurrentSalePromotion = Return<{
     salePromotion: SalePromotion
     productPromotions: (ProductPromotion & Pick<Product, 'name' | 'image'>)[]
+}>
+
+export type SalePromotionIds = Return<
+    {
+        id: string
+        startDate: string
+        endDate: string
+        title: string
+    }[]
+>
+
+export type GetProductOfSalePromotion = Return<{
+    sale: SalePromotion
+    productSales: ProductPromotion[]
 }>

@@ -2,19 +2,19 @@ import { PrismaService } from '@app/common/prisma/prisma.service'
 import {
     BadRequestException,
     HttpException,
+    HttpStatus,
     Inject,
     Injectable,
-    InternalServerErrorException
+    InternalServerErrorException,
+    NotFoundException
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { ClientProxy } from '@nestjs/microservices'
-import { getProductImageByProductSalePromotion } from 'common/constants/event.constant'
 import { PaginationDTO } from 'common/decorators/pagination.dto'
 import { Status } from 'common/enums/status.enum'
 import { CurrentStoreType } from 'common/types/current.type'
-import { MessageReturn, Return } from 'common/types/result.type'
+import { Return } from 'common/types/result.type'
 import { add, endOfHour, startOfHour } from 'date-fns'
-import { firstValueFrom } from 'rxjs'
 import { v4 as uuidv4 } from 'uuid'
 import { CreateProductSalePromotionDTO } from './dtos/create-product-sale.dto'
 import { QuerySalePromotionDTO } from './dtos/query-promotion.dto'
@@ -113,7 +113,7 @@ export class SaleService {
             }
 
             const result = await Promise.all(
-                products.map(({ priceAfter, productId, quantity }) =>
+                products.map(({ priceAfter, productId, quantity, image, name }) =>
                     this.prisma.productPromotion.create({
                         data: {
                             id: uuidv4(),
@@ -124,7 +124,9 @@ export class SaleService {
                             priceAfter,
                             quantity,
                             createdBy: userId,
-                            salePromotionId
+                            salePromotionId,
+                            image,
+                            name
                         }
                     })
                 )
@@ -168,7 +170,7 @@ export class SaleService {
         }
     }
 
-    async getAllProduct(store: CurrentStoreType, promotionId: string, pagination: PaginationDTO) {
+    async getAllProduct(promotionId: string, pagination: PaginationDTO): Promise<Return> {
         try {
             const { limit, page } = pagination
 
@@ -177,7 +179,6 @@ export class SaleService {
             const promotionExist = await this.prisma.salePromotion.findUnique({
                 where: {
                     id: promotionId,
-                    status: Status.ACTIVE,
                     startDate: {
                         gte: endOfHour(new Date())
                     }
@@ -196,49 +197,26 @@ export class SaleService {
                 throw new BadRequestException('Chương trình giảm giá không tồn tại')
             }
 
-            const storePromotion = await this.prisma.storePromotion.findFirst({
-                where: {
-                    storeId: store.storeId
-                }
-            })
-
-            if (!storePromotion) {
-                return {
-                    msg: 'ok',
-                    result: {
-                        sale: promotionExist,
-                        productSales: []
-                    }
-                }
-            }
-
             const products = await this.prisma.productPromotion.findMany({
                 where: {
-                    storePromotionId: storePromotion.id,
+                    salePromotionId: promotionId,
                     isDelete: false,
                     quantity: {
                         gt: 0
                     }
                 },
                 take,
-                skip: take * (page - 1),
+                skip: take * ((page || 1) - 1),
                 select: {
                     id: true,
-                    priceAfter: true,
+                    name: true,
                     productId: true,
-                    quantity: true
+                    bought: true,
+                    quantity: true,
+                    image: true,
+                    priceAfter: true
                 }
             })
-
-            if (!products.length) {
-                return {
-                    msg: 'ok',
-                    result: {
-                        sale: promotionExist,
-                        productSales: []
-                    }
-                }
-            }
 
             return {
                 msg: 'ok',
@@ -248,39 +226,44 @@ export class SaleService {
                 }
             }
         } catch (err) {
-            throw new InternalServerErrorException(err.message)
+            throw new HttpException(
+                (err?.message as string).length > 70 ? 'Lỗi Server' : err.message,
+                err.status || HttpStatus.INTERNAL_SERVER_ERROR
+            )
         }
     }
 
-    async getSalePromotionsInDay() {
+    async getSalePromotionsInDay(): Promise<Return> {
         try {
-            let current = startOfHour(new Date())
+            let current = add(startOfHour(new Date()), { hours: 7 })
 
             const saleIds = await this.prisma.salePromotion.findMany({
                 where: {
                     startDate: {
                         gte: current
-                    },
-                    endDate: add(current, { hours: 24 })
+                    }
                 },
                 orderBy: {
                     startDate: 'asc'
-                }
+                },
+                select: {
+                    id: true,
+                    startDate: true,
+                    endDate: true,
+                    title: true
+                },
+                take: 24
             })
-
-            if (!saleIds.length) {
-                return {
-                    msg: 'ok',
-                    data: []
-                }
-            }
 
             return {
                 msg: 'ok',
-                data: saleIds
+                result: saleIds
             }
         } catch (err) {
-            throw new InternalServerErrorException('Lỗi Server')
+            throw new HttpException(
+                err.message || 'Lỗi server',
+                err.status || HttpStatus.INTERNAL_SERVER_ERROR
+            )
         }
     }
 
@@ -306,6 +289,10 @@ export class SaleService {
                 }
             })
 
+            if (!salePromotion) {
+                throw new NotFoundException('Chương trình giảm giá không tồn tại')
+            }
+
             const products = await this.prisma.productPromotion.findMany({
                 where: {
                     salePromotionId: salePromotion.id,
@@ -324,42 +311,14 @@ export class SaleService {
                 take: 20
             })
 
-            if (!products.length) {
-                return {
-                    msg: 'ok',
-                    result: {
-                        salePromotion,
-                        productPromotions: []
-                    }
-                }
-            }
-
-            const productInfors = await firstValueFrom<
-                MessageReturn<{ name: string; image: string }[]>
-            >(
-                this.productClient.send(
-                    getProductImageByProductSalePromotion,
-                    products.map((e) => e.productId)
-                )
-            )
-
-            if (!productInfors.action) {
-                throw new BadRequestException(productInfors.msg)
-            }
-
             return {
                 msg: 'ok',
                 result: {
                     salePromotion,
-                    productPromotions: products.map((e, idx) => ({
-                        ...e,
-                        name: productInfors.result[idx].name,
-                        image: productInfors.result[idx].image
-                    }))
+                    productPromotions: products
                 }
             }
         } catch (err) {
-            console.log('error', err)
             throw new HttpException(err.message || 'Lỗi Server', err.status || 500)
         }
     }

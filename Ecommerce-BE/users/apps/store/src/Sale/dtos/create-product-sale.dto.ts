@@ -7,10 +7,15 @@ import {
     IsNumber,
     IsOptional,
     IsString,
+    IsUrl,
     ValidateNested
 } from 'class-validator'
 
 export class ProductJoinPromotionDTO {
+    @IsNotEmpty()
+    @IsString()
+    name: string
+
     @IsNotEmpty()
     @IsString()
     productId: string
@@ -22,6 +27,10 @@ export class ProductJoinPromotionDTO {
     @IsNotEmpty()
     @IsNumber()
     priceAfter: number
+
+    @IsNotEmpty()
+    @IsUrl()
+    image: string
 }
 
 export class CreateProductSalePromotionDTO {

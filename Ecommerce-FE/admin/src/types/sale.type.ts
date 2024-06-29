@@ -3,6 +3,8 @@ import { Return } from './return.type'
 
 export type ProductJoinSale = {
     productId: string
+    name: string
+    image: string
     quantity: number
     priceAfter: number
 }
