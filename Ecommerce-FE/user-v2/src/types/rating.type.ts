@@ -69,7 +69,7 @@ export type DataRatingListResponse = {
     query: { page: number; page_size: number }
 }
 
-export type RatingListResponse = Return<DataRatingListResponse | any[]>
+export type RatingListResponse = Return<DataRatingListResponse>
 
 export type CreateRatingResponse = Return<{
     cratedRating: Rating

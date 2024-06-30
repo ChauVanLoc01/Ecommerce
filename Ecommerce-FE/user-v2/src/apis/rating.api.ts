@@ -11,7 +11,7 @@ export const RatingApi = {
     createNewRating: (body: CreateRatingBody) => {
         return http.post<CreateRatingResponse>('/store/rating', body)
     },
-    getProductRating: (body: { productId: string; storeId: string } & RatingQuery) => {
+    getProductRating: (body: { productId: string; storeId: string } & RatingQuery) => () => {
         return http.get<RatingListResponse>(`/store/rating/product-rating/${body.productId}/store/${body.storeId}`, {
             params: {
                 limit: body.limit,

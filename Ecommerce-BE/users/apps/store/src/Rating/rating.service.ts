@@ -18,7 +18,7 @@ import { PaginationDTO } from 'common/decorators/pagination.dto'
 import { OrderStatus } from 'common/enums/orderStatus.enum'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
 import { MessageReturn, Return } from 'common/types/result.type'
-import { flatten, isUndefined, omitBy } from 'lodash'
+import { flatten, isUndefined, keyBy, omitBy } from 'lodash'
 import { firstValueFrom } from 'rxjs'
 import { v4 as uuidv4 } from 'uuid'
 import { CreateRatingDto } from './dtos/create-rating.dto'
@@ -93,6 +93,12 @@ export class RatingService {
             const storeRating = await this.prisma.storeRating.findFirst({
                 where: {
                     storeId
+                },
+                omit: {
+                    storeId: true,
+                    id: true,
+                    createdAt: true,
+                    updatedAt: true
                 }
             })
 
@@ -115,8 +121,6 @@ export class RatingService {
 
             const convertedStoreRating = orderIdsRelatived.map((e) => e.orderId)
 
-            let { id, storeId: a, createdAt, updatedAt, ...rest } = storeRating
-
             const ratings = await this.prisma.rating.findMany({
                 where: {
                     orderId: {
@@ -128,19 +132,21 @@ export class RatingService {
                 },
                 include: {
                     RatingReply: {
-                        take: 1
+                        take: 1,
+                        select: {
+                            detail: true,
+                            createdAt: true
+                        }
                     }
                 },
                 take: limitExist,
-                skip: page && page > 1 ? (page - 1) * limitExist : 0
-            })
-
-            const ratingReplysTmp = ratings.reduce((acum, rating) => {
-                if (!rating.RatingReply.length) {
-                    return acum
+                skip: page && page > 1 ? (page - 1) * limitExist : 0,
+                omit: {
+                    updatedAt: true,
+                    updatedBy: true,
+                    storeId: true
                 }
-                return [...acum, rating.id, ...rating.RatingReply.map((e) => e.id)]
-            }, [])
+            })
 
             const userNames = await firstValueFrom<MessageReturn>(
                 this.userClient.send(
@@ -153,46 +159,32 @@ export class RatingService {
                 throw new InternalServerErrorException('Lỗi Server')
             }
 
-            const ratingMaterial = (
-                await Promise.all(
-                    ratingReplysTmp.map((id) =>
-                        this.prisma.ratingMaterial.findMany({
-                            where: {
-                                OR: [
-                                    {
-                                        ratingId: id
-                                    },
-                                    {
-                                        ratingReplyId: id
-                                    }
-                                ]
-                            }
-                        })
-                    )
+            const ratingMaterial = await Promise.all(
+                ratings.map(({ id }) =>
+                    this.prisma.ratingMaterial.findMany({
+                        where: {
+                            ratingId: id
+                        }
+                    })
                 )
-            ).reduce((acum, e) => {
-                if (e[0]?.ratingId) {
-                    return {
-                        ...acum,
-                        [e[0].ratingId]: e
-                    }
-                }
-                return {
-                    ...acum,
-                    [e[0].ratingReplyId]: e
-                }
-            }, {})
+            )
 
             return {
                 msg: 'ok',
                 result: {
                     data: {
-                        summary: {
-                            ...rest
-                        },
+                        summary: storeRating,
                         ratings,
                         userNames: userNames.result,
-                        ratingMaterial
+                        ratingMaterial: ratingMaterial.length
+                            ? ratingMaterial.reduce(
+                                  (acum, rating) => ({
+                                      ...acum,
+                                      [rating[0].ratingId]: rating
+                                  }),
+                                  {}
+                              )
+                            : {}
                     },
                     query: omitBy(
                         {

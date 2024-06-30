@@ -77,7 +77,7 @@ const Header = () => {
                                 <h3 className='font-semibold text-lg'>Giỏ hàng</h3>
                                 <h4>{ids?.all.length} sản phẩm</h4>
                             </div>
-                            {!products.length ? (
+                            {!ids?.all.length ? (
                                 <>
                                     <div className='w-1/2 mx-auto'>
                                         <img

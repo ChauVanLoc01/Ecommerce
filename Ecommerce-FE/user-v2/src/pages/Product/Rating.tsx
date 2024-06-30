@@ -1,10 +1,9 @@
-import { Flex, Spinner, Text } from '@radix-ui/themes'
+import { Avatar, Box, Flex, Spinner, Text } from '@radix-ui/themes'
 import { useQuery } from '@tanstack/react-query'
 import { format } from 'date-fns'
 import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { RatingApi } from 'src/apis/rating.api'
-import RatingReadOnly from 'src/components/Rating/RatingReadOnly'
 import { dateFormat } from 'src/constants/date-format'
 import { DataRatingListResponse, Rating as RatingType } from 'src/types/rating.type'
 
@@ -33,27 +32,58 @@ import { DataRatingListResponse, Rating as RatingType } from 'src/types/rating.t
 // </div>
 // }
 
+type StarProps = {
+    count: number
+}
+
+const Star = ({ count }: StarProps) => {
+    let starWhite = Array(5)
+        .fill(0)
+        .map((_) => <span>★</span>)
+
+    let starYellow = Array(5)
+        .fill(0)
+        .map((_) => <span className='text-yellow-500'>★</span>)
+
+    return <>{[...starYellow, ...starWhite].slice(5 - count, -count)}</>
+}
+
 type RatingParentProps = {
     data: RatingType
     userName: string
     imgUrl?: string
+    stars: number
+    materials: DataRatingListResponse['data']['ratingMaterial'][string]
 }
 
-const RatingParent = ({ data, userName, imgUrl }: RatingParentProps) => {
+const RatingParent = ({ data, userName, imgUrl, stars, materials }: RatingParentProps) => {
+    console.log('material', materials)
     return (
         <>
-            <div className='user-rating flex flex-row w-full h-full items-center gap-3'>
-                <img
-                    src={imgUrl || 'https://cdn-icons-png.flaticon.com/512/2202/2202112.png'}
-                    className='rounded-full w-10 h-10'
-                />
-                <p className='text-base font-bold'>{userName}</p>
-                <RatingReadOnly ratingValue={data.stars} />
-            </div>
-            <div className='user-comment flex flex-col w-full h-full flex-start gap-5'>
-                <p className='time text-sm text-gray-900'>Nhận xét lúc {format(data.createdAt, dateFormat)}</p>
+            <Flex gap='3' align='center'>
+                <Avatar size='3' src={imgUrl} radius='full' fallback='T' />
+                <Box>
+                    <Text as='div' size='2' weight='bold'>
+                        {userName}
+                    </Text>
+                </Box>
+            </Flex>
+            <div className='user-comment flex flex-col w-full h-full flex-start space-y-3'>
+                <div className='mt-2'>
+                    <Star count={stars} />
+                    <Text className='ml-2 time text-sm text-gray-900'>
+                        Nhận xét lúc {format(data.createdAt, dateFormat)}
+                    </Text>
+                </div>
+                <Flex>
+                    {/* {materials.map(({ url }) => (
+                        <div>
+                            <img src={url} alt='image' />
+                        </div>
+                    ))} */}
+                </Flex>
                 <div className='flex flex-col w-full h-full items-start gap-3 px-5 py-3 border-2 border-gray-300 rounded-md'>
-                    <p className='text-md'>{data.comment}</p>
+                    <Text className='text-md'>{data.comment}</Text>
                 </div>
             </div>
         </>
@@ -61,20 +91,22 @@ const RatingParent = ({ data, userName, imgUrl }: RatingParentProps) => {
 }
 
 type RatingListProps = {
-    ratings: RatingType[]
+    ratings: DataRatingListResponse['data']
     usernames: Record<string, { full_name: string; image: string }>
-    materials: Record<string, { url: string; isPrimary?: boolean }[]>
 }
 
 const RatingList = ({ ratings, usernames }: RatingListProps) => {
+    console.log('ratings', ratings.ratingMaterial)  
     return (
         <div className='space-y-4'>
-            {ratings.map((rating) => (
+            {ratings.ratings.map((rating) => (
                 <div>
                     <RatingParent
                         data={rating}
                         userName={usernames[rating.createdBy].full_name}
                         imgUrl={usernames[rating.createdBy].image}
+                        stars={rating.stars}
+                        materials={ratings.ratingMaterial[rating.id]}
                     />
                 </div>
             ))}
@@ -93,14 +125,14 @@ const Rating = ({ storeId }: RatingProps) => {
 
     const { data: ratingData } = useQuery({
         queryKey: ['ratings', { productId, page }],
-        queryFn: () => RatingApi.getProductRating({ productId: productId as string, storeId, page }),
+        queryFn: RatingApi.getProductRating({ productId: productId as string, storeId, page }),
         select: (data) => data.data.result,
         staleTime: 1000 * 60 * 2
     })
 
     if (!ratingData) {
         return (
-            <Flex justify={'center'} className='h-48'>
+            <Flex justify={'center'} className='h-48 flex-grow'>
                 <Spinner />
             </Flex>
         )
@@ -131,7 +163,7 @@ const Rating = ({ storeId }: RatingProps) => {
                     </Flex>
                 ) : (
                     <RatingList
-                        ratings={(ratingData as DataRatingListResponse).data.ratings}
+                        ratings={(ratingData as DataRatingListResponse).data}
                         usernames={(ratingData as DataRatingListResponse).data.userNames}
                         materials={(ratingData as DataRatingListResponse).data.ratingMaterial}
                     />
