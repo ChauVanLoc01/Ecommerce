@@ -240,7 +240,7 @@ export class OrderService {
                     if (voucherId) {
                         let hahsVoucher = hash('voucher', voucherId)
                         let quantityVoucherCache = await this.cacheManager.get<number>(hahsVoucher)
-                        if (!quantityVoucherCache) {
+                        if (quantityVoucherCache == 0) {
                             return Promise.reject({
                                 msg: 'Voucher đã hết lượt sử dụng',
                                 result: voucherId
@@ -252,7 +252,7 @@ export class OrderService {
                         let hashProductId = hash('product', productId)
                         let fromCache = await this.cacheManager.get<string>(hashProductId)
                         let { quantity } = JSON.parse(fromCache) as { quantity: number }
-                        if (!quantity) {
+                        if (quantity == 0) {
                             return Promise.reject({ action: false, msg: 'Sản phẩm đã hết hàng' })
                         }
                     })
