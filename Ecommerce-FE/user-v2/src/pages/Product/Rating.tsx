@@ -96,7 +96,6 @@ type RatingListProps = {
 }
 
 const RatingList = ({ ratings, usernames }: RatingListProps) => {
-    console.log('ratings', ratings.ratingMaterial)  
     return (
         <div className='space-y-4'>
             {ratings.ratings.map((rating) => (

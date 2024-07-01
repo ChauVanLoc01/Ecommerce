@@ -430,7 +430,6 @@ export class VoucherService {
     async checkVoucherExistToCreateOrder(body: string[][]): Promise<MessageReturn> {
         try {
             await Promise.all(body.map((ids) => this.updateQuantityVoucher(ids[0], ids[1])))
-
             return {
                 msg: 'ok',
                 action: true,
@@ -448,17 +447,13 @@ export class VoucherService {
     async updateQuantityVoucher(storeId: string, id: string) {
         const hashValue = hash('voucher', id)
 
-        const quantityVoucher = await this.cacheManager.get(hashValue)
+        let fromCache = await this.cacheManager.get<string>(hashValue)
+        var quantityVoucher = +fromCache
 
-        if (+quantityVoucher) {
-            if (+quantityVoucher === 1) {
-                this.schedulerRegistry.deleteCronJob(hashValue)
-                this.socketClient.emit(updateQuantityVoucher, {
-                    voucherId: id,
-                    storeId,
-                    quantity: 0
-                })
+        if (quantityVoucher) {
+            if (quantityVoucher === 1) {
                 await Promise.all([
+                    this.cacheManager.set(hashValue, 0),
                     this.prisma.voucher.update({
                         where: {
                             id
@@ -466,17 +461,22 @@ export class VoucherService {
                         data: {
                             currentQuantity: 0
                         }
-                    }),
-                    this.cacheManager.del(hashValue)
+                    })
                 ])
+                this.socketClient.emit(updateQuantityVoucher, {
+                    voucherId: id,
+                    storeId,
+                    quantity: 0
+                })
+                this.schedulerRegistry.deleteCronJob(hashValue)
             } else {
-                let remainingQuantity = +quantityVoucher - 1
+                let remainingQuantity = quantityVoucher - 1
+                await this.cacheManager.set(hashValue, remainingQuantity)
                 this.socketClient.emit(updateQuantityVoucher, {
                     voucherId: id,
                     storeId,
                     quantity: remainingQuantity
                 })
-                await this.cacheManager.set(hashValue, remainingQuantity)
             }
             return {
                 msg: 'ok',
@@ -494,20 +494,27 @@ export class VoucherService {
             }
         })
 
+        if (!voucherExist || !voucherExist.currentQuantity) {
+            throw new Error('Voucher không tồn tại hoặc đã hết')
+        }
+
         if (voucherExist.currentQuantity === 1) {
+            await Promise.all([
+                this.cacheManager.set(hashValue, 0),
+                this.prisma.voucher.update({
+                    where: {
+                        id
+                    },
+                    data: {
+                        currentQuantity: 0
+                    }
+                })
+            ])
+
             this.socketClient.emit(updateQuantityVoucher, {
                 voucherId: id,
                 storeId: voucherExist.storeId,
                 quantity: 0
-            })
-
-            await this.prisma.voucher.update({
-                where: {
-                    id
-                },
-                data: {
-                    currentQuantity: 0
-                }
             })
 
             return {
@@ -519,13 +526,13 @@ export class VoucherService {
 
         let remainingQuantity = voucherExist.currentQuantity - 1
 
+        await this.cacheManager.set(hashValue, remainingQuantity)
+
         this.socketClient.emit(updateQuantityVoucher, {
             voucherId: id,
             storeId: voucherExist.storeId,
             quantity: remainingQuantity
         })
-
-        await this.cacheManager.set(hashValue, remainingQuantity)
 
         const cronJob = new CronJob(CronExpression.EVERY_5_MINUTES, async () => {
             const [currentQuantity, voucherExist] = await Promise.all([
@@ -537,12 +544,6 @@ export class VoucherService {
                 })
             ])
 
-            if (voucherExist.currentQuantity === +currentQuantity) {
-                this.schedulerRegistry.deleteCronJob(hashValue)
-                await this.cacheManager.del(hashValue)
-                return
-            }
-
             await this.prisma.voucher.update({
                 where: {
                     id
@@ -551,6 +552,12 @@ export class VoucherService {
                     currentQuantity: +currentQuantity
                 }
             })
+
+            if (voucherExist.currentQuantity == currentQuantity) {
+                await this.cacheManager.del(hashValue)
+                this.schedulerRegistry.deleteCronJob(hashValue)
+                return
+            }
         })
 
         this.schedulerRegistry.addCronJob(hashValue, cronJob)

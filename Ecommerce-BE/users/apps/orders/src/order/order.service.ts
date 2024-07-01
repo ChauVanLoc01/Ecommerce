@@ -24,6 +24,7 @@ import {
 import { OrderStatus } from 'common/enums/orderStatus.enum'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
 import { MessageReturn, Return } from 'common/types/result.type'
+import { hash } from 'common/utils/helper'
 import { addHours, subDays } from 'date-fns'
 import { isUndefined, max, omitBy, sumBy } from 'lodash'
 import { firstValueFrom } from 'rxjs'
@@ -234,6 +235,32 @@ export class OrderService {
 
     async createOrder(user: CurrentUserType, body: CreateOrderType): Promise<Return> {
         try {
+            body.orderParameters.forEach(async ({ voucherId, orders }) => {
+                if (voucherId) {
+                    let hahsVoucher = hash('voucher', voucherId)
+                    let quantityVoucherCache = await this.cacheManager.get<number>(hahsVoucher)
+
+                    if (!quantityVoucherCache) {
+                        return {
+                            msg: 'Voucher đã hết lượt sử dụng',
+                            result: voucherId
+                        }
+                    }
+                    let productIds = orders.map((order) => order.productId)
+                    productIds.forEach(async (productId) => {
+                        let hashProductId = hash('product', productId)
+                        let fromCache = await this.cacheManager.get<string>(hashProductId)
+                        let { quantity } = JSON.parse(fromCache) as { quantity: number }
+                        if (!quantity) {
+                            return {
+                                msg: 'Số lượng sản phẩm không đủ',
+                                resutl: productId
+                            }
+                        }
+                    })
+                }
+            })
+
             this.orderClient.emit(processOrder, { user, body })
             return {
                 msg: 'Đơn hàng đang được xử lý',

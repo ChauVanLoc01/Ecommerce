@@ -12,4 +12,6 @@ COPY . .
 
 RUN yarn prisma generate
 
-CMD [ "yarn", "product" ]
+RUN yarn build
+
+CMD [ "yarn", "pro:product" ]

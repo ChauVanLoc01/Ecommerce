@@ -36,6 +36,7 @@ export class ProductService {
         private readonly prisma: PrismaService,
         @Inject('SOCKET_SERVICE') private readonly socket_client: ClientProxy,
         @Inject('STORE_SERVICE') private readonly store_service: ClientProxy,
+        @Inject('PRODUCT_SERVICE') private readonly product_client: ClientProxy,
         private readonly configService: ConfigService,
         @Inject(CACHE_MANAGER) private cacheManager: Cache,
         private schedulerRegistry: SchedulerRegistry
@@ -541,6 +542,67 @@ export class ProductService {
     async updateQuantity(productId: string, storeId: string, buy: number) {
         const hashValue = hash('product', productId)
 
+        const fromCache = await this.cacheManager.get<string>(hashValue)
+
+        if (fromCache) {
+            const { quantity, priceAfter } = JSON.parse(fromCache) as {
+                quantity: number
+                priceAfter: number
+            }
+            if (quantity === buy) {
+                await Promise.all([
+                    this.cacheManager.set(
+                        hashValue,
+                        JSON.stringify({ quantity: 0, priceAfter }),
+                        1000 * 60 * 5
+                    ),
+                    this.prisma.product.update({
+                        where: {
+                            id: productId
+                        },
+                        data: {
+                            currentQuantity: 0
+                        }
+                    })
+                ])
+                this.socket_client.emit(updateQuantityProduct, {
+                    type: room_obj.product,
+                    id: productId,
+                    quantity: 0,
+                    priceAfter
+                })
+                this.schedulerRegistry.deleteCronJob(hashValue)
+                return {
+                    msg: 'ok',
+                    action: true,
+                    result: null
+                }
+            }
+
+            let remainingQuantity = quantity - buy
+
+            await this.cacheManager.set(
+                hashValue,
+                JSON.stringify({ quantity: remainingQuantity, priceAfter } as {
+                    quantity: number
+                    priceAfter: number
+                })
+            )
+
+            this.socket_client.emit(updateQuantityProduct, {
+                productId,
+                storeId,
+                quantity: remainingQuantity,
+                priceAfter
+            })
+
+            return {
+                msg: 'ok',
+                action: true,
+                result: null
+            }
+        }
+
         const productExist = await this.prisma.product.findUnique({
             where: {
                 id: productId,
@@ -556,89 +618,15 @@ export class ProductService {
             throw new Error(`Sản phẩm ${productId} không đủ số lượng`)
         }
 
-        const cachedQuantity = await this.cacheManager.get(hashValue)
-
-        if (!cachedQuantity) {
-            if (productExist.currentQuantity === buy) {
-                this.socket_client.emit(updateQuantityProduct, {
-                    type: room_obj.product,
-                    id: productId,
-                    quantity: 0
-                })
-                await this.prisma.product.update({
-                    where: {
-                        id: productId
-                    },
-                    data: {
-                        currentQuantity: 0
-                    }
-                })
-                return {
-                    msg: 'ok',
-                    action: true,
-                    result: null
-                }
-            }
-
-            let remainingQuantity = productExist.currentQuantity - buy
-
-            this.socket_client.emit(updateQuantityProduct, {
-                productId,
-                storeId,
-                quantity: remainingQuantity,
-                priceAfter: productExist.priceAfter
-            })
-
-            await this.cacheManager.set(hashValue, remainingQuantity)
-
-            const updateQuantityJob = new CronJob(CronExpression.EVERY_5_MINUTES, async () => {
-                const [currentQuantity, productIn] = await Promise.all([
-                    this.cacheManager.get(hashValue),
-                    this.prisma.product.findUnique({
-                        where: {
-                            id: productId
-                        }
-                    })
-                ])
-
-                if (+currentQuantity === productIn.currentQuantity) {
-                    this.schedulerRegistry.deleteCronJob(hashValue)
-                    await this.cacheManager.del(hashValue)
-                    return
-                }
-
-                await this.prisma.product.update({
-                    where: {
-                        id: productId,
-                        storeId
-                    },
-                    data: {
-                        currentQuantity: +currentQuantity
-                    }
-                })
-            })
-
-            this.schedulerRegistry.addCronJob(hashValue, updateQuantityJob)
-
-            updateQuantityJob.start()
-
-            return {
-                msg: 'ok',
-                action: true,
-                result: null
-            }
-        }
-
-        if (+cachedQuantity === buy) {
-            this.socket_client.emit(updateQuantityProduct, {
-                productId,
-                storeId,
-                quantity: 0,
-                priceAfter: productExist.priceAfter
-            })
-            this.schedulerRegistry.deleteCronJob(hashValue)
+        if (productExist.currentQuantity === buy) {
             await Promise.all([
-                this.cacheManager.del(hashValue),
+                this.cacheManager.set(
+                    hashValue,
+                    JSON.stringify({
+                        quantity: 0,
+                        priceAfter: productExist.priceAfter
+                    })
+                ),
                 this.prisma.product.update({
                     where: {
                         id: productId
@@ -649,6 +637,13 @@ export class ProductService {
                 })
             ])
 
+            this.socket_client.emit(updateQuantityProduct, {
+                productId,
+                storeId,
+                quantity: 0,
+                priceAfter: productExist.priceAfter
+            })
+
             return {
                 msg: 'ok',
                 action: true,
@@ -656,7 +651,12 @@ export class ProductService {
             }
         }
 
-        let remainingQuantity = +cachedQuantity - buy
+        let remainingQuantity = productExist.currentQuantity - buy
+
+        await this.cacheManager.set(
+            hashValue,
+            JSON.stringify({ quantity: remainingQuantity, priceAfter: productExist.priceAfter })
+        )
 
         this.socket_client.emit(updateQuantityProduct, {
             productId,
@@ -665,7 +665,41 @@ export class ProductService {
             priceAfter: productExist.priceAfter
         })
 
-        await this.cacheManager.set(hashValue, remainingQuantity)
+        const updateQuantityJob = new CronJob(CronExpression.EVERY_5_MINUTES, async () => {
+            const [fromCache, productIn] = await Promise.all([
+                this.cacheManager.get<string>(hashValue),
+                this.prisma.product.findUnique({
+                    where: {
+                        id: productId
+                    }
+                })
+            ])
+            let { quantity } = JSON.parse(fromCache) as { quantity: number; priceAfter: number }
+            let tmp = []
+            if (quantity === productIn.currentQuantity) {
+                tmp.push(this.cacheManager.del(hashValue))
+            }
+            await Promise.all([
+                this.prisma.product.update({
+                    where: {
+                        id: productId,
+                        storeId
+                    },
+                    data: {
+                        currentQuantity: quantity
+                    }
+                }),
+                ...tmp
+            ])
+
+            if (tmp.length) {
+                this.schedulerRegistry.deleteCronJob(hashValue)
+            }
+        })
+
+        this.schedulerRegistry.addCronJob(hashValue, updateQuantityJob)
+
+        updateQuantityJob.start()
 
         return {
             msg: 'ok',
@@ -899,5 +933,20 @@ export class ProductService {
                 result: null
             }
         }
+    }
+
+    async testing() {
+        // const cache = await firstValueFrom(this.product_client.send('testing', { msg: 'ok' }))
+        return {
+            msg: 'ok',
+            result: await this.testingPattern()
+        }
+    }
+
+    async testingPattern() {
+        const cache = await this.cacheManager.get('testing')
+        const tmp = cache ? +cache - 1 : 100 - 1
+        await this.cacheManager.set('testing', tmp)
+        return await this.cacheManager.get('testing')
     }
 }

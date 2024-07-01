@@ -168,4 +168,16 @@ export class ProductController {
     getProductImageByProductSalePromotion(@Payload() payload: string[]) {
         return this.productsService.getProductImageByProductSalePromotion(payload)
     }
+
+    @Public()
+    @Get('testing/testing')
+    testing() {
+        return this.productsService.testing()
+    }
+
+    @Public()
+    @MessagePattern('testing')
+    testingPattern() {
+        return this.productsService.testingPattern()
+    }
 }
