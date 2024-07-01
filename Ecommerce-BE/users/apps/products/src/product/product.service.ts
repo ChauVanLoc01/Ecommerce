@@ -531,6 +531,7 @@ export class ProductService {
                 result: null
             }
         } catch (err) {
+            console.log('error', err)
             return {
                 msg: (err as Error).message,
                 action: false,

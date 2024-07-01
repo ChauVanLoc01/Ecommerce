@@ -235,15 +235,16 @@ export class OrderService {
 
     async createOrder(user: CurrentUserType, body: CreateOrderType): Promise<Return> {
         try {
-            body.orderParameters.forEach(async ({ voucherId, orders }) => {
-                if (voucherId) {
-                    let hahsVoucher = hash('voucher', voucherId)
-                    let quantityVoucherCache = await this.cacheManager.get<number>(hahsVoucher)
-
-                    if (!quantityVoucherCache) {
-                        return {
-                            msg: 'Voucher đã hết lượt sử dụng',
-                            result: voucherId
+            await Promise.all(
+                body.orderParameters.map(async ({ voucherId, orders }) => {
+                    if (voucherId) {
+                        let hahsVoucher = hash('voucher', voucherId)
+                        let quantityVoucherCache = await this.cacheManager.get<number>(hahsVoucher)
+                        if (!quantityVoucherCache) {
+                            return Promise.reject({
+                                msg: 'Voucher đã hết lượt sử dụng',
+                                result: voucherId
+                            })
                         }
                     }
                     let productIds = orders.map((order) => order.productId)
@@ -252,22 +253,37 @@ export class OrderService {
                         let fromCache = await this.cacheManager.get<string>(hashProductId)
                         let { quantity } = JSON.parse(fromCache) as { quantity: number }
                         if (!quantity) {
-                            return {
-                                msg: 'Số lượng sản phẩm không đủ',
-                                resutl: productId
-                            }
+                            return Promise.reject({ action: false, msg: 'Sản phẩm đã hết hàng' })
                         }
                     })
-                }
-            })
+                    return Promise.resolve({ action: true, msg: 'ok' })
+                })
+            )
 
-            this.orderClient.emit(processOrder, { user, body })
+            setTimeout(() => {
+                this.orderClient.emit(processOrder, { user, body })
+            }, 0)
+
             return {
                 msg: 'Đơn hàng đang được xử lý',
                 result: undefined
             }
         } catch (err) {
-            throw new InternalServerErrorException('Lỗi tạo đơn hàng')
+            if (err instanceof Error) {
+                this.socketClient.emit(statusOfOrder, {
+                    id: body.actionId,
+                    msg: 'Lỗi server',
+                    action: false,
+                    result: null
+                })
+            } else {
+                this.socketClient.emit(statusOfOrder, {
+                    id: body.actionId,
+                    msg: err?.msg || 'Lỗi tạo đơn hàng',
+                    action: false,
+                    result: null
+                })
+            }
         }
     }
 

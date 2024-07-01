@@ -436,6 +436,7 @@ export class VoucherService {
                 result: null
             }
         } catch (err) {
+            console.log('err voucher', err)
             return {
                 msg: (err as Error).message,
                 action: false,
@@ -448,9 +449,9 @@ export class VoucherService {
         const hashValue = hash('voucher', id)
 
         let fromCache = await this.cacheManager.get<string>(hashValue)
-        var quantityVoucher = +fromCache
 
-        if (quantityVoucher) {
+        if (fromCache) {
+            let quantityVoucher = +fromCache
             if (quantityVoucher === 1) {
                 await Promise.all([
                     this.cacheManager.set(hashValue, 0),
@@ -495,6 +496,7 @@ export class VoucherService {
         })
 
         if (!voucherExist || !voucherExist.currentQuantity) {
+            await this.cacheManager.set(hashValue, 0)
             throw new Error('Voucher không tồn tại hoặc đã hết')
         }
 
