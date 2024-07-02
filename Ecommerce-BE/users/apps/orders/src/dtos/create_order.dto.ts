@@ -28,7 +28,7 @@ class Parameter {
     quantity: number
 }
 
-class OrdersParameter {
+export class OrdersParameter {
     @IsString()
     @IsNotEmpty()
     storeId: string

@@ -31,7 +31,7 @@ import { isUndefined, max, omitBy, sumBy } from 'lodash'
 import { firstValueFrom } from 'rxjs'
 import { v4 as uuidv4 } from 'uuid'
 import { AnalyticsOrderDTO } from '../dtos/analytics_order.dto'
-import { CreateOrderType } from '../dtos/create_order.dto'
+import { CreateOrderType, OrdersParameter } from '../dtos/create_order.dto'
 import { QueryOrderType } from '../dtos/query-order.dto'
 import { UpdateOrderType, UpdateStatusOrderDTO } from '../dtos/update_order.dto'
 
@@ -236,17 +236,21 @@ export class OrderService {
 
     async createOrder(user: CurrentUserType, body: CreateOrderType): Promise<Return> {
         try {
-            const stepOne = await firstValueFrom<MessageReturn>(
-                this.orderClient.send(processStepOneToCreatOrder, body)
+            const step_one = await firstValueFrom<MessageReturn<string | null>>(
+                this.orderClient.send(processStepOneToCreatOrder, body.orderParameters)
             )
-            if (!stepOne.action) {
-                throw new BadRequestException(stepOne.msg)
-            } else {
+
+            if (step_one.action) {
                 this.orderClient.emit(processOrder, { user, body })
             }
+
+            if (!step_one.action) {
+                throw new BadRequestException(step_one.msg || 'Tạo đơn hàng không thành công')
+            }
+
             return {
                 msg: 'Đơn hàng đang được xử lý',
-                result: undefined
+                result: null
             }
         } catch (err) {
             this.socketClient.emit(statusOfOrder, {
@@ -259,69 +263,50 @@ export class OrderService {
         }
     }
 
-    async stepOne(body: CreateOrderType) {
+    async stepOne(body: InstanceType<typeof OrdersParameter>[]) {
         try {
-            await Promise.all(
-                body.orderParameters.flatMap(async ({ voucherId, orders }) => {
-                    let tmp = []
-                    if (voucherId) {
-                        let hahsVoucher = hash('voucher', voucherId)
-                        let quantityVoucherCache = await this.cacheManager.get<number>(hahsVoucher)
-                        if (quantityVoucherCache && quantityVoucherCache == 0) {
-                            tmp.push(
-                                Promise.reject({
-                                    msg: 'Voucher đã hết lượt sử dụng',
-                                    result: voucherId,
-                                    action: false
-                                })
-                            )
+            const innerPromise = body.map(async ({ voucherId, orders }) => {
+                if (voucherId) {
+                    let hahsVoucher = hash('voucher', voucherId)
+                    let quantityVoucherCache = await this.cacheManager.get<number>(hahsVoucher)
+                    if (quantityVoucherCache == 0) {
+                        return Promise.reject({
+                            action: false,
+                            msg: 'Voucher đã hết lượt sử dụng',
+                            result: voucherId
+                        })
+                    }
+                }
+                orders.forEach(async ({ productId }) => {
+                    let hashProductId = hash('product', productId)
+                    let fromCache = await this.cacheManager.get<string>(hashProductId)
+                    if (fromCache) {
+                        let { quantity } = JSON.parse(fromCache) as { quantity: number }
+                        if (quantity == 0) {
+                            return Promise.reject({
+                                action: false,
+                                msg: 'Sản phẩm không đủ số lượng',
+                                result: productId
+                            })
                         }
                     }
-                    let productIds = orders.map((order) => order.productId)
-                    tmp.push(
-                        ...productIds.map(async (productId) => {
-                            let hashProductId = hash('product', productId)
-                            let fromCache = await this.cacheManager.get<string>(hashProductId)
-                            if (fromCache) {
-                                let { quantity } = JSON.parse(fromCache) as { quantity: number }
-                                if (quantity == 0) {
-                                    return Promise.reject({
-                                        action: false,
-                                        msg: 'Sản phẩm đã hết hàng',
-                                        result: null
-                                    })
-                                }
-                            }
-                            return Promise.resolve({ action: true, msg: 'ok', result: null })
-                        })
-                    )
-                    if (tmp.length) {
-                        return tmp
-                    }
-
-                    return Promise.resolve({ action: true, msg: 'ok', result: null })
                 })
-            )
-            setTimeout(() => {
-                return {
-                    msg: 'ok',
-                    action: true,
-                    result: null
-                }
-            }, 0)
+
+                return Promise.resolve({ action: true, msg: 'ok', result: null })
+            })
+
+            const result = await Promise.all(innerPromise)
+
+            return {
+                msg: 'ok',
+                action: true,
+                result: null
+            }
         } catch (err) {
-            if (err instanceof Error) {
-                return {
-                    msg: 'Lỗi server',
-                    action: false,
-                    result: null
-                }
-            } else {
-                return {
-                    msg: err?.msg || 'Tạo đơn hàng không thành công',
-                    action: false,
-                    result: null
-                }
+            return {
+                msg: err?.msg || 'Tạo đơn hàng không thành công',
+                action: false,
+                result: err?.result || null
             }
         }
     }

@@ -13,7 +13,7 @@ import { Role } from 'common/enums/role.enum'
 import { JwtGuard } from 'common/guards/jwt.guard'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
 import { AnalyticsOrderDTO } from '../dtos/analytics_order.dto'
-import { CreateOrderDTO, CreateOrderType } from '../dtos/create_order.dto'
+import { CreateOrderDTO, CreateOrderType, OrdersParameter } from '../dtos/create_order.dto'
 import { QueryOrderDTO } from '../dtos/query-order.dto'
 import { UpdateOrderDTO, UpdateStatusOrderDTO } from '../dtos/update_order.dto'
 import { OrderService } from './order.service'
@@ -106,8 +106,8 @@ export class OrderController {
 
     @Public()
     @MessagePattern(processStepOneToCreatOrder)
-    processStepOneToCreateOrder(@Payload() body: CreateOrderDTO) {
-        return this.ordersService.stepOne(body)
+    processStepOneToCreateOrder(@Payload() payload: InstanceType<typeof OrdersParameter>[]) {
+        return this.ordersService.stepOne(payload)
     }
 
     @Public()
