@@ -15,7 +15,7 @@ import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
 import { AnalyticsOrderDTO } from '../dtos/analytics_order.dto'
 import { CreateOrderDTO, CreateOrderType, OrdersParameter } from '../dtos/create_order.dto'
 import { QueryOrderDTO } from '../dtos/query-order.dto'
-import { UpdateOrderDTO, UpdateStatusOrderDTO } from '../dtos/update_order.dto'
+import { UpdateOrderDTO } from '../dtos/update_order.dto'
 import { OrderService } from './order.service'
 
 @ApiBearerAuth()
@@ -81,15 +81,15 @@ export class OrderController {
         return this.ordersService.getOrderDetailByStore(user, orderId)
     }
 
-    @Roles(Role.STORE_OWNER)
-    @Put('store-order/:orderId')
-    updateStatusByStore(
-        @CurrentUser() user: CurrentStoreType,
-        @Param('orderId') orderId: string,
-        @Body() body: UpdateStatusOrderDTO
-    ) {
-        return this.ordersService.updateStatusByStore(user, orderId, body)
-    }
+    // @Roles(Role.STORE_OWNER)
+    // @Put('store-order/:orderId')
+    // updateStatusByStore(
+    //     @CurrentUser() user: CurrentStoreType,
+    //     @Param('orderId') orderId: string,
+    //     @Body() body: UpdateStatusOrderDTO
+    // ) {
+    //     return this.ordersService.updateStatusByStore(user, orderId, body)
+    // }
 
     @Roles(Role.ADMIN, Role.EMPLOYEE, Role.STORE_OWNER)
     @Get('store-order-analytics')
@@ -117,13 +117,13 @@ export class OrderController {
     }
 
     @Roles(Role.USER)
-    @Put('user-order/:orderId')
-    updateOrder(
+    @Put('user-order/:orderId/cancel')
+    cancelOrder(
         @Param('orderId') orderId: string,
         @CurrentUser() user: CurrentUserType,
         @Body() body: UpdateOrderDTO
     ) {
-        return this.ordersService.updateOrder(user, orderId, body)
+        return this.ordersService.cancelOrder(user, orderId, body)
     }
 
     // @Public()

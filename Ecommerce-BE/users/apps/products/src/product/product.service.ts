@@ -513,6 +513,15 @@ export class ProductService {
         }
     }
 
+    emitUpdateProductToSocket(productId: string, quantity: number, priceAfter: number) {
+        this.socket_client.emit(updateQuantityProduct, {
+            type: room_obj.product,
+            id: productId,
+            quantity: 0,
+            priceAfter
+        })
+    }
+
     async updateQuantityProducts(
         data: {
             storeId: string
@@ -566,12 +575,7 @@ export class ProductService {
                         }
                     })
                 ])
-                this.socket_client.emit(updateQuantityProduct, {
-                    type: room_obj.product,
-                    id: productId,
-                    quantity: 0,
-                    priceAfter
-                })
+                this.emitUpdateProductToSocket(productId, 0, priceAfter)
                 this.schedulerRegistry.deleteCronJob(hashValue)
                 return {
                     msg: 'ok',
@@ -590,12 +594,7 @@ export class ProductService {
                 })
             )
 
-            this.socket_client.emit(updateQuantityProduct, {
-                productId,
-                storeId,
-                quantity: remainingQuantity,
-                priceAfter
-            })
+            this.emitUpdateProductToSocket(productId, remainingQuantity, priceAfter)
 
             return {
                 msg: 'ok',
@@ -638,12 +637,7 @@ export class ProductService {
                 })
             ])
 
-            this.socket_client.emit(updateQuantityProduct, {
-                productId,
-                storeId,
-                quantity: 0,
-                priceAfter: productExist.priceAfter
-            })
+            this.emitUpdateProductToSocket(productId, 0, productExist.priceAfter)
 
             return {
                 msg: 'ok',
@@ -659,12 +653,7 @@ export class ProductService {
             JSON.stringify({ quantity: remainingQuantity, priceAfter: productExist.priceAfter })
         )
 
-        this.socket_client.emit(updateQuantityProduct, {
-            productId,
-            storeId,
-            quantity: remainingQuantity,
-            priceAfter: productExist.priceAfter
-        })
+        this.emitUpdateProductToSocket(productId, remainingQuantity, productExist.priceAfter)
 
         const updateQuantityJob = new CronJob(CronExpression.EVERY_5_MINUTES, async () => {
             const [fromCache, productIn] = await Promise.all([
@@ -709,31 +698,80 @@ export class ProductService {
         }
     }
 
-    async updateQuantiyProductsWhenCancelOrder(orderId: string) {
+    async updateQuantiyProductsWhenCancelOrder(orderId: string): Promise<MessageReturn> {
         try {
-            console.log('update lai quantity ne')
             const productOrderExists = await this.prisma.productOrder.findMany({
                 where: {
                     orderId
                 }
             })
-            const result = await Promise.all(
-                productOrderExists.map((product) =>
-                    this.prisma.product.update({
+            if (!productOrderExists.length) {
+                return {
+                    msg: 'Sản phẩm trong đơn hàng không tồn tại',
+                    action: false,
+                    result: null
+                }
+            }
+
+            await Promise.all(
+                productOrderExists.map(async ({ productId, quantity }) => {
+                    let hashValue = hash('product', productId)
+                    let fromCache = await this.cacheManager.get<string>(hashValue)
+
+                    if (fromCache) {
+                        let { quantity: quantityFromCache, priceAfter } = JSON.parse(fromCache) as {
+                            quantity: number
+                            priceAfter: number
+                        }
+                        this.emitUpdateProductToSocket(
+                            productId,
+                            quantity + quantityFromCache,
+                            priceAfter
+                        )
+
+                        return Promise.resolve<MessageReturn>({
+                            action: true,
+                            msg: 'ok',
+                            result: null
+                        })
+                    }
+
+                    let productExist = await this.prisma.product.findUnique({
                         where: {
-                            id: product.productId
+                            id: productId
+                        }
+                    })
+
+                    if (!productExist) {
+                        return Promise.reject<MessageReturn>({
+                            action: false,
+                            msg: 'Sản phẩm không tồn tại'
+                        })
+                    }
+
+                    return this.prisma.product.update({
+                        where: {
+                            id: productId
                         },
                         data: {
                             currentQuantity: {
-                                increment: product.quantity
+                                increment: quantity
                             }
                         }
                     })
-                )
+                })
             )
-            return result
-        } catch (_) {
-            return 'Rollback thất bại'
+            return {
+                msg: 'ok',
+                action: true,
+                result: null
+            }
+        } catch (err) {
+            return {
+                msg: err?.message || 'Cập nhật lại số lượng sản phẩm không thành công',
+                action: false,
+                result: null
+            }
         }
     }
 

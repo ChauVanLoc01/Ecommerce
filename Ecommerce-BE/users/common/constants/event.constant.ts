@@ -33,6 +33,8 @@ export const getProductBySalePromotion = 'get::product::by::sale::promotion'
 
 export const checkVoucherExistToCreateOrder = 'checkVoucherExistToCreateOrder'
 
+export const updateVoucherWhenCancelOrder = 'update::voucher::when::cancel::order'
+
 export const processHandleVoucher = 'process::handle::voucher'
 
 export const productDetailPromotion = 'product::detail::promotion'

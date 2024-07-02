@@ -427,6 +427,14 @@ export class VoucherService {
         }
     }
 
+    async emitUpdateQuantityVoucher(voucherId: string, storeId: string, quantity: number) {
+        this.socketClient.emit(updateQuantityVoucher, {
+            voucherId,
+            storeId,
+            quantity
+        })
+    }
+
     async checkVoucherExistToCreateOrder(body: string[][]): Promise<MessageReturn> {
         try {
             await Promise.all(body.map((ids) => this.updateQuantityVoucher(ids[0], ids[1])))
@@ -464,20 +472,12 @@ export class VoucherService {
                         }
                     })
                 ])
-                this.socketClient.emit(updateQuantityVoucher, {
-                    voucherId: id,
-                    storeId,
-                    quantity: 0
-                })
+                this.emitUpdateQuantityVoucher(id, storeId, 0)
                 this.schedulerRegistry.deleteCronJob(hashValue)
             } else {
                 let remainingQuantity = quantityVoucher - 1
                 await this.cacheManager.set(hashValue, remainingQuantity)
-                this.socketClient.emit(updateQuantityVoucher, {
-                    voucherId: id,
-                    storeId,
-                    quantity: remainingQuantity
-                })
+                this.emitUpdateQuantityVoucher(id, storeId, remainingQuantity)
             }
             return {
                 msg: 'ok',
@@ -512,12 +512,7 @@ export class VoucherService {
                     }
                 })
             ])
-
-            this.socketClient.emit(updateQuantityVoucher, {
-                voucherId: id,
-                storeId: voucherExist.storeId,
-                quantity: 0
-            })
+            this.emitUpdateQuantityVoucher(id, voucherExist.storeId, 0)
 
             return {
                 msg: 'ok',
@@ -530,11 +525,7 @@ export class VoucherService {
 
         await this.cacheManager.set(hashValue, remainingQuantity)
 
-        this.socketClient.emit(updateQuantityVoucher, {
-            voucherId: id,
-            storeId: voucherExist.storeId,
-            quantity: remainingQuantity
-        })
+        this.emitUpdateQuantityVoucher(id, voucherExist.storeId, remainingQuantity)
 
         const cronJob = new CronJob(CronExpression.EVERY_5_MINUTES, async () => {
             const [currentQuantity, voucherExist] = await Promise.all([
@@ -570,6 +561,77 @@ export class VoucherService {
             msg: 'ok',
             action: true,
             result: null
+        }
+    }
+
+    async updateVoucherWhenCancelOrder(orderId: string, storeId: string): Promise<MessageReturn> {
+        try {
+            const voucherOrders = await this.prisma.orderVoucher.findMany({
+                where: {
+                    orderId
+                }
+            })
+
+            if (!voucherOrders.length) {
+                return {
+                    msg: 'Đơn hàng không có sử dụng voucher',
+                    action: true,
+                    result: null
+                }
+            }
+
+            await Promise.all(
+                voucherOrders.map(async ({ voucherId }) => {
+                    let hashValue = hash('voucher', voucherId)
+                    let fromCache = await this.cacheManager.get<number>(hashValue)
+
+                    if (fromCache || fromCache == 0) {
+                        this.emitUpdateQuantityVoucher(voucherId, storeId, fromCache + 1)
+                        return Promise.resolve<MessageReturn>({
+                            msg: 'ok',
+                            action: true,
+                            result: null
+                        })
+                    }
+
+                    const voucherExist = await this.prisma.voucher.findUnique({
+                        where: {
+                            id: voucherId
+                        }
+                    })
+
+                    if (!voucherExist) {
+                        return Promise.reject<MessageReturn>({
+                            msg: 'Voucher không tồn tại',
+                            action: false,
+                            result: null
+                        })
+                    }
+
+                    return this.prisma.voucher.update({
+                        where: {
+                            id: voucherId
+                        },
+                        data: {
+                            currentQuantity: {
+                                increment: 1
+                            }
+                        }
+                    })
+                })
+            )
+
+            return {
+                msg: 'ok',
+                action: true,
+                result: null
+            }
+        } catch (err) {
+            return {
+                msg: err?.message || 'Cập nhật số lương cho voucher không thành công',
+                action: false,
+                result: null
+            }
         }
     }
 }

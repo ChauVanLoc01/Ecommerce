@@ -2,6 +2,7 @@ import { PrismaService } from '@app/common/prisma/prisma.service'
 import { CACHE_MANAGER } from '@nestjs/cache-manager'
 import {
     BadRequestException,
+    HttpException,
     Inject,
     Injectable,
     InternalServerErrorException,
@@ -20,7 +21,8 @@ import {
     processStepOneToCreatOrder,
     statusOfOrder,
     updateQuantityProducts,
-    updateQuantiyProductsWhenCancelOrder
+    updateQuantiyProductsWhenCancelOrder,
+    updateVoucherWhenCancelOrder
 } from 'common/constants/event.constant'
 import { OrderStatus } from 'common/enums/orderStatus.enum'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
@@ -33,7 +35,7 @@ import { v4 as uuidv4 } from 'uuid'
 import { AnalyticsOrderDTO } from '../dtos/analytics_order.dto'
 import { CreateOrderType, OrdersParameter } from '../dtos/create_order.dto'
 import { QueryOrderType } from '../dtos/query-order.dto'
-import { UpdateOrderType, UpdateStatusOrderDTO } from '../dtos/update_order.dto'
+import { UpdateOrderType } from '../dtos/update_order.dto'
 
 @Injectable()
 export class OrderService {
@@ -295,7 +297,7 @@ export class OrderService {
                 return Promise.resolve({ action: true, msg: 'ok', result: null })
             })
 
-            const result = await Promise.all(innerPromise)
+            await Promise.all(innerPromise)
 
             return {
                 msg: 'ok',
@@ -487,14 +489,13 @@ export class OrderService {
         }
     }
 
-    async updateOrder(
+    async cancelOrder(
         user: CurrentUserType,
         orderId: string,
         body: UpdateOrderType
     ): Promise<Return> {
         try {
-            const { address, status, transaction } = body
-
+            const { reason } = body
             const orderExist = await this.prisma.order.findUnique({
                 where: {
                     id: orderId,
@@ -504,107 +505,108 @@ export class OrderService {
 
             if (!orderExist) throw new NotFoundException('Đơn hàng không tồn tại')
 
-            if (orderExist.status === OrderStatus.SUCCESS)
-                throw new BadRequestException('Không thể cập nhật đơn hàng đã hoàn tất')
-
-            if (status === OrderStatus.CANCEL) {
-                const [result, orderProducts] = await Promise.all([
-                    this.prisma.order.update({
-                        where: {
-                            id: orderId
-                        },
-                        data: {
-                            status
-                        }
-                    }),
-                    firstValueFrom(
-                        this.productClient.send(updateQuantiyProductsWhenCancelOrder, orderId)
-                    ),
-                    this.prisma.orderFlow.create({
-                        data: {
-                            id: uuidv4(),
-                            status,
-                            createdAt: new Date(),
-                            createdBy: user.id,
-                            orderId
-                        }
-                    })
-                ])
-
-                if (typeof orderProducts === 'string') {
-                    throw new Error('Rollback product thất bại')
-                }
-
-                return {
-                    msg: 'Cập nhật đơn hàng thành công',
-                    result
-                }
+            if (orderExist.status === OrderStatus.SUCCESS) {
+                throw new BadRequestException('Không thể cập nhật đơn hàng đã thành công')
             }
 
-            return {
-                msg: 'Cập nhật đơn hàng thành công',
-                result: await this.prisma.order.update({
+            const [updatedProduct, updatedVoucher] = await Promise.all([
+                firstValueFrom<MessageReturn>(
+                    this.productClient.send(updateQuantiyProductsWhenCancelOrder, orderId)
+                ),
+                firstValueFrom<MessageReturn>(
+                    this.storeClient.send(updateVoucherWhenCancelOrder, {
+                        orderId,
+                        storeId: orderExist.storeId
+                    })
+                )
+            ])
+
+            if (!updatedProduct.action) {
+                throw new BadRequestException(updatedProduct.msg)
+            }
+
+            if (!updatedVoucher.action) {
+                throw new BadRequestException(updatedVoucher.msg)
+            }
+
+            await Promise.all([
+                this.prisma.order.update({
                     where: {
                         id: orderId
                     },
                     data: {
-                        status
+                        status: OrderStatus.CANCEL
+                    }
+                }),
+                this.prisma.orderFlow.create({
+                    data: {
+                        id: uuidv4(),
+                        status: OrderStatus.CANCEL,
+                        createdAt: new Date(),
+                        createdBy: user.id,
+                        orderId,
+                        note: reason
                     }
                 })
-            }
-        } catch (err) {
-            throw new InternalServerErrorException('Lỗi BE')
-        }
-    }
+            ])
 
-    async updateStatusByStore(
-        user: CurrentStoreType,
-        orderId: string,
-        body: UpdateStatusOrderDTO
-    ): Promise<Return> {
-        try {
-            const updatedOrder = await this.prisma.$transaction(async (tx) => {
-                const [orderExist, updatedOrder] = await Promise.all([
-                    tx.order.findUnique({
-                        where: {
-                            id: orderId
-                        }
-                    }),
-                    tx.order.update({
-                        where: {
-                            id: orderId
-                        },
-                        data: {
-                            status: body.status,
-                            updatedAt: new Date().toISOString()
-                        }
-                    }),
-                    tx.orderFlow.create({
-                        data: {
-                            id: uuidv4(),
-                            status: body.status,
-                            createdBy: user.userId,
-                            note: body.note,
-                            orderId,
-                            createdAt: new Date().toISOString()
-                        }
-                    })
-                ])
-
-                if (!orderExist) {
-                    throw new Error('Đơn hàng không tồn tại')
-                }
-
-                return updatedOrder
-            })
             return {
-                msg: 'ok',
-                result: updatedOrder
+                msg: 'Cập nhật đơn hàng thành công',
+                result: undefined
             }
         } catch (err) {
-            throw new BadRequestException(err.message)
+            throw new HttpException(err?.msg || 'Lỗi server', err?.statusCode || 500)
         }
     }
+
+    // async updateStatusByStore(
+    //     user: CurrentStoreType,
+    //     orderId: string,
+    //     body: UpdateStatusOrderDTO
+    // ): Promise<Return> {
+    //     try {
+    //         const updatedOrder = await this.prisma.$transaction(async (tx) => {
+    //             const [orderExist, updatedOrder] = await Promise.all([
+    //                 tx.order.findUnique({
+    //                     where: {
+    //                         id: orderId
+    //                     }
+    //                 }),
+    //                 tx.order.update({
+    //                     where: {
+    //                         id: orderId
+    //                     },
+    //                     data: {
+    //                         status: body.status,
+    //                         updatedAt: new Date().toISOString()
+    //                     }
+    //                 }),
+    //                 tx.orderFlow.create({
+    //                     data: {
+    //                         id: uuidv4(),
+    //                         status: body.status,
+    //                         createdBy: user.userId,
+    //                         note: body.note,
+    //                         orderId,
+    //                         createdAt: new Date().toISOString()
+    //                     }
+    //                 })
+    //             ])
+
+    //             if (!orderExist) {
+    //                 throw new Error('Đơn hàng không tồn tại')
+    //             }
+
+    //             return updatedOrder
+    //         })
+    //         return {
+    //             msg: 'ok',
+    //             result: updatedOrder
+    //         }
+    //     } catch (err) {
+    //         throw new BadRequestException(err.message)
+    //     }
+    // }
 
     async getOrderStatusByStore(user: CurrentStoreType, orderId: string): Promise<Return> {
         try {

@@ -1,7 +1,10 @@
 import { Body, Controller, Get, Param, Post, Put, UseGuards } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
 import { ApiBearerAuth } from '@nestjs/swagger'
-import { checkVoucherExistToCreateOrder } from 'common/constants/event.constant'
+import {
+    checkVoucherExistToCreateOrder,
+    updateVoucherWhenCancelOrder
+} from 'common/constants/event.constant'
 import { CurrentUser } from 'common/decorators/current_user.decorator'
 import { Public } from 'common/decorators/public.decorator'
 import { JwtGuard } from 'common/guards/jwt.guard'
@@ -69,5 +72,11 @@ export class VoucherController {
         payload: string[][]
     ) {
         return this.voucherService.checkVoucherExistToCreateOrder(payload)
+    }
+
+    @Public()
+    @MessagePattern(updateVoucherWhenCancelOrder)
+    updateVoucherWhenCancelOrder(@Payload() payload: { orderId: string; storeId: string }) {
+        return this.voucherService.updateVoucherWhenCancelOrder(payload.orderId, payload.storeId)
     }
 }
