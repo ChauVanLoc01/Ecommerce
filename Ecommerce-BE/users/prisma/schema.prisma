@@ -79,10 +79,13 @@ model Order {
   status                String              @db.Char(20)
   createdAt             DateTime?           @default(now()) @db.Timestamp(0)
   updatedAt             DateTime?           @db.Timestamp(0)
+  numberOfRefund        Int?                @default(3)
   User                  User                @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Order_ibfk_1")
   Store                 Store               @relation(fields: [storeId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Order_ibfk_3")
   DeliveryInformation   DeliveryInformation @relation(fields: [deliveryInformationId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Order_ibfk_4")
   OrderFlow             OrderFlow[]
+  OrderRefund           OrderRefund[]
+  OrderShipping         OrderShipping[]
   OrderVoucher          OrderVoucher[]
   Payment               Payment[]
   ProductOrder          ProductOrder[]
@@ -192,14 +195,15 @@ model ProductImage {
 }
 
 model ProductOrder {
-  id          String  @id @db.VarChar(50)
-  productId   String  @db.VarChar(50)
-  quantity    Int
-  priceBefore Float?  @db.Float
-  priceAfter  Float   @db.Float
-  orderId     String  @db.VarChar(50)
-  Product     Product @relation(fields: [productId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "ProductOrder_ibfk_1")
-  Order       Order   @relation(fields: [orderId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "ProductOrder_ibfk_2")
+  id                 String               @id @db.VarChar(50)
+  productId          String               @db.VarChar(50)
+  quantity           Int
+  priceBefore        Float?               @db.Float
+  priceAfter         Float                @db.Float
+  orderId            String               @db.VarChar(50)
+  Product            Product              @relation(fields: [productId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "ProductOrder_ibfk_1")
+  Order              Order                @relation(fields: [orderId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "ProductOrder_ibfk_2")
+  ProductOrderRefund ProductOrderRefund[]
 
   @@index([orderId], map: "orderId")
   @@index([productId], map: "productId")
@@ -313,6 +317,8 @@ model User {
   DeliveryInformation                 DeliveryInformation[]
   Order                               Order[]
   OrderFlow                           OrderFlow[]
+  OrderRefund                         OrderRefund[]
+  OrderShipping                       OrderShipping[]
   PriceConditionVoucher               PriceConditionVoucher[]
   Product_Product_createdByToUser     Product[]                  @relation("Product_createdByToUser")
   Product_Product_updatedByToUser     Product[]                  @relation("Product_updatedByToUser")
@@ -494,4 +500,63 @@ model StoreRating {
   average   Float     @default(0)
   createdAt DateTime? @db.Timestamp(0)
   updatedAt DateTime? @db.Timestamp(0)
+}
+
+model OrderRefund {
+  id                 String               @id @db.VarChar(50)
+  orderId            String               @db.VarChar(50)
+  status             String               @db.VarChar(20)
+  title              String               @db.VarChar(1000)
+  description        String               @db.TinyText
+  createdAt          DateTime?            @db.Timestamp(0)
+  createdBy          String               @db.VarChar(50)
+  updatedAt          DateTime?            @db.Timestamp(0)
+  updatedBy          String?              @db.VarChar(50)
+  Order              Order                @relation(fields: [orderId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "OrderRefund_ibfk_1")
+  User               User                 @relation(fields: [createdBy], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "OrderRefund_ibfk_2")
+  ProductOrderRefund ProductOrderRefund[]
+  RefundMaterial     RefundMaterial[]
+
+  @@index([createdBy], map: "createdBy")
+  @@index([orderId], map: "orderId")
+}
+
+model ProductOrderRefund {
+  id             String       @id @db.VarChar(50)
+  orderRefundId  String       @db.VarChar(50)
+  productOrderId String       @db.VarChar(50)
+  quantity       Int
+  description    String?      @db.Text
+  OrderRefund    OrderRefund  @relation(fields: [orderRefundId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "ProductOrderRefund_ibfk_1")
+  ProductOrder   ProductOrder @relation(fields: [productOrderId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "ProductOrderRefund_ibfk_2")
+
+  @@index([orderRefundId], map: "orderRefundId")
+  @@index([productOrderId], map: "productOrderId")
+}
+
+model RefundMaterial {
+  id            String      @id @db.VarChar(50)
+  orderRefundId String      @db.VarChar(50)
+  url           String      @db.VarChar(500)
+  type          String      @db.VarChar(50)
+  description   String?     @db.TinyText
+  OrderRefund   OrderRefund @relation(fields: [orderRefundId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "RefundMaterial_ibfk_1")
+
+  @@index([orderRefundId], map: "orderRefundId")
+}
+
+model OrderShipping {
+  id        String    @id @db.VarChar(50)
+  orderId   String    @db.VarChar(50)
+  name      String    @db.VarChar(100)
+  address   String    @db.VarChar(1000)
+  type      String    @db.VarChar(50)
+  createdAt DateTime? @db.Timestamp(0)
+  createdBy String    @db.VarChar(50)
+  updatedAt DateTime? @db.Timestamp(0)
+  Order     Order     @relation(fields: [orderId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "OrderShipping_ibfk_1")
+  User      User      @relation(fields: [createdBy], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "OrderShipping_ibfk_2")
+
+  @@index([createdBy], map: "createdBy")
+  @@index([orderId], map: "orderId")
 }

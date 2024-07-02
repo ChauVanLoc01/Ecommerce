@@ -3,9 +3,9 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager'
 import {
     BadRequestException,
     HttpException,
+    HttpStatus,
     Inject,
     Injectable,
-    InternalServerErrorException,
     NotFoundException
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
@@ -24,16 +24,23 @@ import {
     updateQuantiyProductsWhenCancelOrder,
     updateVoucherWhenCancelOrder
 } from 'common/constants/event.constant'
-import { OrderStatus } from 'common/enums/orderStatus.enum'
+import { OrderShipping, OrderStatus } from 'common/enums/orderStatus.enum'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
 import { MessageReturn, Return } from 'common/types/result.type'
 import { hash } from 'common/utils/helper'
-import { addHours, subDays } from 'date-fns'
+import { add, addHours, sub, subDays } from 'date-fns'
 import { isUndefined, max, omitBy, sumBy } from 'lodash'
 import { firstValueFrom } from 'rxjs'
 import { v4 as uuidv4 } from 'uuid'
 import { AnalyticsOrderDTO } from '../dtos/analytics_order.dto'
 import { CreateOrderType, OrdersParameter } from '../dtos/create_order.dto'
+import {
+    AcceptRequestOrderRefundDTO,
+    CloseOrderRefundDTO,
+    CreateOrderRefundDTO,
+    ReOpenOrderRefundDTO,
+    UpdateOrderRefundDTO
+} from '../dtos/order_refund.dto'
 import { QueryOrderType } from '../dtos/query-order.dto'
 import { UpdateOrderType } from '../dtos/update_order.dto'
 
@@ -556,6 +563,464 @@ export class OrderService {
             }
         } catch (err) {
             throw new HttpException(err?.msg || 'Lỗi server', err?.statusCode || 500)
+        }
+    }
+
+    async requestRefund(
+        user: CurrentUserType,
+        orderId: string,
+        body: CreateOrderRefundDTO
+    ): Promise<Return> {
+        try {
+            const { id: userId } = user
+
+            const { title, description, productOrders, materials } = body
+
+            const orderExist = await this.prisma.order.findUnique({
+                where: {
+                    id: orderId,
+                    status: {
+                        equals: OrderStatus.SUCCESS
+                    },
+                    createdAt: {
+                        gt: sub(new Date(), { days: 3 }).toUTCString()
+                    }
+                },
+                select: {
+                    id: true
+                }
+            })
+
+            if (!orderExist) {
+                throw new BadRequestException('Đơn hàng không đủ điều kiện để tạo hoàn hàng')
+            }
+
+            await this.prisma.$transaction(async (tx) => {
+                return await Promise.all([
+                    tx.orderRefund.create({
+                        data: {
+                            id: uuidv4(),
+                            title,
+                            description,
+                            createdBy: userId,
+                            orderId,
+                            status: OrderStatus.REQUEST_REFUND,
+                            RefundMaterial: {
+                                createMany: {
+                                    data: materials.map(({ type, url, description }) => ({
+                                        id: uuidv4(),
+                                        type,
+                                        url,
+                                        description
+                                    }))
+                                }
+                            },
+                            ProductOrderRefund: {
+                                createMany: {
+                                    data: productOrders.map(
+                                        ({ productOrderId, quantity, description }) => ({
+                                            id: uuidv4(),
+                                            productOrderId,
+                                            quantity,
+                                            description
+                                        })
+                                    )
+                                }
+                            }
+                        }
+                    }),
+                    tx.orderFlow.create({
+                        data: {
+                            id: uuidv4(),
+                            orderId,
+                            status: OrderStatus.REQUEST_REFUND,
+                            createdAt: new Date(),
+                            createdBy: userId
+                        }
+                    }),
+                    tx.order.update({
+                        where: {
+                            id: orderId
+                        },
+                        data: {
+                            status: OrderStatus.REQUEST_REFUND,
+                            numberOfRefund: {
+                                decrement: 1
+                            },
+                            updatedAt: new Date()
+                        }
+                    })
+                ])
+            })
+
+            return {
+                msg: 'ok',
+                result: undefined
+            }
+        } catch (err) {
+            throw new HttpException(
+                (err?.message as string).length > 100 ? 'Tạo đơn hoàn hàng thất bại' : err.message,
+                err?.statusCode || HttpStatus.INTERNAL_SERVER_ERROR
+            )
+        }
+    }
+
+    async updateRequestRefund(orderRefundId: string, body: UpdateOrderRefundDTO): Promise<Return> {
+        try {
+            const { description, materials, productOrders, title } = body
+
+            const orderRefundExist = await this.prisma.orderRefund.findUnique({
+                where: {
+                    id: orderRefundId,
+                    status: OrderStatus.REQUEST_REFUND
+                },
+                include: {
+                    ProductOrderRefund: {
+                        select: {
+                            id: true
+                        }
+                    }
+                }
+            })
+
+            if (orderRefundExist?.updatedAt) {
+                throw new BadRequestException('Chỉ có thể cập nhật đơn hoàn hàng 1 lần duy nhất')
+            }
+
+            if (!orderRefundExist) {
+                throw new BadRequestException('Đơn hoàn hàng không tồn tại')
+            }
+
+            await this.prisma.$transaction(async (tx) => {
+                return await Promise.all([
+                    tx.orderRefund.update({
+                        where: {
+                            id: orderRefundId
+                        },
+                        data: {
+                            description,
+                            title,
+                            updatedAt: new Date(),
+                            ProductOrderRefund: {
+                                deleteMany: orderRefundExist.ProductOrderRefund.map(
+                                    (productOrderRefundId) => productOrderRefundId
+                                ),
+                                createMany: {
+                                    data: productOrders.map(
+                                        ({ productOrderId, quantity, description }) => ({
+                                            id: uuidv4(),
+                                            productOrderId,
+                                            quantity,
+                                            description
+                                        })
+                                    )
+                                }
+                            },
+                            RefundMaterial: {
+                                deleteMany: {
+                                    orderRefundId
+                                },
+                                createMany: {
+                                    data: materials.map(({ type, url, description }) => ({
+                                        id: uuidv4(),
+                                        type,
+                                        url,
+                                        description
+                                    }))
+                                }
+                            }
+                        }
+                    }),
+                    tx.orderFlow.create({
+                        data: {
+                            id: uuidv4(),
+                            status: OrderStatus.UPDATE_REFUND,
+                            createdAt: new Date(),
+                            createdBy: orderRefundExist.createdBy,
+                            orderId: orderRefundExist.orderId
+                        }
+                    })
+                ])
+            })
+
+            return {
+                msg: 'ok',
+                result: undefined
+            }
+        } catch (err) {
+            throw new HttpException(
+                (err?.message as string).length > 100
+                    ? 'Cập nhật đơn hoàn hàng thất bại'
+                    : err?.message || 'Lỗi server',
+                err?.statusCode || HttpStatus.INTERNAL_SERVER_ERROR
+            )
+        }
+    }
+
+    async acceptRequestRefund(
+        store: CurrentStoreType,
+        orderRefundId: string,
+        body: AcceptRequestOrderRefundDTO
+    ): Promise<Return> {
+        try {
+            const orderRefundExist = await this.prisma.orderRefund.findUnique({
+                where: {
+                    id: orderRefundId,
+                    status: OrderStatus.REQUEST_REFUND
+                }
+            })
+
+            if (!orderRefundExist) {
+                throw new BadRequestException(
+                    'Đơn hoàn hàng không tồn tại hoặc không đủ điều kiện để tạo hoàn hàng'
+                )
+            }
+
+            let { address, name } = body
+
+            await this.prisma.$transaction([
+                this.prisma.orderRefund.update({
+                    where: {
+                        id: orderRefundId
+                    },
+                    data: {
+                        status: OrderStatus.REFUND_SHIPPING,
+                        updatedAt: new Date()
+                    }
+                }),
+                this.prisma.order.update({
+                    where: {
+                        id: orderRefundExist.orderId
+                    },
+                    data: {
+                        status: OrderStatus.REFUND_SHIPPING,
+                        updatedAt: new Date()
+                    }
+                }),
+                this.prisma.orderFlow.create({
+                    data: {
+                        id: uuidv4(),
+                        status: OrderStatus.ACCEPT_REFUND,
+                        createdAt: new Date(),
+                        orderId: orderRefundExist.orderId,
+                        createdBy: store.userId
+                    }
+                }),
+                this.prisma.orderShipping.create({
+                    data: {
+                        id: uuidv4(),
+                        name,
+                        address,
+                        type: OrderShipping.REFUND,
+                        orderId: orderRefundExist.orderId,
+                        createdBy: store.userId
+                    }
+                }),
+                this.prisma.orderFlow.create({
+                    data: {
+                        id: uuidv4(),
+                        status: OrderStatus.REFUND_SHIPPING,
+                        createdAt: add(new Date(), { seconds: 10 }).toUTCString(),
+                        orderId: orderRefundExist.orderId,
+                        createdBy: orderRefundExist.createdBy
+                    }
+                })
+            ])
+
+            return {
+                msg: 'ok',
+                result: undefined
+            }
+        } catch (err) {
+            throw new HttpException(
+                (err?.message as string).length > 100
+                    ? 'Cập nhật đơn hoàn hàng không thành công'
+                    : err?.message || 'Lỗi Server',
+                err?.statusCode || HttpStatus.INTERNAL_SERVER_ERROR
+            )
+        }
+    }
+
+    async closeRequestRefund(orderRefundId: string, body: CloseOrderRefundDTO): Promise<Return> {
+        try {
+            const { note } = body
+            const orderRefundExist = await this.prisma.orderRefund.findUnique({
+                where: {
+                    id: orderRefundId,
+                    status: OrderStatus.REFUND_SHIPPING
+                }
+            })
+
+            if (!orderRefundExist) {
+                throw new BadRequestException('Đơn hoàn hàng không tồn tại hoặc đã đóng')
+            }
+
+            await this.prisma.$transaction([
+                this.prisma.orderRefund.update({
+                    where: {
+                        id: orderRefundId
+                    },
+                    data: {
+                        status: OrderStatus.FINISH,
+                        updatedAt: new Date()
+                    }
+                }),
+                this.prisma.order.update({
+                    where: {
+                        id: orderRefundExist.orderId
+                    },
+                    data: {
+                        status: OrderStatus.FINISH,
+                        updatedAt: new Date()
+                    }
+                }),
+                this.prisma.orderFlow.create({
+                    data: {
+                        id: uuidv4(),
+                        status: OrderStatus.CLOSE_REFUND,
+                        createdAt: new Date(),
+                        createdBy: orderRefundExist.createdBy,
+                        note,
+                        orderId: orderRefundExist.orderId
+                    }
+                }),
+                this.prisma.orderFlow.create({
+                    data: {
+                        id: uuidv4(),
+                        status: OrderStatus.FINISH,
+                        createdAt: add(new Date(), { seconds: 10 }),
+                        orderId: orderRefundExist.orderId,
+                        createdBy: orderRefundExist.createdBy
+                    }
+                })
+            ])
+
+            return {
+                msg: 'ok',
+                result: undefined
+            }
+        } catch (err) {
+            throw new HttpException(
+                (err?.message as string).length > 100
+                    ? 'Cập nhật thông tin đơn hoàn hàng thất bại'
+                    : err?.message || 'Lỗi server',
+                err?.statusCode || HttpStatus.INTERNAL_SERVER_ERROR
+            )
+        }
+    }
+
+    async reopenOrderRefund(orderRefundId: string, body: ReOpenOrderRefundDTO): Promise<Return> {
+        try {
+            const orderRefundExist = await this.prisma.orderRefund.findUnique({
+                where: {
+                    id: orderRefundId,
+                    status: OrderStatus.REFUND_SHIPPING
+                },
+                include: {
+                    ProductOrderRefund: true,
+                    Order: {
+                        select: {
+                            numberOfRefund: true
+                        }
+                    }
+                }
+            })
+
+            if (!orderRefundExist) {
+                throw new BadRequestException('Đơn hoàn hàng không tồn tại hoặc đã đóng')
+            }
+
+            if (
+                !orderRefundExist.Order.numberOfRefund ||
+                orderRefundExist.Order.numberOfRefund == 0
+            ) {
+                throw new BadRequestException('Hoàn hàng tối đa 3 lần')
+            }
+
+            let { description, materials, title } = body
+
+            await this.prisma.$transaction([
+                this.prisma.orderRefund.update({
+                    where: {
+                        id: orderRefundId
+                    },
+                    data: {
+                        status: OrderStatus.RE_OPEN_REFUND
+                    }
+                }),
+                this.prisma.order.update({
+                    where: {
+                        id: orderRefundExist.orderId
+                    },
+                    data: {
+                        status: OrderStatus.REQUEST_REFUND,
+                        numberOfRefund: {
+                            decrement: 1
+                        }
+                    }
+                }),
+                this.prisma.orderRefund.create({
+                    data: {
+                        id: uuidv4(),
+                        title,
+                        description,
+                        status: OrderStatus.REQUEST_REFUND,
+                        orderId: orderRefundExist.orderId,
+                        createdBy: orderRefundExist.createdBy,
+                        ProductOrderRefund: {
+                            createMany: {
+                                data: orderRefundExist.ProductOrderRefund.map(
+                                    ({ description, productOrderId, quantity }) => ({
+                                        id: uuidv4(),
+                                        productOrderId,
+                                        quantity,
+                                        description
+                                    })
+                                )
+                            }
+                        },
+                        RefundMaterial: {
+                            createMany: {
+                                data: materials.map(({ type, url, description }) => ({
+                                    id: uuidv4(),
+                                    type,
+                                    url,
+                                    description
+                                }))
+                            }
+                        }
+                    }
+                }),
+                this.prisma.orderFlow.create({
+                    data: {
+                        id: uuidv4(),
+                        status: OrderStatus.RE_OPEN_REFUND,
+                        createdBy: orderRefundExist.createdBy,
+                        orderId: orderRefundExist.orderId
+                    }
+                }),
+                this.prisma.orderFlow.create({
+                    data: {
+                        id: uuidv4(),
+                        status: OrderStatus.REQUEST_REFUND,
+                        createdBy: orderRefundExist.createdBy,
+                        orderId: orderRefundExist.orderId,
+                        createdAt: add(new Date(), { seconds: 10 })
+                    }
+                })
+            ])
+
+            return {
+                msg: 'ok',
+                result: undefined
+            }
+        } catch (err) {
+            throw new HttpException(
+                (err?.message as string).length > 100
+                    ? 'Cập nhật trạng thái đơn hoàn hàng không thành công'
+                    : err?.message || 'Lỗi server',
+                err?.statusCode || HttpStatus.INTERNAL_SERVER_ERROR
+            )
         }
     }
 

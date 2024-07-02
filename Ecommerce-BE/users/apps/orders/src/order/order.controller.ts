@@ -14,6 +14,13 @@ import { JwtGuard } from 'common/guards/jwt.guard'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
 import { AnalyticsOrderDTO } from '../dtos/analytics_order.dto'
 import { CreateOrderDTO, CreateOrderType, OrdersParameter } from '../dtos/create_order.dto'
+import {
+    AcceptRequestOrderRefundDTO,
+    CloseOrderRefundDTO,
+    CreateOrderRefundDTO,
+    ReOpenOrderRefundDTO,
+    UpdateOrderRefundDTO
+} from '../dtos/order_refund.dto'
 import { QueryOrderDTO } from '../dtos/query-order.dto'
 import { UpdateOrderDTO } from '../dtos/update_order.dto'
 import { OrderService } from './order.service'
@@ -124,6 +131,53 @@ export class OrderController {
         @Body() body: UpdateOrderDTO
     ) {
         return this.ordersService.cancelOrder(user, orderId, body)
+    }
+
+    @Roles(Role.USER)
+    @Post('user-order/:orderId/refund')
+    requestRefund(
+        @CurrentUser() user: CurrentUserType,
+        @Param('orderId') orderId: string,
+        @Body() body: CreateOrderRefundDTO
+    ) {
+        return this.ordersService.requestRefund(user, orderId, body)
+    }
+
+    @Roles(Role.USER)
+    @Put('user-order/:orderRefundId/refund')
+    updateRequestRefund(
+        @Param('orderRefundId') orderRefundId: string,
+        @Body() body: UpdateOrderRefundDTO
+    ) {
+        return this.ordersService.updateRequestRefund(orderRefundId, body)
+    }
+
+    @Roles(Role.EMPLOYEE, Role.STORE_OWNER)
+    @Post('store-order/:orderRefundId/refund/accept')
+    acceptRequestRefund(
+        @CurrentUser() store: CurrentStoreType,
+        @Param('orderRefundId') orderRefundId: string,
+        @Body() body: AcceptRequestOrderRefundDTO
+    ) {
+        return this.ordersService.acceptRequestRefund(store, orderRefundId, body)
+    }
+
+    @Roles(Role.USER)
+    @Post('user-order/:orderRefundId/refund/close')
+    closeRequestRefund(
+        @Param('orderRefundId') orderRefundId: string,
+        @Body() body: CloseOrderRefundDTO
+    ) {
+        return this.ordersService.closeRequestRefund(orderRefundId, body)
+    }
+
+    @Roles(Role.USER)
+    @Post('user-order/:orderRefundId/refund/reopen')
+    reopenOrderRefund(
+        @Param('orderRefundId') orderRefundId: string,
+        @Body() body: ReOpenOrderRefundDTO
+    ) {
+        return this.ordersService.reopenOrderRefund(orderRefundId, body)
     }
 
     // @Public()
