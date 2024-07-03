@@ -513,11 +513,15 @@ export class ProductService {
         }
     }
 
-    emitUpdateProductToSocket(productId: string, quantity: number, priceAfter: number) {
+    async emitUpdateProductToSocket(productId: string, quantity: number, priceAfter: number) {
+        await this.cacheManager.set(
+            hash('product', productId),
+            JSON.stringify({ quantity, priceAfter })
+        )
         this.socket_client.emit(updateQuantityProduct, {
             type: room_obj.product,
             id: productId,
-            quantity: 0,
+            quantity,
             priceAfter
         })
     }

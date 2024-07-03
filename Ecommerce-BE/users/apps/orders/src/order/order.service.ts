@@ -10,7 +10,8 @@ import {
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { ClientProxy } from '@nestjs/microservices'
-import { Product } from '@prisma/client'
+import { SchedulerRegistry } from '@nestjs/schedule'
+import { DeliveryInformation, Product } from '@prisma/client'
 import { Cache } from 'cache-manager'
 import {
     checkDeliveryInformationId,
@@ -54,7 +55,8 @@ export class OrderService {
         @Inject('PRODUCT_SERVICE') private productClient: ClientProxy,
         @Inject('USER_SERVICE') private userClient: ClientProxy,
         @Inject('STORE_SERVICE') private storeClient: ClientProxy,
-        @Inject('SOCKET_SERVICE') private socketClient: ClientProxy
+        @Inject('SOCKET_SERVICE') private socketClient: ClientProxy,
+        private schedulerRegistry: SchedulerRegistry
     ) {}
 
     async getAllOrderByUser(user: CurrentUserType, query: QueryOrderType): Promise<Return> {
@@ -389,24 +391,6 @@ export class OrderService {
                 return parameter.storeId
             })
 
-            const [deliveryReturn, storeReturn] = await Promise.all([
-                firstValueFrom<MessageReturn>(
-                    this.userClient.send(checkDeliveryInformationId, {
-                        userId: id,
-                        deliveryInformationId
-                    })
-                ),
-                firstValueFrom(this.storeClient.send<MessageReturn>(checkStoreExist, stores))
-            ])
-
-            if (!deliveryReturn.action) {
-                emitStatusOfOrder(deliveryReturn.msg)
-            }
-
-            if (!storeReturn.action) {
-                emitStatusOfOrder(storeReturn.msg)
-            }
-
             const productReturn = await firstValueFrom(
                 this.productClient.send<MessageReturn>(updateQuantityProducts, productIds)
             )
@@ -441,6 +425,33 @@ export class OrderService {
                                         }
                                     })
                                 }
+                            },
+                            OrderShipping: {
+                                createMany: {
+                                    data: {
+                                        id: uuidv4(),
+                                        address: deliveryReturn.result.address,
+                                        name: deliveryReturn.result.full_name,
+                                        type: OrderShipping.SHIPPING,
+                                        createdBy: id
+                                    }
+                                }
+                            },
+                            OrderFlow: {
+                                create: {
+                                    id: uuidv4(),
+                                    status: OrderStatus.WAITING_CONFIRM,
+                                    createdBy: id
+                                }
+                            },
+                            OrderVoucher: {
+                                createMany: {
+                                    data: storeIdKeyByVoucher.voucherIds[idx].map((voucherId) => ({
+                                        id: uuidv4(),
+                                        createdAt: new Date(),
+                                        voucherId
+                                    }))
+                                }
                             }
                         }
                     })
@@ -458,41 +469,23 @@ export class OrderService {
                 emitStatusOfOrder(voucherReturn.msg)
             }
 
-            let tmp = []
-
-            if (storeIdKeyByVoucher.voucherIds.length) {
-                tmp = [
-                    ...storeIdKeyByVoucher.mixedVoucher.map((e) =>
-                        this.prisma.orderVoucher.create({
-                            data: {
-                                id: uuidv4(),
-                                orderId: e.orderId,
-                                voucherId: e.voucherId,
-                                createdAt: new Date()
-                            }
-                        })
-                    )
-                ]
-            }
-
-            await Promise.all([
-                ...storeIdKeyByVoucher.orderIds.map((orderId) =>
-                    this.prisma.orderFlow.create({
-                        data: {
-                            id: uuidv4(),
-                            status: OrderStatus.WAITING_CONFIRM,
-                            createdBy: id,
-                            orderId,
-                            createdAt: new Date()
-                        }
-                    })
-                ),
-                ...tmp
-            ])
-
             emitStatusOfOrder('Đặt hàng thành công', true, storeIdKeyByVoucher.orderIds)
         } catch (err) {
             emitStatusOfOrder('Lỗi Server')
+        }
+    }
+
+    async rollbackOrder(job_name: string) {
+        const job = this.schedulerRegistry.getCronJob(job_name)
+        if (job) {
+            job.start()
+        }
+    }
+
+    async commitOrder(job_name: string) {
+        const job = this.schedulerRegistry.getCronJob(job_name)
+        if (job) {
+            this.schedulerRegistry.deleteCronJob(job_name)
         }
     }
 
@@ -512,57 +505,69 @@ export class OrderService {
 
             if (!orderExist) throw new NotFoundException('Đơn hàng không tồn tại')
 
+            if (orderExist.status === OrderStatus.SHIPING) {
+                throw new BadRequestException('Không thể hủy đơn hàng đang được vận chuyển')
+            }
+
             if (orderExist.status === OrderStatus.SUCCESS) {
                 throw new BadRequestException('Không thể cập nhật đơn hàng đã thành công')
             }
 
-            const [updatedProduct, updatedVoucher] = await Promise.all([
-                firstValueFrom<MessageReturn>(
-                    this.productClient.send(updateQuantiyProductsWhenCancelOrder, orderId)
-                ),
-                firstValueFrom<MessageReturn>(
-                    this.storeClient.send(updateVoucherWhenCancelOrder, {
-                        orderId,
-                        storeId: orderExist.storeId
+            await this.prisma.$transaction(async (tx) => {
+                const [updatedProduct, updatedVoucher] = await Promise.all([
+                    firstValueFrom<MessageReturn>(
+                        this.productClient.send(updateQuantiyProductsWhenCancelOrder, orderId)
+                    ),
+                    firstValueFrom<MessageReturn>(
+                        this.storeClient.send(updateVoucherWhenCancelOrder, {
+                            orderId,
+                            storeId: orderExist.storeId
+                        })
+                    )
+                ])
+
+                if (!updatedProduct.action) {
+                    throw new BadRequestException(updatedProduct.msg)
+                }
+
+                if (!updatedVoucher.action) {
+                    throw new BadRequestException(updatedVoucher.msg)
+                }
+
+                await Promise.all([
+                    tx.order.update({
+                        where: {
+                            id: orderId
+                        },
+                        data: {
+                            status: OrderStatus.CANCEL,
+                            updatedAt: new Date()
+                        }
+                    }),
+                    tx.orderFlow.create({
+                        data: {
+                            id: uuidv4(),
+                            status: OrderStatus.CANCEL,
+                            createdAt: new Date(),
+                            createdBy: user.id,
+                            orderId,
+                            note: reason
+                        }
                     })
-                )
-            ])
+                ])
 
-            if (!updatedProduct.action) {
-                throw new BadRequestException(updatedProduct.msg)
-            }
-
-            if (!updatedVoucher.action) {
-                throw new BadRequestException(updatedVoucher.msg)
-            }
-
-            await Promise.all([
-                this.prisma.order.update({
-                    where: {
-                        id: orderId
-                    },
-                    data: {
-                        status: OrderStatus.CANCEL
-                    }
-                }),
-                this.prisma.orderFlow.create({
-                    data: {
-                        id: uuidv4(),
-                        status: OrderStatus.CANCEL,
-                        createdAt: new Date(),
-                        createdBy: user.id,
-                        orderId,
-                        note: reason
-                    }
-                })
-            ])
+                return 'ok'
+            })
 
             return {
                 msg: 'Cập nhật đơn hàng thành công',
                 result: undefined
             }
         } catch (err) {
-            throw new HttpException(err?.msg || 'Lỗi server', err?.statusCode || 500)
+            throw new HttpException(
+                (err?.message as string).length > 100 ? 'Lỗi server' : err?.message || 'Lỗi server',
+                err?.statusCode || 500
+            )
         }
     }
 

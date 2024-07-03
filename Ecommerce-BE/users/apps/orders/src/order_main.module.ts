@@ -3,6 +3,7 @@ import { CacheModule } from '@nestjs/cache-manager'
 import { Module } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { ClientsModule, Transport } from '@nestjs/microservices'
+import { ScheduleModule } from '@nestjs/schedule'
 import * as redisStore from 'cache-manager-redis-store'
 import { QueueName } from 'common/constants/queue.constant'
 import { OrderModule } from './order/order.module'
@@ -61,6 +62,7 @@ import { PaymentModule } from './payment/payment.module'
                 port: configService.get<number>('bullqueue.port')
             })
         }),
+        ScheduleModule.forRoot(),
         OrderModule,
         PaymentModule
     ],

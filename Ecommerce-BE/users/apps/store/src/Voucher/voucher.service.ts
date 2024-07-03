@@ -428,6 +428,7 @@ export class VoucherService {
     }
 
     async emitUpdateQuantityVoucher(voucherId: string, storeId: string, quantity: number) {
+        await this.cacheManager.set(hash('voucher', voucherId), quantity)
         this.socketClient.emit(updateQuantityVoucher, {
             voucherId,
             storeId,
