@@ -61,37 +61,33 @@ model DeliveryInformation {
   createdAt DateTime? @db.Timestamp(0)
   isDelete  Boolean   @default(false)
   User      User      @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "DeliveryInformation_ibfk_1")
-  Order     Order[]
 
   @@index([userId], map: "userId")
 }
 
 model Order {
-  id                    String              @id @db.VarChar(50)
-  userId                String              @db.VarChar(50)
-  storeId               String              @db.VarChar(50)
-  total                 Float               @db.Float
-  discount              Float?              @db.Float
-  pay                   Float               @db.Float
-  note                  String?             @db.VarChar(200)
-  deliveryInformationId String              @db.VarChar(100)
-  isRated               Boolean?            @default(false)
-  status                String              @db.Char(20)
-  createdAt             DateTime?           @default(now()) @db.Timestamp(0)
-  updatedAt             DateTime?           @db.Timestamp(0)
-  numberOfRefund        Int?                @default(3)
-  User                  User                @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Order_ibfk_1")
-  Store                 Store               @relation(fields: [storeId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Order_ibfk_3")
-  DeliveryInformation   DeliveryInformation @relation(fields: [deliveryInformationId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Order_ibfk_4")
-  OrderFlow             OrderFlow[]
-  OrderRefund           OrderRefund[]
-  OrderShipping         OrderShipping[]
-  OrderVoucher          OrderVoucher[]
-  Payment               Payment[]
-  ProductOrder          ProductOrder[]
-  Rating                Rating[]
+  id             String          @id @db.VarChar(50)
+  userId         String          @db.VarChar(50)
+  storeId        String          @db.VarChar(50)
+  total          Float           @db.Float
+  discount       Float?          @db.Float
+  pay            Float           @db.Float
+  note           String?         @db.VarChar(200)
+  isRated        Boolean?        @default(false)
+  status         String          @db.Char(20)
+  createdAt      DateTime?       @default(now()) @db.Timestamp(0)
+  updatedAt      DateTime?       @db.Timestamp(0)
+  numberOfRefund Int?            @default(3)
+  User           User            @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Order_ibfk_1")
+  Store          Store           @relation(fields: [storeId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Order_ibfk_3")
+  OrderFlow      OrderFlow[]
+  OrderRefund    OrderRefund[]
+  OrderShipping  OrderShipping[]
+  OrderVoucher   OrderVoucher[]
+  Payment        Payment[]
+  ProductOrder   ProductOrder[]
+  Rating         Rating[]
 
-  @@index([deliveryInformationId], map: "deliveryInformationId")
   @@index([storeId], map: "storeId")
   @@index([userId], map: "userId")
 }

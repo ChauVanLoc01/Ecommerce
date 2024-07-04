@@ -5,30 +5,31 @@ import {
     IsInt,
     IsNotEmpty,
     IsNumber,
+    IsObject,
     IsOptional,
     IsString,
     ValidateNested
 } from 'class-validator'
 
-class Parameter {
+class ProductOrder {
     @IsString()
     @IsNotEmpty()
     productId: string
 
     @IsNumber()
     @IsOptional()
-    price_before?: number
+    priceBefore?: number
 
     @IsNumber()
     @IsNotEmpty()
-    price_after: number
+    priceAfter: number
 
     @IsInt()
     @IsNotEmpty()
     quantity: number
 }
 
-export class OrdersParameter {
+export class OrderDetail {
     @IsString()
     @IsNotEmpty()
     storeId: string
@@ -55,12 +56,22 @@ export class OrdersParameter {
 
     @IsArray()
     @ValidateNested({ each: true })
-    @Type(() => Parameter)
+    @Type(() => ProductOrder)
     @IsNotEmpty()
-    orders: Parameter[]
+    productOrders: ProductOrder[]
 }
 
-export type OrdersParameterType = InstanceType<typeof OrdersParameter> & { orderId: string }
+export class OrderDeliveryDTO {
+    @ApiProperty()
+    @IsString()
+    @IsNotEmpty()
+    name: string
+
+    @ApiProperty()
+    @IsString()
+    @IsNotEmpty()
+    address: string
+}
 
 export class CreateOrderDTO {
     @ApiProperty({
@@ -68,14 +79,9 @@ export class CreateOrderDTO {
     })
     @IsArray()
     @ValidateNested({ each: true })
-    @Type(() => OrdersParameter)
+    @Type(() => OrderDetail)
     @IsNotEmpty()
-    orderParameters: OrdersParameter[]
-
-    @ApiProperty()
-    @IsString()
-    @IsNotEmpty()
-    deliveryInformationId?: string
+    orders: OrderDetail[]
 
     @ApiPropertyOptional()
     @IsString()
@@ -86,6 +92,9 @@ export class CreateOrderDTO {
     @IsString()
     @IsNotEmpty()
     actionId: string
-}
 
-export type CreateOrderType = InstanceType<typeof CreateOrderDTO>
+    @ApiProperty()
+    @IsObject({ each: true })
+    @Type(() => OrderDeliveryDTO)
+    delivery_info: OrderDeliveryDTO
+}

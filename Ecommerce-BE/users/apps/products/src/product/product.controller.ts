@@ -1,5 +1,5 @@
 import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common'
-import { MessagePattern, Payload } from '@nestjs/microservices'
+import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices'
 import { ApiBearerAuth, ApiProperty } from '@nestjs/swagger'
 import {
     createProductOrder,
@@ -23,6 +23,7 @@ import { QueryProductDTO } from './dtos/query-product.dto'
 import { RefreshCartDTO } from './dtos/refresh-cart.dto'
 import { UpdateProductDTO } from './dtos/update-product.dto'
 import { ProductService } from './product.service'
+import { OrderPayload } from 'common/types/order_payload.type'
 
 @UseGuards(JwtGuard)
 @ApiBearerAuth()
@@ -120,16 +121,8 @@ export class ProductController {
     }
 
     @Public()
-    @MessagePattern(updateQuantityProducts)
-    updateQuantiyProducts(
-        @Payload()
-        data: {
-            storeId: string
-            note?: string
-            productId: string
-            quantity: number
-        }[]
-    ) {
+    @EventPattern(updateQuantityProducts)
+    updateQuantiyProducts(@Payload() payload: OrderPayload) {
         return this.productsService.updateQuantityProducts(data)
     }
 

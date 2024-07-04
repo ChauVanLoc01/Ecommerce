@@ -10,18 +10,15 @@ import {
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { ClientProxy } from '@nestjs/microservices'
-import { SchedulerRegistry } from '@nestjs/schedule'
-import { DeliveryInformation, Product } from '@prisma/client'
+import { CronExpression, SchedulerRegistry } from '@nestjs/schedule'
+import { Product } from '@prisma/client'
 import { Cache } from 'cache-manager'
 import {
     checkDeliveryInformationId,
-    checkStoreExist,
-    checkVoucherExistToCreateOrder,
     getAllProductWithProductOrder,
-    processOrder,
     processStepOneToCreatOrder,
+    processStepTwoToCreateOrder,
     statusOfOrder,
-    updateQuantityProducts,
     updateQuantiyProductsWhenCancelOrder,
     updateVoucherWhenCancelOrder
 } from 'common/constants/event.constant'
@@ -29,12 +26,13 @@ import { OrderShipping, OrderStatus } from 'common/enums/orderStatus.enum'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
 import { MessageReturn, Return } from 'common/types/result.type'
 import { hash } from 'common/utils/helper'
+import { CronJob } from 'cron'
 import { add, addHours, sub, subDays } from 'date-fns'
 import { isUndefined, max, omitBy, sumBy } from 'lodash'
 import { firstValueFrom } from 'rxjs'
 import { v4 as uuidv4 } from 'uuid'
 import { AnalyticsOrderDTO } from '../dtos/analytics_order.dto'
-import { CreateOrderType, OrdersParameter } from '../dtos/create_order.dto'
+import { CreateOrderDTO } from '../../../../common/dtos/create_order.dto'
 import {
     AcceptRequestOrderRefundDTO,
     CloseOrderRefundDTO,
@@ -121,7 +119,10 @@ export class OrderService {
                 userId: user.id
             },
             include: {
-                ProductOrder: true
+                ProductOrder: true,
+                OrderShipping: true,
+                OrderVoucher: true,
+                OrderFlow: true
             }
         })
 
@@ -135,21 +136,14 @@ export class OrderService {
         if (!orderExist) throw new NotFoundException('Đơn hàng không tồn tại')
 
         const convertedProductOrder = await Promise.all(
-            { ...orderExist }.ProductOrder.map((productOrder) => {
-                return Promise.resolve({
+            orderExist.ProductOrder.map((productOrder) => {
+                return {
                     ...productOrder,
                     name: productsInOrder[productOrder.productId].name,
                     image: productsInOrder[productOrder.productId].image,
                     category: productsInOrder[productOrder.productId].category,
                     currentPriceAfter: productsInOrder[productOrder.productId].priceAfter
-                })
-            })
-        )
-
-        const delivery = await await firstValueFrom(
-            this.userClient.send(checkDeliveryInformationId, {
-                user,
-                deliveryInformationId: orderExist.deliveryInformationId
+                }
             })
         )
 
@@ -157,8 +151,7 @@ export class OrderService {
             msg: 'Lấy thông tin đơn hàng thành công',
             result: {
                 ...orderExist,
-                ProductOrder: convertedProductOrder,
-                delivery
+                ProductOrder: convertedProductOrder
             }
         }
     }
@@ -245,57 +238,40 @@ export class OrderService {
         }
     }
 
-    async createOrder(user: CurrentUserType, body: CreateOrderType): Promise<Return> {
-        try {
-            const step_one = await firstValueFrom<MessageReturn<string | null>>(
-                this.orderClient.send(processStepOneToCreatOrder, body.orderParameters)
-            )
+    updateStatusOfOrderToClient(id: string, msg: string, action: boolean, result: string[] | null) {
+        this.socketClient.emit(statusOfOrder, { id, msg, action, result })
+    }
 
-            if (step_one.action) {
-                this.orderClient.emit(processOrder, { user, body })
-            }
-
-            if (!step_one.action) {
-                throw new BadRequestException(step_one.msg || 'Tạo đơn hàng không thành công')
-            }
-
-            return {
-                msg: 'Đơn hàng đang được xử lý',
-                result: null
-            }
-        } catch (err) {
-            this.socketClient.emit(statusOfOrder, {
-                id: body.actionId,
-                msg: err?.message || 'Tạo đơn hàng không thành công',
-                action: false,
-                result: null
-            })
-            throw new BadRequestException(err?.message || 'Tạo đơn hàng không thành công')
+    async createOrder(user: CurrentUserType, body: CreateOrderDTO): Promise<Return> {
+        this.orderClient.emit(processStepOneToCreatOrder, { user, body })
+        return {
+            msg: 'Đơn hàng đang được xử lý',
+            result: null
         }
     }
 
-    async stepOne(body: InstanceType<typeof OrdersParameter>[]) {
-        try {
-            const innerPromise = body.map(async ({ voucherId, orders }) => {
+    async checkCache(user: CurrentUserType, body: CreateOrderDTO) {
+        let { orders } = body
+
+        Promise.all(
+            orders.map(async ({ voucherId, productOrders }) => {
                 if (voucherId) {
                     let hahsVoucher = hash('voucher', voucherId)
                     let quantityVoucherCache = await this.cacheManager.get<number>(hahsVoucher)
                     if (quantityVoucherCache == 0) {
                         return Promise.reject({
-                            action: false,
                             msg: 'Voucher đã hết lượt sử dụng',
                             result: voucherId
                         })
                     }
                 }
-                orders.forEach(async ({ productId }) => {
+                productOrders.forEach(async ({ productId }) => {
                     let hashProductId = hash('product', productId)
                     let fromCache = await this.cacheManager.get<string>(hashProductId)
                     if (fromCache) {
                         let { quantity } = JSON.parse(fromCache) as { quantity: number }
                         if (quantity == 0) {
                             return Promise.reject({
-                                action: false,
                                 msg: 'Sản phẩm không đủ số lượng',
                                 result: productId
                             })
@@ -303,138 +279,61 @@ export class OrderService {
                     }
                 })
 
-                return Promise.resolve({ action: true, msg: 'ok', result: null })
+                return Promise.resolve({ msg: 'ok' })
             })
-
-            await Promise.all(innerPromise)
-
-            return {
-                msg: 'ok',
-                action: true,
-                result: null
-            }
-        } catch (err) {
-            return {
-                msg: err?.msg || 'Tạo đơn hàng không thành công',
-                action: false,
-                result: err?.result || null
-            }
-        }
+        )
+            .then((_) => {
+                this.productClient.emit(processStepTwoToCreateOrder, { user, body })
+            })
+            .catch((err) => {
+                this.updateStatusOfOrderToClient(
+                    body.actionId,
+                    err?.msg || 'Tạo đơn hàng không thành công',
+                    false,
+                    err?.result || null
+                )
+            })
     }
 
-    async processOrder(user: CurrentUserType, body: CreateOrderType) {
-        var emitStatusOfOrder = (msg: string, action = false, result?: string[]) => {
-            this.socketClient.emit<
-                string,
-                { id: string; msg: string; action: boolean; result: string[] | null }
-            >(statusOfOrder, {
-                id: body.actionId,
-                msg,
-                action,
-                result: result || null
-            })
-            return
-        }
-        try {
-            const { id } = user
-            const { orderParameters, deliveryInformationId, globalVoucherId } = body
-
-            let productIds: {
-                storeId: string
-                note?: string
-                productId: string
-                quantity: number
-            }[] = []
-
-            let storeIdKeyByVoucher: {
-                orderIds: string[]
-                voucherIds: string[][]
-                mixedVoucher: {
-                    orderId: string
-                    voucherId: string
-                }[]
-            } = { orderIds: [], mixedVoucher: [], voucherIds: [] }
-            const stores = orderParameters.map((parameter) => {
-                let orderId = uuidv4()
-                let arr = []
-                let mixed = []
-
-                if (globalVoucherId) {
-                    arr.push(['global', globalVoucherId])
-                    mixed.push({
-                        orderId,
-                        voucherId: globalVoucherId
-                    })
-                }
-                if (parameter.voucherId) {
-                    arr.push([parameter.storeId, parameter.voucherId])
-                    mixed.push({
-                        orderId,
-                        voucherId: parameter.voucherId
-                    })
-                }
-
-                storeIdKeyByVoucher = {
-                    orderIds: [...storeIdKeyByVoucher.orderIds, orderId],
-                    voucherIds: [...storeIdKeyByVoucher.voucherIds, ...arr],
-                    mixedVoucher: [...storeIdKeyByVoucher.mixedVoucher, ...mixed]
-                }
-
-                parameter.orders.forEach((e) => {
-                    productIds.push({
-                        productId: e.productId,
-                        quantity: e.quantity,
-                        storeId: parameter.storeId
-                    })
-                })
-
-                return parameter.storeId
-            })
-
-            const productReturn = await firstValueFrom(
-                this.productClient.send<MessageReturn>(updateQuantityProducts, productIds)
-            )
-
-            if (!productReturn.action) {
-                emitStatusOfOrder(productReturn.msg)
-            }
-
-            await Promise.all(
-                orderParameters.map((parameter, idx) =>
+    async processOrder(user: CurrentUserType, body: CreateOrderDTO) {
+        const { id } = user
+        const { orders, globalVoucherId, delivery_info } = body
+        this.prisma
+            .$transaction(
+                orders.map((order) =>
                     this.prisma.order.create({
                         data: {
-                            id: storeIdKeyByVoucher.orderIds[idx],
-                            deliveryInformationId,
-                            total: parameter.total,
-                            discount: parameter.discount,
-                            pay: parameter.pay,
+                            id: uuidv4(),
+                            total: order.total,
+                            discount: order.discount,
+                            pay: order.pay,
                             status: OrderStatus.WAITING_CONFIRM,
-                            storeId: parameter.storeId,
-                            note: parameter.note,
+                            storeId: order.storeId,
+                            note: order.note,
                             userId: id,
                             createdAt: new Date(),
                             ProductOrder: {
                                 createMany: {
-                                    data: parameter.orders.map((order) => {
-                                        return {
-                                            id: uuidv4(),
-                                            productId: order.productId,
-                                            quantity: order.quantity,
-                                            priceBefore: order.price_before,
-                                            priceAfter: order.price_after
+                                    data: order.productOrders.map(
+                                        ({ productId, quantity, priceAfter, priceBefore }) => {
+                                            return {
+                                                id: uuidv4(),
+                                                productId,
+                                                quantity,
+                                                priceBefore,
+                                                priceAfter
+                                            }
                                         }
-                                    })
+                                    )
                                 }
                             },
                             OrderShipping: {
-                                createMany: {
-                                    data: {
-                                        id: uuidv4(),
-                                        address: deliveryReturn.result.address,
-                                        name: deliveryReturn.result.full_name,
-                                        type: OrderShipping.SHIPPING,
-                                        createdBy: id
-                                    }
+                                create: {
+                                    id: uuidv4(),
+                                    address: delivery_info.address,
+                                    name: delivery_info.name,
+                                    type: OrderShipping.SHIPPING,
+                                    createdBy: id
                                 }
                             },
                             OrderFlow: {
@@ -446,46 +345,125 @@ export class OrderService {
                             },
                             OrderVoucher: {
                                 createMany: {
-                                    data: storeIdKeyByVoucher.voucherIds[idx].map((voucherId) => ({
+                                    data: [order.voucherId, globalVoucherId].map((voucherId) => ({
                                         id: uuidv4(),
-                                        createdAt: new Date(),
-                                        voucherId
+                                        voucherId,
+                                        createdAt: new Date()
                                     }))
+                                }
+                            }
+                        },
+                        include: {
+                            OrderShipping: {
+                                select: {
+                                    id: true
+                                }
+                            },
+                            OrderFlow: {
+                                select: {
+                                    id: true
+                                }
+                            },
+                            OrderVoucher: {
+                                select: {
+                                    id: true
+                                }
+                            },
+                            ProductOrder: {
+                                select: {
+                                    id: true
                                 }
                             }
                         }
                     })
                 )
             )
+            .then((result) => {
+                let productOrderIds = []
+                let orderFlowIds = []
+                let orderVoucherIds = []
+                let orderShippingIds = []
 
-            const voucherReturn = await firstValueFrom<MessageReturn>(
-                this.storeClient.send(
-                    checkVoucherExistToCreateOrder,
-                    storeIdKeyByVoucher.voucherIds
+                result.forEach((order) => {
+                    productOrderIds.push(...order.ProductOrder.map((product) => product.id))
+                    orderFlowIds.push(order.OrderFlow[0].id)
+                    orderVoucherIds.push(...order.OrderVoucher.map((voucher) => voucher.id))
+                    orderShippingIds.push(order.OrderShipping[0].id)
+                })
+
+                let hashValue = hash('order', body.actionId)
+                const job = new CronJob(
+                    CronExpression.EVERY_SECOND,
+                    async () => {
+                        await this.prisma.$transaction([
+                            this.prisma.order.deleteMany({
+                                where: {
+                                    id: {
+                                        in: result.map((order) => order.id)
+                                    },
+                                    ProductOrder: {
+                                        every: {
+                                            id: {
+                                                in: productOrderIds
+                                            }
+                                        }
+                                    },
+                                    OrderFlow: {
+                                        every: {
+                                            id: {
+                                                in: orderFlowIds
+                                            }
+                                        }
+                                    },
+                                    OrderVoucher: {
+                                        every: {
+                                            id: {
+                                                in: orderVoucherIds
+                                            }
+                                        }
+                                    },
+                                    OrderShipping: {
+                                        every: {
+                                            id: {
+                                                in: orderShippingIds
+                                            }
+                                        }
+                                    }
+                                }
+                            })
+                        ])
+                    },
+                    () => this.schedulerRegistry.deleteCronJob(hashValue)
                 )
-            )
+                job.runOnce = true
+                this.schedulerRegistry.addCronJob(hashValue, job)
 
-            if (!voucherReturn.action) {
-                emitStatusOfOrder(voucherReturn.msg)
-            }
-
-            emitStatusOfOrder('Đặt hàng thành công', true, storeIdKeyByVoucher.orderIds)
-        } catch (err) {
-            emitStatusOfOrder('Lỗi Server')
-        }
+                this.productClient.emit()s
+            })
+            .catch((_) => {
+                this.updateStatusOfOrderToClient(
+                    body.actionId,
+                    'Tạo đơn hàng không thành công',
+                    false,
+                    null
+                )
+            })
     }
 
-    async rollbackOrder(job_name: string) {
+    async rollbackOrder(actionId: string, job_name: string) {
         const job = this.schedulerRegistry.getCronJob(job_name)
         if (job) {
             job.start()
         }
+        this.updateStatusOfOrderToClient(actionId, 'Đặt hàng không thành công', false, null)
     }
 
-    async commitOrder(job_name: string) {
+    async commitOrder(actionId: string, job_name: string) {
+        this.updateStatusOfOrderToClient(actionId, 'Đặt hàng thành công', true, null)
         const job = this.schedulerRegistry.getCronJob(job_name)
         if (job) {
             this.schedulerRegistry.deleteCronJob(job_name)
+            job.stop()
         }
     }
 

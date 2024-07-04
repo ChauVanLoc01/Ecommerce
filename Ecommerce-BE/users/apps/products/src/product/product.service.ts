@@ -29,6 +29,7 @@ import { CreateProductType } from './dtos/create-product.dto'
 import { QueryProductType } from './dtos/query-product.dto'
 import { RefreshCartDTO } from './dtos/refresh-cart.dto'
 import { UpdateProductType } from './dtos/update-product.dto'
+import { OrderPayload } from 'common/types/order_payload.type'
 
 @Injectable()
 export class ProductService {
@@ -526,34 +527,94 @@ export class ProductService {
         })
     }
 
-    async updateQuantityProducts(
-        data: {
-            storeId: string
-            note?: string
+    async updateQuantityProducts(order_payload: OrderPayload): Promise<MessageReturn> {
+        let { body, user } = order_payload
+        var tmp: {
             productId: string
             quantity: number
-        }[]
-    ): Promise<MessageReturn> {
-        try {
-            await Promise.all(
-                data.map((e) => this.updateQuantity(e.productId, e.storeId, e.quantity))
-            )
-            return {
-                msg: 'ok',
-                action: true,
-                result: null
-            }
-        } catch (err) {
-            console.log('error', err)
-            return {
-                msg: (err as Error).message,
-                action: false,
-                result: null
-            }
-        }
+            priceAfter: number
+        }[] = []
+        this.prisma
+            .$transaction(async (tx) => {
+                body.orders.forEach(async (order) => {
+                    order.productOrders.forEach(async ({ productId, quantity: buy }) => {
+                        let hashValue = hash('product', productId)
+                        let fromCache = await this.cacheManager.get<string>(hashValue)
+
+                        if (fromCache) {
+                            let { quantity, priceAfter } = JSON.parse(fromCache) as {
+                                quantity: number
+                                priceAfter: number
+                            }
+                            if (quantity === 1) {
+                                tmp.push({
+                                    productId,
+                                    quantity: 0,
+                                    priceAfter
+                                })
+                                await tx.product.update({
+                                    where: {
+                                        id: productId
+                                    },
+                                    data: {
+                                        currentQuantity: 0
+                                    }
+                                })
+                            } else {
+                                tmp.push({
+                                    productId,
+                                    quantity: quantity - buy,
+                                    priceAfter
+                                })
+                            }
+                        } else {
+                            const productExist = await tx.product.findUnique({
+                                where: {
+                                    id: productId
+                                },
+                                select: {
+                                    currentQuantity: true,
+                                    priceAfter: true
+                                }
+                            })
+
+                            if (!productExist) {
+                                throw new Error('Sản phẩm không tồn tại')
+                            }
+
+                            if (productExist.currentQuantity < buy) {
+                                throw new Error('Sản phẩm không đủ số lượng')
+                            }
+
+                            if (productExist.currentQuantity === buy) {
+                                tmp.push({
+                                    productId,
+                                    quantity: 0,
+                                    priceAfter: productExist.priceAfter
+                                })
+                            }
+                            tmp.push({
+                                productId,
+                                quantity: productExist.currentQuantity - buy,
+                                priceAfter: productExist.priceAfter
+                            })
+                        }
+                    })
+                })
+            })
+            .then(async (_) => {
+                tmp.forEach(async ({ productId, priceAfter, quantity }) => {
+                    let hashValue = hash('product', productId)
+                    await this.cacheManager.set(hashValue, JSON.stringify({ quantity, priceAfter }))
+                    this.emitUpdateProductToSocket(productId, quantity, priceAfter)
+                    let cron_job = new CronJob(CronExpression.EVERY_5_MINUTES, () => {})
+                    this.schedulerRegistry
+                })
+            })
+            .catch((err) => {})
     }
 
-    async updateQuantity(productId: string, storeId: string, buy: number) {
+    async updateQuantity(productId: string, storeId: string, buy: number): Promise<Mess> {
         const hashValue = hash('product', productId)
 
         const fromCache = await this.cacheManager.get<string>(hashValue)
@@ -605,100 +666,100 @@ export class ProductService {
                 action: true,
                 result: null
             }
-        }
+        } else {
+            const productExist = await this.prisma.product.findUnique({
+                where: {
+                    id: productId,
+                    storeId
+                }
+            })
 
-        const productExist = await this.prisma.product.findUnique({
-            where: {
-                id: productId,
-                storeId
+            if (!productExist) {
+                throw new Error('Sản phẩm không tồn tại')
             }
-        })
 
-        if (!productExist) {
-            throw new Error('Sản phẩm không tồn tại')
-        }
+            if (productExist.currentQuantity < buy) {
+                throw new Error(`Sản phẩm ${productId} không đủ số lượng`)
+            }
 
-        if (productExist.currentQuantity < buy) {
-            throw new Error(`Sản phẩm ${productId} không đủ số lượng`)
-        }
-
-        if (productExist.currentQuantity === buy) {
-            await Promise.all([
-                this.cacheManager.set(
-                    hashValue,
-                    JSON.stringify({
-                        quantity: 0,
-                        priceAfter: productExist.priceAfter
+            if (productExist.currentQuantity === buy) {
+                await Promise.all([
+                    this.cacheManager.set(
+                        hashValue,
+                        JSON.stringify({
+                            quantity: 0,
+                            priceAfter: productExist.priceAfter
+                        })
+                    ),
+                    this.prisma.product.update({
+                        where: {
+                            id: productId
+                        },
+                        data: {
+                            currentQuantity: 0
+                        }
                     })
-                ),
-                this.prisma.product.update({
-                    where: {
-                        id: productId
-                    },
-                    data: {
-                        currentQuantity: 0
-                    }
-                })
-            ])
+                ])
 
-            this.emitUpdateProductToSocket(productId, 0, productExist.priceAfter)
+                this.emitUpdateProductToSocket(productId, 0, productExist.priceAfter)
+
+                return {
+                    msg: 'ok',
+                    action: true,
+                    result: null
+                }
+            }
+
+            let remainingQuantity = productExist.currentQuantity - buy
+
+            await this.cacheManager.set(
+                hashValue,
+                JSON.stringify({ quantity: remainingQuantity, priceAfter: productExist.priceAfter })
+            )
+
+            this.emitUpdateProductToSocket(productId, remainingQuantity, productExist.priceAfter)
+
+            const updateQuantityJob = new CronJob(CronExpression.EVERY_5_MINUTES, async () => {
+                const [fromCache, productIn] = await Promise.all([
+                    this.cacheManager.get<string>(hashValue),
+                    this.prisma.product.findUnique({
+                        where: {
+                            id: productId
+                        }
+                    })
+                ])
+                let { quantity } = JSON.parse(fromCache) as { quantity: number; priceAfter: number }
+                let tmp = []
+                if (quantity === productIn.currentQuantity) {
+                    tmp.push(this.cacheManager.del(hashValue))
+                }
+                await Promise.all([
+                    this.prisma.product.update({
+                        where: {
+                            id: productId,
+                            storeId
+                        },
+                        data: {
+                            currentQuantity: quantity
+                        }
+                    }),
+                    ...tmp
+                ])
+
+                if (tmp.length) {
+                    this.schedulerRegistry.deleteCronJob(hashValue)
+                }
+            })
+
+            this.schedulerRegistry.addCronJob(hashValue, updateQuantityJob)
+
+            updateQuantityJob.start()
 
             return {
                 msg: 'ok',
                 action: true,
                 result: null
             }
-        }
-
-        let remainingQuantity = productExist.currentQuantity - buy
-
-        await this.cacheManager.set(
-            hashValue,
-            JSON.stringify({ quantity: remainingQuantity, priceAfter: productExist.priceAfter })
-        )
-
-        this.emitUpdateProductToSocket(productId, remainingQuantity, productExist.priceAfter)
-
-        const updateQuantityJob = new CronJob(CronExpression.EVERY_5_MINUTES, async () => {
-            const [fromCache, productIn] = await Promise.all([
-                this.cacheManager.get<string>(hashValue),
-                this.prisma.product.findUnique({
-                    where: {
-                        id: productId
-                    }
-                })
-            ])
-            let { quantity } = JSON.parse(fromCache) as { quantity: number; priceAfter: number }
-            let tmp = []
-            if (quantity === productIn.currentQuantity) {
-                tmp.push(this.cacheManager.del(hashValue))
-            }
-            await Promise.all([
-                this.prisma.product.update({
-                    where: {
-                        id: productId,
-                        storeId
-                    },
-                    data: {
-                        currentQuantity: quantity
-                    }
-                }),
-                ...tmp
-            ])
-
-            if (tmp.length) {
-                this.schedulerRegistry.deleteCronJob(hashValue)
-            }
-        })
-
-        this.schedulerRegistry.addCronJob(hashValue, updateQuantityJob)
-
-        updateQuantityJob.start()
-
-        return {
-            msg: 'ok',
-            action: true,
-            result: null
         }
     }
 

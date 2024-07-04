@@ -3,8 +3,8 @@ import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices'
 import { ApiBearerAuth } from '@nestjs/swagger'
 import {
     getOrderByRating,
-    processOrder,
-    processStepOneToCreatOrder
+    processStepOneToCreatOrder,
+    processStepTwoToCreateOrder
 } from 'common/constants/event.constant'
 import { CurrentUser } from 'common/decorators/current_user.decorator'
 import { Public } from 'common/decorators/public.decorator'
@@ -12,8 +12,9 @@ import { Roles } from 'common/decorators/roles.decorator'
 import { Role } from 'common/enums/role.enum'
 import { JwtGuard } from 'common/guards/jwt.guard'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
+import { OrderPayload } from 'common/types/order_payload.type'
+import { CreateOrderDTO } from '../../../../common/dtos/create_order.dto'
 import { AnalyticsOrderDTO } from '../dtos/analytics_order.dto'
-import { CreateOrderDTO, CreateOrderType, OrdersParameter } from '../dtos/create_order.dto'
 import {
     AcceptRequestOrderRefundDTO,
     CloseOrderRefundDTO,
@@ -112,14 +113,15 @@ export class OrderController {
     }
 
     @Public()
+    @EventPattern()
     @MessagePattern(processStepOneToCreatOrder)
-    processStepOneToCreateOrder(@Payload() payload: InstanceType<typeof OrdersParameter>[]) {
-        return this.ordersService.stepOne(payload)
+    checkCache(@Payload() payload: OrderPayload) {
+        return this.ordersService.checkCache(payload.user, payload.body)
     }
 
     @Public()
-    @EventPattern(processOrder)
-    processOrder(data: { user: CurrentUserType; body: CreateOrderType }) {
+    @EventPattern(processStepTwoToCreateOrder)
+    processOrder(data: OrderPayload) {
         return this.ordersService.processOrder(data.user, data.body)
     }
 
