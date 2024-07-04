@@ -2,9 +2,11 @@ import { Body, Controller, Get, Param, Post, Put, Query, UseGuards } from '@nest
 import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices'
 import { ApiBearerAuth } from '@nestjs/swagger'
 import {
+    commitOrder,
     getOrderByRating,
     processStepOneToCreatOrder,
-    processStepTwoToCreateOrder
+    processStepTwoToCreateOrder,
+    rollbackOrder
 } from 'common/constants/event.constant'
 import { CurrentUser } from 'common/decorators/current_user.decorator'
 import { Public } from 'common/decorators/public.decorator'
@@ -123,6 +125,18 @@ export class OrderController {
     @EventPattern(processStepTwoToCreateOrder)
     processOrder(data: OrderPayload) {
         return this.ordersService.processOrder(data.user, data.body)
+    }
+
+    @Public()
+    @EventPattern(rollbackOrder)
+    rollbackOrder(actionId: string) {
+        return this.ordersService.rollbackOrder(actionId)
+    }
+
+    @Public()
+    @EventPattern(commitOrder)
+    commitOrder(actionId: string) {
+        return this.ordersService.commitOrder(actionId)
     }
 
     @Roles(Role.USER)

@@ -4,7 +4,13 @@ export const updateQuantityProducts = 'product::quantity::update'
 
 export const updateQuantiyProductsWhenCancelOrder = 'updateQuantiyProductsWhenCancelOrder'
 
-export const rollbackUpdateQuantityProducts = 'product::quantity::rollback'
+export const rollbackOrder = 'roll::back::order'
+
+export const commitOrder = 'commit::order'
+
+export const rollbackUpdateQuantityProducts = 'rollback::update::quantity::product'
+
+export const commitUpdateQuantityProducts = 'commit::update::quantity::product'
 
 export const checkStoreExist = 'store::check::exist'
 

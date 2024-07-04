@@ -122,8 +122,8 @@ export class ProductController {
 
     @Public()
     @EventPattern(updateQuantityProducts)
-    updateQuantiyProducts(@Payload() payload: OrderPayload) {
-        return this.productsService.updateQuantityProducts(data)
+    updateQuantiyProducts(payload: OrderPayload) {
+        return this.productsService.updateQuantityProducts(payload)
     }
 
     @Public()

@@ -14,16 +14,17 @@ import { CronExpression, SchedulerRegistry } from '@nestjs/schedule'
 import { Product } from '@prisma/client'
 import { Cache } from 'cache-manager'
 import {
-    checkDeliveryInformationId,
     getAllProductWithProductOrder,
     processStepOneToCreatOrder,
     processStepTwoToCreateOrder,
     statusOfOrder,
+    updateQuantityProducts,
     updateQuantiyProductsWhenCancelOrder,
     updateVoucherWhenCancelOrder
 } from 'common/constants/event.constant'
 import { OrderShipping, OrderStatus } from 'common/enums/orderStatus.enum'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
+import { OrderPayload } from 'common/types/order_payload.type'
 import { MessageReturn, Return } from 'common/types/result.type'
 import { hash } from 'common/utils/helper'
 import { CronJob } from 'cron'
@@ -31,8 +32,8 @@ import { add, addHours, sub, subDays } from 'date-fns'
 import { isUndefined, max, omitBy, sumBy } from 'lodash'
 import { firstValueFrom } from 'rxjs'
 import { v4 as uuidv4 } from 'uuid'
-import { AnalyticsOrderDTO } from '../dtos/analytics_order.dto'
 import { CreateOrderDTO } from '../../../../common/dtos/create_order.dto'
+import { AnalyticsOrderDTO } from '../dtos/analytics_order.dto'
 import {
     AcceptRequestOrderRefundDTO,
     CloseOrderRefundDTO,
@@ -438,7 +439,7 @@ export class OrderService {
                 job.runOnce = true
                 this.schedulerRegistry.addCronJob(hashValue, job)
 
-                this.productClient.emit()s
+                this.productClient.emit(updateQuantityProducts, { user, body } as OrderPayload)
             })
             .catch((_) => {
                 this.updateStatusOfOrderToClient(
@@ -450,20 +451,22 @@ export class OrderService {
             })
     }
 
-    async rollbackOrder(actionId: string, job_name: string) {
-        const job = this.schedulerRegistry.getCronJob(job_name)
+    async rollbackOrder(actionId: string) {
+        let hashValue = hash('order', actionId)
+        const job = this.schedulerRegistry.getCronJob(hashValue)
         if (job) {
             job.start()
         }
         this.updateStatusOfOrderToClient(actionId, 'Đặt hàng không thành công', false, null)
     }
 
-    async commitOrder(actionId: string, job_name: string) {
+    async commitOrder(actionId: string) {
+        let hashValue = hash('order', actionId)
         this.updateStatusOfOrderToClient(actionId, 'Đặt hàng thành công', true, null)
-        const job = this.schedulerRegistry.getCronJob(job_name)
+        const job = this.schedulerRegistry.getCronJob(hashValue)
         if (job) {
-            this.schedulerRegistry.deleteCronJob(job_name)
             job.stop()
+            this.schedulerRegistry.deleteCronJob(hashValue)
         }
     }
 
