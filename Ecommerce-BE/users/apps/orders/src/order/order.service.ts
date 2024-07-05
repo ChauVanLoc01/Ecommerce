@@ -256,31 +256,30 @@ export class OrderService {
 
         Promise.all(
             orders.map(async ({ voucherId, productOrders }) => {
-                if (voucherId) {
-                    let hahsVoucher = hash('voucher', voucherId)
-                    let quantityVoucherCache = await this.cacheManager.get<number>(hahsVoucher)
-                    if (quantityVoucherCache == 0) {
-                        return Promise.reject({
-                            msg: 'Voucher đã hết lượt sử dụng',
-                            result: voucherId
-                        })
-                    }
-                }
-                productOrders.forEach(async ({ productId }) => {
-                    let hashProductId = hash('product', productId)
-                    let fromCache = await this.cacheManager.get<string>(hashProductId)
-                    if (fromCache) {
-                        let { quantity } = JSON.parse(fromCache) as { quantity: number }
-                        if (quantity == 0) {
-                            return Promise.reject({
-                                msg: 'Sản phẩm không đủ số lượng',
-                                result: productId
-                            })
+                try {
+                    if (voucherId) {
+                        let hahsVoucher = hash('voucher', voucherId)
+                        let quantityVoucherCache = await this.cacheManager.get<number>(hahsVoucher)
+                        if (quantityVoucherCache == 0) {
+                            return Promise.reject('Voucher đã hết lượt sử dụng')
                         }
                     }
-                })
+                    productOrders.forEach(async ({ productId }) => {
+                        let hashProductId = hash('product', productId)
+                        let fromCache = await this.cacheManager.get<string>(hashProductId)
+                        if (fromCache) {
+                            let { quantity } = JSON.parse(fromCache) as { quantity: number }
+                            if (quantity == 0) {
+                                throw new Error('Sản phẩm không đủ số lượng')
+                            }
+                        }
+                        return { msg: 'ok', result: null }
+                    })
+                } catch (err) {
+                    return Promise.reject({ msg: err.message, action: false, result: null })
+                }
 
-                return Promise.resolve({ msg: 'ok' })
+                return { msg: 'ok' }
             })
         )
             .then((_) => {
@@ -385,12 +384,14 @@ export class OrderService {
                 )
             )
             .then((result) => {
+                let orderIds = []
                 let productOrderIds = []
                 let orderFlowIds = []
                 let orderVoucherIds = []
                 let orderShippingIds = []
 
                 result.forEach((order) => {
+                    orderIds.push(order.id)
                     productOrderIds.push(...order.ProductOrder.map((product) => product.id))
                     orderFlowIds.push(order.OrderFlow[0].id)
                     orderVoucherIds.push(...order.OrderVoucher.map((voucher) => voucher.id))
@@ -399,44 +400,45 @@ export class OrderService {
 
                 let hashValue = hash('order', body.actionId)
                 const roll_back_job = new CronJob(CronExpression.EVERY_SECOND, async () => {
-                    console.log('roll back cron job order is runninginingingiggngign')
-                    await this.prisma.$transaction([
-                        this.prisma.order.deleteMany({
+                    await this.prisma.$transaction(async (tx) => {
+                        await Promise.all([
+                            tx.productOrder.deleteMany({
+                                where: {
+                                    id: {
+                                        in: productOrderIds
+                                    }
+                                }
+                            }),
+                            tx.orderFlow.deleteMany({
+                                where: {
+                                    id: {
+                                        in: orderFlowIds
+                                    }
+                                }
+                            }),
+                            tx.orderVoucher.deleteMany({
+                                where: {
+                                    id: {
+                                        in: orderVoucherIds.length ? orderFlowIds : undefined
+                                    }
+                                }
+                            }),
+                            tx.orderShipping.deleteMany({
+                                where: {
+                                    id: {
+                                        in: orderShippingIds
+                                    }
+                                }
+                            })
+                        ])
+                        await tx.order.deleteMany({
                             where: {
                                 id: {
-                                    in: result.map((order) => order.id)
-                                },
-                                ProductOrder: {
-                                    every: {
-                                        id: {
-                                            in: productOrderIds
-                                        }
-                                    }
-                                },
-                                OrderFlow: {
-                                    every: {
-                                        id: {
-                                            in: orderFlowIds
-                                        }
-                                    }
-                                },
-                                OrderVoucher: {
-                                    every: {
-                                        id: {
-                                            in: orderVoucherIds
-                                        }
-                                    }
-                                },
-                                OrderShipping: {
-                                    every: {
-                                        id: {
-                                            in: orderShippingIds
-                                        }
-                                    }
+                                    in: orderIds
                                 }
                             }
                         })
-                    ])
+                    })
                 })
                 roll_back_job.runOnce = true
                 this.schedulerRegistry.addCronJob(hashValue, roll_back_job)

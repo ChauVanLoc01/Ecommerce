@@ -297,7 +297,7 @@ export class ProductService {
                     status: Status.ACTIVE
                 }
             }),
-            this.cacheManager.get(hash('product', productId)),
+            this.cacheManager.get<string>(hash('product', productId)),
             this.prisma.productImage.findMany({
                 where: {
                     productId
@@ -312,7 +312,7 @@ export class ProductService {
             result: {
                 ...productExist,
                 productImages: imgs,
-                currentQuantity: cached || productExist.currentQuantity
+                currentQuantity: cached ? JSON.parse(cached).quantity : productExist.currentQuantity
             } as Product
         }
     }
@@ -1094,7 +1094,7 @@ export class ProductService {
                         }
                     }
                 }),
-                this.cacheManager.get(hash('product', id))
+                this.cacheManager.get<string>(hash('product', id))
             ])
 
             if (!product) {
@@ -1103,7 +1103,7 @@ export class ProductService {
 
             return {
                 ...product,
-                currentQuantity: +cached || product.currentQuantity
+                currentQuantity: cached ? JSON.parse(cached).quantity : product.currentQuantity
             }
         } catch (error) {
             throw new BadRequestException('Lỗi')
