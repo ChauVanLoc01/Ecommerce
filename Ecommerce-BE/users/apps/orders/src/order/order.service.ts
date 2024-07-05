@@ -284,9 +284,10 @@ export class OrderService {
             })
         )
             .then((_) => {
-                this.productClient.emit(processStepTwoToCreateOrder, { user, body })
+                this.orderClient.emit(processStepTwoToCreateOrder, { user, body })
             })
             .catch((err) => {
+                console.log('error at order', err)
                 this.updateStatusOfOrderToClient(
                     body.actionId,
                     err?.msg || 'Tạo đơn hàng không thành công',
@@ -344,15 +345,19 @@ export class OrderService {
                                     createdBy: id
                                 }
                             },
-                            OrderVoucher: {
-                                createMany: {
-                                    data: [order.voucherId, globalVoucherId].map((voucherId) => ({
-                                        id: uuidv4(),
-                                        voucherId,
-                                        createdAt: new Date()
-                                    }))
-                                }
-                            }
+                            OrderVoucher: [order.voucherId, globalVoucherId].filter(Boolean).length
+                                ? {
+                                      createMany: {
+                                          data: [order.voucherId, globalVoucherId]
+                                              .filter(Boolean)
+                                              .map((voucherId) => ({
+                                                  id: uuidv4(),
+                                                  voucherId,
+                                                  createdAt: new Date()
+                                              }))
+                                      }
+                                  }
+                                : undefined
                         },
                         include: {
                             OrderShipping: {
@@ -393,9 +398,10 @@ export class OrderService {
                 })
 
                 let hashValue = hash('order', body.actionId)
-                const job = new CronJob(
+                const roll_back_job = new CronJob(
                     CronExpression.EVERY_SECOND,
                     async () => {
+                        console.log('roll back cron job order is runninginingingiggngign')
                         await this.prisma.$transaction([
                             this.prisma.order.deleteMany({
                                 where: {
@@ -436,12 +442,13 @@ export class OrderService {
                     },
                     () => this.schedulerRegistry.deleteCronJob(hashValue)
                 )
-                job.runOnce = true
-                this.schedulerRegistry.addCronJob(hashValue, job)
+                roll_back_job.runOnce = true
+                this.schedulerRegistry.addCronJob(hashValue, roll_back_job)
 
                 this.productClient.emit(updateQuantityProducts, { user, body } as OrderPayload)
             })
-            .catch((_) => {
+            .catch((err) => {
+                console.log('error step 2', err)
                 this.updateStatusOfOrderToClient(
                     body.actionId,
                     'Tạo đơn hàng không thành công',
@@ -461,7 +468,6 @@ export class OrderService {
 
     async commitOrder(actionId: string) {
         let hashValue = hash('order', actionId)
-        // this.updateStatusOfOrderToClient(actionId, 'Đặt hàng thành công', true, null)
         const job = this.schedulerRegistry.getCronJob(hashValue)
         if (job) {
             job.stop()

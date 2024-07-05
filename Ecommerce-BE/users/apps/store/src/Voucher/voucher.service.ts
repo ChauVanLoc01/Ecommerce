@@ -456,7 +456,7 @@ export class VoucherService {
 
         this.prisma
             .$transaction(async (tx) => {
-                body.body.orders.forEach(async ({ voucherId, storeId }) => {
+                for (let { voucherId, storeId } of body.body.orders) {
                     let hashValue = hash('voucher', voucherId)
                     let quantityFromCache = await this.cacheManager.get<number>(hashValue)
 
@@ -473,7 +473,7 @@ export class VoucherService {
                         }
                         tmp.push({ quantity: quantityFromCache - 1, storeId, voucherId })
                     } else {
-                        const voucherExist = await this.prisma.voucher.findUnique({
+                        const voucherExist = await tx.voucher.findUnique({
                             where: {
                                 id: voucherId,
                                 currentQuantity: {
@@ -503,7 +503,7 @@ export class VoucherService {
                             voucherId
                         })
                     }
-                })
+                }
             })
             .then(async () => {
                 this.commitCreateOrderSuccess(body.body.actionId, body.productActionId)
@@ -519,7 +519,14 @@ export class VoucherService {
                     })
                 )
             })
-            .catch(async () => {
+            .catch(async (err) => {
+                console.log('err', err)
+                this.socketClient.emit(statusOfOrder, {
+                    id: body.body.actionId,
+                    msg: 'Lỗi cập nhật voucher',
+                    action: false,
+                    result: null
+                })
                 this.rollbackCreateOrderFail(body.body.actionId, body.productActionId)
             })
     }

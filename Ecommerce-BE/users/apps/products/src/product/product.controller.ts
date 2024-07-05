@@ -125,18 +125,22 @@ export class ProductController {
     @Public()
     @EventPattern(updateQuantityProducts)
     updateQuantiyProducts(payload: OrderPayload) {
+        console.log('update quantity product')
         return this.productsService.updateQuantityProducts(payload)
     }
 
     @Public()
     @EventPattern(rollbackUpdateQuantityProducts)
-    rollbackUpdateQuantityProduct(actionId: string, productActionId: string) {
+    rollbackUpdateQuantityProduct(payload: { actionId: string; productActionId: string }) {
+        console.log('roll back update quantity product')
+        let { actionId, productActionId } = payload
         return this.productsService.rolloutUpdateQuantityProduct(actionId, productActionId)
     }
 
     @Public()
     @EventPattern(commitUpdateQuantityProducts)
     commitUpdateQuantityProduct(payload: { actionId: string; productActionId: string }) {
+        console.log('commit update quantity product')
         let { actionId, productActionId } = payload
         return this.productsService.commitUpdateQuantityProduct(actionId, productActionId)
     }

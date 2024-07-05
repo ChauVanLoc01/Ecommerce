@@ -1,23 +1,27 @@
 import { Delivery } from './delivery.type'
 import { Product } from './product.type'
 
+export type OrderDelivery = {
+    name: string
+    address: string
+}
+
 export type OrderBody = {
-    orderParameters: {
+    orders: {
         storeId: string
         voucherId?: string
         total: number
         discount: number
         pay: number
-        orders: {
+        productOrders: {
             productId: string
-            price_after: number
+            priceAfter: number
             quantity: number
         }[]
     }[]
-    deliveryInformationId: string
     globalVoucherId?: string
     actionId: string
-    
+    delivery_info: OrderDelivery
 }
 export type OrderQuery = {
     product_name?: string

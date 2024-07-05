@@ -79,9 +79,9 @@ const useDataCheckout = ({ ids, products, voucherIds, setStep, setProducts, sock
                     let tmp = pre.products
                     let length = 0
                     Object.keys(productLatest.checked).forEach((storeId) => {
-                        let productCheckedArr = tmp[storeId].filter(
-                            ({ productId }) => !productLatest.checked?.[storeId]?.[productId]
-                        )
+                        let productCheckedArr = tmp[storeId].filter(({ productId }) => {
+                            return !productLatest.checked?.[storeId]?.[productId]
+                        })
                         if (productCheckedArr.length) {
                             tmp = {
                                 ...tmp,

@@ -547,8 +547,8 @@ export class ProductService {
         }[] = []
         this.prisma
             .$transaction(async (tx) => {
-                body.orders.forEach(async (order) => {
-                    order.productOrders.forEach(async ({ productId, quantity: buy }) => {
+                for (let order of body.orders) {
+                    for (let { productId, quantity: buy } of order.productOrders) {
                         let hashValue = hash('product', productId)
                         let fromCache = await this.cacheManager.get<string>(hashValue)
 
@@ -586,7 +586,10 @@ export class ProductService {
                         } else {
                             const productExist = await tx.product.findUnique({
                                 where: {
-                                    id: productId
+                                    id: productId,
+                                    currentQuantity: {
+                                        gt: 0
+                                    }
                                 },
                                 select: {
                                     currentQuantity: true,
@@ -603,7 +606,7 @@ export class ProductService {
                             }
 
                             if (productExist.currentQuantity === buy) {
-                                await this.prisma.product.update({
+                                await tx.product.update({
                                     where: {
                                         id: productId
                                     },
@@ -628,8 +631,8 @@ export class ProductService {
                                 storeId: order.storeId
                             })
                         }
-                    })
-                })
+                    }
+                }
             })
             .then(async (_) => {
                 tmp.forEach(async ({ productId, priceAfter, quantity }) => {
@@ -728,6 +731,7 @@ export class ProductService {
                 } as OrderPayload & { productActionId: string })
             })
             .catch((err) => {
+                console.log('err update product', err)
                 this.order_client.emit(rollbackOrder, body.actionId)
                 setTimeout(() => {
                     this.socket_client.emit(statusOfOrder, {
@@ -742,12 +746,6 @@ export class ProductService {
 
     async rolloutUpdateQuantityProduct(actionId: string, productActionId: string) {
         this.order_client.emit(rollbackOrder, actionId)
-        this.socket_client.emit(statusOfOrder, {
-            id: actionId,
-            msg: 'Lỗi sản phẩm',
-            action: false,
-            result: null
-        })
         let hashValue = hash('product', productActionId)
         let cron_job = this.schedulerRegistry.getCronJob(hashValue)
         if (cron_job) {

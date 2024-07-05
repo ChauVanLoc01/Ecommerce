@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { AppContext } from 'src/contexts/AppContext'
 import useStep from 'src/hooks/useStep'
+import { Delivery } from 'src/types/delivery.type'
 import { OrderBody } from 'src/types/order.type'
 import CheckoutHeader from './CheckoutHeader'
 import CheckoutSummary from './CheckoutSummary'
@@ -36,7 +37,7 @@ const Checkout = () => {
     if (!ids) {
         return <CheckOutEmpty />
     }
-    const [addressId, setAddressId] = useState<string>('')
+    const [address, setAddress] = useState<Delivery | undefined>(undefined)
     const { step, handleNextStep, handlePreviousStep, setStep } = useStep()
     const [orderSuccess, setOrderSuccess] = useState<boolean>(false)
     const [voucherIds, setVoucherIds] = useState<{ [storeId: string]: string } | undefined>(undefined)
@@ -66,30 +67,33 @@ const Checkout = () => {
             toast.warning('Sản phẩm trống')
         }
 
-        const orderParameters: OrderBody['orderParameters'] = earchOfStoreId.map((storeId) => {
+        const orders: OrderBody['orders'] = earchOfStoreId.map((storeId) => {
             let { discount, pay, total } = priceWithStore[storeId]
-            let orders = Object.values(productLatest?.checked[storeId] as (typeof productLatest.checked)[string]).map(
-                ({ priceAfter, productId, buy }) => {
-                    return {
-                        price_after: priceAfter,
-                        productId,
-                        quantity: buy
-                    }
+            let productOrders = Object.values(
+                productLatest?.checked[storeId] as (typeof productLatest.checked)[string]
+            ).map(({ priceAfter, productId, buy }) => {
+                return {
+                    priceAfter: priceAfter,
+                    productId,
+                    quantity: buy
                 }
-            )
+            })
             return {
                 storeId,
                 total,
                 discount,
                 pay,
                 voucherId: voucherIds?.[storeId],
-                orders
+                productOrders
             }
         })
 
         orderMutate({
-            orderParameters,
-            deliveryInformationId: addressId,
+            orders,
+            delivery_info: {
+                address: address?.address || '',
+                name: address?.full_name || ''
+            },
             actionId
         })
     }
@@ -136,13 +140,13 @@ const Checkout = () => {
                                                 handleRemoveVoucher={handleRemoveVoucher}
                                             />
                                         ),
-                                        2: <Step2 addressId={addressId} setAddressId={setAddressId} />,
+                                        2: <Step2 address={address} setAddress={setAddress} />,
                                         3: <Step3 />
                                     }[step]
                                 }
                             </section>
                             <CheckoutSummary
-                                handleNextStep={handleNextStep}
+                                handleNextStep={handleNextStep([!!ids.checked.length, !!address][step - 1])}
                                 handleOrder={handleOrder}
                                 isPending={isPending}
                                 step={step}

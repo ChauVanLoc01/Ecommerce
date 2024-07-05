@@ -1,16 +1,17 @@
 import { Badge, Box, Flex, RadioCards, Text } from '@radix-ui/themes'
 import { useQuery } from '@tanstack/react-query'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { profileFetching } from 'src/apis/profile'
+import { Delivery } from 'src/types/delivery.type'
 import { cn } from 'src/utils/utils.ts'
 import CreateAddress from './CreateAddress'
 
 type Step2Props = {
-    addressId: string
-    setAddressId: React.Dispatch<React.SetStateAction<string>>
+    address: Delivery | undefined
+    setAddress: React.Dispatch<React.SetStateAction<Delivery | undefined>>
 }
 
-const Step2 = ({ addressId, setAddressId }: Step2Props) => {
+const Step2 = ({ address, setAddress }: Step2Props) => {
     const [open, setOpen] = useState<boolean>(false)
 
     const deliveriesQuery = useQuery({
@@ -21,11 +22,9 @@ const Step2 = ({ addressId, setAddressId }: Step2Props) => {
         enabled: false
     })
 
-    useEffect(() => {
-        if (deliveriesQuery.data?.data) {
-            setAddressId(deliveriesQuery.data?.data.result.find((delivery) => delivery.isPrimary)?.id as string)
-        }
-    }, [deliveriesQuery.data?.data])
+    const handleAddressChange = (id: string) => {
+        setAddress(deliveriesQuery.data?.data.result.find((delivery) => delivery.id === id))
+    }
 
     return (
         <section className='p-24 rounded-8 border border-border/30 bg-[#FFFFFF] space-y-4'>
@@ -34,8 +33,8 @@ const Step2 = ({ addressId, setAddressId }: Step2Props) => {
             </Flex>
             <Box>
                 <RadioCards.Root
-                    value={addressId}
-                    onValueChange={setAddressId}
+                    defaultValue={address?.id}
+                    onValueChange={handleAddressChange}
                     columns={{ initial: '1', sm: '3' }}
                     color='blue'
                 >

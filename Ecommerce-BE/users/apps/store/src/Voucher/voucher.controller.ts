@@ -69,6 +69,7 @@ export class VoucherController {
     @Public()
     @EventPattern(checkVoucherExistToCreateOrder)
     checkVoucherExistToCreateOrder(body: OrderPayload & { productActionId: string }) {
+        console.log('update quantity voucher')
         return this.voucherService.checkVoucherExistToCreateOrder(body)
     }
 
