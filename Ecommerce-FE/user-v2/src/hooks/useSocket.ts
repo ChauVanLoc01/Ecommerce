@@ -30,7 +30,7 @@ const useSocket = ({ actionId }: UseSocketProps) => {
         })
         socket.on(channel.order, (res: SocketReturn<any>) => {
             if (res.action) {
-                toast.success('Đặt hàng thành công')
+                toast.success(res.msg)
             } else {
                 toast.error(res.msg)
             }

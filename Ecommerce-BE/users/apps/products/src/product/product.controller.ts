@@ -2,10 +2,12 @@ import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseGuards } fro
 import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices'
 import { ApiBearerAuth, ApiProperty } from '@nestjs/swagger'
 import {
+    commitUpdateQuantityProducts,
     createProductOrder,
     getAllProductWithProductOrder,
     getProductImageByProductSalePromotion,
     getProductOrderByRating,
+    rollbackUpdateQuantityProducts,
     updateQuantityProducts,
     updateQuantiyProductsWhenCancelOrder
 } from 'common/constants/event.constant'
@@ -15,6 +17,7 @@ import { Roles } from 'common/decorators/roles.decorator'
 import { Role } from 'common/enums/role.enum'
 import { JwtGuard } from 'common/guards/jwt.guard'
 import { CurrentStoreType } from 'common/types/current.type'
+import { OrderPayload } from 'common/types/order_payload.type'
 import { AnalyticsProductDTO } from './dtos/analytics-product.dto'
 import { CreateUserAddProductToCartDTO } from './dtos/create-product-add-to-cart.dto'
 import { CreateUserViewProductDto } from './dtos/create-product-view.dto'
@@ -23,7 +26,6 @@ import { QueryProductDTO } from './dtos/query-product.dto'
 import { RefreshCartDTO } from './dtos/refresh-cart.dto'
 import { UpdateProductDTO } from './dtos/update-product.dto'
 import { ProductService } from './product.service'
-import { OrderPayload } from 'common/types/order_payload.type'
 
 @UseGuards(JwtGuard)
 @ApiBearerAuth()
@@ -124,6 +126,19 @@ export class ProductController {
     @EventPattern(updateQuantityProducts)
     updateQuantiyProducts(payload: OrderPayload) {
         return this.productsService.updateQuantityProducts(payload)
+    }
+
+    @Public()
+    @EventPattern(rollbackUpdateQuantityProducts)
+    rollbackUpdateQuantityProduct(actionId: string, productActionId: string) {
+        return this.productsService.rolloutUpdateQuantityProduct(actionId, productActionId)
+    }
+
+    @Public()
+    @EventPattern(commitUpdateQuantityProducts)
+    commitUpdateQuantityProduct(payload: { actionId: string; productActionId: string }) {
+        let { actionId, productActionId } = payload
+        return this.productsService.commitUpdateQuantityProduct(actionId, productActionId)
     }
 
     @Public()

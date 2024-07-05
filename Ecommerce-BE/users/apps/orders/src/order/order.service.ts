@@ -457,12 +457,11 @@ export class OrderService {
         if (job) {
             job.start()
         }
-        this.updateStatusOfOrderToClient(actionId, 'Đặt hàng không thành công', false, null)
     }
 
     async commitOrder(actionId: string) {
         let hashValue = hash('order', actionId)
-        this.updateStatusOfOrderToClient(actionId, 'Đặt hàng thành công', true, null)
+        // this.updateStatusOfOrderToClient(actionId, 'Đặt hàng thành công', true, null)
         const job = this.schedulerRegistry.getCronJob(hashValue)
         if (job) {
             job.stop()

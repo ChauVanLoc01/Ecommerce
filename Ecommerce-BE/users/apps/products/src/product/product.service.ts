@@ -13,6 +13,8 @@ import { CronExpression, SchedulerRegistry } from '@nestjs/schedule'
 import { Product } from '@prisma/client'
 import { Cache } from 'cache-manager'
 import {
+    checkVoucherExistToCreateOrder,
+    commitOrder,
     getStoreDetail,
     rollbackOrder,
     statusOfOrder,
@@ -41,7 +43,7 @@ export class ProductService {
     constructor(
         private readonly prisma: PrismaService,
         @Inject('SOCKET_SERVICE') private readonly socket_client: ClientProxy,
-        @Inject('STORE_SERVICE') private readonly store_service: ClientProxy,
+        @Inject('STORE_SERVICE') private readonly store_client: ClientProxy,
         @Inject('PRODUCT_SERVICE') private readonly product_client: ClientProxy,
         @Inject('ORDER_SERVICE') private readonly order_client: ClientProxy,
         private readonly configService: ConfigService,
@@ -130,7 +132,7 @@ export class ProductService {
             const storeIdList = products.map((product) => product.storeId)
 
             const storeList = await firstValueFrom<MessageReturn>(
-                this.store_service.send(getStoreDetail, storeIdList)
+                this.store_client.send(getStoreDetail, storeIdList)
             )
 
             if (!storeList.action) {
@@ -535,11 +537,13 @@ export class ProductService {
 
     async updateQuantityProducts(order_payload: OrderPayload) {
         let { body, user } = order_payload
+        let productActionId = hash('product', uuidv4())
         var tmp: {
             productId: string
             original_quantity: number
             quantity: number
             priceAfter: number
+            storeId: string
         }[] = []
         this.prisma
             .$transaction(async (tx) => {
@@ -558,7 +562,8 @@ export class ProductService {
                                     productId,
                                     quantity: 0,
                                     priceAfter,
-                                    original_quantity: buy
+                                    original_quantity: buy,
+                                    storeId: order.storeId
                                 })
                                 await tx.product.update({
                                     where: {
@@ -574,7 +579,8 @@ export class ProductService {
                                     productId,
                                     original_quantity: quantity,
                                     quantity: quantity - buy,
-                                    priceAfter
+                                    priceAfter,
+                                    storeId: order.storeId
                                 })
                             }
                         } else {
@@ -610,14 +616,16 @@ export class ProductService {
                                     productId,
                                     quantity: 0,
                                     priceAfter: productExist.priceAfter,
-                                    original_quantity: buy
+                                    original_quantity: buy,
+                                    storeId: order.storeId
                                 })
                             }
                             tmp.push({
                                 productId,
                                 quantity: productExist.currentQuantity - buy,
                                 priceAfter: productExist.priceAfter,
-                                original_quantity: productExist.currentQuantity
+                                original_quantity: productExist.currentQuantity,
+                                storeId: order.storeId
                             })
                         }
                     })
@@ -661,7 +669,63 @@ export class ProductService {
                         }
                     )
                     this.schedulerRegistry.addCronJob(hashValue, update_product_quantity_job)
+                    update_product_quantity_job.start()
                 })
+
+                const rollout_quantity_product_job = new CronJob(
+                    CronExpression.EVERY_SECOND,
+                    async () => {
+                        tmp.forEach(
+                            async ({
+                                quantity,
+                                original_quantity,
+                                productId,
+                                priceAfter,
+                                storeId
+                            }) => {
+                                let hashValue = hash('product', productId)
+                                this.socket_client.emit(updateQuantityProduct, {
+                                    priceAfter,
+                                    productId,
+                                    quantity: original_quantity,
+                                    storeId
+                                } as {
+                                    productId: string
+                                    storeId: string
+                                    quantity: number
+                                    priceAfter: number
+                                })
+                                await this.cacheManager.set(
+                                    hashValue,
+                                    JSON.stringify({ quantity: original_quantity, priceAfter })
+                                )
+                                if (quantity == 0) {
+                                    await this.prisma.product.update({
+                                        where: {
+                                            id: productId
+                                        },
+                                        data: {
+                                            currentQuantity: original_quantity
+                                        }
+                                    })
+                                } else {
+                                    this.schedulerRegistry.getCronJob(hashValue).stop()
+                                    this.schedulerRegistry.deleteCronJob(hashValue)
+                                }
+                            }
+                        )
+                    }
+                )
+
+                rollout_quantity_product_job.runOnce = true
+
+                this.schedulerRegistry.addCronJob(productActionId, rollout_quantity_product_job)
+
+                this.store_client.emit(checkVoucherExistToCreateOrder, {
+                    user,
+                    body,
+                    productActionId
+                } as OrderPayload & { productActionId: string })
             })
             .catch((err) => {
                 this.order_client.emit(rollbackOrder, body.actionId)
@@ -672,8 +736,33 @@ export class ProductService {
                         action: false,
                         result: null
                     })
-                }, 2000)
+                }, 500)
             })
+    }
+
+    async rolloutUpdateQuantityProduct(actionId: string, productActionId: string) {
+        this.order_client.emit(rollbackOrder, actionId)
+        this.socket_client.emit(statusOfOrder, {
+            id: actionId,
+            msg: 'Lỗi sản phẩm',
+            action: false,
+            result: null
+        })
+        let hashValue = hash('product', productActionId)
+        let cron_job = this.schedulerRegistry.getCronJob(hashValue)
+        if (cron_job) {
+            cron_job.start()
+        }
+    }
+
+    async commitUpdateQuantityProduct(actionId: string, productActionId: string) {
+        this.order_client.emit(commitOrder, actionId)
+        let hashValue = hash('product', productActionId)
+        let cron_job = this.schedulerRegistry.getCronJob(hashValue)
+        if (cron_job) {
+            cron_job.stop()
+            this.schedulerRegistry.deleteCronJob(hashValue)
+        }
     }
 
     // async updateQuantity(productId: string, storeId: string, buy: number): Promise<Mess> {
