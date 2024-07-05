@@ -398,50 +398,46 @@ export class OrderService {
                 })
 
                 let hashValue = hash('order', body.actionId)
-                const roll_back_job = new CronJob(
-                    CronExpression.EVERY_SECOND,
-                    async () => {
-                        console.log('roll back cron job order is runninginingingiggngign')
-                        await this.prisma.$transaction([
-                            this.prisma.order.deleteMany({
-                                where: {
-                                    id: {
-                                        in: result.map((order) => order.id)
-                                    },
-                                    ProductOrder: {
-                                        every: {
-                                            id: {
-                                                in: productOrderIds
-                                            }
+                const roll_back_job = new CronJob(CronExpression.EVERY_SECOND, async () => {
+                    console.log('roll back cron job order is runninginingingiggngign')
+                    await this.prisma.$transaction([
+                        this.prisma.order.deleteMany({
+                            where: {
+                                id: {
+                                    in: result.map((order) => order.id)
+                                },
+                                ProductOrder: {
+                                    every: {
+                                        id: {
+                                            in: productOrderIds
                                         }
-                                    },
-                                    OrderFlow: {
-                                        every: {
-                                            id: {
-                                                in: orderFlowIds
-                                            }
+                                    }
+                                },
+                                OrderFlow: {
+                                    every: {
+                                        id: {
+                                            in: orderFlowIds
                                         }
-                                    },
-                                    OrderVoucher: {
-                                        every: {
-                                            id: {
-                                                in: orderVoucherIds
-                                            }
+                                    }
+                                },
+                                OrderVoucher: {
+                                    every: {
+                                        id: {
+                                            in: orderVoucherIds
                                         }
-                                    },
-                                    OrderShipping: {
-                                        every: {
-                                            id: {
-                                                in: orderShippingIds
-                                            }
+                                    }
+                                },
+                                OrderShipping: {
+                                    every: {
+                                        id: {
+                                            in: orderShippingIds
                                         }
                                     }
                                 }
-                            })
-                        ])
-                    },
-                    () => this.schedulerRegistry.deleteCronJob(hashValue)
-                )
+                            }
+                        })
+                    ])
+                })
                 roll_back_job.runOnce = true
                 this.schedulerRegistry.addCronJob(hashValue, roll_back_job)
 

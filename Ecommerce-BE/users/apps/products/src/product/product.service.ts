@@ -522,14 +522,19 @@ export class ProductService {
         }
     }
 
-    async emitUpdateProductToSocket(productId: string, quantity: number, priceAfter: number) {
+    async emitUpdateProductToSocket(
+        storeId: string,
+        productId: string,
+        quantity: number,
+        priceAfter: number
+    ) {
         await this.cacheManager.set(
             hash('product', productId),
             JSON.stringify({ quantity, priceAfter })
         )
         this.socket_client.emit(updateQuantityProduct, {
-            type: room_obj.product,
-            id: productId,
+            productId,
+            storeId,
             quantity,
             priceAfter
         })
@@ -637,11 +642,16 @@ export class ProductService {
             .then(async (_) => {
                 const update_quantity_job = new CronJob(CronExpression.EVERY_SECOND, async () => {
                     console.log('start cron job updarte quantity product')
-                    tmp.forEach(async ({ productId, priceAfter, quantity }) => {
+                    for (let { productId, priceAfter, quantity, storeId } of tmp) {
                         let hashValue = hash('product', productId)
-                        await this.emitUpdateProductToSocket(productId, quantity, priceAfter)
+                        await this.emitUpdateProductToSocket(
+                            storeId,
+                            productId,
+                            quantity,
+                            priceAfter
+                        )
                         let update_product_quantity_job = new CronJob(
-                            CronExpression.EVERY_SECOND,
+                            CronExpression.EVERY_5_MINUTES,
                             async () => {
                                 let dataProductFromCache =
                                     await this.cacheManager.get<string>(hashValue)
@@ -675,7 +685,7 @@ export class ProductService {
                         )
                         this.schedulerRegistry.addCronJob(hashValue, update_product_quantity_job)
                         update_product_quantity_job.start()
-                    })
+                    }
                 })
 
                 update_quantity_job.runOnce = true
@@ -867,7 +877,10 @@ export class ProductService {
     //     }
     // }
 
-    async updateQuantiyProductsWhenCancelOrder(orderId: string): Promise<MessageReturn> {
+    async updateQuantiyProductsWhenCancelOrder(
+        storeId: string,
+        orderId: string
+    ): Promise<MessageReturn> {
         try {
             const productOrderExists = await this.prisma.productOrder.findMany({
                 where: {
@@ -893,6 +906,7 @@ export class ProductService {
                             priceAfter: number
                         }
                         this.emitUpdateProductToSocket(
+                            storeId,
                             productId,
                             quantity + quantityFromCache,
                             priceAfter
