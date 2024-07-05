@@ -700,7 +700,6 @@ export class ProductService {
                                             })
                                         )
                                     }
-                                    console.log('logic:::', quantity == 0 || isNotReach)
                                     if (quantity == 0 || isNotReach) {
                                         this.cacheManager.del(hashValue)
                                         this.schedulerRegistry.getCronJob(hashValue).stop()
