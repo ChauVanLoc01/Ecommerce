@@ -635,94 +635,52 @@ export class ProductService {
                 }
             })
             .then(async (_) => {
-                tmp.forEach(async ({ productId, priceAfter, quantity }) => {
-                    let hashValue = hash('product', productId)
-                    this.emitUpdateProductToSocket(productId, quantity, priceAfter)
-                    let update_product_quantity_job = new CronJob(
-                        CronExpression.EVERY_5_MINUTES,
-                        async () => {
-                            let dataProductFromCache =
-                                await this.cacheManager.get<string>(hashValue)
+                const update_quantity_job = new CronJob(CronExpression.EVERY_SECOND, async () => {
+                    console.log('start cron job updarte quantity product')
+                    tmp.forEach(async ({ productId, priceAfter, quantity }) => {
+                        let hashValue = hash('product', productId)
+                        await this.emitUpdateProductToSocket(productId, quantity, priceAfter)
+                        let update_product_quantity_job = new CronJob(
+                            CronExpression.EVERY_SECOND,
+                            async () => {
+                                let dataProductFromCache =
+                                    await this.cacheManager.get<string>(hashValue)
 
-                            if (dataProductFromCache) {
-                                let {
-                                    quantity: quantityFromCache,
-                                    priceAfter: priceAfterFromCache
-                                } = JSON.parse(dataProductFromCache) as {
-                                    quantity: number
-                                    priceAfter: number
-                                }
-
-                                await this.prisma.product.update({
-                                    where: {
-                                        id: productId
-                                    },
-                                    data: {
-                                        currentQuantity: quantityFromCache,
-                                        updatedAt: new Date()
+                                if (dataProductFromCache) {
+                                    let {
+                                        quantity: quantityFromCache,
+                                        priceAfter: priceAfterFromCache
+                                    } = JSON.parse(dataProductFromCache) as {
+                                        quantity: number
+                                        priceAfter: number
                                     }
-                                })
 
-                                if (quantity == 0) {
-                                    this.cacheManager.del(hashValue)
-                                    this.schedulerRegistry.getCronJob(hashValue).stop()
-                                    this.schedulerRegistry.deleteCronJob(hashValue)
-                                }
-                            }
-                        }
-                    )
-                    this.schedulerRegistry.addCronJob(hashValue, update_product_quantity_job)
-                    update_product_quantity_job.start()
-                })
-
-                const rollout_quantity_product_job = new CronJob(
-                    CronExpression.EVERY_SECOND,
-                    async () => {
-                        tmp.forEach(
-                            async ({
-                                quantity,
-                                original_quantity,
-                                productId,
-                                priceAfter,
-                                storeId
-                            }) => {
-                                let hashValue = hash('product', productId)
-                                this.socket_client.emit(updateQuantityProduct, {
-                                    priceAfter,
-                                    productId,
-                                    quantity: original_quantity,
-                                    storeId
-                                } as {
-                                    productId: string
-                                    storeId: string
-                                    quantity: number
-                                    priceAfter: number
-                                })
-                                await this.cacheManager.set(
-                                    hashValue,
-                                    JSON.stringify({ quantity: original_quantity, priceAfter })
-                                )
-                                if (quantity == 0) {
                                     await this.prisma.product.update({
                                         where: {
                                             id: productId
                                         },
                                         data: {
-                                            currentQuantity: original_quantity
+                                            currentQuantity: quantityFromCache,
+                                            updatedAt: new Date()
                                         }
                                     })
-                                } else {
-                                    this.schedulerRegistry.getCronJob(hashValue).stop()
-                                    this.schedulerRegistry.deleteCronJob(hashValue)
+
+                                    if (quantity == 0) {
+                                        this.cacheManager.del(hashValue)
+                                        this.schedulerRegistry.getCronJob(hashValue).stop()
+                                        this.schedulerRegistry.deleteCronJob(hashValue)
+                                    }
                                 }
                             }
                         )
-                    }
-                )
+                        this.schedulerRegistry.addCronJob(hashValue, update_product_quantity_job)
+                        update_product_quantity_job.start()
+                    })
+                })
 
-                rollout_quantity_product_job.runOnce = true
+                update_quantity_job.runOnce = true
 
-                this.schedulerRegistry.addCronJob(productActionId, rollout_quantity_product_job)
+                this.schedulerRegistry.addCronJob(productActionId, update_quantity_job)
 
                 this.store_client.emit(checkVoucherExistToCreateOrder, {
                     user,
@@ -746,20 +704,17 @@ export class ProductService {
 
     async rolloutUpdateQuantityProduct(actionId: string, productActionId: string) {
         this.order_client.emit(rollbackOrder, actionId)
-        let hashValue = hash('product', productActionId)
-        let cron_job = this.schedulerRegistry.getCronJob(hashValue)
-        if (cron_job) {
-            cron_job.start()
+        let update_quantity_product_job = this.schedulerRegistry.getCronJob(productActionId)
+        if (update_quantity_product_job) {
+            this.schedulerRegistry.deleteCronJob(productActionId)
         }
     }
 
     async commitUpdateQuantityProduct(actionId: string, productActionId: string) {
         this.order_client.emit(commitOrder, actionId)
-        let hashValue = hash('product', productActionId)
-        let cron_job = this.schedulerRegistry.getCronJob(hashValue)
+        let cron_job = this.schedulerRegistry.getCronJob(productActionId)
         if (cron_job) {
-            cron_job.stop()
-            this.schedulerRegistry.deleteCronJob(hashValue)
+            cron_job.start()
         }
     }
 

@@ -457,6 +457,9 @@ export class VoucherService {
         this.prisma
             .$transaction(async (tx) => {
                 for (let { voucherId, storeId } of body.body.orders) {
+                    if (!voucherId) {
+                        return
+                    }
                     let hashValue = hash('voucher', voucherId)
                     let quantityFromCache = await this.cacheManager.get<number>(hashValue)
 
@@ -506,6 +509,7 @@ export class VoucherService {
                 }
             })
             .then(async () => {
+                console.log('voucher success')
                 this.commitCreateOrderSuccess(body.body.actionId, body.productActionId)
                 this.socketClient.emit(statusOfOrder, {
                     id: body.body.actionId,
@@ -520,7 +524,7 @@ export class VoucherService {
                 )
             })
             .catch(async (err) => {
-                console.log('err', err)
+                console.log('err voucher', err)
                 this.socketClient.emit(statusOfOrder, {
                     id: body.body.actionId,
                     msg: 'Lỗi cập nhật voucher',

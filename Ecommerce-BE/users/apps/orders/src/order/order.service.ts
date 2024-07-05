@@ -470,7 +470,6 @@ export class OrderService {
         let hashValue = hash('order', actionId)
         const job = this.schedulerRegistry.getCronJob(hashValue)
         if (job) {
-            job.stop()
             this.schedulerRegistry.deleteCronJob(hashValue)
         }
     }
