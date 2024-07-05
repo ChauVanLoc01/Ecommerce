@@ -526,11 +526,12 @@ export class ProductService {
         storeId: string,
         productId: string,
         quantity: number,
-        priceAfter: number
+        priceAfter: number,
+        times = 2
     ) {
         await this.cacheManager.set(
             hash('product', productId),
-            JSON.stringify({ quantity, priceAfter })
+            JSON.stringify({ quantity, priceAfter, times })
         )
         this.socket_client.emit(updateQuantityProduct, {
             productId,
@@ -641,7 +642,6 @@ export class ProductService {
             })
             .then(async (_) => {
                 const update_quantity_job = new CronJob(CronExpression.EVERY_SECOND, async () => {
-                    console.log('start cron job updarte quantity product')
                     for (let { productId, priceAfter, quantity, storeId } of tmp) {
                         let hashValue = hash('product', productId)
                         await this.emitUpdateProductToSocket(
@@ -650,6 +650,8 @@ export class ProductService {
                             quantity,
                             priceAfter
                         )
+                        let is_exist_cron_job = this.schedulerRegistry.doesExist('cron', hashValue)
+                        if (is_exist_cron_job) return
                         let update_product_quantity_job = new CronJob(
                             CronExpression.EVERY_5_MINUTES,
                             async () => {
@@ -657,13 +659,26 @@ export class ProductService {
                                     await this.cacheManager.get<string>(hashValue)
 
                                 if (dataProductFromCache) {
-                                    let {
-                                        quantity: quantityFromCache,
-                                        priceAfter: priceAfterFromCache
-                                    } = JSON.parse(dataProductFromCache) as {
+                                    let { quantity: quantityFromCache, times } = JSON.parse(
+                                        dataProductFromCache
+                                    ) as {
                                         quantity: number
                                         priceAfter: number
+                                        times: number
                                     }
+
+                                    const quantityFromDB = await this.prisma.product.findUnique({
+                                        where: {
+                                            id: productId
+                                        },
+                                        select: {
+                                            currentQuantity: true
+                                        }
+                                    })
+
+                                    let isNotReach =
+                                        quantityFromDB.currentQuantity == quantityFromCache &&
+                                        !times
 
                                     await this.prisma.product.update({
                                         where: {
@@ -675,7 +690,18 @@ export class ProductService {
                                         }
                                     })
 
-                                    if (quantity == 0) {
+                                    if (!isNotReach) {
+                                        await this.cacheManager.set(
+                                            hash('product', productId),
+                                            JSON.stringify({
+                                                quantity: quantityFromCache,
+                                                priceAfter,
+                                                times: times - 1
+                                            })
+                                        )
+                                    }
+                                    console.log('logic:::', quantity == 0 || isNotReach)
+                                    if (quantity == 0 || isNotReach) {
                                         this.cacheManager.del(hashValue)
                                         this.schedulerRegistry.getCronJob(hashValue).stop()
                                         this.schedulerRegistry.deleteCronJob(hashValue)
@@ -687,11 +713,8 @@ export class ProductService {
                         update_product_quantity_job.start()
                     }
                 })
-
                 update_quantity_job.runOnce = true
-
                 this.schedulerRegistry.addCronJob(productActionId, update_quantity_job)
-
                 this.store_client.emit(checkVoucherExistToCreateOrder, {
                     user,
                     body,
@@ -699,7 +722,6 @@ export class ProductService {
                 } as OrderPayload & { productActionId: string })
             })
             .catch((err) => {
-                console.log('err update product', err)
                 this.order_client.emit(rollbackOrder, body.actionId)
                 setTimeout(() => {
                     this.socket_client.emit(statusOfOrder, {
