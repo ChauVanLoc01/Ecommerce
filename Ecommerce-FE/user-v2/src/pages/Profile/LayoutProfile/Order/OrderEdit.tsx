@@ -194,13 +194,13 @@ const OrderEdit = ({ isOpen, setIsOpen, data, orderData }: OrderDetailProps) => 
                         <DataList.Item align='center'>
                             <DataList.Label minWidth='200px'>Người nhận hàng</DataList.Label>
                             <DataList.Value>
-                                <Text>{orderData.delivery.full_name}</Text>
+                                <Text>{orderData.OrderShipping[0].name}</Text>
                             </DataList.Value>
                         </DataList.Item>
                         <DataList.Item align='center'>
                             <DataList.Label minWidth='200px'>Địa chỉ nhận hàng</DataList.Label>
                             <DataList.Value>
-                                <Text>{orderData.delivery.address}</Text>
+                                <Text>{orderData.OrderShipping[0].address}</Text>
                             </DataList.Value>
                         </DataList.Item>
                     </DataList.Root>

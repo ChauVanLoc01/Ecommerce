@@ -1,4 +1,3 @@
-import { Delivery } from './delivery.type'
 import { Product } from './product.type'
 
 export type OrderDelivery = {
@@ -48,6 +47,7 @@ export type Order = {
     status: string
     createdAt: string
     updatedAt?: string
+    numberOfRefund: number
 }
 
 export type ProductOrder = {
@@ -58,6 +58,34 @@ export type ProductOrder = {
     priceAfter: number
     orderId: string
 }
+
+export type OrderFlow = {
+    id: string
+    status: string
+    note: string
+    createdBy: string
+    createdAt: string
+    orderId: string
+}
+
+export type OrderShipping = {
+    id: string
+    orderId: string
+    name: string
+    address: string
+    type: string
+    createdAt: string
+    createdBy: string
+    updatedAt?: string
+}
+
+export type OrderVoucher = {
+    id: string
+    orderId: string
+    voucherId: string
+    createdAt: string
+}
+
 export type ProductOrderWithProduct = ProductOrder &
     Pick<Product, 'name' | 'image' | 'category'> & { currentPriceAfter: number }
 
@@ -67,6 +95,8 @@ export type OrderResponse = {
 }
 
 export type OrderDetailResponse = Order & {
-    ProductOrder: ProductOrderWithProduct[]
-    delivery: Delivery
+    OrderFlow: OrderFlow[]
+    OrderShipping: OrderShipping[]
+    OrderVoucher: OrderVoucher[]
+    ProductOrder: (ProductOrder & Pick<Product, 'name' | 'image' | 'category'> & { current_price_after: number })[]
 }

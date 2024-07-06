@@ -231,7 +231,8 @@ const Order = () => {
         queryKey: ['orderDetail', orderId],
         queryFn: ({ signal }) => OrderFetching.getOrderDetail(orderId, signal),
         enabled: false,
-        staleTime: 1000 * 60 * 5
+        staleTime: 1000 * 60 * 5,
+        select: (data) => data.data.result
     })
 
     const { mutate: createRatingMutation } = useMutation({
@@ -434,14 +435,14 @@ const Order = () => {
             <OrderDetail
                 isOpen={openDetail}
                 setIsOpen={setOpenDetail}
-                data={orderDetailData?.data.result.ProductOrder || []}
-                orderData={orderDetailData?.data.result}
+                data={orderDetailData || []}
+                orderData={orderDetailData}
             />
             <OrderEdit
                 isOpen={openEdit}
                 setIsOpen={setOpenEdit}
-                data={orderDetailData?.data.result.ProductOrder || []}
-                orderData={orderDetailData?.data.result}
+                data={orderDetailData?.ProductOrder || []}
+                orderData={orderDetailData}
             />
             <OrderCancel isOpen={openCancel} setIsOpen={setOpenCancel} orderId={orderId} refetch={refetch} />
             <OrderRating

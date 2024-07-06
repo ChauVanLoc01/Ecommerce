@@ -77,6 +77,8 @@ services:
         container_name: user-api
         ports:
             - 4001:3001
+        volumes:
+            - ./dist:/app/dist
         env_file:
             - .env
             - .env.user
@@ -86,6 +88,8 @@ services:
             - .env.elasticsearch
         depends_on:
             - mysql
+            - rabbitmq
+            - redis
         networks:
             - kong-net
 
@@ -94,6 +98,8 @@ services:
         container_name: product-api
         ports:
             - 4002:3002
+        volumes:
+            - ./dist:/app/dist
         env_file:
             - .env
             - .env.product
@@ -103,7 +109,8 @@ services:
             - .env.elasticsearch
         depends_on:
             - mysql
-            - elasticsearch
+            - rabbitmq
+            - redis
         networks:
             - kong-net
     store-api:
@@ -111,6 +118,8 @@ services:
         container_name: store-api
         ports:
             - 4003:3003
+        volumes:
+            - ./dist:/app/dist
         env_file:
             - .env
             - .env.store
@@ -120,6 +129,8 @@ services:
             - .env.elasticsearch
         depends_on:
             - mysql
+            - rabbitmq
+            - redis
         networks:
             - kong-net
     order-api:
@@ -127,6 +138,8 @@ services:
         container_name: order-api
         ports:
             - 4004:3004
+        volumes:
+            - ./dist:/app/dist
         env_file:
             - .env
             - .env.order
@@ -136,6 +149,29 @@ services:
             - .env.elasticsearch
         depends_on:
             - mysql
+            - rabbitmq
+            - redis
+        networks:
+            - kong-net
+
+    socket-api:
+        image: chauvanloc/socket-api:latest
+        container_name: socket-api
+        ports:
+            - 4333:3333
+        volumes:
+            - ./dist:/app/dist
+        env_file:
+            - .env
+            - .env.socket
+            - .env.aws
+            - .env.rabbitmq
+            - .env.bullqueue
+            - .env.elasticsearch
+        depends_on:
+            - mysql
+            - rabbitmq
+            - redis
         networks:
             - kong-net
 

@@ -5,18 +5,18 @@ import { BiSolidSortAlt } from 'react-icons/bi'
 import { Link } from 'react-router-dom'
 import Table from 'src/components/Table'
 import { OrderStatus } from 'src/constants/order-status'
-import { OrderDetailResponse, ProductOrderWithProduct } from 'src/types/order.type'
+import { OrderDetailResponse } from 'src/types/order.type'
 import { convertCurrentcy, convertDigitalNumber, removeSpecialCharacter } from 'src/utils/utils.ts'
 
 type OrderDetailProps = {
     isOpen: boolean
     setIsOpen: React.Dispatch<React.SetStateAction<boolean>>
-    data: ProductOrderWithProduct[]
+    data: OrderDetailResponse
     orderData?: OrderDetailResponse
 }
 
 const OrderDetail = ({ isOpen, setIsOpen, data, orderData }: OrderDetailProps) => {
-    const columns: ColumnDef<ProductOrderWithProduct>[] = [
+    const columns: ColumnDef<OrderDetailResponse['ProductOrder'][number]>[] = [
         {
             accessorKey: 'Hình ảnh',
             header: () => {
@@ -85,7 +85,7 @@ const OrderDetail = ({ isOpen, setIsOpen, data, orderData }: OrderDetailProps) =
             header: () => {
                 return (
                     <div className='flex items-center gap-x-2'>
-                        Giá đã giảm
+                        Giá mua
                         <BiSolidSortAlt />
                     </div>
                 )
@@ -108,7 +108,7 @@ const OrderDetail = ({ isOpen, setIsOpen, data, orderData }: OrderDetailProps) =
             },
             cell: ({ row }) => (
                 <Text className='!text-center' as='div'>
-                    {convertCurrentcy(row.original.currentPriceAfter)}
+                    {convertCurrentcy(row.original.current_price_after)}
                 </Text>
             )
         },
@@ -194,19 +194,19 @@ const OrderDetail = ({ isOpen, setIsOpen, data, orderData }: OrderDetailProps) =
                         <DataList.Item align='center'>
                             <DataList.Label minWidth='200px'>Người nhận hàng</DataList.Label>
                             <DataList.Value>
-                                <Text>{orderData.delivery.full_name}</Text>
+                                <Text>{orderData.OrderShipping[0].name}</Text>
                             </DataList.Value>
                         </DataList.Item>
                         <DataList.Item align='center'>
                             <DataList.Label minWidth='200px'>Địa chỉ nhận hàng</DataList.Label>
                             <DataList.Value>
-                                <Text>{orderData.delivery.address}</Text>
+                                <Text>{orderData.OrderShipping[0].address}</Text>
                             </DataList.Value>
                         </DataList.Item>
                     </DataList.Root>
-                    <Table<ProductOrderWithProduct>
+                    <Table<OrderDetailResponse['ProductOrder'][number]>
                         columns={columns}
-                        data={data}
+                        data={data.ProductOrder}
                         className='w-[1400px]'
                         tableMaxHeight='300px'
                     />

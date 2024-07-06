@@ -29,7 +29,7 @@ import { MessageReturn, Return } from 'common/types/result.type'
 import { hash } from 'common/utils/helper'
 import { CronJob } from 'cron'
 import { add, addHours, sub, subDays } from 'date-fns'
-import { isUndefined, max, omitBy, sumBy } from 'lodash'
+import { Dictionary, isUndefined, max, omitBy, sumBy } from 'lodash'
 import { firstValueFrom } from 'rxjs'
 import { v4 as uuidv4 } from 'uuid'
 import { CreateOrderDTO } from '../../../../common/dtos/create_order.dto'
@@ -114,46 +114,55 @@ export class OrderService {
     }
 
     async getOrderDetailByUser(user: CurrentUserType, orderId: string): Promise<Return> {
-        const orderExist = await this.prisma.order.findUnique({
-            where: {
-                id: orderId,
-                userId: user.id
-            },
-            include: {
-                ProductOrder: true,
-                OrderShipping: true,
-                OrderVoucher: true,
-                OrderFlow: true
-            }
-        })
-
-        const productsInOrder: { [key: string]: Product } = await firstValueFrom(
-            this.productClient.send(
-                getAllProductWithProductOrder,
-                orderExist.ProductOrder.map((productOder) => productOder.productId)
-            )
-        )
-
-        if (!orderExist) throw new NotFoundException('Đơn hàng không tồn tại')
-
-        const convertedProductOrder = await Promise.all(
-            orderExist.ProductOrder.map((productOrder) => {
-                return {
-                    ...productOrder,
-                    name: productsInOrder[productOrder.productId].name,
-                    image: productsInOrder[productOrder.productId].image,
-                    category: productsInOrder[productOrder.productId].category,
-                    currentPriceAfter: productsInOrder[productOrder.productId].priceAfter
+        try {
+            const orderExist = await this.prisma.order.findUnique({
+                where: {
+                    id: orderId,
+                    userId: user.id
+                },
+                include: {
+                    ProductOrder: true,
+                    OrderShipping: true,
+                    OrderVoucher: true,
+                    OrderFlow: true
                 }
             })
-        )
 
-        return {
-            msg: 'Lấy thông tin đơn hàng thành công',
-            result: {
-                ...orderExist,
-                ProductOrder: convertedProductOrder
+            const productsInOrder = await firstValueFrom<MessageReturn<Dictionary<Product>>>(
+                this.productClient.send(
+                    getAllProductWithProductOrder,
+                    orderExist.ProductOrder.map((productOder) => productOder.productId)
+                )
+            )
+
+            if (!productsInOrder.action) {
+                throw new BadRequestException(productsInOrder.msg)
             }
+
+            const convertedProductOrder = await Promise.all(
+                orderExist.ProductOrder.map((productOrder) => {
+                    return {
+                        ...productOrder,
+                        name: productsInOrder.result[productOrder.productId].name,
+                        image: productsInOrder.result[productOrder.productId].image,
+                        category: productsInOrder.result[productOrder.productId].category,
+                        currentPriceAfter: productsInOrder.result[productOrder.productId].priceAfter
+                    }
+                })
+            )
+
+            return {
+                msg: 'Lấy thông tin đơn hàng thành công',
+                result: {
+                    ...orderExist,
+                    ProductOrder: convertedProductOrder
+                }
+            }
+        } catch (err) {
+            throw new HttpException(
+                (err?.message as string).length > 100 ? 'Lỗi server' : err.message,
+                err?.statusCode || HttpStatus.INTERNAL_SERVER_ERROR
+            )
         }
     }
 

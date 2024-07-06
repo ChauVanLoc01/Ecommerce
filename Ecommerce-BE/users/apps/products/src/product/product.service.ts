@@ -20,7 +20,6 @@ import {
     statusOfOrder,
     updateQuantityProduct
 } from 'common/constants/event.constant'
-import { room_obj } from 'common/constants/socket.constant'
 import { Status } from 'common/enums/status.enum'
 import { CurrentStoreType } from 'common/types/current.type'
 import { OrderPayload } from 'common/types/order_payload.type'
@@ -169,17 +168,30 @@ export class ProductService {
         }
     }
 
-    async getProductByProductOrder(productsId: string[]) {
-        const products = await Promise.all(
-            productsId.map((id) =>
-                this.prisma.product.findUnique({
-                    where: {
-                        id
-                    }
-                })
+    async getProductByProductOrder(productsId: string[]): Promise<MessageReturn> {
+        try {
+            const products = await Promise.all(
+                productsId.map((id) =>
+                    this.prisma.product.findUnique({
+                        where: {
+                            id
+                        }
+                    })
+                )
             )
-        )
-        return keyBy(products, 'id')
+
+            return {
+                msg: 'ok',
+                action: true,
+                result: keyBy(products, 'id')
+            }
+        } catch (err) {
+            return {
+                msg: 'Lỗi server',
+                action: false,
+                result: null
+            }
+        }
     }
 
     async getALlProductForStore(storeId: string, query: QueryProductType): Promise<Return> {
