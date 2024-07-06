@@ -149,13 +149,25 @@ export class ProductController {
     @MessagePattern(updateQuantiyProductsWhenCancelOrder)
     updateQuantiyProductsWhenCancelOrder(
         @Payload()
+        payload: {
+            storeId: string
+            products: { id: string; quantity: number }[]
+        }
+    ) {
+        return this.productsService.updateQuantiyProductsWhenCancelOrder(payload)
+    }
+
+    @Public()
+    @MessagePattern(updateQuantiyProductsWhenCancelOrder)
+    rollbackUpdateQuantiyProductsWhenCancelOrder(
+        @Payload()
         data: {
             storeId: string
             productId: string
         }
     ) {
         let { productId, storeId } = data
-        return this.productsService.updateQuantiyProductsWhenCancelOrder(storeId, productId)
+        return this.productsService.rollbackUpdateQuantiyProductsWhenCancelOrder(storeId, productId)
     }
 
     @Public()

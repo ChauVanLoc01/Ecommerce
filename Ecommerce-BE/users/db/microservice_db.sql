@@ -150,6 +150,9 @@ CREATE TABLE `Order` (
   CONSTRAINT `Order_ibfk_3` FOREIGN KEY (`storeId`) REFERENCES `Store` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+INSERT INTO `Order` (`id`, `userId`, `storeId`, `total`, `discount`, `pay`, `note`, `isRated`, `status`, `createdAt`, `updatedAt`, `numberOfRefund`) VALUES
+('859912ec-dd00-4c35-9272-a6d0530003d1',	'a226f227-c629-4c75-98ca-e56a3dab016e',	'465d9c2f-cbb7-4d53-943d-0b902f51861f',	328000,	0,	328000,	NULL,	0,	'WAITING_CONFIRM',	'2024-07-06 10:33:15',	NULL,	3),
+('c33d0129-d297-406d-ad10-7bf6c4b63573',	'a226f227-c629-4c75-98ca-e56a3dab016e',	'61692e39-1edf-4eb7-b312-7a95aea194ef',	39000,	0,	39000,	NULL,	0,	'WAITING_CONFIRM',	'2024-07-06 10:33:15',	NULL,	3);
 
 DROP TABLE IF EXISTS `OrderFlow`;
 CREATE TABLE `OrderFlow` (
@@ -166,6 +169,9 @@ CREATE TABLE `OrderFlow` (
   CONSTRAINT `OrderFlow_ibfk_3` FOREIGN KEY (`createdBy`) REFERENCES `User` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+INSERT INTO `OrderFlow` (`id`, `status`, `note`, `createdBy`, `createdAt`, `orderId`) VALUES
+('0ade45eb-cbe5-4ea9-90ed-a51fe825daca',	'WAITING_CONFIRM',	NULL,	'a226f227-c629-4c75-98ca-e56a3dab016e',	NULL,	'859912ec-dd00-4c35-9272-a6d0530003d1'),
+('3f073bbe-bf2d-49b6-876d-c2eb26b34c3f',	'WAITING_CONFIRM',	NULL,	'a226f227-c629-4c75-98ca-e56a3dab016e',	NULL,	'c33d0129-d297-406d-ad10-7bf6c4b63573');
 
 DROP TABLE IF EXISTS `OrderRefund`;
 CREATE TABLE `OrderRefund` (
@@ -203,6 +209,9 @@ CREATE TABLE `OrderShipping` (
   CONSTRAINT `OrderShipping_ibfk_2` FOREIGN KEY (`createdBy`) REFERENCES `User` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+INSERT INTO `OrderShipping` (`id`, `orderId`, `name`, `address`, `type`, `createdAt`, `createdBy`, `updatedAt`) VALUES
+('494b6cdb-aefa-4e20-8543-87b33ec1bead',	'c33d0129-d297-406d-ad10-7bf6c4b63573',	'CHAU VAN LOC',	'Tien Giang',	'SHIPPING',	NULL,	'a226f227-c629-4c75-98ca-e56a3dab016e',	NULL),
+('d2d1a2f1-5ea1-439c-b8b6-12b80f4bf078',	'859912ec-dd00-4c35-9272-a6d0530003d1',	'CHAU VAN LOC',	'Tien Giang',	'SHIPPING',	NULL,	'a226f227-c629-4c75-98ca-e56a3dab016e',	NULL);
 
 DROP TABLE IF EXISTS `OrderVoucher`;
 CREATE TABLE `OrderVoucher` (
@@ -290,8 +299,8 @@ CREATE TABLE `Product` (
 
 INSERT INTO `Product` (`id`, `name`, `image`, `priceBefore`, `priceAfter`, `initQuantity`, `currentQuantity`, `sold`, `description`, `status`, `category`, `createdBy`, `updatedBy`, `createdAt`, `updatedAt`, `deletedBy`, `deletedAt`, `storeId`, `voucherId`, `rate`, `isDelete`) VALUES
 ('001e6c58-dc0a-46ea-91e6-c9c34e661a3f',	'[RẺ VÔ ĐỊCH] Áo Thun Tổ Ong Logo Chant Unisex [FREESHIP] Phông form rộng tay lỡ kiểu dáng 3158 đường phố vintage',	'https://down-vn.img.susercontent.com/file/321978991305d3f80cfa18269ea5e33a_tn',	0,	37000,	2415,	1407,	998,	NULL,	'BLOCK',	'thoitrangnu',	'f82a04b9-c41e-4d24-bc0b-3be0538a603b',	NULL,	'2024-04-09 16:19:42',	NULL,	NULL,	NULL,	'de51b1b6-ed27-49b7-a804-57b7992cbc81',	NULL,	0,	0),
-('0045ffae-a79d-427b-a3a6-917492310c51',	'HOB-Tinh Chất Hàu Biển OB Tăng Cường Sinh Lý Nam Growgreenaz - Cải Thiện Yếu Sinh Lý, Xuất Tinh Sớm( Hộp 30v)',	'https://down-vn.img.susercontent.com/file/vn-11134207-7r98o-lmef9xvyagv3ce_tn',	369000,	328000,	4039,	2410,	1614,	NULL,	'ACTIVE',	'suckhoe',	'a666dc45-29aa-4301-87bb-18cc547386be',	NULL,	'2024-04-09 16:19:42',	NULL,	NULL,	NULL,	'465d9c2f-cbb7-4d53-943d-0b902f51861f',	NULL,	0,	0),
-('0063ab52-aef0-41a8-a751-bfd6cec00038',	'Máy Chơi Game SUP 400 trò chơi [TẶNG KÈM TAY CHƠI GAME],SUP400 Cầm Tay G1 Plus 400 In 1 - HƠN 400 TRÒ CHƠI',	'https://down-vn.img.susercontent.com/file/2bf9ddd983c20ee071b76ad6e30bd62e_tn',	0,	39000,	2273,	1700,	566,	NULL,	'ACTIVE',	'thietbidientu',	'e9307983-16bd-42ce-a3bf-7e12dc89fae6',	NULL,	'2024-04-09 16:19:42',	NULL,	NULL,	NULL,	'61692e39-1edf-4eb7-b312-7a95aea194ef',	NULL,	0,	0),
+('0045ffae-a79d-427b-a3a6-917492310c51',	'HOB-Tinh Chất Hàu Biển OB Tăng Cường Sinh Lý Nam Growgreenaz - Cải Thiện Yếu Sinh Lý, Xuất Tinh Sớm( Hộp 30v)',	'https://down-vn.img.susercontent.com/file/vn-11134207-7r98o-lmef9xvyagv3ce_tn',	369000,	328000,	4039,	2409,	1614,	NULL,	'ACTIVE',	'suckhoe',	'a666dc45-29aa-4301-87bb-18cc547386be',	NULL,	'2024-04-09 16:19:42',	'2024-07-06 10:35:00',	NULL,	NULL,	'465d9c2f-cbb7-4d53-943d-0b902f51861f',	NULL,	0,	0),
+('0063ab52-aef0-41a8-a751-bfd6cec00038',	'Máy Chơi Game SUP 400 trò chơi [TẶNG KÈM TAY CHƠI GAME],SUP400 Cầm Tay G1 Plus 400 In 1 - HƠN 400 TRÒ CHƠI',	'https://down-vn.img.susercontent.com/file/2bf9ddd983c20ee071b76ad6e30bd62e_tn',	0,	39000,	2273,	1699,	566,	NULL,	'ACTIVE',	'thietbidientu',	'e9307983-16bd-42ce-a3bf-7e12dc89fae6',	NULL,	'2024-04-09 16:19:42',	'2024-07-06 10:35:00',	NULL,	NULL,	'61692e39-1edf-4eb7-b312-7a95aea194ef',	NULL,	0,	0),
 ('00718b4a-bba4-4e01-a05a-68f27a1fab00',	'Dép Đi Trong Nhà Đế Dày Chống Trượt Họa Tiết Vịt Hoạt Hình Dễ Thương Cho Nữ',	'https://down-vn.img.susercontent.com/file/vn-11134201-23020-lp9yu2giwlnv6c_tn',	125000,	61000,	8117,	3881,	4152,	NULL,	'ACTIVE',	'giaydepnu',	'f82a04b9-c41e-4d24-bc0b-3be0538a603b',	NULL,	'2024-04-09 16:19:42',	NULL,	NULL,	NULL,	'de51b1b6-ed27-49b7-a804-57b7992cbc81',	NULL,	0,	0),
 ('007ddcd6-e8b3-46cc-83d8-a5569e7e8022',	'Set đồ nam nữ form rộng unisex, áo polo khóa kéo kèm quần short đùi thêu logo chất liệu cotton tổ ong nhiều màu',	'https://down-vn.img.susercontent.com/file/aa4b800b2223167ff0c45a2e94ff57be_tn',	0,	90000,	300,	112,	177,	NULL,	'ACTIVE',	'thoitrangnam',	'a3816a2a-93c2-49a9-b5af-16e25615b2c1',	NULL,	'2024-04-09 16:19:42',	NULL,	NULL,	NULL,	'93dd964f-2e6d-4874-9c79-009eb4d89202',	NULL,	0,	0),
 ('007ebce5-7398-499d-9899-bd360a047517',	'Súng massage cầm tay METAMO 8 đầu 99 cấp độ trị đau nhức toàn thân hiệu quả, máy massage kèm 8 đầu mát xa chuyên sâu',	'https://down-vn.img.susercontent.com/file/vn-11134207-7qukw-lf9n5emqbujb7a_tn',	0,	239000,	1417,	938,	397,	NULL,	'ACTIVE',	'suckhoe',	'6c868791-2b31-46aa-b24f-9442084f260a',	NULL,	'2024-04-09 16:19:42',	NULL,	NULL,	NULL,	'72e339da-c565-4a2e-97b0-1a142176e072',	NULL,	0,	0),
@@ -2004,6 +2013,9 @@ CREATE TABLE `ProductOrder` (
   CONSTRAINT `ProductOrder_ibfk_2` FOREIGN KEY (`orderId`) REFERENCES `Order` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+INSERT INTO `ProductOrder` (`id`, `productId`, `quantity`, `priceBefore`, `priceAfter`, `orderId`) VALUES
+('380a7ff2-2621-46eb-b025-74fcddebe464',	'0045ffae-a79d-427b-a3a6-917492310c51',	1,	NULL,	328000,	'859912ec-dd00-4c35-9272-a6d0530003d1'),
+('6f2599dc-7989-474e-91fd-5a6044521351',	'0063ab52-aef0-41a8-a751-bfd6cec00038',	1,	NULL,	39000,	'c33d0129-d297-406d-ad10-7bf6c4b63573');
 
 DROP TABLE IF EXISTS `ProductOrderRefund`;
 CREATE TABLE `ProductOrderRefund` (
@@ -2496,6 +2508,7 @@ INSERT INTO `UserViewProduct` (`id`, `userId`, `productId`, `createdAt`) VALUES
 ('a8fe7634-1792-41e1-9510-177ee052d773',	'a226f227-c629-4c75-98ca-e56a3dab016e',	'0063ab52-aef0-41a8-a751-bfd6cec00038',	'2024-06-27 12:42:06'),
 ('b2165a59-ce3f-4863-8ff9-63bbd6d36889',	'a226f227-c629-4c75-98ca-e56a3dab016e',	'0063ab52-aef0-41a8-a751-bfd6cec00038',	'2024-06-26 06:23:06'),
 ('b67427c6-ad8f-4a06-910b-0c3186b6493f',	'a226f227-c629-4c75-98ca-e56a3dab016e',	'001e6c58-dc0a-46ea-91e6-c9c34e661a3f',	'2024-06-25 10:33:44'),
+('c5d35be4-8b79-4958-878e-9a22ada2f8e9',	'a226f227-c629-4c75-98ca-e56a3dab016e',	'00718b4a-bba4-4e01-a05a-68f27a1fab00',	'2024-07-06 10:31:54'),
 ('c8aa2094-1e87-41e6-b14f-a7237b0d69df',	'187af660-ad6c-4256-a90f-e463dc9081de',	'25032780-fcc5-4154-a642-b7e408025cb7',	'2024-06-22 10:35:05'),
 ('cae8b265-88a0-4be6-be10-24f872904c77',	'a226f227-c629-4c75-98ca-e56a3dab016e',	'073959bc-19a6-4011-b8e9-6149c408d1c2',	'2024-06-26 05:56:47'),
 ('cb7c0054-31e9-4c45-9fe1-e7224b22675a',	'a226f227-c629-4c75-98ca-e56a3dab016e',	'073959bc-19a6-4011-b8e9-6149c408d1c2',	'2024-06-26 06:16:57'),
@@ -2564,4 +2577,4 @@ CREATE TABLE `Voucher` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
--- 2024-07-06 10:30:48
+-- 2024-07-06 10:38:49

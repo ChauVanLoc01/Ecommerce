@@ -75,14 +75,14 @@ export class ReOpenOrderRefundDTO extends PickType(CreateOrderRefundDTO, [
     'materials'
 ]) {}
 
-export class AcceptRequestOrderRefundDTO {
+export class UpdateStatusOrderFlow {
     @ApiProperty()
     @IsString()
     @IsNotEmpty()
-    name: string
+    status: string
 
-    @ApiProperty()
+    @ApiPropertyOptional()
     @IsString()
-    @IsNotEmpty()
-    address: string
+    @IsOptional()
+    note?: string
 }

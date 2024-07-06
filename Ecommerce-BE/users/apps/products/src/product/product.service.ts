@@ -10,7 +10,8 @@ import {
 import { ConfigService } from '@nestjs/config'
 import { ClientProxy } from '@nestjs/microservices'
 import { CronExpression, SchedulerRegistry } from '@nestjs/schedule'
-import { Product } from '@prisma/client'
+import { Prisma, PrismaClient, Product } from '@prisma/client'
+import { DefaultArgs } from '@prisma/client/runtime/library'
 import { Cache } from 'cache-manager'
 import {
     checkVoucherExistToCreateOrder,
@@ -541,16 +542,20 @@ export class ProductService {
         priceAfter: number,
         times = 2
     ) {
-        await this.cacheManager.set(
-            hash('product', productId),
-            JSON.stringify({ quantity, priceAfter, times })
-        )
-        this.socket_client.emit(updateQuantityProduct, {
-            productId,
-            storeId,
-            quantity,
-            priceAfter
-        })
+        try {
+            await this.cacheManager.set(
+                hash('product', productId),
+                JSON.stringify({ quantity, priceAfter, times })
+            )
+            this.socket_client.emit(updateQuantityProduct, {
+                productId,
+                storeId,
+                quantity,
+                priceAfter
+            })
+        } catch (err) {
+            throw new Error('Lỗi cập nhật dữ liệu')
+        }
     }
 
     async updateQuantityProducts(order_payload: OrderPayload) {
@@ -910,73 +915,23 @@ export class ProductService {
     //     }
     // }
 
-    async updateQuantiyProductsWhenCancelOrder(
-        storeId: string,
-        orderId: string
-    ): Promise<MessageReturn> {
+    async updateQuantiyProductsWhenCancelOrder(payload: {
+        storeId: string
+        products: { id: string; quantity: number }[]
+    }): Promise<MessageReturn> {
         try {
-            const productOrderExists = await this.prisma.productOrder.findMany({
-                where: {
-                    orderId
+            await this.prisma.$transaction(async (tx) => {
+                try {
+                    let { storeId, products } = payload
+                    await Promise.all(
+                        products.map(({ quantity, id }) =>
+                            this.processUpdateQuantityWhenCancelOrder(tx, storeId, id, quantity)
+                        )
+                    )
+                } catch (err) {
+                    throw new Error(err)
                 }
             })
-            if (!productOrderExists.length) {
-                return {
-                    msg: 'Sản phẩm trong đơn hàng không tồn tại',
-                    action: false,
-                    result: null
-                }
-            }
-
-            await Promise.all(
-                productOrderExists.map(async ({ productId, quantity }) => {
-                    let hashValue = hash('product', productId)
-                    let fromCache = await this.cacheManager.get<string>(hashValue)
-
-                    if (fromCache) {
-                        let { quantity: quantityFromCache, priceAfter } = JSON.parse(fromCache) as {
-                            quantity: number
-                            priceAfter: number
-                        }
-                        this.emitUpdateProductToSocket(
-                            storeId,
-                            productId,
-                            quantity + quantityFromCache,
-                            priceAfter
-                        )
-
-                        return Promise.resolve<MessageReturn>({
-                            action: true,
-                            msg: 'ok',
-                            result: null
-                        })
-                    }
-
-                    let productExist = await this.prisma.product.findUnique({
-                        where: {
-                            id: productId
-                        }
-                    })
-
-                    if (!productExist) {
-                        return Promise.reject<MessageReturn>({
-                            action: false,
-                            msg: 'Sản phẩm không tồn tại'
-                        })
-                    }
-
-                    return this.prisma.product.update({
-                        where: {
-                            id: productId
-                        },
-                        data: {
-                            currentQuantity: {
-                                increment: quantity
-                            }
-                        }
-                    })
-                })
-            )
             return {
                 msg: 'ok',
                 action: true,
@@ -988,6 +943,47 @@ export class ProductService {
                 action: false,
                 result: null
             }
+        }
+    }
+
+    async processUpdateQuantityWhenCancelOrder(
+        tx: Omit<
+            PrismaClient<Prisma.PrismaClientOptions, never, DefaultArgs>,
+            '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
+        >,
+        storeId: string,
+        productId: string,
+        quantity: number
+    ) {
+        try {
+            let hashValue = hash('product', productId)
+            let fromCache = await this.cacheManager.get<string>(hashValue)
+
+            if (fromCache) {
+                let { quantity: quantityFromCache, priceAfter } = JSON.parse(fromCache) as {
+                    quantity: number
+                    priceAfter: number
+                }
+                this.emitUpdateProductToSocket(
+                    storeId,
+                    productId,
+                    quantity + quantityFromCache,
+                    priceAfter
+                )
+                return { action: true, msg: 'ok', result: null }
+            }
+            return tx.product.update({
+                where: {
+                    id: productId
+                },
+                data: {
+                    currentQuantity: {
+                        increment: quantity
+                    }
+                }
+            })
+        } catch (_) {
+            Promise.reject('Lỗi cập nhật số lượng sản phẩm')
         }
     }
 

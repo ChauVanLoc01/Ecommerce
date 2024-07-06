@@ -6,7 +6,18 @@ import {
     Pencil1Icon,
     StarIcon
 } from '@radix-ui/react-icons'
-import { AlertDialog, Badge, Button, Flex, IconButton, Select, Text, TextField, Tooltip } from '@radix-ui/themes'
+import {
+    AlertDialog,
+    Badge,
+    Button,
+    Flex,
+    IconButton,
+    Select,
+    Spinner,
+    Text,
+    TextField,
+    Tooltip
+} from '@radix-ui/themes'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { ColumnDef } from '@tanstack/react-table'
 import { add, endOfDay, format, startOfDay } from 'date-fns'
@@ -168,55 +179,58 @@ const Order = () => {
         },
         {
             accessorKey: ' ',
-            cell: ({ row }) => (
-                <Flex gapX={'2'} align={'center'}>
-                    <Tooltip content='Xem chi tiết'>
-                        <IconButton
-                            variant='soft'
-                            onClick={() => setOpenDetail(!openDetail)}
-                            onMouseEnter={handleFetchOrderDetailWhenHovering(row.original.id)}
-                        >
-                            <InfoCircledIcon />
-                        </IconButton>
-                    </Tooltip>
-                    <Tooltip content='Chỉnh sửa'>
-                        <IconButton
-                            variant='soft'
-                            color='orange'
-                            onClick={() => setOpenEdit(!openEdit)}
-                            onMouseEnter={handleFetchOrderDetailWhenHovering(row.original.id)}
-                            disabled={['CANCEL', 'SUCCESS'].includes(row.original.status)}
-                        >
-                            <Pencil1Icon />
-                        </IconButton>
-                    </Tooltip>
-                    <Tooltip content='Hủy đơn'>
-                        <IconButton
-                            variant='soft'
-                            color='red'
-                            onClick={() => setOpenCancel(!openCancel)}
-                            onMouseEnter={handleFetchOrderDetailWhenHovering(row.original.id)}
-                            disabled={['CANCEL', 'SUCCESS'].includes(row.original.status)}
-                        >
-                            <Cross2Icon />
-                        </IconButton>
-                    </Tooltip>
-                    <Tooltip content='Đánh giá'>
-                        <IconButton
-                            variant='soft'
-                            color='green'
-                            onClick={onOpenRatingClick(row.original.id, row.original.storeId)}
-                            onMouseEnter={handleFetchOrderDetailWhenHovering(row.original.id)}
-                            disabled={
-                                row.original.isRated == 1 ||
-                                ['CANCEL', 'WAITING_CONFIRM', 'SHIPPING'].includes(row.original.status)
-                            }
-                        >
-                            <StarIcon />
-                        </IconButton>
-                    </Tooltip>
-                </Flex>
-            )
+            cell: ({ row }) => {
+                let isFetching = row.original.id === orderId && isOrderDetailFetching
+                return (
+                    <Flex gapX={'2'} align={'center'}>
+                        <Tooltip content='Xem chi tiết'>
+                            <IconButton
+                                variant='soft'
+                                onClick={() => setOpenDetail(!openDetail)}
+                                onMouseEnter={handleFetchOrderDetailWhenHovering(row.original.id)}
+                            >
+                                {isFetching ? <Spinner /> : <InfoCircledIcon />}
+                            </IconButton>
+                        </Tooltip>
+                        <Tooltip content='Chỉnh sửa'>
+                            <IconButton
+                                variant='soft'
+                                color='orange'
+                                onClick={() => setOpenEdit(!openEdit)}
+                                onMouseEnter={handleFetchOrderDetailWhenHovering(row.original.id)}
+                                disabled={['CANCEL', 'SUCCESS'].includes(row.original.status)}
+                            >
+                                <Pencil1Icon />
+                            </IconButton>
+                        </Tooltip>
+                        <Tooltip content='Hủy đơn'>
+                            <IconButton
+                                variant='soft'
+                                color='red'
+                                onClick={() => setOpenCancel(!openCancel)}
+                                onMouseEnter={handleFetchOrderDetailWhenHovering(row.original.id)}
+                                disabled={['CANCEL', 'SUCCESS'].includes(row.original.status)}
+                            >
+                                <Cross2Icon />
+                            </IconButton>
+                        </Tooltip>
+                        <Tooltip content='Đánh giá'>
+                            <IconButton
+                                variant='soft'
+                                color='green'
+                                onClick={onOpenRatingClick(row.original.id, row.original.storeId)}
+                                onMouseEnter={handleFetchOrderDetailWhenHovering(row.original.id)}
+                                disabled={
+                                    row.original.isRated == 1 ||
+                                    ['CANCEL', 'WAITING_CONFIRM', 'SHIPPING'].includes(row.original.status)
+                                }
+                            >
+                                <StarIcon />
+                            </IconButton>
+                        </Tooltip>
+                    </Flex>
+                )
+            }
         }
     ]
 
@@ -227,7 +241,11 @@ const Order = () => {
         refetchInterval: 1000 * 60 * 2
     })
 
-    const { refetch: orderRefetch, data: orderDetailData } = useQuery({
+    const {
+        refetch: orderRefetch,
+        data: orderDetailData,
+        isFetching: isOrderDetailFetching
+    } = useQuery({
         queryKey: ['orderDetail', orderId],
         queryFn: ({ signal }) => OrderFetching.getOrderDetail(orderId, signal),
         enabled: false,
@@ -407,7 +425,7 @@ const Order = () => {
                     columns={columns}
                     data={data?.data.result.data || []}
                     tableMaxHeight='520px'
-                    className='w-[1200px] max-w-[1200px]'
+                    className='w-[1300px] max-w-[1300px]'
                 />
             </Flex>
             <AlertDialog.Root>
@@ -441,7 +459,7 @@ const Order = () => {
             <OrderEdit
                 isOpen={openEdit}
                 setIsOpen={setOpenEdit}
-                data={orderDetailData?.ProductOrder || []}
+                data={orderDetailData || {}}
                 orderData={orderDetailData}
             />
             <OrderCancel isOpen={openCancel} setIsOpen={setOpenCancel} orderId={orderId} refetch={refetch} />

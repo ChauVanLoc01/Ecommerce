@@ -73,9 +73,9 @@ export class VoucherController {
         return this.voucherService.checkVoucherExistToCreateOrder(body)
     }
 
-    // @Public()
-    // @MessagePattern(updateVoucherWhenCancelOrder)
-    // updateVoucherWhenCancelOrder(@Payload() payload: { orderId: string; storeId: string }) {
-    //     return this.voucherService.updateVoucherWhenCancelOrder(payload.orderId, payload.storeId)
-    // }
+    @Public()
+    @MessagePattern(updateVoucherWhenCancelOrder)
+    updateVoucherWhenCancelOrder(@Payload() payload: { storeId: string; voucherIds: string[] }) {
+        return this.voucherService.updateVoucherWhenCancelOrder(payload)
+    }
 }

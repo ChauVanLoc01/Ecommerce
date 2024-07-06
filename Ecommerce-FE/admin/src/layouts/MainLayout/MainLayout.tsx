@@ -10,6 +10,7 @@ import useLoadingFetching from 'src/hooks/useLoadingFetching'
 import { ls } from 'src/utils/localStorage'
 import Header from './Header'
 import SideNav from './SideNav'
+import 'react-vertical-timeline-component/style.min.css'
 
 setDefaultOptions({ locale: vi })
 

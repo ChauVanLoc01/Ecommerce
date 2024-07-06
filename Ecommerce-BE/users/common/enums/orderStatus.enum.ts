@@ -1,25 +1,33 @@
-export enum OrderStatus {
+export enum OrderFlowEnum {
     WAITING_CONFIRM = 'WAITING_CONFIRM',
-    SHIPING = 'SHIPING',
-    SUCCESS = 'SUCCESS',
-    CANCEL = 'CANCEL',
-    FINISH = 'FINISH',
-    IN_PROCESS_REFUND = 'IN_PROCESS_REFUND',
+    CLIENT_CANCEL = 'CLIENT_CANCEL',
+    REQUEST_CANCEL = 'REQUEST_CANCEL',
+    ACCEPT_CANCEL = 'ACCEPT_CANCEL',
+    CONFIRM_AND_SHIPPING = 'CONFIRM_AND_SHIPPING',
+    SHIPING_SUCCESS = 'SHIPING_SUCCESS',
     REQUEST_REFUND = 'REQUEST_REFUND',
     UPDATE_REFUND = 'UPDATE_REFUND',
-    ACCEPT_REFUND = 'ACCEPT_REFUND',
-    REFUND_SHIPPING = 'REFUND_SHIPPING',
+    CANCEL_REFUND = 'CANCEL_REFUND',
+    ACCEPT_REFUND_AND_SHIPPING = 'ACCEPT_REFUND_AND_SHIPPING',
+    REFUND_SHIPPING_SUCCESS = 'REFUND_SHIPPING_SUCCESS',
     RE_OPEN_REFUND = 'RE_OPEN_REFUND',
-    CLOSE_REFUND = 'CLOSE_REFUND'
-}
-
-export enum RefundStatus {
-    IN_PROCESS = 'IN_PROCESS',
-    ACCEPT = 'ACCEPT',
+    CLOSE_REFUND = 'CLOSE_REFUND',
     FINISH = 'FINISH'
 }
 
-export enum OrderShipping {
-    SHIPPING = 'SHIPPING',
-    REFUND = 'REFUND'
+export const RefundStatus = {
+    [OrderFlowEnum.REQUEST_REFUND]: true,
+    [OrderFlowEnum.UPDATE_REFUND]: true,
+    [OrderFlowEnum.CANCEL_REFUND]: true,
+    [OrderFlowEnum.ACCEPT_REFUND_AND_SHIPPING]: true,
+    [OrderFlowEnum.REFUND_SHIPPING_SUCCESS]: true,
+    [OrderFlowEnum.RE_OPEN_REFUND]: true,
+    [OrderFlowEnum.CLOSE_REFUND]: true
+}
+
+export const OrderShipping = {
+    [OrderFlowEnum.CONFIRM_AND_SHIPPING]: true,
+    [OrderFlowEnum.SHIPING_SUCCESS]: true,
+    [OrderFlowEnum.ACCEPT_REFUND_AND_SHIPPING]: true,
+    [OrderFlowEnum.REFUND_SHIPPING_SUCCESS]: true
 }

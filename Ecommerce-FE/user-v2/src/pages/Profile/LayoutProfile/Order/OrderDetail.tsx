@@ -1,21 +1,24 @@
 import { AlertDialog, Avatar, Badge, Button, DataList, Flex, Spinner, Text } from '@radix-ui/themes'
 import { ColumnDef } from '@tanstack/react-table'
 import { format } from 'date-fns'
+import { useRef } from 'react'
 import { BiSolidSortAlt } from 'react-icons/bi'
 import { Link } from 'react-router-dom'
 import Table from 'src/components/Table'
 import { OrderStatus } from 'src/constants/order-status'
 import { OrderDetailResponse } from 'src/types/order.type'
 import { convertCurrentcy, convertDigitalNumber, removeSpecialCharacter } from 'src/utils/utils.ts'
+import OrderFlow from './OrderFlow'
 
 type OrderDetailProps = {
     isOpen: boolean
     setIsOpen: React.Dispatch<React.SetStateAction<boolean>>
-    data: OrderDetailResponse
     orderData?: OrderDetailResponse
 }
 
-const OrderDetail = ({ isOpen, setIsOpen, data, orderData }: OrderDetailProps) => {
+const OrderDetail = ({ isOpen, setIsOpen, orderData }: OrderDetailProps) => {
+    const dataListRef = useRef<HTMLDListElement | null>(null)
+
     const columns: ColumnDef<OrderDetailResponse['ProductOrder'][number]>[] = [
         {
             accessorKey: 'Hình ảnh',
@@ -143,70 +146,79 @@ const OrderDetail = ({ isOpen, setIsOpen, data, orderData }: OrderDetailProps) =
 
     return (
         <AlertDialog.Root open={isOpen} onOpenChange={setIsOpen}>
-            <AlertDialog.Content maxWidth='900px' className='!rounded-8'>
+            <AlertDialog.Content maxWidth='1200px' className='!rounded-8'>
                 <div className='space-y-5'>
                     <AlertDialog.Title>Thông tin chi tiết đơn hàng</AlertDialog.Title>
-                    <DataList.Root>
-                        <DataList.Item align='center'>
-                            <DataList.Label minWidth='200px'>Mã đơn hàng</DataList.Label>
-                            <DataList.Value>
-                                <Text>{orderData?.id}</Text>
-                            </DataList.Value>
-                        </DataList.Item>
-                        <DataList.Item align='center'>
-                            <DataList.Label minWidth='200px'>Trạng thái</DataList.Label>
-                            <DataList.Value>
-                                <Badge size={'3'} color={OrderStatus[orderData?.status][1] as any}>
-                                    {OrderStatus[orderData?.status][0]}
-                                </Badge>
-                            </DataList.Value>
-                        </DataList.Item>
-                        <DataList.Item align='center'>
-                            <DataList.Label minWidth='200px'>Tổng tiền</DataList.Label>
-                            <DataList.Value>
-                                <Text>{convertCurrentcy(orderData.total)}</Text>
-                            </DataList.Value>
-                        </DataList.Item>
-                        <DataList.Item align='center'>
-                            <DataList.Label minWidth='200px'>Giảm giá</DataList.Label>
-                            <DataList.Value>
-                                <Text>{convertCurrentcy(orderData.discount)}</Text>
-                            </DataList.Value>
-                        </DataList.Item>
-                        <DataList.Item align='center'>
-                            <DataList.Label minWidth='200px'>Tổng tiền phải trả</DataList.Label>
-                            <DataList.Value>
-                                <Text>{convertCurrentcy(orderData.pay)}</Text>
-                            </DataList.Value>
-                        </DataList.Item>
-                        <DataList.Item align='center'>
-                            <DataList.Label minWidth='200px'>Thời gian đặt hàng</DataList.Label>
-                            <DataList.Value>
-                                <Text>{format(orderData.createdAt, 'HH:mm dd/LL/Y')}</Text>
-                            </DataList.Value>
-                        </DataList.Item>
-                        <DataList.Item align='center'>
-                            <DataList.Label minWidth='200px'>Thời gian hoàn thành</DataList.Label>
-                            <DataList.Value>
-                                <Text>{orderData.updatedAt ? format(orderData.createdAt, 'HH:mm dd/LL/Y') : '_'}</Text>
-                            </DataList.Value>
-                        </DataList.Item>
-                        <DataList.Item align='center'>
-                            <DataList.Label minWidth='200px'>Người nhận hàng</DataList.Label>
-                            <DataList.Value>
-                                <Text>{orderData.OrderShipping[0].name}</Text>
-                            </DataList.Value>
-                        </DataList.Item>
-                        <DataList.Item align='center'>
-                            <DataList.Label minWidth='200px'>Địa chỉ nhận hàng</DataList.Label>
-                            <DataList.Value>
-                                <Text>{orderData.OrderShipping[0].address}</Text>
-                            </DataList.Value>
-                        </DataList.Item>
-                    </DataList.Root>
+                    <Flex gapX={'9'}>
+                        <div className='flex-basis-1/2 flex-shrink-0'>
+                            <DataList.Root ref={dataListRef}>
+                                <DataList.Item align='center'>
+                                    <DataList.Label minWidth='200px'>Mã đơn hàng</DataList.Label>
+                                    <DataList.Value>
+                                        <Text>{orderData?.id}</Text>
+                                    </DataList.Value>
+                                </DataList.Item>
+                                <DataList.Item align='center'>
+                                    <DataList.Label minWidth='200px'>Trạng thái</DataList.Label>
+                                    <DataList.Value>
+                                        <Badge size={'3'} color={OrderStatus[orderData?.status][1] as any}>
+                                            {OrderStatus[orderData?.status][0]}
+                                        </Badge>
+                                    </DataList.Value>
+                                </DataList.Item>
+                                <DataList.Item align='center'>
+                                    <DataList.Label minWidth='200px'>Tổng tiền</DataList.Label>
+                                    <DataList.Value>
+                                        <Text>{convertCurrentcy(orderData.total)}</Text>
+                                    </DataList.Value>
+                                </DataList.Item>
+                                <DataList.Item align='center'>
+                                    <DataList.Label minWidth='200px'>Giảm giá</DataList.Label>
+                                    <DataList.Value>
+                                        <Text>{convertCurrentcy(orderData.discount)}</Text>
+                                    </DataList.Value>
+                                </DataList.Item>
+                                <DataList.Item align='center'>
+                                    <DataList.Label minWidth='200px'>Tổng tiền phải trả</DataList.Label>
+                                    <DataList.Value>
+                                        <Text>{convertCurrentcy(orderData.pay)}</Text>
+                                    </DataList.Value>
+                                </DataList.Item>
+                                <DataList.Item align='center'>
+                                    <DataList.Label minWidth='200px'>Thời gian đặt hàng</DataList.Label>
+                                    <DataList.Value>
+                                        <Text>{format(orderData.createdAt, 'HH:mm dd/LL/Y')}</Text>
+                                    </DataList.Value>
+                                </DataList.Item>
+                                <DataList.Item align='center'>
+                                    <DataList.Label minWidth='200px'>Thời gian hoàn thành</DataList.Label>
+                                    <DataList.Value>
+                                        <Text>
+                                            {orderData.updatedAt ? format(orderData.createdAt, 'HH:mm dd/LL/Y') : '_'}
+                                        </Text>
+                                    </DataList.Value>
+                                </DataList.Item>
+                                <DataList.Item align='center'>
+                                    <DataList.Label minWidth='200px'>Người nhận hàng</DataList.Label>
+                                    <DataList.Value>
+                                        <Text>{orderData.OrderShipping[0].name}</Text>
+                                    </DataList.Value>
+                                </DataList.Item>
+                                <DataList.Item align='center'>
+                                    <DataList.Label minWidth='200px'>Địa chỉ nhận hàng</DataList.Label>
+                                    <DataList.Value>
+                                        <Text>{orderData.OrderShipping[0].address}</Text>
+                                    </DataList.Value>
+                                </DataList.Item>
+                            </DataList.Root>
+                        </div>
+                        <div className='basis-1/2 flex-shrink-0 flex-grow'>
+                            <OrderFlow dataListRef={dataListRef} orderFlow={orderData.OrderFlow} />
+                        </div>
+                    </Flex>
                     <Table<OrderDetailResponse['ProductOrder'][number]>
                         columns={columns}
-                        data={data.ProductOrder}
+                        data={orderData.ProductOrder}
                         className='w-[1400px]'
                         tableMaxHeight='300px'
                     />

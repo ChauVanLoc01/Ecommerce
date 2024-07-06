@@ -18,14 +18,13 @@ import { OrderPayload } from 'common/types/order_payload.type'
 import { CreateOrderDTO } from '../../../../common/dtos/create_order.dto'
 import { AnalyticsOrderDTO } from '../dtos/analytics_order.dto'
 import {
-    AcceptRequestOrderRefundDTO,
     CloseOrderRefundDTO,
     CreateOrderRefundDTO,
     ReOpenOrderRefundDTO,
-    UpdateOrderRefundDTO
+    UpdateOrderRefundDTO,
+    UpdateStatusOrderFlow
 } from '../dtos/order_refund.dto'
 import { QueryOrderDTO } from '../dtos/query-order.dto'
-import { UpdateOrderDTO } from '../dtos/update_order.dto'
 import { OrderService } from './order.service'
 
 @ApiBearerAuth()
@@ -91,16 +90,6 @@ export class OrderController {
         return this.ordersService.getOrderDetailByStore(user, orderId)
     }
 
-    // @Roles(Role.STORE_OWNER)
-    // @Put('store-order/:orderId')
-    // updateStatusByStore(
-    //     @CurrentUser() user: CurrentStoreType,
-    //     @Param('orderId') orderId: string,
-    //     @Body() body: UpdateStatusOrderDTO
-    // ) {
-    //     return this.ordersService.updateStatusByStore(user, orderId, body)
-    // }
-
     @Roles(Role.ADMIN, Role.EMPLOYEE, Role.STORE_OWNER)
     @Get('store-order-analytics')
     analyticOrderStore(@CurrentUser() user: CurrentStoreType) {
@@ -143,13 +132,13 @@ export class OrderController {
     }
 
     @Roles(Role.USER)
-    @Put('user-order/:orderId/cancel')
-    cancelOrder(
-        @Param('orderId') orderId: string,
+    @Put('user-order/:orderId/status')
+    updateStatusOfOrderFlow(
         @CurrentUser() user: CurrentUserType,
-        @Body() body: UpdateOrderDTO
+        @Param('orderId') orderId: string,
+        @Body() body: UpdateStatusOrderFlow
     ) {
-        return this.ordersService.cancelOrder(user, orderId, body)
+        return this.ordersService.updateStatusOfOrderFlow(user, orderId, body)
     }
 
     @Roles(Role.USER)
