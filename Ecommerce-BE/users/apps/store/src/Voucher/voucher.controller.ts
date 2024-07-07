@@ -3,18 +3,19 @@ import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices'
 import { ApiBearerAuth } from '@nestjs/swagger'
 import {
     checkVoucherExistToCreateOrder,
+    rollbackUpdateVoucherWhenCancelOrder,
     updateVoucherWhenCancelOrder
 } from 'common/constants/event.constant'
 import { CurrentUser } from 'common/decorators/current_user.decorator'
 import { Public } from 'common/decorators/public.decorator'
 import { JwtGuard } from 'common/guards/jwt.guard'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
+import { OrderPayload } from 'common/types/order_payload.type'
 import { CreateVoucherDTO } from './dtos/CreateVoucher.dto'
 import { VoucherQueryDTO } from './dtos/QueryVoucher.dto'
 import { SearchCodeDTO } from './dtos/search-code.dto'
 import { UpdateVoucherDTO } from './dtos/UpdateVoucher.dto'
 import { VoucherService } from './voucher.service'
-import { OrderPayload } from 'common/types/order_payload.type'
 
 @ApiBearerAuth()
 @UseGuards(JwtGuard)
@@ -77,5 +78,13 @@ export class VoucherController {
     @MessagePattern(updateVoucherWhenCancelOrder)
     updateVoucherWhenCancelOrder(@Payload() payload: { storeId: string; voucherIds: string[] }) {
         return this.voucherService.updateVoucherWhenCancelOrder(payload)
+    }
+
+    @Public()
+    @EventPattern(rollbackUpdateVoucherWhenCancelOrder)
+    rollbackUpdateVoucherWhenCancelOrder(
+        @Payload() payload: { storeId: string; voucherIds: string[] }
+    ) {
+        return this.voucherService.rollbackUpdateVoucherWhenCancelOrdere(payload)
     }
 }

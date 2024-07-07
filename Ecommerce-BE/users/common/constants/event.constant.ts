@@ -4,6 +4,9 @@ export const updateQuantityProducts = 'product::quantity::update'
 
 export const updateQuantiyProductsWhenCancelOrder = 'updateQuantiyProductsWhenCancelOrder'
 
+export const rollbackUpdateQuantiyProductsWhenCancelOrder =
+    'rollback::updateQuantiyProductsWhenCancelOrder'
+
 export const rollbackOrder = 'roll::back::order'
 
 export const commitOrder = 'commit::order'
@@ -40,6 +43,9 @@ export const getProductBySalePromotion = 'get::product::by::sale::promotion'
 export const checkVoucherExistToCreateOrder = 'checkVoucherExistToCreateOrder'
 
 export const updateVoucherWhenCancelOrder = 'update::voucher::when::cancel::order'
+
+export const rollbackUpdateVoucherWhenCancelOrder =
+    'roll::back::update::voucher::when::cancel::order'
 
 export const processHandleVoucher = 'process::handle::voucher'
 

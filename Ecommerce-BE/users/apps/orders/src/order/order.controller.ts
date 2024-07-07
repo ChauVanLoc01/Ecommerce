@@ -160,25 +160,6 @@ export class OrderController {
         return this.ordersService.updateRequestRefund(orderRefundId, body)
     }
 
-    @Roles(Role.EMPLOYEE, Role.STORE_OWNER)
-    @Post('store-order/:orderRefundId/refund/accept')
-    acceptRequestRefund(
-        @CurrentUser() store: CurrentStoreType,
-        @Param('orderRefundId') orderRefundId: string,
-        @Body() body: AcceptRequestOrderRefundDTO
-    ) {
-        return this.ordersService.acceptRequestRefund(store, orderRefundId, body)
-    }
-
-    @Roles(Role.USER)
-    @Post('user-order/:orderRefundId/refund/close')
-    closeRequestRefund(
-        @Param('orderRefundId') orderRefundId: string,
-        @Body() body: CloseOrderRefundDTO
-    ) {
-        return this.ordersService.closeRequestRefund(orderRefundId, body)
-    }
-
     @Roles(Role.USER)
     @Post('user-order/:orderRefundId/refund/reopen')
     reopenOrderRefund(

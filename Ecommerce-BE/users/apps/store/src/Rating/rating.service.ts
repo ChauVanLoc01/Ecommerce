@@ -1,6 +1,8 @@
 import { PrismaService } from '@app/common/prisma/prisma.service'
 import {
     BadRequestException,
+    HttpException,
+    HttpStatus,
     Inject,
     Injectable,
     InternalServerErrorException,
@@ -15,10 +17,10 @@ import {
     getProductOrderByRating
 } from 'common/constants/event.constant'
 import { PaginationDTO } from 'common/decorators/pagination.dto'
-import { OrderStatus } from 'common/enums/orderStatus.enum'
+import { OrderFlowEnum } from 'common/enums/orderStatus.enum'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
 import { MessageReturn, Return } from 'common/types/result.type'
-import { flatten, isUndefined, keyBy, omitBy } from 'lodash'
+import { flatten, isUndefined, omitBy } from 'lodash'
 import { firstValueFrom } from 'rxjs'
 import { v4 as uuidv4 } from 'uuid'
 import { CreateRatingDto } from './dtos/create-rating.dto'
@@ -295,14 +297,16 @@ export class RatingService {
     async createNewRating(user: CurrentUserType, body: CreateRatingDto): Promise<Return> {
         try {
             const { id } = user
-            const { comment, orderId, storeId, stars, urls } = body
+            const { comment, orderId, stars, urls } = body
             const ratingId = uuidv4()
 
             const ratingExist = await this.prisma.rating.findFirst({
                 where: {
                     orderId,
-                    storeId,
                     createdBy: id
+                },
+                select: {
+                    id: true
                 }
             })
 
@@ -310,99 +314,111 @@ export class RatingService {
                 throw new BadRequestException('Đã tồn tại đánh giá cho đơn hàng này')
             }
 
-            const [orderExist, storeExist, storeRating] = await Promise.all([
-                this.prisma.order.findUnique({
-                    where: {
-                        id: orderId,
-                        status: OrderStatus.SUCCESS
-                    }
-                }),
-                this.prisma.store.findUnique({
-                    where: {
-                        id: storeId
-                    }
-                }),
-                this.prisma.storeRating.findFirst({
-                    where: {
-                        storeId
-                    }
-                })
-            ])
-
-            if (!orderExist) {
-                throw new BadRequestException(
-                    'Chưa đủ điều kiện để thực hiện đánh giá cho đơn hàng này'
-                )
-            }
-            if (!storeExist) {
-                throw new BadRequestException('Mã cửa hàng không đúng')
-            }
-
-            const tmp: Record<number, keyof Prisma.StoreRatingCreateInput> = {
-                1: 'one',
-                2: 'two',
-                3: 'three',
-                4: 'four',
-                5: 'five'
-            }
-
-            if (storeRating) {
-                await this.prisma.storeRating.update({
-                    where: {
-                        id: storeRating.id
-                    },
-                    data: {
-                        [tmp[stars]]: +storeRating?.[tmp[stars]] + 1,
-                        total: storeRating.total + 1,
-                        average: (storeRating.average + stars) / 2,
-                        updatedAt: new Date()
-                    }
-                })
-            }
-
             await this.prisma.$transaction(async (tx) => {
-                return await Promise.all([
-                    tx.rating.create({
-                        data: {
-                            id: ratingId,
-                            storeId,
-                            orderId,
-                            stars,
-                            comment,
-                            createdAt: new Date(),
-                            createdBy: id,
-                            isReply: false
+                try {
+                    const orderExist = await tx.order.findUnique({
+                        where: {
+                            id: orderId,
+                            status: OrderFlowEnum.FINISH
+                        },
+                        select: {
+                            id: true,
+                            storeId: true
                         }
-                    }),
-                    !storeRating &&
-                        tx.storeRating.create({
+                    })
+
+                    if (!orderExist) {
+                        throw new BadRequestException(
+                            'Chưa đủ điều kiện để thực hiện đánh giá cho đơn hàng này'
+                        )
+                    }
+
+                    const tmp: Record<number, keyof Prisma.StoreRatingCreateInput> = {
+                        1: 'one',
+                        2: 'two',
+                        3: 'three',
+                        4: 'four',
+                        5: 'five'
+                    }
+
+                    const storeRating = await this.prisma.storeRating.findFirst({
+                        where: {
+                            storeId: orderExist.storeId
+                        },
+                        omit: {
+                            updatedAt: true,
+                            createdAt: true
+                        }
+                    })
+
+                    await tx.storeRating.upsert({
+                        where: {
+                            id: storeRating.id
+                        },
+                        create: {
+                            id: uuidv4(),
+                            storeId: orderExist.storeId,
+                            createdAt: new Date()
+                        },
+                        update: {
+                            [tmp[stars]]: +storeRating?.[tmp[stars]] + 1,
+                            total: storeRating.total + 1,
+                            average: (storeRating.average + stars) / 2,
+                            updatedAt: new Date()
+                        }
+                    })
+
+                    await Promise.all([
+                        tx.rating.create({
                             data: {
-                                id: uuidv4(),
-                                storeId,
-                                [tmp[stars]]: 1,
-                                total: 1,
-                                average: stars
+                                id: ratingId,
+                                storeId: orderExist.storeId,
+                                orderId,
+                                stars,
+                                comment,
+                                createdAt: new Date(),
+                                createdBy: id,
+                                isReply: false
                             }
                         }),
-                    tx.order.update({
-                        where: {
-                            id: orderId
-                        },
-                        data: {
-                            isRated: true
-                        }
-                    }),
-                    ...urls.map(({ url, isPrimary }) =>
-                        tx.ratingMaterial.create({
+                        !storeRating &&
+                            tx.storeRating.create({
+                                data: {
+                                    id: uuidv4(),
+                                    storeId: orderExist.storeId,
+                                    [tmp[stars]]: 1,
+                                    total: 1,
+                                    average: stars
+                                }
+                            }),
+                        tx.order.update({
+                            where: {
+                                id: orderId
+                            },
                             data: {
-                                id: uuidv4(),
-                                isPrimary: isPrimary || false,
-                                url,
-                                ratingId
+                                isRated: true
                             }
-                        })
+                        }),
+                        ...urls.map(({ url, isPrimary }) =>
+                            tx.ratingMaterial.create({
+                                data: {
+                                    id: uuidv4(),
+                                    isPrimary: isPrimary || false,
+                                    url,
+                                    ratingId
+                                }
+                            })
+                        )
+                    ])
+                } catch (err) {
+                    throw new Error(
+                        err?.message
+                            ? (err.message as string).length > 100
+                                ? 'Đánh giá không thành công'
+                                : err.message
+                            : 'Đánh giá không thành công'
                     )
-                ])
+                }
             })
 
             return {
@@ -410,7 +426,10 @@ export class RatingService {
                 result: undefined
             }
         } catch (err) {
-            throw new InternalServerErrorException('Lỗi Server')
+            throw new HttpException(
+                err?.message || 'Đánh giá không thành công. Vui lòng thử lại sau',
+                err.statusCode || HttpStatus.INTERNAL_SERVER_ERROR
+            )
         }
     }
 

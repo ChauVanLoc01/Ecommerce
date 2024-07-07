@@ -158,16 +158,15 @@ export class ProductController {
     }
 
     @Public()
-    @MessagePattern(updateQuantiyProductsWhenCancelOrder)
+    @EventPattern(updateQuantiyProductsWhenCancelOrder)
     rollbackUpdateQuantiyProductsWhenCancelOrder(
         @Payload()
-        data: {
+        payload: {
             storeId: string
-            productId: string
+            products: { id: string; quantity: number }[]
         }
     ) {
-        let { productId, storeId } = data
-        return this.productsService.rollbackUpdateQuantiyProductsWhenCancelOrder(storeId, productId)
+        return this.productsService.rollbackUpdateQuantityWhenCancelOrder(payload)
     }
 
     @Public()

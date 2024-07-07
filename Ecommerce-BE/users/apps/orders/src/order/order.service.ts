@@ -11,39 +11,39 @@ import {
 import { ConfigService } from '@nestjs/config'
 import { ClientProxy } from '@nestjs/microservices'
 import { CronExpression, SchedulerRegistry } from '@nestjs/schedule'
-import { Product } from '@prisma/client'
+import { Prisma, PrismaClient, Product } from '@prisma/client'
+import { DefaultArgs } from '@prisma/client/runtime/library'
 import { Cache } from 'cache-manager'
 import {
     getAllProductWithProductOrder,
     processStepOneToCreatOrder,
     processStepTwoToCreateOrder,
+    rollbackUpdateQuantiyProductsWhenCancelOrder,
+    rollbackUpdateVoucherWhenCancelOrder,
     statusOfOrder,
     updateQuantityProducts,
     updateQuantiyProductsWhenCancelOrder,
     updateVoucherWhenCancelOrder
 } from 'common/constants/event.constant'
-import { OrderFlowEnum, OrderShipping, OrderStatus } from 'common/enums/orderStatus.enum'
+import { NormalStatus, OrderFlowEnum, RefundStatus } from 'common/enums/orderStatus.enum'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
 import { OrderPayload } from 'common/types/order_payload.type'
 import { MessageReturn, Return } from 'common/types/result.type'
 import { hash } from 'common/utils/helper'
 import { CronJob } from 'cron'
-import { add, addHours, isPast, sub, subDays } from 'date-fns'
+import { add, addHours, compareDesc, sub, subDays } from 'date-fns'
 import { Dictionary, isUndefined, max, omitBy, sumBy } from 'lodash'
 import { firstValueFrom } from 'rxjs'
 import { v4 as uuidv4 } from 'uuid'
 import { CreateOrderDTO } from '../../../../common/dtos/create_order.dto'
 import { AnalyticsOrderDTO } from '../dtos/analytics_order.dto'
 import {
-    AcceptRequestOrderRefundDTO,
-    CloseOrderRefundDTO,
     CreateOrderRefundDTO,
     ReOpenOrderRefundDTO,
     UpdateOrderRefundDTO,
     UpdateStatusOrderFlow
 } from '../dtos/order_refund.dto'
 import { QueryOrderType } from '../dtos/query-order.dto'
-import { UpdateStatusOfOrderDTO } from '../dtos/update_order.dto'
 
 @Injectable()
 export class OrderService {
@@ -318,7 +318,7 @@ export class OrderService {
                             total: order.total,
                             discount: order.discount,
                             pay: order.pay,
-                            status: OrderStatus.WAITING_CONFIRM,
+                            status: OrderFlowEnum.WAITING_CONFIRM,
                             storeId: order.storeId,
                             note: order.note,
                             userId: id,
@@ -350,7 +350,7 @@ export class OrderService {
                             OrderFlow: {
                                 create: {
                                     id: uuidv4(),
-                                    status: OrderStatus.WAITING_CONFIRM,
+                                    status: OrderFlowEnum.WAITING_CONFIRM,
                                     createdBy: id,
                                     createdAt: new Date()
                                 }
@@ -489,7 +489,8 @@ export class OrderService {
         body: UpdateStatusOrderFlow
     ): Promise<Return> {
         try {
-            const { status, note } = body
+            const { id: userId } = user
+            const { status, note, orderFlowId } = body
 
             const orderExist = await this.prisma.order.findUnique({
                 where: {
@@ -517,28 +518,61 @@ export class OrderService {
                 throw new BadRequestException('Không thể cập nhật đơn hàng đã thành công')
             }
 
-            if (status === OrderFlowEnum.CLIENT_CANCEL) {
+            let updateStatus = (
+                tx: Omit<
+                    PrismaClient<Prisma.PrismaClientOptions, never, DefaultArgs>,
+                    '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
+                >,
+                orderId: string,
+                status: string
+            ) => {
+                return Promise.all([
+                    tx.order.update({
+                        where: {
+                            id: orderId
+                        },
+                        data: {
+                            status
+                        }
+                    }),
+                    tx.orderFlow.create({
+                        data: {
+                            id: uuidv4(),
+                            orderId,
+                            status,
+                            note,
+                            createdAt: new Date(),
+                            createdBy: userId
+                        }
+                    })
+                ])
+            }
+
+            if (
+                [OrderFlowEnum.CLIENT_CANCEL, OrderFlowEnum.ACCEPT_CANCEL].includes(status as any)
+            ) {
                 await this.prisma.$transaction(async (tx) => {
+                    const [products, voucherIds] = await Promise.all([
+                        tx.productOrder.findMany({
+                            where: {
+                                orderId
+                            },
+                            select: {
+                                productId: true,
+                                quantity: true
+                            }
+                        }),
+                        tx.orderVoucher.findMany({
+                            where: {
+                                orderId
+                            },
+                            select: {
+                                voucherId: true
+                            }
+                        })
+                    ])
+
                     try {
-                        const [products, voucherIds] = await Promise.all([
-                            this.prisma.productOrder.findMany({
-                                where: {
-                                    orderId
-                                },
-                                select: {
-                                    productId: true,
-                                    quantity: true
-                                }
-                            }),
-                            this.prisma.orderVoucher.findMany({
-                                where: {
-                                    orderId
-                                },
-                                select: {
-                                    voucherId: true
-                                }
-                            })
-                        ])
                         const [updatedProduct, updatedVoucher] = await Promise.all([
                             firstValueFrom<MessageReturn>(
                                 this.productClient.send(updateQuantiyProductsWhenCancelOrder, {
@@ -547,47 +581,108 @@ export class OrderService {
                                 })
                             ),
                             firstValueFrom<MessageReturn>(
-                                this.storeClient.send(updateVoucherWhenCancelOrder, voucherIds)
+                                this.storeClient.send(updateVoucherWhenCancelOrder, {
+                                    storeId: orderExist.storeId,
+                                    voucherIds
+                                })
                             )
                         ])
 
                         if (!updatedProduct.action) {
-                            throw new BadRequestException(updatedProduct.msg)
+                            throw new Error(updatedProduct.msg)
                         }
 
                         if (!updatedVoucher.action) {
-                            throw new BadRequestException(updatedVoucher.msg)
+                            throw new Error(updatedVoucher.msg)
+                        }
+
+                        await updateStatus(tx, orderId, status)
+                    } catch (err) {
+                        let storeId = orderExist.storeId
+                        this.productClient.emit(rollbackUpdateQuantiyProductsWhenCancelOrder, {
+                            storeId,
+                            products
+                        })
+                        this.storeClient.emit(rollbackUpdateVoucherWhenCancelOrder, {
+                            storeId,
+                            voucherIds
+                        })
+                        throw new Error('Lỗi cập nhật trạng thái')
+                    }
+                })
+            } else if (NormalStatus?.[status]) {
+                await this.prisma.$transaction(async (tx) => {
+                    await updateStatus(tx, orderId, status)
+                })
+            } else if (RefundStatus?.[status]) {
+                if (!orderFlowId) {
+                    throw new BadRequestException('Id của đơn hoàn đổi là bắt buộc')
+                }
+
+                await this.prisma.$transaction(async (tx) => {
+                    try {
+                        await updateStatus(tx, orderId, status)
+                        let arr = []
+                        if (status === OrderFlowEnum.CLOSE_REFUND) {
+                            arr.push(
+                                ...[OrderFlowEnum.CLOSE_REFUND, OrderFlowEnum.FINISH].map(
+                                    (status) =>
+                                        tx.orderFlow.create({
+                                            data: {
+                                                id: uuidv4(),
+                                                status,
+                                                orderId,
+                                                createdAt:
+                                                    status === OrderFlowEnum.FINISH
+                                                        ? add(new Date(), { seconds: 10 })
+                                                        : new Date(),
+                                                createdBy: userId
+                                            }
+                                        })
+                                )
+                            )
+                            arr.push(
+                                tx.order.update({
+                                    where: {
+                                        id: orderId
+                                    },
+                                    data: {
+                                        updatedAt: new Date(),
+                                        status: OrderFlowEnum.FINISH
+                                    }
+                                })
+                            )
+                            arr.push(
+                                tx.orderRefund.update({
+                                    where: {
+                                        id: orderFlowId
+                                    },
+                                    data: {
+                                        status: OrderFlowEnum.FINISH,
+                                        updatedAt: add(new Date(), { seconds: 10 })
+                                    }
+                                })
+                            )
                         }
 
                         await Promise.all([
-                            tx.order.update({
+                            tx.orderRefund.update({
                                 where: {
-                                    id: orderId
+                                    id: orderFlowId
                                 },
                                 data: {
-                                    status: OrderFlowEnum.CLIENT_CANCEL,
-                                    updatedAt: new Date()
+                                    status
                                 }
                             }),
-                            tx.orderFlow.create({
-                                data: {
-                                    id: uuidv4(),
-                                    status: OrderFlowEnum.CLIENT_CANCEL,
-                                    createdAt: new Date(),
-                                    createdBy: user.id,
-                                    orderId,
-                                    note
-                                }
-                            })
+                            ...arr
                         ])
-                    } catch (_) {
-                        throw new Error('Cập nhật đơn hàng thất bại')
+                    } catch (err) {
+                        throw new BadRequestException('Đơn hoản đổi không tồn tại')
                     }
                 })
             }
-
             return {
-                msg: 'Cập nhật đơn hàng thành công',
+                msg: 'Cập nhật trạng thái thành công',
                 result: undefined
             }
         } catch (err) {
@@ -612,19 +707,25 @@ export class OrderService {
                 where: {
                     id: orderId,
                     status: {
-                        equals: OrderStatus.SUCCESS
-                    },
-                    createdAt: {
-                        gt: sub(new Date(), { days: 3 }).toUTCString()
+                        equals: OrderFlowEnum.SHIPING_SUCCESS
                     }
                 },
                 select: {
-                    id: true
+                    id: true,
+                    createdAt: true
                 }
             })
 
             if (!orderExist) {
-                throw new BadRequestException('Đơn hàng không đủ điều kiện để tạo hoàn hàng')
+                throw new BadRequestException(
+                    'Đơn hàng không tồn tại hoặc chưa được vận chuyển đến khách hàng'
+                )
+            }
+
+            if (compareDesc(orderExist.createdAt, sub(new Date(), { days: 3 }))) {
+                throw new BadRequestException(
+                    'Không thể yêu cầu hoàn đổi khi đơn hàng đã quá 3 ngày'
+                )
             }
 
             await this.prisma.$transaction(async (tx) => {
@@ -636,7 +737,7 @@ export class OrderService {
                             description,
                             createdBy: userId,
                             orderId,
-                            status: OrderStatus.REQUEST_REFUND,
+                            status: OrderFlowEnum.REQUEST_REFUND,
                             RefundMaterial: {
                                 createMany: {
                                     data: materials.map(({ type, url, description }) => ({
@@ -665,7 +766,7 @@ export class OrderService {
                         data: {
                             id: uuidv4(),
                             orderId,
-                            status: OrderStatus.REQUEST_REFUND,
+                            status: OrderFlowEnum.REQUEST_REFUND,
                             createdAt: new Date(),
                             createdBy: userId
                         }
@@ -675,7 +776,7 @@ export class OrderService {
                             id: orderId
                         },
                         data: {
-                            status: OrderStatus.REQUEST_REFUND,
+                            status: OrderFlowEnum.REQUEST_REFUND,
                             numberOfRefund: {
                                 decrement: 1
                             },
@@ -704,7 +805,7 @@ export class OrderService {
             const orderRefundExist = await this.prisma.orderRefund.findUnique({
                 where: {
                     id: orderRefundId,
-                    status: OrderStatus.REQUEST_REFUND
+                    status: OrderFlowEnum.REQUEST_REFUND
                 },
                 include: {
                     ProductOrderRefund: {
@@ -733,6 +834,7 @@ export class OrderService {
                             description,
                             title,
                             updatedAt: new Date(),
+                            status: OrderFlowEnum.UPDATE_REFUND,
                             ProductOrderRefund: {
                                 deleteMany: orderRefundExist.ProductOrderRefund.map(
                                     (productOrderRefundId) => productOrderRefundId
@@ -766,7 +868,7 @@ export class OrderService {
                     tx.orderFlow.create({
                         data: {
                             id: uuidv4(),
-                            status: OrderStatus.UPDATE_REFUND,
+                            status: OrderFlowEnum.UPDATE_REFUND,
                             createdAt: new Date(),
                             createdBy: orderRefundExist.createdBy,
                             orderId: orderRefundExist.orderId
@@ -789,164 +891,12 @@ export class OrderService {
         }
     }
 
-    async acceptRequestRefund(
-        store: CurrentStoreType,
-        orderRefundId: string,
-        body: AcceptRequestOrderRefundDTO
-    ): Promise<Return> {
-        try {
-            const orderRefundExist = await this.prisma.orderRefund.findUnique({
-                where: {
-                    id: orderRefundId,
-                    status: OrderStatus.REQUEST_REFUND
-                }
-            })
-
-            if (!orderRefundExist) {
-                throw new BadRequestException(
-                    'Đơn hoàn hàng không tồn tại hoặc không đủ điều kiện để tạo hoàn hàng'
-                )
-            }
-
-            let { address, name } = body
-
-            await this.prisma.$transaction([
-                this.prisma.orderRefund.update({
-                    where: {
-                        id: orderRefundId
-                    },
-                    data: {
-                        status: OrderStatus.REFUND_SHIPPING,
-                        updatedAt: new Date()
-                    }
-                }),
-                this.prisma.order.update({
-                    where: {
-                        id: orderRefundExist.orderId
-                    },
-                    data: {
-                        status: OrderStatus.REFUND_SHIPPING,
-                        updatedAt: new Date()
-                    }
-                }),
-                this.prisma.orderFlow.create({
-                    data: {
-                        id: uuidv4(),
-                        status: OrderStatus.ACCEPT_REFUND,
-                        createdAt: new Date(),
-                        orderId: orderRefundExist.orderId,
-                        createdBy: store.userId
-                    }
-                }),
-                this.prisma.orderShipping.create({
-                    data: {
-                        id: uuidv4(),
-                        name,
-                        address,
-                        type: OrderShipping.REFUND,
-                        orderId: orderRefundExist.orderId,
-                        createdBy: store.userId
-                    }
-                }),
-                this.prisma.orderFlow.create({
-                    data: {
-                        id: uuidv4(),
-                        status: OrderStatus.REFUND_SHIPPING,
-                        createdAt: add(new Date(), { seconds: 10 }).toUTCString(),
-                        orderId: orderRefundExist.orderId,
-                        createdBy: orderRefundExist.createdBy
-                    }
-                })
-            ])
-
-            return {
-                msg: 'ok',
-                result: undefined
-            }
-        } catch (err) {
-            throw new HttpException(
-                (err?.message as string).length > 100
-                    ? 'Cập nhật đơn hoàn hàng không thành công'
-                    : err?.message || 'Lỗi Server',
-                err?.statusCode || HttpStatus.INTERNAL_SERVER_ERROR
-            )
-        }
-    }
-
-    async closeRequestRefund(orderRefundId: string, body: CloseOrderRefundDTO): Promise<Return> {
-        try {
-            const { note } = body
-            const orderRefundExist = await this.prisma.orderRefund.findUnique({
-                where: {
-                    id: orderRefundId,
-                    status: OrderStatus.REFUND_SHIPPING
-                }
-            })
-
-            if (!orderRefundExist) {
-                throw new BadRequestException('Đơn hoàn hàng không tồn tại hoặc đã đóng')
-            }
-
-            await this.prisma.$transaction([
-                this.prisma.orderRefund.update({
-                    where: {
-                        id: orderRefundId
-                    },
-                    data: {
-                        status: OrderStatus.FINISH,
-                        updatedAt: new Date()
-                    }
-                }),
-                this.prisma.order.update({
-                    where: {
-                        id: orderRefundExist.orderId
-                    },
-                    data: {
-                        status: OrderStatus.FINISH,
-                        updatedAt: new Date()
-                    }
-                }),
-                this.prisma.orderFlow.create({
-                    data: {
-                        id: uuidv4(),
-                        status: OrderStatus.CLOSE_REFUND,
-                        createdAt: new Date(),
-                        createdBy: orderRefundExist.createdBy,
-                        note,
-                        orderId: orderRefundExist.orderId
-                    }
-                }),
-                this.prisma.orderFlow.create({
-                    data: {
-                        id: uuidv4(),
-                        status: OrderStatus.FINISH,
-                        createdAt: add(new Date(), { seconds: 10 }),
-                        orderId: orderRefundExist.orderId,
-                        createdBy: orderRefundExist.createdBy
-                    }
-                })
-            ])
-
-            return {
-                msg: 'ok',
-                result: undefined
-            }
-        } catch (err) {
-            throw new HttpException(
-                (err?.message as string).length > 100
-                    ? 'Cập nhật thông tin đơn hoàn hàng thất bại'
-                    : err?.message || 'Lỗi server',
-                err?.statusCode || HttpStatus.INTERNAL_SERVER_ERROR
-            )
-        }
-    }
-
     async reopenOrderRefund(orderRefundId: string, body: ReOpenOrderRefundDTO): Promise<Return> {
         try {
             const orderRefundExist = await this.prisma.orderRefund.findUnique({
                 where: {
                     id: orderRefundId,
-                    status: OrderStatus.REFUND_SHIPPING
+                    status: OrderFlowEnum.REFUND_SHIPPING_SUCCESS
                 },
                 include: {
                     ProductOrderRefund: true,
@@ -962,11 +912,29 @@ export class OrderService {
                 throw new BadRequestException('Đơn hoàn hàng không tồn tại hoặc đã đóng')
             }
 
-            if (
-                !orderRefundExist.Order.numberOfRefund ||
-                orderRefundExist.Order.numberOfRefund == 0
-            ) {
-                throw new BadRequestException('Hoàn hàng tối đa 3 lần')
+            const orderFlowRefund = await this.prisma.orderFlow.findFirst({
+                where: {
+                    orderId: orderRefundExist.orderId,
+                    status: OrderFlowEnum.REFUND_SHIPPING_SUCCESS
+                },
+                orderBy: {
+                    createdAt: 'desc'
+                },
+                take: 1
+            })
+
+            if (!orderFlowRefund) {
+                throw new NotFoundException('Không tìm thấy đơn hoàn đổi hợp lệ')
+            }
+
+            if (compareDesc(orderFlowRefund.createdAt, sub(new Date(), { days: 3 }))) {
+                throw new BadRequestException(
+                    'Đã hết thời gian hoàn đổi. Thời gian hoản đổi phải dưới 3 ngày'
+                )
+            }
+
+            if (!orderRefundExist.Order.numberOfRefund) {
+                throw new BadRequestException('Bạn đã hết lượt hoàn đổi. Hoàn đổi tối đa 3 lần')
             }
 
             let { description, materials, title } = body
@@ -977,7 +945,7 @@ export class OrderService {
                         id: orderRefundId
                     },
                     data: {
-                        status: OrderStatus.RE_OPEN_REFUND
+                        status: OrderFlowEnum.RE_OPEN_REFUND
                     }
                 }),
                 this.prisma.order.update({
@@ -985,7 +953,7 @@ export class OrderService {
                         id: orderRefundExist.orderId
                     },
                     data: {
-                        status: OrderStatus.REQUEST_REFUND,
+                        status: OrderFlowEnum.REQUEST_REFUND,
                         numberOfRefund: {
                             decrement: 1
                         }
@@ -996,7 +964,7 @@ export class OrderService {
                         id: uuidv4(),
                         title,
                         description,
-                        status: OrderStatus.REQUEST_REFUND,
+                        status: OrderFlowEnum.REQUEST_REFUND,
                         orderId: orderRefundExist.orderId,
                         createdBy: orderRefundExist.createdBy,
                         ProductOrderRefund: {
@@ -1026,7 +994,7 @@ export class OrderService {
                 this.prisma.orderFlow.create({
                     data: {
                         id: uuidv4(),
-                        status: OrderStatus.RE_OPEN_REFUND,
+                        status: OrderFlowEnum.RE_OPEN_REFUND,
                         createdBy: orderRefundExist.createdBy,
                         orderId: orderRefundExist.orderId
                     }
@@ -1034,7 +1002,7 @@ export class OrderService {
                 this.prisma.orderFlow.create({
                     data: {
                         id: uuidv4(),
-                        status: OrderStatus.REQUEST_REFUND,
+                        status: OrderFlowEnum.REQUEST_REFUND,
                         createdBy: orderRefundExist.createdBy,
                         orderId: orderRefundExist.orderId,
                         createdAt: add(new Date(), { seconds: 10 })
@@ -1080,29 +1048,30 @@ export class OrderService {
             }),
             this.prisma.order.count({
                 where: {
-                    status: OrderStatus.SUCCESS,
+                    status: OrderFlowEnum.FINISH,
                     storeId: user.storeId
                 }
             }),
             this.prisma.order.count({
                 where: {
-                    status: OrderStatus.WAITING_CONFIRM,
+                    status: OrderFlowEnum.WAITING_CONFIRM,
                     storeId: user.storeId
                 }
             }),
             this.prisma.order.count({
                 where: {
-                    status: OrderStatus.SHIPING,
+                    status: OrderFlowEnum.SHIPING_SUCCESS,
                     storeId: user.storeId
                 }
             }),
             this.prisma.order.count({
                 where: {
-                    status: OrderStatus.CANCEL,
+                    status: OrderFlowEnum.REQUEST_REFUND,
                     storeId: user.storeId
                 }
             })
         ])
+
         return {
             msg: 'ok',
             result: {
@@ -1201,7 +1170,7 @@ export class OrderService {
                 createdAt: {
                     gte: subDays(addHours(new Date(), 7), 5)
                 },
-                status: OrderStatus.SUCCESS
+                status: OrderFlowEnum.FINISH
             }
         })
     }

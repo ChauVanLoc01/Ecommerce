@@ -15,19 +15,17 @@ export enum OrderFlowEnum {
     FINISH = 'FINISH'
 }
 
+export const NormalStatus = {
+    [OrderFlowEnum.CLIENT_CANCEL]: true,
+    [OrderFlowEnum.REQUEST_CANCEL]: true,
+    [OrderFlowEnum.ACCEPT_CANCEL]: true,
+    [OrderFlowEnum.CONFIRM_AND_SHIPPING]: true,
+    [OrderFlowEnum.SHIPING_SUCCESS]: true
+}
+
 export const RefundStatus = {
-    [OrderFlowEnum.REQUEST_REFUND]: true,
-    [OrderFlowEnum.UPDATE_REFUND]: true,
     [OrderFlowEnum.CANCEL_REFUND]: true,
     [OrderFlowEnum.ACCEPT_REFUND_AND_SHIPPING]: true,
     [OrderFlowEnum.REFUND_SHIPPING_SUCCESS]: true,
-    [OrderFlowEnum.RE_OPEN_REFUND]: true,
     [OrderFlowEnum.CLOSE_REFUND]: true
-}
-
-export const OrderShipping = {
-    [OrderFlowEnum.CONFIRM_AND_SHIPPING]: true,
-    [OrderFlowEnum.SHIPING_SUCCESS]: true,
-    [OrderFlowEnum.ACCEPT_REFUND_AND_SHIPPING]: true,
-    [OrderFlowEnum.REFUND_SHIPPING_SUCCESS]: true
 }

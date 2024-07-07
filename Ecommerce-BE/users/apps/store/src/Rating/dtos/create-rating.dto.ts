@@ -3,12 +3,6 @@ import { IsNotEmpty, IsNumber, IsOptional, IsString, MaxLength } from 'class-val
 import { CreateRatingMaterialDto } from './rating-relatived.dto'
 
 export class CreateRatingDto extends CreateRatingMaterialDto {
-    @ApiProperty({ description: 'Unique identifier for the store', example: 'store-123' })
-    @IsString()
-    @IsNotEmpty()
-    @MaxLength(50)
-    storeId: string
-
     @ApiProperty({ description: 'Unique identifier for the order', example: 'order-123' })
     @IsString()
     @IsNotEmpty()
