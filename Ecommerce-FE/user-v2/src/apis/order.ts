@@ -1,5 +1,13 @@
 import { GenericAbortSignal } from 'axios'
-import { Order, OrderBody, OrderDetailResponse, OrderQuery, OrderResponse } from 'src/types/order.type'
+import {
+    CreateOrderRefund,
+    Order,
+    OrderBody,
+    OrderDetailResponse,
+    OrderQuery,
+    OrderResponse,
+    UpdateOrderStatus
+} from 'src/types/order.type'
 import { Return } from 'src/types/return.type'
 import { http } from './http'
 
@@ -20,5 +28,11 @@ export const OrderFetching = {
     },
     cancelOrder: (orderId: string) => {
         return http.put(`order/order/user-order/${orderId}`, { status: 'CANCEL' })
+    },
+    updateStatusOrder: (orderId: string) => (body: UpdateOrderStatus) => {
+        return http.put(`order/order/${orderId}/status`, body)
+    },
+    requestRefund: (orderId: string) => (body: CreateOrderRefund) => {
+        return http.post(`order/order/${orderId}/refund`, body)
     }
 }

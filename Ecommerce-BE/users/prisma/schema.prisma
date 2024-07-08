@@ -100,7 +100,6 @@ model OrderFlow {
   createdAt DateTime? @db.Timestamp(0)
   orderId   String    @db.VarChar(50)
   Order     Order     @relation(fields: [orderId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "OrderFlow_ibfk_2")
-  User      User      @relation(fields: [createdBy], references: [id], onUpdate: Restrict, map: "OrderFlow_ibfk_3")
 
   @@index([createdBy], map: "createdBy")
   @@index([orderId], map: "orderId")
@@ -312,7 +311,6 @@ model User {
   CategoryConditionVoucher            CategoryConditionVoucher[]
   DeliveryInformation                 DeliveryInformation[]
   Order                               Order[]
-  OrderFlow                           OrderFlow[]
   OrderRefund                         OrderRefund[]
   OrderShipping                       OrderShipping[]
   PriceConditionVoucher               PriceConditionVoucher[]

@@ -1,7 +1,7 @@
 import { AlertDialog, Avatar, Badge, Button, DataList, Flex, Spinner, Text } from '@radix-ui/themes'
+import { QueryObserverResult, RefetchOptions } from '@tanstack/react-query'
 import { ColumnDef } from '@tanstack/react-table'
 import { format } from 'date-fns'
-import { useRef } from 'react'
 import { BiSolidSortAlt } from 'react-icons/bi'
 import { Link } from 'react-router-dom'
 import Table from 'src/components/Table'
@@ -14,11 +14,10 @@ type OrderDetailProps = {
     isOpen: boolean
     setIsOpen: React.Dispatch<React.SetStateAction<boolean>>
     orderData?: OrderDetailResponse
+    orderRefetch: (options?: RefetchOptions) => Promise<QueryObserverResult<OrderDetailResponse, Error>>
 }
 
-const OrderDetail = ({ isOpen, setIsOpen, orderData }: OrderDetailProps) => {
-    const dataListRef = useRef<HTMLDListElement | null>(null)
-
+const OrderDetail = ({ isOpen, setIsOpen, orderData, orderRefetch }: OrderDetailProps) => {
     const columns: ColumnDef<OrderDetailResponse['ProductOrder'][number]>[] = [
         {
             accessorKey: 'Hình ảnh',
@@ -151,7 +150,7 @@ const OrderDetail = ({ isOpen, setIsOpen, orderData }: OrderDetailProps) => {
                     <AlertDialog.Title>Thông tin chi tiết đơn hàng</AlertDialog.Title>
                     <Flex gapX={'9'}>
                         <div className='flex-basis-1/2 flex-shrink-0'>
-                            <DataList.Root ref={dataListRef}>
+                            <DataList.Root id='order-detail-list'>
                                 <DataList.Item align='center'>
                                     <DataList.Label minWidth='200px'>Mã đơn hàng</DataList.Label>
                                     <DataList.Value>
@@ -161,9 +160,14 @@ const OrderDetail = ({ isOpen, setIsOpen, orderData }: OrderDetailProps) => {
                                 <DataList.Item align='center'>
                                     <DataList.Label minWidth='200px'>Trạng thái</DataList.Label>
                                     <DataList.Value>
-                                        <Badge size={'3'} color={OrderStatus[orderData?.status][1] as any}>
-                                            {OrderStatus[orderData?.status][0]}
-                                        </Badge>
+                                        <div className='text-center'>
+                                            <Badge
+                                                color={(OrderStatus?.[orderData.status]?.color as any) || 'red'}
+                                                size={'3'}
+                                            >
+                                                {OrderStatus?.[orderData.status]?.label}
+                                            </Badge>
+                                        </div>
                                     </DataList.Value>
                                 </DataList.Item>
                                 <DataList.Item align='center'>
@@ -213,7 +217,7 @@ const OrderDetail = ({ isOpen, setIsOpen, orderData }: OrderDetailProps) => {
                             </DataList.Root>
                         </div>
                         <div className='basis-1/2 flex-shrink-0 flex-grow'>
-                            <OrderFlow dataListRef={dataListRef} orderFlow={orderData.OrderFlow} />
+                            <OrderFlow orderData={orderData} orderRefetch={orderRefetch} />
                         </div>
                     </Flex>
                     <Table<OrderDetailResponse['ProductOrder'][number]>

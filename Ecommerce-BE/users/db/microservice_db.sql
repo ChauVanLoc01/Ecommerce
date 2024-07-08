@@ -140,7 +140,7 @@ CREATE TABLE `Order` (
   `note` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `isRated` tinyint(1) DEFAULT '0',
   `status` char(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `createdAt` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `createdAt` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `updatedAt` timestamp NULL DEFAULT NULL,
   `numberOfRefund` int DEFAULT '3',
   PRIMARY KEY (`id`),
@@ -152,7 +152,9 @@ CREATE TABLE `Order` (
 
 INSERT INTO `Order` (`id`, `userId`, `storeId`, `total`, `discount`, `pay`, `note`, `isRated`, `status`, `createdAt`, `updatedAt`, `numberOfRefund`) VALUES
 ('859912ec-dd00-4c35-9272-a6d0530003d1',	'a226f227-c629-4c75-98ca-e56a3dab016e',	'465d9c2f-cbb7-4d53-943d-0b902f51861f',	328000,	0,	328000,	NULL,	0,	'WAITING_CONFIRM',	'2024-07-06 10:33:15',	NULL,	3),
-('c33d0129-d297-406d-ad10-7bf6c4b63573',	'a226f227-c629-4c75-98ca-e56a3dab016e',	'61692e39-1edf-4eb7-b312-7a95aea194ef',	39000,	0,	39000,	NULL,	0,	'WAITING_CONFIRM',	'2024-07-06 10:33:15',	NULL,	3);
+('c1f6cd51-747f-4fd5-b630-583eb694bf07',	'a226f227-c629-4c75-98ca-e56a3dab016e',	'6748c5c1-a1c7-468a-a779-0d5e0be487c4',	700000,	0,	700000,	NULL,	0,	'WAITING_CONFIRM',	'2024-07-06 12:32:14',	NULL,	3),
+('c33d0129-d297-406d-ad10-7bf6c4b63573',	'a226f227-c629-4c75-98ca-e56a3dab016e',	'61692e39-1edf-4eb7-b312-7a95aea194ef',	39000,	0,	39000,	NULL,	0,	'WAITING_CONFIRM',	'2024-07-06 10:33:15',	NULL,	3),
+('ec200e48-6c28-4fde-a521-84d2afc1b570',	'a226f227-c629-4c75-98ca-e56a3dab016e',	'a160174c-3e17-4623-8504-dea02e634036',	8900,	0,	8900,	NULL,	0,	'REQUEST_REFUND',	'2024-07-08 17:14:28',	'2024-07-08 17:14:26',	1);
 
 DROP TABLE IF EXISTS `OrderFlow`;
 CREATE TABLE `OrderFlow` (
@@ -160,27 +162,33 @@ CREATE TABLE `OrderFlow` (
   `status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `note` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
   `createdBy` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `createdAt` timestamp NULL DEFAULT NULL,
+  `createdAt` timestamp NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   `orderId` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   PRIMARY KEY (`id`),
   KEY `createdBy` (`createdBy`),
   KEY `orderId` (`orderId`),
-  CONSTRAINT `OrderFlow_ibfk_2` FOREIGN KEY (`orderId`) REFERENCES `Order` (`id`),
-  CONSTRAINT `OrderFlow_ibfk_3` FOREIGN KEY (`createdBy`) REFERENCES `User` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
+  CONSTRAINT `OrderFlow_ibfk_2` FOREIGN KEY (`orderId`) REFERENCES `Order` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT INTO `OrderFlow` (`id`, `status`, `note`, `createdBy`, `createdAt`, `orderId`) VALUES
 ('0ade45eb-cbe5-4ea9-90ed-a51fe825daca',	'WAITING_CONFIRM',	NULL,	'a226f227-c629-4c75-98ca-e56a3dab016e',	NULL,	'859912ec-dd00-4c35-9272-a6d0530003d1'),
-('3f073bbe-bf2d-49b6-876d-c2eb26b34c3f',	'WAITING_CONFIRM',	NULL,	'a226f227-c629-4c75-98ca-e56a3dab016e',	NULL,	'c33d0129-d297-406d-ad10-7bf6c4b63573');
+('11ddd32b-f071-4403-8d6d-65e3f1073aad',	'WAITING_CONFIRM',	NULL,	'a226f227-c629-4c75-98ca-e56a3dab016e',	NULL,	'c1f6cd51-747f-4fd5-b630-583eb694bf07'),
+('22a63216-fc46-4f02-b3ab-8d94d4959ade',	'CONFIRM_AND_SHIPPING',	NULL,	'4fbaeb18-6d87-40e3-80cd-5dbf57f963a7',	'2024-07-07 09:40:27',	'ec200e48-6c28-4fde-a521-84d2afc1b570'),
+('29cb07fd-5cd3-49c9-960e-95ebd2f3e5cf',	'SHIPING_SUCCESS',	'',	'a160174c-3e17-4623-8504-dea02e634036',	'2024-07-07 11:03:38',	'ec200e48-6c28-4fde-a521-84d2afc1b570'),
+('3f073bbe-bf2d-49b6-876d-c2eb26b34c3f',	'WAITING_CONFIRM',	NULL,	'a226f227-c629-4c75-98ca-e56a3dab016e',	NULL,	'c33d0129-d297-406d-ad10-7bf6c4b63573'),
+('5b84ce46-6232-4af9-9c67-0120f5af1c1e',	'REQUEST_REFUND',	NULL,	'a226f227-c629-4c75-98ca-e56a3dab016e',	'2024-07-08 16:32:09',	'ec200e48-6c28-4fde-a521-84d2afc1b570'),
+('849f4f82-0ede-4dea-87ff-a7b4cdf03a3a',	'REQUEST_REFUND',	NULL,	'a226f227-c629-4c75-98ca-e56a3dab016e',	'2024-07-08 17:14:26',	'ec200e48-6c28-4fde-a521-84d2afc1b570'),
+('9deca8de-94b0-4e0d-a0a8-7a348771a39d',	'WAITING_CONFIRM',	NULL,	'a226f227-c629-4c75-98ca-e56a3dab016e',	'2024-07-06 12:47:47',	'ec200e48-6c28-4fde-a521-84d2afc1b570'),
+('dc84e7aa-e812-4d70-abc0-0680792df4e9',	'CANCEL_REFUND',	'',	'a226f227-c629-4c75-98ca-e56a3dab016e',	'2024-07-08 16:59:51',	'ec200e48-6c28-4fde-a521-84d2afc1b570');
 
 DROP TABLE IF EXISTS `OrderRefund`;
 CREATE TABLE `OrderRefund` (
   `id` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `orderId` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `status` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `title` varchar(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `description` tinytext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `createdAt` timestamp NULL DEFAULT NULL,
+  `createdAt` timestamp NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   `createdBy` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `updatedAt` timestamp NULL DEFAULT NULL,
   `updatedBy` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
@@ -191,6 +199,9 @@ CREATE TABLE `OrderRefund` (
   CONSTRAINT `OrderRefund_ibfk_2` FOREIGN KEY (`createdBy`) REFERENCES `User` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+INSERT INTO `OrderRefund` (`id`, `orderId`, `status`, `title`, `description`, `createdAt`, `createdBy`, `updatedAt`, `updatedBy`) VALUES
+('867f9a38-fbb3-4d9a-b7aa-52a98c22be46',	'ec200e48-6c28-4fde-a521-84d2afc1b570',	'CANCEL_REFUND',	'Yêu cầu hoàn đổi',	'Sản phẩm bị lỗi',	'2024-07-08 16:59:53',	'a226f227-c629-4c75-98ca-e56a3dab016e',	NULL,	NULL),
+('8c3c2c00-512c-4403-ba7f-1c311e04abd6',	'ec200e48-6c28-4fde-a521-84d2afc1b570',	'REQUEST_REFUND',	'Yêu cầu hoàn đổi',	'Sản phẩm bị lỗi',	NULL,	'a226f227-c629-4c75-98ca-e56a3dab016e',	NULL,	NULL);
 
 DROP TABLE IF EXISTS `OrderShipping`;
 CREATE TABLE `OrderShipping` (
@@ -199,7 +210,7 @@ CREATE TABLE `OrderShipping` (
   `name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `address` varchar(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `type` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `createdAt` timestamp NULL DEFAULT NULL,
+  `createdAt` timestamp NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   `createdBy` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `updatedAt` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
@@ -210,7 +221,9 @@ CREATE TABLE `OrderShipping` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT INTO `OrderShipping` (`id`, `orderId`, `name`, `address`, `type`, `createdAt`, `createdBy`, `updatedAt`) VALUES
+('4356d1bd-cd6d-4db7-9343-0d01804568b6',	'ec200e48-6c28-4fde-a521-84d2afc1b570',	'CHAU VAN LOC',	'Tien Giang',	'SHIPPING',	NULL,	'a226f227-c629-4c75-98ca-e56a3dab016e',	NULL),
 ('494b6cdb-aefa-4e20-8543-87b33ec1bead',	'c33d0129-d297-406d-ad10-7bf6c4b63573',	'CHAU VAN LOC',	'Tien Giang',	'SHIPPING',	NULL,	'a226f227-c629-4c75-98ca-e56a3dab016e',	NULL),
+('b51add6b-feeb-4775-ba9c-7e6ff78aded9',	'c1f6cd51-747f-4fd5-b630-583eb694bf07',	'CHAU VAN LOC',	'Tien Giang',	'SHIPPING',	NULL,	'a226f227-c629-4c75-98ca-e56a3dab016e',	NULL),
 ('d2d1a2f1-5ea1-439c-b8b6-12b80f4bf078',	'859912ec-dd00-4c35-9272-a6d0530003d1',	'CHAU VAN LOC',	'Tien Giang',	'SHIPPING',	NULL,	'a226f227-c629-4c75-98ca-e56a3dab016e',	NULL);
 
 DROP TABLE IF EXISTS `OrderVoucher`;
@@ -218,7 +231,7 @@ CREATE TABLE `OrderVoucher` (
   `id` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `orderId` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `voucherId` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `createdAt` timestamp NOT NULL,
+  `createdAt` timestamp NOT NULL ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `orderId` (`orderId`),
   KEY `voucherId` (`voucherId`),
@@ -299,15 +312,15 @@ CREATE TABLE `Product` (
 
 INSERT INTO `Product` (`id`, `name`, `image`, `priceBefore`, `priceAfter`, `initQuantity`, `currentQuantity`, `sold`, `description`, `status`, `category`, `createdBy`, `updatedBy`, `createdAt`, `updatedAt`, `deletedBy`, `deletedAt`, `storeId`, `voucherId`, `rate`, `isDelete`) VALUES
 ('001e6c58-dc0a-46ea-91e6-c9c34e661a3f',	'[RẺ VÔ ĐỊCH] Áo Thun Tổ Ong Logo Chant Unisex [FREESHIP] Phông form rộng tay lỡ kiểu dáng 3158 đường phố vintage',	'https://down-vn.img.susercontent.com/file/321978991305d3f80cfa18269ea5e33a_tn',	0,	37000,	2415,	1407,	998,	NULL,	'BLOCK',	'thoitrangnu',	'f82a04b9-c41e-4d24-bc0b-3be0538a603b',	NULL,	'2024-04-09 16:19:42',	NULL,	NULL,	NULL,	'de51b1b6-ed27-49b7-a804-57b7992cbc81',	NULL,	0,	0),
-('0045ffae-a79d-427b-a3a6-917492310c51',	'HOB-Tinh Chất Hàu Biển OB Tăng Cường Sinh Lý Nam Growgreenaz - Cải Thiện Yếu Sinh Lý, Xuất Tinh Sớm( Hộp 30v)',	'https://down-vn.img.susercontent.com/file/vn-11134207-7r98o-lmef9xvyagv3ce_tn',	369000,	328000,	4039,	2409,	1614,	NULL,	'ACTIVE',	'suckhoe',	'a666dc45-29aa-4301-87bb-18cc547386be',	NULL,	'2024-04-09 16:19:42',	'2024-07-06 10:35:00',	NULL,	NULL,	'465d9c2f-cbb7-4d53-943d-0b902f51861f',	NULL,	0,	0),
-('0063ab52-aef0-41a8-a751-bfd6cec00038',	'Máy Chơi Game SUP 400 trò chơi [TẶNG KÈM TAY CHƠI GAME],SUP400 Cầm Tay G1 Plus 400 In 1 - HƠN 400 TRÒ CHƠI',	'https://down-vn.img.susercontent.com/file/2bf9ddd983c20ee071b76ad6e30bd62e_tn',	0,	39000,	2273,	1699,	566,	NULL,	'ACTIVE',	'thietbidientu',	'e9307983-16bd-42ce-a3bf-7e12dc89fae6',	NULL,	'2024-04-09 16:19:42',	'2024-07-06 10:35:00',	NULL,	NULL,	'61692e39-1edf-4eb7-b312-7a95aea194ef',	NULL,	0,	0),
+('0045ffae-a79d-427b-a3a6-917492310c51',	'HOB-Tinh Chất Hàu Biển OB Tăng Cường Sinh Lý Nam Growgreenaz - Cải Thiện Yếu Sinh Lý, Xuất Tinh Sớm( Hộp 30v)',	'https://down-vn.img.susercontent.com/file/vn-11134207-7r98o-lmef9xvyagv3ce_tn',	369000,	328000,	4039,	2409,	1614,	NULL,	'ACTIVE',	'suckhoe',	'a666dc45-29aa-4301-87bb-18cc547386be',	NULL,	'2024-04-09 16:19:42',	'2024-07-06 10:45:00',	NULL,	NULL,	'465d9c2f-cbb7-4d53-943d-0b902f51861f',	NULL,	0,	0),
+('0063ab52-aef0-41a8-a751-bfd6cec00038',	'Máy Chơi Game SUP 400 trò chơi [TẶNG KÈM TAY CHƠI GAME],SUP400 Cầm Tay G1 Plus 400 In 1 - HƠN 400 TRÒ CHƠI',	'https://down-vn.img.susercontent.com/file/2bf9ddd983c20ee071b76ad6e30bd62e_tn',	0,	39000,	2273,	1699,	566,	NULL,	'ACTIVE',	'thietbidientu',	'e9307983-16bd-42ce-a3bf-7e12dc89fae6',	NULL,	'2024-04-09 16:19:42',	'2024-07-06 10:45:00',	NULL,	NULL,	'61692e39-1edf-4eb7-b312-7a95aea194ef',	NULL,	0,	0),
 ('00718b4a-bba4-4e01-a05a-68f27a1fab00',	'Dép Đi Trong Nhà Đế Dày Chống Trượt Họa Tiết Vịt Hoạt Hình Dễ Thương Cho Nữ',	'https://down-vn.img.susercontent.com/file/vn-11134201-23020-lp9yu2giwlnv6c_tn',	125000,	61000,	8117,	3881,	4152,	NULL,	'ACTIVE',	'giaydepnu',	'f82a04b9-c41e-4d24-bc0b-3be0538a603b',	NULL,	'2024-04-09 16:19:42',	NULL,	NULL,	NULL,	'de51b1b6-ed27-49b7-a804-57b7992cbc81',	NULL,	0,	0),
 ('007ddcd6-e8b3-46cc-83d8-a5569e7e8022',	'Set đồ nam nữ form rộng unisex, áo polo khóa kéo kèm quần short đùi thêu logo chất liệu cotton tổ ong nhiều màu',	'https://down-vn.img.susercontent.com/file/aa4b800b2223167ff0c45a2e94ff57be_tn',	0,	90000,	300,	112,	177,	NULL,	'ACTIVE',	'thoitrangnam',	'a3816a2a-93c2-49a9-b5af-16e25615b2c1',	NULL,	'2024-04-09 16:19:42',	NULL,	NULL,	NULL,	'93dd964f-2e6d-4874-9c79-009eb4d89202',	NULL,	0,	0),
 ('007ebce5-7398-499d-9899-bd360a047517',	'Súng massage cầm tay METAMO 8 đầu 99 cấp độ trị đau nhức toàn thân hiệu quả, máy massage kèm 8 đầu mát xa chuyên sâu',	'https://down-vn.img.susercontent.com/file/vn-11134207-7qukw-lf9n5emqbujb7a_tn',	0,	239000,	1417,	938,	397,	NULL,	'ACTIVE',	'suckhoe',	'6c868791-2b31-46aa-b24f-9442084f260a',	NULL,	'2024-04-09 16:19:42',	NULL,	NULL,	NULL,	'72e339da-c565-4a2e-97b0-1a142176e072',	NULL,	0,	0),
 ('00c00e94-708e-41a5-9ea6-a5484ab55c35',	'Ví nữ đựng thẻ ngắn mini cute cầm tay nhiều ngăn giá rẻ nhỏ gọn bỏ túi thời trang hàn quốc VN500',	'https://down-vn.img.susercontent.com/file/vn-11134207-7qukw-lho7vcqjkxhh44_tn',	25000,	12500,	6198,	5610,	580,	NULL,	'ACTIVE',	'tuivinu',	'4fbaeb18-6d87-40e3-80cd-5dbf57f963a7',	NULL,	'2024-04-09 16:19:42',	NULL,	NULL,	NULL,	'a160174c-3e17-4623-8504-dea02e634036',	NULL,	0,	0),
 ('00c49667-3653-4c7a-9042-34a37456972e',	'[Size to] Túi đựng mỹ phẩm đồ du lịch đa năng có móc treo',	'https://down-vn.img.susercontent.com/file/03d8f9302089dd5489baffd1855ceef8_tn',	0,	59000,	4761,	1956,	2801,	NULL,	'ACTIVE',	'tuivinu',	'a666dc45-29aa-4301-87bb-18cc547386be',	NULL,	'2024-04-09 16:19:42',	NULL,	NULL,	NULL,	'465d9c2f-cbb7-4d53-943d-0b902f51861f',	NULL,	0,	0),
-('00ce04d3-c05d-4255-9d2c-6548ac3f2735',	'Vòng cổ Chuỗi Hạt Ngọc Trai Nhiều Màu Sắc Mặt Hình Ngôi Sao Mặt Cười',	'https://down-vn.img.susercontent.com/file/5751d8baec3896c90a7b54329d63ece5_tn',	0,	8900,	6286,	2870,	3408,	NULL,	'ACTIVE',	'phukien&trangsucnu',	'4fbaeb18-6d87-40e3-80cd-5dbf57f963a7',	NULL,	'2024-04-09 16:19:42',	NULL,	NULL,	NULL,	'a160174c-3e17-4623-8504-dea02e634036',	NULL,	0,	0),
-('00d08f1f-1d79-4778-a3a5-901508138a02',	'Bàn phím không dây Bluetooth Logitech K380',	'https://down-vn.img.susercontent.com/file/sg-11134201-22100-i2h29b52llivbc_tn',	1000000,	700000,	536,	494,	36,	'Mô tả',	'ACTIVE',	'giaydepnu',	'a226f227-c629-4c75-98ca-e56a3dab016e',	NULL,	'2024-04-09 16:19:42',	NULL,	NULL,	NULL,	'6748c5c1-a1c7-468a-a779-0d5e0be487c4',	NULL,	0,	0),
+('00ce04d3-c05d-4255-9d2c-6548ac3f2735',	'Vòng cổ Chuỗi Hạt Ngọc Trai Nhiều Màu Sắc Mặt Hình Ngôi Sao Mặt Cười',	'https://down-vn.img.susercontent.com/file/5751d8baec3896c90a7b54329d63ece5_tn',	0,	8900,	6286,	2868,	3408,	NULL,	'ACTIVE',	'phukien&trangsucnu',	'4fbaeb18-6d87-40e3-80cd-5dbf57f963a7',	NULL,	'2024-04-09 16:19:42',	'2024-07-06 13:00:00',	NULL,	NULL,	'a160174c-3e17-4623-8504-dea02e634036',	NULL,	0,	0),
+('00d08f1f-1d79-4778-a3a5-901508138a02',	'Bàn phím không dây Bluetooth Logitech K380',	'https://down-vn.img.susercontent.com/file/sg-11134201-22100-i2h29b52llivbc_tn',	1000000,	700000,	536,	493,	36,	'Mô tả',	'ACTIVE',	'giaydepnu',	'a226f227-c629-4c75-98ca-e56a3dab016e',	NULL,	'2024-04-09 16:19:42',	'2024-07-06 12:45:00',	NULL,	NULL,	'6748c5c1-a1c7-468a-a779-0d5e0be487c4',	NULL,	0,	0),
 ('01236d43-bf11-4b6d-bd3b-7ce3ff95bfb2',	'Nồi Cơm Điện mini CUCKOO CR388/NKMedia- Dung tích 1,2L kiểu dáng Con Lợn Siêu Đáng Yêu, BH 12 tháng',	'https://down-vn.img.susercontent.com/file/b3f91f9a852b067753ef5b72caa7734f_tn',	0,	286000,	2097,	2090,	4,	NULL,	'ACTIVE',	'thietbidiengiadung',	'a3816a2a-93c2-49a9-b5af-16e25615b2c1',	NULL,	'2024-04-09 16:19:42',	NULL,	NULL,	NULL,	'93dd964f-2e6d-4874-9c79-009eb4d89202',	NULL,	0,	0),
 ('012542cf-1a0c-4240-a314-e185d052a7bd',	'Găng Tay đi phượt 511 Ngón Cụt (Loại Xịn) - Tập Gym - Lái xe - Đi phượt',	'https://down-vn.img.susercontent.com/file/2900a2d4bf52a4d5560ac69c8ab745cb_tn',	90000,	40000,	805,	612,	187,	NULL,	'BLOCK',	'thoitrangnam',	'a226f227-c629-4c75-98ca-e56a3dab016e',	NULL,	'2024-04-09 16:19:42',	NULL,	NULL,	NULL,	'6748c5c1-a1c7-468a-a779-0d5e0be487c4',	NULL,	0,	0),
 ('012e9bf4-252c-46ec-bd08-e15240d96d8d',	'Quần bỏ bỉm riokids cao cấp dành cho bé từ 4-22kg',	'https://down-vn.img.susercontent.com/file/bc6f8cafea8cf9b572db6c34a594dc52_tn',	0,	17500,	6621,	5550,	1069,	NULL,	'ACTIVE',	'me&be',	'f82a04b9-c41e-4d24-bc0b-3be0538a603b',	NULL,	'2024-04-09 16:19:42',	NULL,	NULL,	NULL,	'de51b1b6-ed27-49b7-a804-57b7992cbc81',	NULL,	0,	0),
@@ -2015,7 +2028,9 @@ CREATE TABLE `ProductOrder` (
 
 INSERT INTO `ProductOrder` (`id`, `productId`, `quantity`, `priceBefore`, `priceAfter`, `orderId`) VALUES
 ('380a7ff2-2621-46eb-b025-74fcddebe464',	'0045ffae-a79d-427b-a3a6-917492310c51',	1,	NULL,	328000,	'859912ec-dd00-4c35-9272-a6d0530003d1'),
-('6f2599dc-7989-474e-91fd-5a6044521351',	'0063ab52-aef0-41a8-a751-bfd6cec00038',	1,	NULL,	39000,	'c33d0129-d297-406d-ad10-7bf6c4b63573');
+('696a79ea-1df3-4cd1-82ef-8208e7fa00f1',	'00ce04d3-c05d-4255-9d2c-6548ac3f2735',	1,	NULL,	8900,	'ec200e48-6c28-4fde-a521-84d2afc1b570'),
+('6f2599dc-7989-474e-91fd-5a6044521351',	'0063ab52-aef0-41a8-a751-bfd6cec00038',	1,	NULL,	39000,	'c33d0129-d297-406d-ad10-7bf6c4b63573'),
+('d81060c6-ee97-4b46-b328-e2787bb652f8',	'00d08f1f-1d79-4778-a3a5-901508138a02',	1,	NULL,	700000,	'c1f6cd51-747f-4fd5-b630-583eb694bf07');
 
 DROP TABLE IF EXISTS `ProductOrderRefund`;
 CREATE TABLE `ProductOrderRefund` (
@@ -2031,6 +2046,9 @@ CREATE TABLE `ProductOrderRefund` (
   CONSTRAINT `ProductOrderRefund_ibfk_2` FOREIGN KEY (`productOrderId`) REFERENCES `ProductOrder` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+INSERT INTO `ProductOrderRefund` (`id`, `orderRefundId`, `productOrderId`, `quantity`, `description`) VALUES
+('1c76982b-9252-44bd-822d-dea45ac1dae3',	'867f9a38-fbb3-4d9a-b7aa-52a98c22be46',	'696a79ea-1df3-4cd1-82ef-8208e7fa00f1',	1,	NULL),
+('6cc3f96f-ceeb-47ef-9673-a5c4fb39adfe',	'8c3c2c00-512c-4403-ba7f-1c311e04abd6',	'696a79ea-1df3-4cd1-82ef-8208e7fa00f1',	1,	NULL);
 
 DROP TABLE IF EXISTS `ProductPromotion`;
 CREATE TABLE `ProductPromotion` (
@@ -2121,6 +2139,9 @@ CREATE TABLE `RefundMaterial` (
   CONSTRAINT `RefundMaterial_ibfk_1` FOREIGN KEY (`orderRefundId`) REFERENCES `OrderRefund` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+INSERT INTO `RefundMaterial` (`id`, `orderRefundId`, `url`, `type`, `description`) VALUES
+('54778327-9418-45a8-b2ef-0d62da076059',	'8c3c2c00-512c-4403-ba7f-1c311e04abd6',	'https://vanlocbucket.s3.ap-southeast-2.amazonaws.com/1c4fb97c-8732-4e63-a026-aa1f3de46d40_catliuliu.jpg',	'image',	NULL),
+('80e89cd7-5f37-4004-b10c-8f50edcf93ce',	'867f9a38-fbb3-4d9a-b7aa-52a98c22be46',	'https://vanlocbucket.s3.ap-southeast-2.amazonaws.com/e42789c5-b763-4252-9d54-8eb1cff9dca5_meokhantam.jpg',	'image',	NULL);
 
 DROP TABLE IF EXISTS `SalePromotion`;
 CREATE TABLE `SalePromotion` (
@@ -2138,6 +2159,175 @@ CREATE TABLE `SalePromotion` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+INSERT INTO `SalePromotion` (`id`, `title`, `description`, `type`, `status`, `startDate`, `endDate`, `createdAt`, `createdBy`, `updatedAt`, `updatedBy`) VALUES
+('01e51e13-d3af-4635-a4f9-8fbfe7b991fc',	'Daily Sale 00:00 13-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 00:00 13-07-2024',	'NORMAL',	'BLOCK',	'2024-07-13 07:00:00',	'2024-07-13 08:00:00',	'2024-07-08 03:31:25',	'system',	NULL,	NULL),
+('026c397b-efe7-4a05-9884-5736886efd10',	'Daily Sale 22:00 08-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 22:00 08-07-2024',	'NORMAL',	'BLOCK',	'2024-07-09 05:00:00',	'2024-07-09 06:00:00',	'2024-07-08 03:31:00',	'system',	NULL,	NULL),
+('043505aa-532a-4abb-bd2f-a76206b85efb',	'Daily Sale 20:00 13-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 20:00 13-07-2024',	'NORMAL',	'BLOCK',	'2024-07-14 03:00:00',	'2024-07-14 04:00:00',	'2024-07-08 03:31:25',	'system',	NULL,	NULL),
+('049ef5a3-c782-4d24-8621-45c930c8fa67',	'Daily Sale 15:00 14-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 15:00 14-07-2024',	'NORMAL',	'BLOCK',	'2024-07-14 22:00:00',	'2024-07-14 23:00:00',	'2024-07-08 03:31:30',	'system',	NULL,	NULL),
+('05c8fd48-aaa3-4015-8c57-23fe700c4d37',	'Daily Sale 03:00 08-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 03:00 08-07-2024',	'NORMAL',	'BLOCK',	'2024-07-08 10:00:00',	'2024-07-08 11:00:00',	'2024-07-08 03:31:00',	'system',	NULL,	NULL),
+('077675f5-954e-4924-a4bf-20a9f3c84263',	'Daily Sale 08:00 11-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 08:00 11-07-2024',	'NORMAL',	'BLOCK',	'2024-07-11 15:00:00',	'2024-07-11 16:00:00',	'2024-07-08 03:31:15',	'system',	NULL,	NULL),
+('089b19da-8228-4350-bf3b-e87e5bdfa66f',	'Daily Sale 16:00 09-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 16:00 09-07-2024',	'NORMAL',	'BLOCK',	'2024-07-09 23:00:00',	'2024-07-10 00:00:00',	'2024-07-08 03:31:05',	'system',	NULL,	NULL),
+('0a709352-bcfe-40e9-b420-8f192650de80',	'Daily Sale 02:00 14-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 02:00 14-07-2024',	'NORMAL',	'BLOCK',	'2024-07-14 09:00:00',	'2024-07-14 10:00:00',	'2024-07-08 03:31:30',	'system',	NULL,	NULL),
+('0d277a34-07c6-446e-b31d-d8676c862cdd',	'Daily Sale 22:00 09-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 22:00 09-07-2024',	'NORMAL',	'BLOCK',	'2024-07-10 05:00:00',	'2024-07-10 06:00:00',	'2024-07-08 03:31:05',	'system',	NULL,	NULL),
+('11bff8d1-035e-4cb8-b4f2-08b336fc89b0',	'Daily Sale 09:00 12-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 09:00 12-07-2024',	'NORMAL',	'BLOCK',	'2024-07-12 16:00:00',	'2024-07-12 17:00:00',	'2024-07-08 03:31:20',	'system',	NULL,	NULL),
+('1284912b-a149-46ad-b500-e20060eb6bea',	'Daily Sale 09:00 14-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 09:00 14-07-2024',	'NORMAL',	'BLOCK',	'2024-07-14 16:00:00',	'2024-07-14 17:00:00',	'2024-07-08 03:31:30',	'system',	NULL,	NULL),
+('1352c623-2959-4f37-b960-25b79b9e447a',	'Daily Sale 17:00 11-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 17:00 11-07-2024',	'NORMAL',	'BLOCK',	'2024-07-12 00:00:00',	'2024-07-12 01:00:00',	'2024-07-08 03:31:15',	'system',	NULL,	NULL),
+('143166fd-5ab3-4e40-9ccf-2f7b43b43b6d',	'Daily Sale 11:00 11-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 11:00 11-07-2024',	'NORMAL',	'BLOCK',	'2024-07-11 18:00:00',	'2024-07-11 19:00:00',	'2024-07-08 03:31:15',	'system',	NULL,	NULL),
+('1602f695-21d5-4f33-8493-225b2256eab8',	'Daily Sale 10:00 08-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 10:00 08-07-2024',	'NORMAL',	'BLOCK',	'2024-07-08 17:00:00',	'2024-07-08 18:00:00',	'2024-07-08 03:31:00',	'system',	NULL,	NULL),
+('1672337b-526f-492c-a05c-0a1e2fe1eb3f',	'Daily Sale 13:00 14-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 13:00 14-07-2024',	'NORMAL',	'BLOCK',	'2024-07-14 20:00:00',	'2024-07-14 21:00:00',	'2024-07-08 03:31:30',	'system',	NULL,	NULL),
+('17529335-0504-4062-a41d-051c38232862',	'Daily Sale 17:00 09-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 17:00 09-07-2024',	'NORMAL',	'BLOCK',	'2024-07-10 00:00:00',	'2024-07-10 01:00:00',	'2024-07-08 03:31:05',	'system',	NULL,	NULL),
+('18783edf-12e5-4b1e-965e-e65ac8e15c1c',	'Daily Sale 11:00 12-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 11:00 12-07-2024',	'NORMAL',	'BLOCK',	'2024-07-12 18:00:00',	'2024-07-12 19:00:00',	'2024-07-08 03:31:20',	'system',	NULL,	NULL),
+('1c6218ba-ea98-4709-9fc5-4dbc782d31bf',	'Daily Sale 01:00 13-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 01:00 13-07-2024',	'NORMAL',	'BLOCK',	'2024-07-13 08:00:00',	'2024-07-13 09:00:00',	'2024-07-08 03:31:25',	'system',	NULL,	NULL),
+('1cad39b9-fbb2-403d-b8a8-65d2534d772b',	'Daily Sale 16:00 10-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 16:00 10-07-2024',	'NORMAL',	'BLOCK',	'2024-07-10 23:00:00',	'2024-07-11 00:00:00',	'2024-07-08 03:31:10',	'system',	NULL,	NULL),
+('1d123006-221e-4454-928a-d637506aec13',	'Daily Sale 23:00 14-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 23:00 14-07-2024',	'NORMAL',	'BLOCK',	'2024-07-15 06:00:00',	'2024-07-15 07:00:00',	'2024-07-08 03:31:30',	'system',	NULL,	NULL),
+('1dd9914e-50f7-4278-b2d9-ddd81eefe919',	'Daily Sale 19:00 12-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 19:00 12-07-2024',	'NORMAL',	'BLOCK',	'2024-07-13 02:00:00',	'2024-07-13 03:00:00',	'2024-07-08 03:31:20',	'system',	NULL,	NULL),
+('1ec32fc7-86f9-44e4-8e39-cc002f42f48c',	'Daily Sale 02:00 12-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 02:00 12-07-2024',	'NORMAL',	'BLOCK',	'2024-07-12 09:00:00',	'2024-07-12 10:00:00',	'2024-07-08 03:31:20',	'system',	NULL,	NULL),
+('1fcf3333-cc92-4db1-8fc0-0247df876b3d',	'Daily Sale 15:00 12-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 15:00 12-07-2024',	'NORMAL',	'BLOCK',	'2024-07-12 22:00:00',	'2024-07-12 23:00:00',	'2024-07-08 03:31:20',	'system',	NULL,	NULL),
+('21f34c96-2484-4aba-9f62-e205974e9a7c',	'Daily Sale 13:00 10-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 13:00 10-07-2024',	'NORMAL',	'BLOCK',	'2024-07-10 20:00:00',	'2024-07-10 21:00:00',	'2024-07-08 03:31:10',	'system',	NULL,	NULL),
+('22e6c2bc-ac4b-4be5-97c1-84abbce762b8',	'Daily Sale 08:00 09-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 08:00 09-07-2024',	'NORMAL',	'BLOCK',	'2024-07-09 15:00:00',	'2024-07-09 16:00:00',	'2024-07-08 03:31:05',	'system',	NULL,	NULL),
+('23443fb7-e103-4bec-add6-9e611f84b66d',	'Daily Sale 18:00 10-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 18:00 10-07-2024',	'NORMAL',	'BLOCK',	'2024-07-11 01:00:00',	'2024-07-11 02:00:00',	'2024-07-08 03:31:10',	'system',	NULL,	NULL),
+('242237f1-3601-4bab-aae5-a4bf9ce2d53c',	'Daily Sale 19:00 09-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 19:00 09-07-2024',	'NORMAL',	'BLOCK',	'2024-07-10 02:00:00',	'2024-07-10 03:00:00',	'2024-07-08 03:31:05',	'system',	NULL,	NULL),
+('258302a1-e7f9-4344-ab62-f1d5935ed146',	'Daily Sale 10:00 13-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 10:00 13-07-2024',	'NORMAL',	'BLOCK',	'2024-07-13 17:00:00',	'2024-07-13 18:00:00',	'2024-07-08 03:31:25',	'system',	NULL,	NULL),
+('296bda62-5aab-4855-8ea7-a4991f5eb749',	'Daily Sale 08:00 08-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 08:00 08-07-2024',	'NORMAL',	'BLOCK',	'2024-07-08 15:00:00',	'2024-07-08 16:00:00',	'2024-07-08 03:31:00',	'system',	NULL,	NULL),
+('2d4ed790-a8cb-4859-a85f-02e8de12894a',	'Daily Sale 22:00 11-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 22:00 11-07-2024',	'NORMAL',	'BLOCK',	'2024-07-12 05:00:00',	'2024-07-12 06:00:00',	'2024-07-08 03:31:15',	'system',	NULL,	NULL),
+('30343d7e-8659-4606-89a8-90208ddc36fb',	'Daily Sale 08:00 13-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 08:00 13-07-2024',	'NORMAL',	'BLOCK',	'2024-07-13 15:00:00',	'2024-07-13 16:00:00',	'2024-07-08 03:31:25',	'system',	NULL,	NULL),
+('30650d86-ce75-419b-8923-0a26e5ca42a2',	'Daily Sale 20:00 08-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 20:00 08-07-2024',	'NORMAL',	'BLOCK',	'2024-07-09 03:00:00',	'2024-07-09 04:00:00',	'2024-07-08 03:31:00',	'system',	NULL,	NULL),
+('3080145f-157b-4f0f-a4a9-22639ddcd5ba',	'Daily Sale 10:00 11-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 10:00 11-07-2024',	'NORMAL',	'BLOCK',	'2024-07-11 17:00:00',	'2024-07-11 18:00:00',	'2024-07-08 03:31:15',	'system',	NULL,	NULL),
+('32daaea4-4812-4ffe-8a97-6540109fd638',	'Daily Sale 17:00 08-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 17:00 08-07-2024',	'NORMAL',	'BLOCK',	'2024-07-09 00:00:00',	'2024-07-09 01:00:00',	'2024-07-08 03:31:00',	'system',	NULL,	NULL),
+('3764761c-0052-4604-bf19-648450d05c08',	'Daily Sale 12:00 11-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 12:00 11-07-2024',	'NORMAL',	'BLOCK',	'2024-07-11 19:00:00',	'2024-07-11 20:00:00',	'2024-07-08 03:31:15',	'system',	NULL,	NULL),
+('38a90473-e253-4ca3-8fe6-8f8b312197df',	'Daily Sale 07:00 11-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 07:00 11-07-2024',	'NORMAL',	'BLOCK',	'2024-07-11 14:00:00',	'2024-07-11 15:00:00',	'2024-07-08 03:31:15',	'system',	NULL,	NULL),
+('38af37fc-04d8-4e93-a280-074890e8898f',	'Daily Sale 09:00 10-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 09:00 10-07-2024',	'NORMAL',	'BLOCK',	'2024-07-10 16:00:00',	'2024-07-10 17:00:00',	'2024-07-08 03:31:10',	'system',	NULL,	NULL),
+('39f10cc1-ae02-4574-a18b-74ba08088bd5',	'Daily Sale 18:00 12-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 18:00 12-07-2024',	'NORMAL',	'BLOCK',	'2024-07-13 01:00:00',	'2024-07-13 02:00:00',	'2024-07-08 03:31:20',	'system',	NULL,	NULL),
+('3d61ebe2-fae6-43c4-bea5-d52eccc19576',	'Daily Sale 09:00 09-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 09:00 09-07-2024',	'NORMAL',	'BLOCK',	'2024-07-09 16:00:00',	'2024-07-09 17:00:00',	'2024-07-08 03:31:05',	'system',	NULL,	NULL),
+('3dd264ae-e18a-49d4-95ac-759ab0b05e23',	'Daily Sale 23:00 08-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 23:00 08-07-2024',	'NORMAL',	'BLOCK',	'2024-07-09 06:00:00',	'2024-07-09 07:00:00',	'2024-07-08 03:31:00',	'system',	NULL,	NULL),
+('3e10b87a-3e47-40ce-a2e8-e02fdf4f992d',	'Daily Sale 10:00 10-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 10:00 10-07-2024',	'NORMAL',	'BLOCK',	'2024-07-10 17:00:00',	'2024-07-10 18:00:00',	'2024-07-08 03:31:10',	'system',	NULL,	NULL),
+('40f6c5ad-81fa-4487-8e2a-85a1bc8346d8',	'Daily Sale 04:00 08-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 04:00 08-07-2024',	'NORMAL',	'BLOCK',	'2024-07-08 11:00:00',	'2024-07-08 12:00:00',	'2024-07-08 03:31:00',	'system',	NULL,	NULL),
+('41d43841-0faa-418e-af83-05849e234ca1',	'Daily Sale 00:00 10-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 00:00 10-07-2024',	'NORMAL',	'BLOCK',	'2024-07-10 07:00:00',	'2024-07-10 08:00:00',	'2024-07-08 03:31:10',	'system',	NULL,	NULL),
+('420e66dc-1103-4086-bee4-cee428ab5815',	'Daily Sale 06:00 12-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 06:00 12-07-2024',	'NORMAL',	'BLOCK',	'2024-07-12 13:00:00',	'2024-07-12 14:00:00',	'2024-07-08 03:31:20',	'system',	NULL,	NULL),
+('4337b288-7b9e-4995-9213-c92b9e1b5cce',	'Daily Sale 00:00 14-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 00:00 14-07-2024',	'NORMAL',	'BLOCK',	'2024-07-14 07:00:00',	'2024-07-14 08:00:00',	'2024-07-08 03:31:30',	'system',	NULL,	NULL),
+('45636d35-92fb-45ad-b1ca-7dcd010925da',	'Daily Sale 15:00 11-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 15:00 11-07-2024',	'NORMAL',	'BLOCK',	'2024-07-11 22:00:00',	'2024-07-11 23:00:00',	'2024-07-08 03:31:15',	'system',	NULL,	NULL),
+('46bcbfd4-a387-477e-a2e3-4ef01d21d23d',	'Daily Sale 01:00 09-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 01:00 09-07-2024',	'NORMAL',	'BLOCK',	'2024-07-09 08:00:00',	'2024-07-09 09:00:00',	'2024-07-08 03:31:05',	'system',	NULL,	NULL),
+('4738765a-7d7a-4815-a1c6-49961cb7a877',	'Daily Sale 06:00 13-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 06:00 13-07-2024',	'NORMAL',	'BLOCK',	'2024-07-13 13:00:00',	'2024-07-13 14:00:00',	'2024-07-08 03:31:25',	'system',	NULL,	NULL),
+('483513bb-e9ce-4ea9-ab4d-4a432bfc34f9',	'Daily Sale 14:00 11-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 14:00 11-07-2024',	'NORMAL',	'BLOCK',	'2024-07-11 21:00:00',	'2024-07-11 22:00:00',	'2024-07-08 03:31:15',	'system',	NULL,	NULL),
+('48749bd3-430a-42ef-be3e-c04ed46c6e2b',	'Daily Sale 10:00 12-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 10:00 12-07-2024',	'NORMAL',	'BLOCK',	'2024-07-12 17:00:00',	'2024-07-12 18:00:00',	'2024-07-08 03:31:20',	'system',	NULL,	NULL),
+('4a0d43e7-462b-4c63-901f-bf87f4705489',	'Daily Sale 14:00 12-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 14:00 12-07-2024',	'NORMAL',	'BLOCK',	'2024-07-12 21:00:00',	'2024-07-12 22:00:00',	'2024-07-08 03:31:20',	'system',	NULL,	NULL),
+('4a4822b5-286a-4b1c-80d3-a8ed5a6b5fab',	'Daily Sale 13:00 11-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 13:00 11-07-2024',	'NORMAL',	'BLOCK',	'2024-07-11 20:00:00',	'2024-07-11 21:00:00',	'2024-07-08 03:31:15',	'system',	NULL,	NULL),
+('4a911106-df50-4416-ac75-0c853a213d47',	'Daily Sale 17:00 12-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 17:00 12-07-2024',	'NORMAL',	'BLOCK',	'2024-07-13 00:00:00',	'2024-07-13 01:00:00',	'2024-07-08 03:31:20',	'system',	NULL,	NULL),
+('4b0d5a21-397e-4e4d-ac81-88b2d13dd549',	'Daily Sale 10:00 14-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 10:00 14-07-2024',	'NORMAL',	'BLOCK',	'2024-07-14 17:00:00',	'2024-07-14 18:00:00',	'2024-07-08 03:31:30',	'system',	NULL,	NULL),
+('4b14fb21-edcc-4e1b-927d-3f0dc697f268',	'Daily Sale 11:00 13-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 11:00 13-07-2024',	'NORMAL',	'BLOCK',	'2024-07-13 18:00:00',	'2024-07-13 19:00:00',	'2024-07-08 03:31:25',	'system',	NULL,	NULL),
+('4c101ce0-47c9-4cb0-bc11-eca482c1d6c7',	'Daily Sale 07:00 12-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 07:00 12-07-2024',	'NORMAL',	'BLOCK',	'2024-07-12 14:00:00',	'2024-07-12 15:00:00',	'2024-07-08 03:31:20',	'system',	NULL,	NULL),
+('4fa95659-3889-42b9-b2cd-47c5203767ee',	'Daily Sale 03:00 12-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 03:00 12-07-2024',	'NORMAL',	'BLOCK',	'2024-07-12 10:00:00',	'2024-07-12 11:00:00',	'2024-07-08 03:31:20',	'system',	NULL,	NULL),
+('50327e1f-1146-4980-9c51-a3e6fa2f9b9b',	'Daily Sale 06:00 08-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 06:00 08-07-2024',	'NORMAL',	'BLOCK',	'2024-07-08 13:00:00',	'2024-07-08 14:00:00',	'2024-07-08 03:31:00',	'system',	NULL,	NULL),
+('54b2c97c-a212-4bac-91fe-c6ef643d9628',	'Daily Sale 13:00 09-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 13:00 09-07-2024',	'NORMAL',	'BLOCK',	'2024-07-09 20:00:00',	'2024-07-09 21:00:00',	'2024-07-08 03:31:05',	'system',	NULL,	NULL),
+('54eb58ac-9a6a-4d54-93a1-e158ce925e2a',	'Daily Sale 03:00 09-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 03:00 09-07-2024',	'NORMAL',	'BLOCK',	'2024-07-09 10:00:00',	'2024-07-09 11:00:00',	'2024-07-08 03:31:05',	'system',	NULL,	NULL),
+('5529feb7-ac1b-46e0-b3a9-a4e57b720111',	'Daily Sale 13:00 12-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 13:00 12-07-2024',	'NORMAL',	'BLOCK',	'2024-07-12 20:00:00',	'2024-07-12 21:00:00',	'2024-07-08 03:31:20',	'system',	NULL,	NULL),
+('57872f8f-b7ee-41aa-b040-7fcc1943c842',	'Daily Sale 02:00 08-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 02:00 08-07-2024',	'NORMAL',	'BLOCK',	'2024-07-08 09:00:00',	'2024-07-08 10:00:00',	'2024-07-08 03:31:00',	'system',	NULL,	NULL),
+('5b60e5b9-d292-40dc-9130-8123454451e2',	'Daily Sale 02:00 13-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 02:00 13-07-2024',	'NORMAL',	'BLOCK',	'2024-07-13 09:00:00',	'2024-07-13 10:00:00',	'2024-07-08 03:31:25',	'system',	NULL,	NULL),
+('5c1081a9-ee15-4cac-bac3-b4989977e376',	'Daily Sale 04:00 10-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 04:00 10-07-2024',	'NORMAL',	'BLOCK',	'2024-07-10 11:00:00',	'2024-07-10 12:00:00',	'2024-07-08 03:31:10',	'system',	NULL,	NULL),
+('5cc1c528-92ca-467f-87c8-4123bca35c8c',	'Daily Sale 09:00 08-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 09:00 08-07-2024',	'NORMAL',	'BLOCK',	'2024-07-08 16:00:00',	'2024-07-08 17:00:00',	'2024-07-08 03:31:00',	'system',	NULL,	NULL),
+('60daadcf-ad28-4815-8af4-0e060a9f13f8',	'Daily Sale 07:00 08-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 07:00 08-07-2024',	'NORMAL',	'BLOCK',	'2024-07-08 14:00:00',	'2024-07-08 15:00:00',	'2024-07-08 03:31:00',	'system',	NULL,	NULL),
+('67476d58-9fe4-4d9d-8af5-c7470af179e5',	'Daily Sale 02:00 10-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 02:00 10-07-2024',	'NORMAL',	'BLOCK',	'2024-07-10 09:00:00',	'2024-07-10 10:00:00',	'2024-07-08 03:31:10',	'system',	NULL,	NULL),
+('6964b84d-d3f9-4027-8046-d42e267cb4dd',	'Daily Sale 19:00 13-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 19:00 13-07-2024',	'NORMAL',	'BLOCK',	'2024-07-14 02:00:00',	'2024-07-14 03:00:00',	'2024-07-08 03:31:25',	'system',	NULL,	NULL),
+('6a4023da-343d-461e-99c5-c2508ca4163a',	'Daily Sale 11:00 09-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 11:00 09-07-2024',	'NORMAL',	'BLOCK',	'2024-07-09 18:00:00',	'2024-07-09 19:00:00',	'2024-07-08 03:31:05',	'system',	NULL,	NULL),
+('6e69dd9b-0e86-4f66-8de1-3ac94b8bee4f',	'Daily Sale 11:00 08-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 11:00 08-07-2024',	'NORMAL',	'BLOCK',	'2024-07-08 18:00:00',	'2024-07-08 19:00:00',	'2024-07-08 03:31:00',	'system',	NULL,	NULL),
+('6ec9ced1-5566-4c5b-b0b8-59343de39db2',	'Daily Sale 02:00 11-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 02:00 11-07-2024',	'NORMAL',	'BLOCK',	'2024-07-11 09:00:00',	'2024-07-11 10:00:00',	'2024-07-08 03:31:15',	'system',	NULL,	NULL),
+('6eddf8dc-8abb-4ae4-8eba-c49d17cca030',	'Daily Sale 18:00 08-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 18:00 08-07-2024',	'NORMAL',	'BLOCK',	'2024-07-09 01:00:00',	'2024-07-09 02:00:00',	'2024-07-08 03:31:00',	'system',	NULL,	NULL),
+('6f1dc6eb-cc2d-4849-a517-1ae98098ad14',	'Daily Sale 20:00 14-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 20:00 14-07-2024',	'NORMAL',	'BLOCK',	'2024-07-15 03:00:00',	'2024-07-15 04:00:00',	'2024-07-08 03:31:30',	'system',	NULL,	NULL),
+('7125171c-2c23-4fe1-b1f2-2523e6df908f',	'Daily Sale 05:00 09-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 05:00 09-07-2024',	'NORMAL',	'BLOCK',	'2024-07-09 12:00:00',	'2024-07-09 13:00:00',	'2024-07-08 03:31:05',	'system',	NULL,	NULL),
+('715ff0be-394b-4e8a-82ad-4fe1ab62d440',	'Daily Sale 08:00 12-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 08:00 12-07-2024',	'NORMAL',	'BLOCK',	'2024-07-12 15:00:00',	'2024-07-12 16:00:00',	'2024-07-08 03:31:20',	'system',	NULL,	NULL),
+('71af0285-d655-461f-8fc1-b25bbb853722',	'Daily Sale 00:00 09-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 00:00 09-07-2024',	'NORMAL',	'BLOCK',	'2024-07-09 07:00:00',	'2024-07-09 08:00:00',	'2024-07-08 03:31:05',	'system',	NULL,	NULL),
+('731edf32-368c-4f15-9f05-08f6ea7afdc7',	'Daily Sale 03:00 14-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 03:00 14-07-2024',	'NORMAL',	'BLOCK',	'2024-07-14 10:00:00',	'2024-07-14 11:00:00',	'2024-07-08 03:31:30',	'system',	NULL,	NULL),
+('73a2d1e5-1e81-420e-a665-f8ed1b82771d',	'Daily Sale 15:00 13-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 15:00 13-07-2024',	'NORMAL',	'BLOCK',	'2024-07-13 22:00:00',	'2024-07-13 23:00:00',	'2024-07-08 03:31:25',	'system',	NULL,	NULL),
+('74a1c1af-3cdf-4307-a738-7768c12bf8ec',	'Daily Sale 12:00 14-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 12:00 14-07-2024',	'NORMAL',	'BLOCK',	'2024-07-14 19:00:00',	'2024-07-14 20:00:00',	'2024-07-08 03:31:30',	'system',	NULL,	NULL),
+('75388bf2-646a-43e4-81ec-3190355ae387',	'Daily Sale 04:00 12-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 04:00 12-07-2024',	'NORMAL',	'BLOCK',	'2024-07-12 11:00:00',	'2024-07-12 12:00:00',	'2024-07-08 03:31:20',	'system',	NULL,	NULL),
+('75a2bb0c-95b2-42df-98ac-cf1e131d9a0b',	'Daily Sale 01:00 08-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 01:00 08-07-2024',	'NORMAL',	'BLOCK',	'2024-07-08 08:00:00',	'2024-07-08 09:00:00',	'2024-07-08 03:31:00',	'system',	NULL,	NULL),
+('7e73281a-8245-46b2-8666-326596e0c765',	'Daily Sale 11:00 10-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 11:00 10-07-2024',	'NORMAL',	'BLOCK',	'2024-07-10 18:00:00',	'2024-07-10 19:00:00',	'2024-07-08 03:31:10',	'system',	NULL,	NULL),
+('802adb1c-8643-4863-b0dd-f1bfe79a4030',	'Daily Sale 20:00 10-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 20:00 10-07-2024',	'NORMAL',	'BLOCK',	'2024-07-11 03:00:00',	'2024-07-11 04:00:00',	'2024-07-08 03:31:10',	'system',	NULL,	NULL),
+('802cdcbb-1270-4a91-86d5-e786d6313d01',	'Daily Sale 09:00 13-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 09:00 13-07-2024',	'NORMAL',	'BLOCK',	'2024-07-13 16:00:00',	'2024-07-13 17:00:00',	'2024-07-08 03:31:25',	'system',	NULL,	NULL),
+('80bc3f09-88a4-47c0-b8e2-72eb1ffbbadf',	'Daily Sale 03:00 10-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 03:00 10-07-2024',	'NORMAL',	'BLOCK',	'2024-07-10 10:00:00',	'2024-07-10 11:00:00',	'2024-07-08 03:31:10',	'system',	NULL,	NULL),
+('8236d495-085a-4f9c-aa97-d25296379ad8',	'Daily Sale 01:00 10-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 01:00 10-07-2024',	'NORMAL',	'BLOCK',	'2024-07-10 08:00:00',	'2024-07-10 09:00:00',	'2024-07-08 03:31:10',	'system',	NULL,	NULL),
+('843cffc3-ff94-453d-9898-8f1a8d17cbeb',	'Daily Sale 06:00 09-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 06:00 09-07-2024',	'NORMAL',	'BLOCK',	'2024-07-09 13:00:00',	'2024-07-09 14:00:00',	'2024-07-08 03:31:05',	'system',	NULL,	NULL),
+('8515dc71-c389-419d-89ae-fb88bc3363fb',	'Daily Sale 07:00 10-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 07:00 10-07-2024',	'NORMAL',	'BLOCK',	'2024-07-10 14:00:00',	'2024-07-10 15:00:00',	'2024-07-08 03:31:10',	'system',	NULL,	NULL),
+('8550029e-ab9e-4cc0-a876-8c956d29770b',	'Daily Sale 22:00 13-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 22:00 13-07-2024',	'NORMAL',	'BLOCK',	'2024-07-14 05:00:00',	'2024-07-14 06:00:00',	'2024-07-08 03:31:25',	'system',	NULL,	NULL),
+('85874252-51c7-4c08-b747-1713b3598353',	'Daily Sale 16:00 12-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 16:00 12-07-2024',	'NORMAL',	'BLOCK',	'2024-07-12 23:00:00',	'2024-07-13 00:00:00',	'2024-07-08 03:31:20',	'system',	NULL,	NULL),
+('8637bf96-5429-4c84-9138-910bd08bf6ba',	'Daily Sale 23:00 10-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 23:00 10-07-2024',	'NORMAL',	'BLOCK',	'2024-07-11 06:00:00',	'2024-07-11 07:00:00',	'2024-07-08 03:31:10',	'system',	NULL,	NULL),
+('88a3fcaa-687e-4ca5-a4ed-3d910ebc162a',	'Daily Sale 17:00 10-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 17:00 10-07-2024',	'NORMAL',	'BLOCK',	'2024-07-11 00:00:00',	'2024-07-11 01:00:00',	'2024-07-08 03:31:10',	'system',	NULL,	NULL),
+('8ae267d8-4366-4fea-8d20-341e978e14d8',	'Daily Sale 15:00 08-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 15:00 08-07-2024',	'NORMAL',	'BLOCK',	'2024-07-08 22:00:00',	'2024-07-08 23:00:00',	'2024-07-08 03:31:00',	'system',	NULL,	NULL),
+('8eb8e8a2-552c-4cad-8c1c-a7b0102e7050',	'Daily Sale 21:00 14-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 21:00 14-07-2024',	'NORMAL',	'BLOCK',	'2024-07-15 04:00:00',	'2024-07-15 05:00:00',	'2024-07-08 03:31:30',	'system',	NULL,	NULL),
+('8f311e78-b33f-4022-9620-6e3d62ccba83',	'Daily Sale 05:00 14-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 05:00 14-07-2024',	'NORMAL',	'BLOCK',	'2024-07-14 12:00:00',	'2024-07-14 13:00:00',	'2024-07-08 03:31:30',	'system',	NULL,	NULL),
+('8fda12aa-f336-4d86-8220-d408100b0aed',	'Daily Sale 14:00 14-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 14:00 14-07-2024',	'NORMAL',	'BLOCK',	'2024-07-14 21:00:00',	'2024-07-14 22:00:00',	'2024-07-08 03:31:30',	'system',	NULL,	NULL),
+('90fb1017-30c2-4431-8fd4-19de799232e5',	'Daily Sale 22:00 10-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 22:00 10-07-2024',	'NORMAL',	'BLOCK',	'2024-07-11 05:00:00',	'2024-07-11 06:00:00',	'2024-07-08 03:31:10',	'system',	NULL,	NULL),
+('92f5f664-5477-46ed-bd76-ff17431d5ce9',	'Daily Sale 08:00 10-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 08:00 10-07-2024',	'NORMAL',	'BLOCK',	'2024-07-10 15:00:00',	'2024-07-10 16:00:00',	'2024-07-08 03:31:10',	'system',	NULL,	NULL),
+('947791e0-139c-495c-8d6d-8235146a73b2',	'Daily Sale 14:00 09-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 14:00 09-07-2024',	'NORMAL',	'BLOCK',	'2024-07-09 21:00:00',	'2024-07-09 22:00:00',	'2024-07-08 03:31:05',	'system',	NULL,	NULL),
+('95029785-52e6-496c-a377-812de48bd5e7',	'Daily Sale 18:00 14-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 18:00 14-07-2024',	'NORMAL',	'BLOCK',	'2024-07-15 01:00:00',	'2024-07-15 02:00:00',	'2024-07-08 03:31:30',	'system',	NULL,	NULL),
+('956fcff4-0200-4482-9b70-8d3cab5222e9',	'Daily Sale 18:00 09-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 18:00 09-07-2024',	'NORMAL',	'BLOCK',	'2024-07-10 01:00:00',	'2024-07-10 02:00:00',	'2024-07-08 03:31:05',	'system',	NULL,	NULL),
+('9c9cc175-f3fd-4107-8ab0-ba9a95ee30d6',	'Daily Sale 05:00 10-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 05:00 10-07-2024',	'NORMAL',	'BLOCK',	'2024-07-10 12:00:00',	'2024-07-10 13:00:00',	'2024-07-08 03:31:10',	'system',	NULL,	NULL),
+('9d3d57ce-08ce-4a7f-b5d9-f7662529227a',	'Daily Sale 05:00 13-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 05:00 13-07-2024',	'NORMAL',	'BLOCK',	'2024-07-13 12:00:00',	'2024-07-13 13:00:00',	'2024-07-08 03:31:25',	'system',	NULL,	NULL),
+('9d7d54a7-ad36-4db0-8bb2-16816ff8af09',	'Daily Sale 00:00 08-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 00:00 08-07-2024',	'NORMAL',	'BLOCK',	'2024-07-08 07:00:00',	'2024-07-08 08:00:00',	'2024-07-08 03:31:00',	'system',	NULL,	NULL),
+('9fe282c3-3083-4f03-a102-36158aabaf14',	'Daily Sale 18:00 11-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 18:00 11-07-2024',	'NORMAL',	'BLOCK',	'2024-07-12 01:00:00',	'2024-07-12 02:00:00',	'2024-07-08 03:31:15',	'system',	NULL,	NULL),
+('a1971d29-6200-4a7b-8bbf-6ca6fa9a2474',	'Daily Sale 16:00 13-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 16:00 13-07-2024',	'NORMAL',	'BLOCK',	'2024-07-13 23:00:00',	'2024-07-14 00:00:00',	'2024-07-08 03:31:25',	'system',	NULL,	NULL),
+('a4676e2a-78dd-4989-b9d6-857d27199df5',	'Daily Sale 12:00 08-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 12:00 08-07-2024',	'NORMAL',	'BLOCK',	'2024-07-08 19:00:00',	'2024-07-08 20:00:00',	'2024-07-08 03:31:00',	'system',	NULL,	NULL),
+('a504b55a-0df1-46a5-bdbe-df52d73a6cf2',	'Daily Sale 04:00 11-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 04:00 11-07-2024',	'NORMAL',	'BLOCK',	'2024-07-11 11:00:00',	'2024-07-11 12:00:00',	'2024-07-08 03:31:15',	'system',	NULL,	NULL),
+('a5bc3740-7f15-467b-90fa-7622a589b776',	'Daily Sale 06:00 10-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 06:00 10-07-2024',	'NORMAL',	'BLOCK',	'2024-07-10 13:00:00',	'2024-07-10 14:00:00',	'2024-07-08 03:31:10',	'system',	NULL,	NULL),
+('a912430a-f55f-46b8-ba72-3ce1372d6a35',	'Daily Sale 23:00 13-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 23:00 13-07-2024',	'NORMAL',	'BLOCK',	'2024-07-14 06:00:00',	'2024-07-14 07:00:00',	'2024-07-08 03:31:25',	'system',	NULL,	NULL),
+('a9bc488e-51ca-4312-9f55-16ba1044d5b4',	'Daily Sale 21:00 10-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 21:00 10-07-2024',	'NORMAL',	'BLOCK',	'2024-07-11 04:00:00',	'2024-07-11 05:00:00',	'2024-07-08 03:31:10',	'system',	NULL,	NULL),
+('ac545fe2-554d-40d0-b8bc-15b6a6fd9013',	'Daily Sale 14:00 13-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 14:00 13-07-2024',	'NORMAL',	'BLOCK',	'2024-07-13 21:00:00',	'2024-07-13 22:00:00',	'2024-07-08 03:31:25',	'system',	NULL,	NULL),
+('ad085f56-bb03-40bf-ae58-49f3ed3c6865',	'Daily Sale 21:00 08-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 21:00 08-07-2024',	'NORMAL',	'BLOCK',	'2024-07-09 04:00:00',	'2024-07-09 05:00:00',	'2024-07-08 03:31:00',	'system',	NULL,	NULL),
+('ada8fb5d-cc06-4ec4-95b6-190d2b90b573',	'Daily Sale 09:00 11-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 09:00 11-07-2024',	'NORMAL',	'BLOCK',	'2024-07-11 16:00:00',	'2024-07-11 17:00:00',	'2024-07-08 03:31:15',	'system',	NULL,	NULL),
+('af18dbf3-fa57-4da1-890e-8aa637dba8bb',	'Daily Sale 05:00 08-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 05:00 08-07-2024',	'NORMAL',	'BLOCK',	'2024-07-08 12:00:00',	'2024-07-08 13:00:00',	'2024-07-08 03:31:00',	'system',	NULL,	NULL),
+('afc49207-a524-44f0-ad05-01b8a1dcf915',	'Daily Sale 04:00 09-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 04:00 09-07-2024',	'NORMAL',	'BLOCK',	'2024-07-09 11:00:00',	'2024-07-09 12:00:00',	'2024-07-08 03:31:05',	'system',	NULL,	NULL),
+('b02374f4-2dd3-4f9d-a337-2862d8cc2b19',	'Daily Sale 23:00 09-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 23:00 09-07-2024',	'NORMAL',	'BLOCK',	'2024-07-10 06:00:00',	'2024-07-10 07:00:00',	'2024-07-08 03:31:05',	'system',	NULL,	NULL),
+('b09a2461-dfb2-4a97-9fa8-5225273cde5a',	'Daily Sale 16:00 08-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 16:00 08-07-2024',	'NORMAL',	'BLOCK',	'2024-07-08 23:00:00',	'2024-07-09 00:00:00',	'2024-07-08 03:31:00',	'system',	NULL,	NULL),
+('b1f0297f-98c3-4dab-af9e-c4056da054f3',	'Daily Sale 22:00 14-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 22:00 14-07-2024',	'NORMAL',	'BLOCK',	'2024-07-15 05:00:00',	'2024-07-15 06:00:00',	'2024-07-08 03:31:30',	'system',	NULL,	NULL),
+('b4525d11-f7a9-479f-a410-83fbe991a556',	'Daily Sale 20:00 11-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 20:00 11-07-2024',	'NORMAL',	'BLOCK',	'2024-07-12 03:00:00',	'2024-07-12 04:00:00',	'2024-07-08 03:31:15',	'system',	NULL,	NULL),
+('b47f6e46-2455-4e57-9724-931d1545042e',	'Daily Sale 23:00 12-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 23:00 12-07-2024',	'NORMAL',	'BLOCK',	'2024-07-13 06:00:00',	'2024-07-13 07:00:00',	'2024-07-08 03:31:20',	'system',	NULL,	NULL),
+('b5c8ddc5-09fa-42ca-95e0-e690bb552e73',	'Daily Sale 08:00 14-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 08:00 14-07-2024',	'NORMAL',	'BLOCK',	'2024-07-14 15:00:00',	'2024-07-14 16:00:00',	'2024-07-08 03:31:30',	'system',	NULL,	NULL),
+('b679aea8-1578-4666-a7ac-9f4d6b4815e0',	'Daily Sale 12:00 10-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 12:00 10-07-2024',	'NORMAL',	'BLOCK',	'2024-07-10 19:00:00',	'2024-07-10 20:00:00',	'2024-07-08 03:31:10',	'system',	NULL,	NULL),
+('b6ffaa94-686d-43f3-96b8-59184b7fe0be',	'Daily Sale 02:00 09-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 02:00 09-07-2024',	'NORMAL',	'BLOCK',	'2024-07-09 09:00:00',	'2024-07-09 10:00:00',	'2024-07-08 03:31:05',	'system',	NULL,	NULL),
+('bb86912f-a12d-41fd-a742-6005a5f019b6',	'Daily Sale 04:00 14-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 04:00 14-07-2024',	'NORMAL',	'BLOCK',	'2024-07-14 11:00:00',	'2024-07-14 12:00:00',	'2024-07-08 03:31:30',	'system',	NULL,	NULL),
+('bba889e5-f37d-4501-80bc-2922eadf7bcc',	'Daily Sale 00:00 11-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 00:00 11-07-2024',	'NORMAL',	'BLOCK',	'2024-07-11 07:00:00',	'2024-07-11 08:00:00',	'2024-07-08 03:31:15',	'system',	NULL,	NULL),
+('bdc6d921-4d1d-402d-8d6f-0ed3e5c2c341',	'Daily Sale 11:00 14-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 11:00 14-07-2024',	'NORMAL',	'BLOCK',	'2024-07-14 18:00:00',	'2024-07-14 19:00:00',	'2024-07-08 03:31:30',	'system',	NULL,	NULL),
+('bee40584-7ca2-4e9d-869f-c6528cb06688',	'Daily Sale 19:00 14-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 19:00 14-07-2024',	'NORMAL',	'BLOCK',	'2024-07-15 02:00:00',	'2024-07-15 03:00:00',	'2024-07-08 03:31:30',	'system',	NULL,	NULL),
+('bff45b9b-9084-4234-9cdc-09733c39abdf',	'Daily Sale 14:00 10-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 14:00 10-07-2024',	'NORMAL',	'BLOCK',	'2024-07-10 21:00:00',	'2024-07-10 22:00:00',	'2024-07-08 03:31:10',	'system',	NULL,	NULL),
+('c692f02f-93d8-4e26-96ed-acf42df80239',	'Daily Sale 07:00 09-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 07:00 09-07-2024',	'NORMAL',	'BLOCK',	'2024-07-09 14:00:00',	'2024-07-09 15:00:00',	'2024-07-08 03:31:05',	'system',	NULL,	NULL),
+('c6f40071-6176-4b26-b62d-c5f8832939e9',	'Daily Sale 15:00 10-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 15:00 10-07-2024',	'NORMAL',	'BLOCK',	'2024-07-10 22:00:00',	'2024-07-10 23:00:00',	'2024-07-08 03:31:10',	'system',	NULL,	NULL),
+('c7b72841-045b-4172-8164-848a98f6a9e1',	'Daily Sale 14:00 08-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 14:00 08-07-2024',	'NORMAL',	'BLOCK',	'2024-07-08 21:00:00',	'2024-07-08 22:00:00',	'2024-07-08 03:31:00',	'system',	NULL,	NULL),
+('cae6b1d2-13b5-4928-8766-e39af4f95979',	'Daily Sale 00:00 12-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 00:00 12-07-2024',	'NORMAL',	'BLOCK',	'2024-07-12 07:00:00',	'2024-07-12 08:00:00',	'2024-07-08 03:31:20',	'system',	NULL,	NULL),
+('d0edd9f5-b288-4a43-b9f5-85c07fabb53c',	'Daily Sale 19:00 08-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 19:00 08-07-2024',	'NORMAL',	'BLOCK',	'2024-07-09 02:00:00',	'2024-07-09 03:00:00',	'2024-07-08 03:31:00',	'system',	NULL,	NULL),
+('d1023d81-7e59-4062-a099-0489e2c75442',	'Daily Sale 18:00 13-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 18:00 13-07-2024',	'NORMAL',	'BLOCK',	'2024-07-14 01:00:00',	'2024-07-14 02:00:00',	'2024-07-08 03:31:25',	'system',	NULL,	NULL),
+('d1c598e3-e4b5-46bf-8285-7c235c954fa8',	'Daily Sale 21:00 09-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 21:00 09-07-2024',	'NORMAL',	'BLOCK',	'2024-07-10 04:00:00',	'2024-07-10 05:00:00',	'2024-07-08 03:31:05',	'system',	NULL,	NULL),
+('d2584764-91ad-4a51-be20-ba67e85f8090',	'Daily Sale 06:00 14-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 06:00 14-07-2024',	'NORMAL',	'BLOCK',	'2024-07-14 13:00:00',	'2024-07-14 14:00:00',	'2024-07-08 03:31:30',	'system',	NULL,	NULL),
+('d4aecaf2-b261-4e9e-86cf-728b477df9cc',	'Daily Sale 17:00 13-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 17:00 13-07-2024',	'NORMAL',	'BLOCK',	'2024-07-14 00:00:00',	'2024-07-14 01:00:00',	'2024-07-08 03:31:25',	'system',	NULL,	NULL),
+('d6506d0b-63a4-4230-b415-1b19ec4c2e96',	'Daily Sale 13:00 08-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 13:00 08-07-2024',	'NORMAL',	'BLOCK',	'2024-07-08 20:00:00',	'2024-07-08 21:00:00',	'2024-07-08 03:31:00',	'system',	NULL,	NULL),
+('d75f0134-8d25-4ccb-8286-a2b1925bbe3d',	'Daily Sale 07:00 13-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 07:00 13-07-2024',	'NORMAL',	'BLOCK',	'2024-07-13 14:00:00',	'2024-07-13 15:00:00',	'2024-07-08 03:31:25',	'system',	NULL,	NULL),
+('db6d3c5b-5d6c-4e22-81bf-a3ce92551102',	'Daily Sale 01:00 11-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 01:00 11-07-2024',	'NORMAL',	'BLOCK',	'2024-07-11 08:00:00',	'2024-07-11 09:00:00',	'2024-07-08 03:31:15',	'system',	NULL,	NULL),
+('dd973f2b-b24f-4c28-8ea0-cc895c04c946',	'Daily Sale 23:00 11-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 23:00 11-07-2024',	'NORMAL',	'BLOCK',	'2024-07-12 06:00:00',	'2024-07-12 07:00:00',	'2024-07-08 03:31:15',	'system',	NULL,	NULL),
+('ddb780dd-c077-40a1-8bdf-b69799f1d2d4',	'Daily Sale 21:00 13-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 21:00 13-07-2024',	'NORMAL',	'BLOCK',	'2024-07-14 04:00:00',	'2024-07-14 05:00:00',	'2024-07-08 03:31:25',	'system',	NULL,	NULL),
+('ddf14ab9-2af2-48a2-ae7f-1823a40cef6b',	'Daily Sale 10:00 09-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 10:00 09-07-2024',	'NORMAL',	'BLOCK',	'2024-07-09 17:00:00',	'2024-07-09 18:00:00',	'2024-07-08 03:31:05',	'system',	NULL,	NULL),
+('e2dacb74-9d1e-4019-8865-0bd306eaba83',	'Daily Sale 21:00 11-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 21:00 11-07-2024',	'NORMAL',	'BLOCK',	'2024-07-12 04:00:00',	'2024-07-12 05:00:00',	'2024-07-08 03:31:15',	'system',	NULL,	NULL),
+('e4b7718b-6aa0-49bf-96a4-08a3325eff89',	'Daily Sale 19:00 11-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 19:00 11-07-2024',	'NORMAL',	'BLOCK',	'2024-07-12 02:00:00',	'2024-07-12 03:00:00',	'2024-07-08 03:31:15',	'system',	NULL,	NULL),
+('e4ecf977-1e30-4b86-be9a-5cc16a0872c6',	'Daily Sale 17:00 14-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 17:00 14-07-2024',	'NORMAL',	'BLOCK',	'2024-07-15 00:00:00',	'2024-07-15 01:00:00',	'2024-07-08 03:31:30',	'system',	NULL,	NULL),
+('e5f78d55-c926-4bcd-9af8-39e1e7a68dcb',	'Daily Sale 20:00 09-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 20:00 09-07-2024',	'NORMAL',	'BLOCK',	'2024-07-10 03:00:00',	'2024-07-10 04:00:00',	'2024-07-08 03:31:05',	'system',	NULL,	NULL),
+('e7308b9a-950e-4931-89e3-5ee0d5cb3a53',	'Daily Sale 12:00 09-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 12:00 09-07-2024',	'NORMAL',	'BLOCK',	'2024-07-09 19:00:00',	'2024-07-09 20:00:00',	'2024-07-08 03:31:05',	'system',	NULL,	NULL),
+('e9655771-062c-4abf-9d30-80a1707fc334',	'Daily Sale 01:00 14-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 01:00 14-07-2024',	'NORMAL',	'BLOCK',	'2024-07-14 08:00:00',	'2024-07-14 09:00:00',	'2024-07-08 03:31:30',	'system',	NULL,	NULL),
+('ead85dda-c5b4-4873-bfd3-988bd4fc9916',	'Daily Sale 06:00 11-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 06:00 11-07-2024',	'NORMAL',	'BLOCK',	'2024-07-11 13:00:00',	'2024-07-11 14:00:00',	'2024-07-08 03:31:15',	'system',	NULL,	NULL),
+('eb972853-93be-45dd-95f8-d3b41b25096a',	'Daily Sale 12:00 12-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 12:00 12-07-2024',	'NORMAL',	'BLOCK',	'2024-07-12 19:00:00',	'2024-07-12 20:00:00',	'2024-07-08 03:31:20',	'system',	NULL,	NULL),
+('eda15635-5107-40a7-893d-dc9b04b84461',	'Daily Sale 12:00 13-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 12:00 13-07-2024',	'NORMAL',	'BLOCK',	'2024-07-13 19:00:00',	'2024-07-13 20:00:00',	'2024-07-08 03:31:25',	'system',	NULL,	NULL),
+('ee1fb4bd-05b7-4cd4-a609-2b308eb0d3ea',	'Daily Sale 19:00 10-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 19:00 10-07-2024',	'NORMAL',	'BLOCK',	'2024-07-11 02:00:00',	'2024-07-11 03:00:00',	'2024-07-08 03:31:10',	'system',	NULL,	NULL),
+('ee4462b1-f7ae-45a8-9d24-72cf11ec7fb6',	'Daily Sale 16:00 14-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 16:00 14-07-2024',	'NORMAL',	'BLOCK',	'2024-07-14 23:00:00',	'2024-07-15 00:00:00',	'2024-07-08 03:31:30',	'system',	NULL,	NULL),
+('eec27c1f-b9ac-42a3-9602-667411afc650',	'Daily Sale 20:00 12-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 20:00 12-07-2024',	'NORMAL',	'BLOCK',	'2024-07-13 03:00:00',	'2024-07-13 04:00:00',	'2024-07-08 03:31:20',	'system',	NULL,	NULL),
+('eef1b78a-8151-4eb5-ad27-2f58e786b5d6',	'Daily Sale 13:00 13-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 13:00 13-07-2024',	'NORMAL',	'BLOCK',	'2024-07-13 20:00:00',	'2024-07-13 21:00:00',	'2024-07-08 03:31:25',	'system',	NULL,	NULL),
+('f162e550-68d7-4d6b-b83e-bcbd1c38bd32',	'Daily Sale 07:00 14-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 07:00 14-07-2024',	'NORMAL',	'BLOCK',	'2024-07-14 14:00:00',	'2024-07-14 15:00:00',	'2024-07-08 03:31:30',	'system',	NULL,	NULL),
+('f1f43c62-a88e-46e7-b760-632b4436f16a',	'Daily Sale 04:00 13-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 04:00 13-07-2024',	'NORMAL',	'BLOCK',	'2024-07-13 11:00:00',	'2024-07-13 12:00:00',	'2024-07-08 03:31:25',	'system',	NULL,	NULL),
+('f2d0e075-32a9-47aa-9770-7a915eda9596',	'Daily Sale 03:00 11-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 03:00 11-07-2024',	'NORMAL',	'BLOCK',	'2024-07-11 10:00:00',	'2024-07-11 11:00:00',	'2024-07-08 03:31:15',	'system',	NULL,	NULL),
+('f30cbc80-3606-4c56-ae60-c7ba52791438',	'Daily Sale 05:00 11-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 05:00 11-07-2024',	'NORMAL',	'BLOCK',	'2024-07-11 12:00:00',	'2024-07-11 13:00:00',	'2024-07-08 03:31:15',	'system',	NULL,	NULL),
+('f362014e-0037-489c-887a-838f993567fc',	'Daily Sale 21:00 12-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 21:00 12-07-2024',	'NORMAL',	'BLOCK',	'2024-07-13 04:00:00',	'2024-07-13 05:00:00',	'2024-07-08 03:31:20',	'system',	NULL,	NULL),
+('f6e0b4e2-6f75-441f-a7e8-6f64af699748',	'Daily Sale 01:00 12-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 01:00 12-07-2024',	'NORMAL',	'BLOCK',	'2024-07-12 08:00:00',	'2024-07-12 09:00:00',	'2024-07-08 03:31:20',	'system',	NULL,	NULL),
+('f924d7af-1424-403c-ae91-6aa458149f38',	'Daily Sale 22:00 12-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 22:00 12-07-2024',	'NORMAL',	'BLOCK',	'2024-07-13 05:00:00',	'2024-07-13 06:00:00',	'2024-07-08 03:31:20',	'system',	NULL,	NULL),
+('f9cd0435-fedd-4656-830e-16c272d547da',	'Daily Sale 05:00 12-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 05:00 12-07-2024',	'NORMAL',	'BLOCK',	'2024-07-12 12:00:00',	'2024-07-12 13:00:00',	'2024-07-08 03:31:20',	'system',	NULL,	NULL),
+('fa7389b2-4a8b-4aa5-9ffb-312e937b5dfd',	'Daily Sale 16:00 11-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 16:00 11-07-2024',	'NORMAL',	'BLOCK',	'2024-07-11 23:00:00',	'2024-07-12 00:00:00',	'2024-07-08 03:31:15',	'system',	NULL,	NULL),
+('fb66b4a3-5e41-4e27-8c63-f31d95821425',	'Daily Sale 15:00 09-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 15:00 09-07-2024',	'NORMAL',	'BLOCK',	'2024-07-09 22:00:00',	'2024-07-09 23:00:00',	'2024-07-08 03:31:05',	'system',	NULL,	NULL),
+('fe8ecffc-f1eb-4ea4-afbc-16453eb0b5ec',	'Daily Sale 03:00 13-07-2024',	'Chương trình giảm giá hằng ngày kích cầu mua sắm 03:00 13-07-2024',	'NORMAL',	'BLOCK',	'2024-07-13 10:00:00',	'2024-07-13 11:00:00',	'2024-07-08 03:31:25',	'system',	NULL,	NULL);
 
 DROP TABLE IF EXISTS `Store`;
 CREATE TABLE `Store` (
@@ -2336,10 +2526,12 @@ INSERT INTO `UserAddProductToCart` (`id`, `userId`, `productId`, `quantity`, `cr
 ('15dfa146-04d1-4b28-b274-23de757d0fc0',	NULL,	'f8ac40df-f384-4aaf-b59a-7b5385e51ca7',	1,	'2024-06-26 17:11:40',	NULL,	NULL),
 ('18fa278e-12ab-4e44-926b-2e4cc5d5e209',	NULL,	'0045ffae-a79d-427b-a3a6-917492310c51',	1,	'2024-06-27 06:05:12',	NULL,	NULL),
 ('19ad75d4-3798-4112-8700-cfba8b0fb175',	NULL,	'01a1d99b-8ffd-4c7c-8678-3a8bc5ac2b6c',	1,	'2024-06-27 08:37:29',	NULL,	NULL),
+('1ac3c345-f8ec-4121-922c-32f7dac897f3',	NULL,	'00d08f1f-1d79-4778-a3a5-901508138a02',	1,	'2024-07-06 12:38:47',	NULL,	NULL),
 ('1f6c17f8-d95c-4d66-8691-4df7dd8c6f5a',	NULL,	'01a1d99b-8ffd-4c7c-8678-3a8bc5ac2b6c',	1,	'2024-06-25 10:28:24',	NULL,	NULL),
 ('2028a5e5-f47d-480f-9dfd-6d0253a5cb2c',	NULL,	'f923c01c-e360-4c73-9abd-89247238d0e8',	1,	'2024-06-26 17:11:42',	NULL,	NULL),
 ('21f3940f-7ebf-4605-be00-2f8e31611808',	NULL,	'00ce04d3-c05d-4255-9d2c-6548ac3f2735',	1,	'2024-06-27 13:28:55',	NULL,	NULL),
 ('227ff65f-aa1d-4672-a5a5-344e5fc62cb5',	NULL,	'01a1d99b-8ffd-4c7c-8678-3a8bc5ac2b6c',	1,	'2024-06-27 13:33:41',	NULL,	NULL),
+('24b5f8d7-5ee5-49ae-94f8-1ca0996513b8',	NULL,	'00ce04d3-c05d-4255-9d2c-6548ac3f2735',	1,	'2024-07-06 12:38:48',	NULL,	NULL),
 ('24f77eba-7aeb-4ce0-8dc8-f11be17fddbb',	NULL,	'0063ab52-aef0-41a8-a751-bfd6cec00038',	1,	'2024-06-26 17:10:04',	NULL,	NULL),
 ('2534ae59-43d8-4a5e-b2a4-e6392a884aab',	NULL,	'01c5bf90-5e4f-49b1-ac6c-e68c2a7d4f27',	1,	'2024-06-27 13:33:58',	NULL,	NULL),
 ('26162629-542e-4084-ad1a-fba920b189aa',	NULL,	'0063ab52-aef0-41a8-a751-bfd6cec00038',	1,	'2024-06-26 14:29:47',	NULL,	NULL),
@@ -2403,6 +2595,7 @@ INSERT INTO `UserAddProductToCart` (`id`, `userId`, `productId`, `quantity`, `cr
 ('afd7ced7-4066-47b5-b71c-985ae3d41971',	NULL,	'f923c01c-e360-4c73-9abd-89247238d0e8',	1,	'2024-06-26 17:11:54',	NULL,	NULL),
 ('b2869e5b-719d-4013-9ba0-995cf2627b6d',	NULL,	'01236d43-bf11-4b6d-bd3b-7ce3ff95bfb2',	1,	'2024-06-25 10:42:01',	NULL,	NULL),
 ('b378cc1c-68b3-44d9-84cc-ef7308b6fa49',	NULL,	'00c49667-3653-4c7a-9042-34a37456972e',	1,	'2024-06-27 13:28:55',	NULL,	NULL),
+('b645fbb2-fa1c-42ca-a49e-5d19c1ff4919',	NULL,	'00c49667-3653-4c7a-9042-34a37456972e',	1,	'2024-07-06 12:38:49',	NULL,	NULL),
 ('b972d4ba-ba64-495f-9d28-4767ca919bd2',	NULL,	'001e6c58-dc0a-46ea-91e6-c9c34e661a3f',	1,	'2024-06-25 10:28:13',	NULL,	NULL),
 ('ba1b8f36-3ff7-4aeb-a6df-2685aa7885be',	NULL,	'f923c01c-e360-4c73-9abd-89247238d0e8',	1,	'2024-06-25 10:42:18',	NULL,	NULL),
 ('bbc6193e-0f81-4414-a12b-3be009b871a8',	NULL,	'00718b4a-bba4-4e01-a05a-68f27a1fab00',	1,	'2024-06-26 13:58:05',	NULL,	NULL),
@@ -2487,6 +2680,7 @@ INSERT INTO `UserViewProduct` (`id`, `userId`, `productId`, `createdAt`) VALUES
 ('696b7838-2f55-4c12-be57-ec32c323190b',	'a226f227-c629-4c75-98ca-e56a3dab016e',	'0045ffae-a79d-427b-a3a6-917492310c51',	'2024-06-27 10:11:49'),
 ('6a1b21bb-95bb-45ad-8da8-af1d8dbbab95',	'a226f227-c629-4c75-98ca-e56a3dab016e',	'001e6c58-dc0a-46ea-91e6-c9c34e661a3f',	'2024-06-27 05:53:27'),
 ('6cd51942-b08c-451e-beb7-db0aeaf5874e',	'a226f227-c629-4c75-98ca-e56a3dab016e',	'0045ffae-a79d-427b-a3a6-917492310c51',	'2024-06-27 11:28:29'),
+('6f92e3b2-cefe-43c0-9144-e313bfccfe88',	'a226f227-c629-4c75-98ca-e56a3dab016e',	'00ce04d3-c05d-4255-9d2c-6548ac3f2735',	'2024-07-06 12:49:30'),
 ('776b7d85-9726-49f0-a08b-aafc9704902f',	'a226f227-c629-4c75-98ca-e56a3dab016e',	'073959bc-19a6-4011-b8e9-6149c408d1c2',	'2024-06-26 05:37:30'),
 ('77bfe2d7-4436-4878-b3b1-7b742d2b5565',	'a3816a2a-93c2-49a9-b5af-16e25615b2c1',	'00d08f1f-1d79-4778-a3a5-901508138a02',	'2024-06-24 16:02:07'),
 ('79661878-df24-4c89-bb55-5c5ab9e55719',	'a226f227-c629-4c75-98ca-e56a3dab016e',	'01a1d99b-8ffd-4c7c-8678-3a8bc5ac2b6c',	'2024-06-26 16:49:15'),
@@ -2513,6 +2707,7 @@ INSERT INTO `UserViewProduct` (`id`, `userId`, `productId`, `createdAt`) VALUES
 ('cae8b265-88a0-4be6-be10-24f872904c77',	'a226f227-c629-4c75-98ca-e56a3dab016e',	'073959bc-19a6-4011-b8e9-6149c408d1c2',	'2024-06-26 05:56:47'),
 ('cb7c0054-31e9-4c45-9fe1-e7224b22675a',	'a226f227-c629-4c75-98ca-e56a3dab016e',	'073959bc-19a6-4011-b8e9-6149c408d1c2',	'2024-06-26 06:16:57'),
 ('d2ac5416-c28d-40c1-b26d-4fd3fecb0b42',	'a226f227-c629-4c75-98ca-e56a3dab016e',	'001e6c58-dc0a-46ea-91e6-c9c34e661a3f',	'2024-06-27 05:56:14'),
+('d345fbe6-9dc1-45a1-8465-c511a3553aee',	'a226f227-c629-4c75-98ca-e56a3dab016e',	'00c00e94-708e-41a5-9ea6-a5484ab55c35',	'2024-07-07 14:29:35'),
 ('d719bc4a-16e5-48eb-8add-fbe6fef872f7',	'a3816a2a-93c2-49a9-b5af-16e25615b2c1',	'001e6c58-dc0a-46ea-91e6-c9c34e661a3f',	'2024-06-24 15:59:42'),
 ('d731ff29-59ca-4ea7-99a2-41e3067b474a',	'a226f227-c629-4c75-98ca-e56a3dab016e',	'001e6c58-dc0a-46ea-91e6-c9c34e661a3f',	'2024-06-26 06:33:59'),
 ('d9848f40-b84e-424f-a391-1660fd3e2a66',	'a226f227-c629-4c75-98ca-e56a3dab016e',	'001e6c58-dc0a-46ea-91e6-c9c34e661a3f',	'2024-06-27 05:09:41'),
@@ -2577,4 +2772,4 @@ CREATE TABLE `Voucher` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
--- 2024-07-06 10:38:49
+-- 2024-07-08 17:59:50

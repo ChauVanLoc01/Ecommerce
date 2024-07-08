@@ -1,19 +1,59 @@
-export const OrderStatus: { [key: string]: { lable: string; color: string } } = {
+export const OrderStatus: { [key: string]: { label: string; color: string } } = {
     WAITING_CONFIRM: {
-        lable: 'Chờ xác nhận',
-        color: 'yellow'
-    },
-    SHIPING: {
-        lable: 'Đang vận chuyển',
+        label: 'Chờ xác nhận',
         color: 'orange'
     },
-    SUCCESS: {
-        lable: 'Thành công',
+    CLIENT_CANCEL: {
+        label: 'Khách hàng hủy',
+        color: 'red'
+    },
+    REQUEST_CANCEL: {
+        label: 'Yêu cầu hủy đơn với khách hàng',
+        color: 'red'
+    },
+    ACCEPT_CANCEL: {
+        label: 'Khách hàng đồng ý hủy đơn',
+        color: 'red'
+    },
+    CONFIRM_AND_SHIPPING: {
+        label: 'Xác nhận và đang giao hàng',
+        color: 'yellow'
+    },
+    SHIPING_SUCCESS: {
+        label: 'Giao hàng thành công',
         color: 'green'
     },
-    CANCEL: {
-        lable: 'Đã hủy',
-        color: 'red'
+    REQUEST_REFUND: {
+        label: 'Yêu cầu hoàn đổi',
+        color: 'blue'
+    },
+    UPDATE_REFUND: {
+        label: 'Cập nhật hoàn đổi',
+        color: 'blue'
+    },
+    CANCEL_REFUND: {
+        label: 'Hủy hoàn đổi',
+        color: 'blue'
+    },
+    ACCEPT_REFUND_AND_SHIPPING: {
+        label: 'Đồng ý hoàn đổi và đang giao hàng',
+        color: 'purple'
+    },
+    REFUND_SHIPPING_SUCCESS: {
+        label: 'Giao đơn hoàn đổi thành công',
+        color: 'purple'
+    },
+    RE_OPEN_REFUND: {
+        label: 'Mở lại yêu cầu hoàn đổi',
+        color: 'blue'
+    },
+    CLOSE_REFUND: {
+        label: 'Đóng yêu cầu hoàn đổi',
+        color: 'blue'
+    },
+    FINISH: {
+        label: 'Hoàn thành',
+        color: 'green'
     }
 }
 
@@ -66,7 +106,7 @@ export const order_next_flow = {
 export const OrderFlowLable = {
     [OrderFlowEnum.WAITING_CONFIRM]: 'Đơn hàng chờ xác nhận',
     [OrderFlowEnum.CLIENT_CANCEL]: 'Khách hàng đã hủy đơn',
-    [OrderFlowEnum.REQUEST_CANCEL]: 'Yêu cầu hủy đơn hàng với khách hàng',
+    [OrderFlowEnum.REQUEST_CANCEL]: 'Bạn đã yêu cầu hủy đơn hàng với khách hàng',
     [OrderFlowEnum.ACCEPT_CANCEL]: 'Khách hàng xác nhận cho phép cửa hàng hủy đơn',
     [OrderFlowEnum.CONFIRM_AND_SHIPPING]: 'Đơn hàng đang trong quá trình giao đến khách hàng',
     [OrderFlowEnum.SHIPING_SUCCESS]: 'Đơn hàng đã giao đến khách hàng',
@@ -75,6 +115,24 @@ export const OrderFlowLable = {
     [OrderFlowEnum.ACCEPT_REFUND_AND_SHIPPING]:
         'Cửa hàng của bạn đã chấp nhận hoàn đổi sản phẩm và đang tiến hành gửi sản phẩm khác đến khách hàng',
     [OrderFlowEnum.REFUND_SHIPPING_SUCCESS]: 'Đơn hoàn đổi sản phẩm đã giao đến khách hàng',
+    [OrderFlowEnum.CANCEL_REFUND]: 'Khách hàng đã hủy đơn hoàn đổi',
+    [OrderFlowEnum.RE_OPEN_REFUND]: 'Sản phẩm hoàn đổi không đạt yêu cầu. Khách hàng yêu cầu hoàn đổi lại',
+    [OrderFlowEnum.CLOSE_REFUND]: 'Sản phẩm hoàn đổi đạt yêu cầu. Đơn hoàn đổi đóng',
+    [OrderFlowEnum.FINISH]: 'Đơn hàng hoàn thành'
+}
+
+export const OrderNextFlowLable = {
+    [OrderFlowEnum.WAITING_CONFIRM]: 'Đơn hàng chờ xác nhận',
+    [OrderFlowEnum.CLIENT_CANCEL]: 'Khách hàng đã hủy đơn',
+    [OrderFlowEnum.REQUEST_CANCEL]: 'Bạn muốn yêu cầu hủy đơn với khách hàng?',
+    [OrderFlowEnum.ACCEPT_CANCEL]: 'Khách hàng xác nhận cho phép cửa hàng hủy đơn',
+    [OrderFlowEnum.CONFIRM_AND_SHIPPING]: 'Bạn cần xác nhận hoặc yêu cầu hủy đơn?',
+    [OrderFlowEnum.SHIPING_SUCCESS]: 'Đơn hàng đã giao đến khách hàng',
+    [OrderFlowEnum.REQUEST_REFUND]: 'Khách hàng đã yêu cầu hoàn đổi sản phẩm',
+    [OrderFlowEnum.UPDATE_REFUND]: 'Khách hàng đã cập nhật đơn hoàn đổi sản phẩm',
+    [OrderFlowEnum.ACCEPT_REFUND_AND_SHIPPING]: 'Bạn chấp nhận hoàn đổi sản phẩm với khách hàng',
+    [OrderFlowEnum.REFUND_SHIPPING_SUCCESS]: 'Đơn hoàn đổi sản phẩm đã giao đến khách hàng',
+    [OrderFlowEnum.CANCEL_REFUND]: 'Bạn muốn từ chối đổi sản phẩm mới cho khách hàng',
     [OrderFlowEnum.RE_OPEN_REFUND]: 'Sản phẩm hoàn đổi không đạt yêu cầu. Khách hàng yêu cầu hoàn đổi lại',
     [OrderFlowEnum.CLOSE_REFUND]: 'Sản phẩm hoàn đổi đạt yêu cầu. Đơn hoàn đổi đóng',
     [OrderFlowEnum.FINISH]: 'Đơn hàng hoàn thành'

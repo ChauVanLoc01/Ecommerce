@@ -31,7 +31,7 @@ import { OrderPayload } from 'common/types/order_payload.type'
 import { MessageReturn, Return } from 'common/types/result.type'
 import { hash } from 'common/utils/helper'
 import { CronJob } from 'cron'
-import { add, addHours, compareDesc, sub, subDays } from 'date-fns'
+import { add, addHours, compareAsc, compareDesc, isPast, sub, subDays } from 'date-fns'
 import { Dictionary, isUndefined, max, omitBy, sumBy } from 'lodash'
 import { firstValueFrom } from 'rxjs'
 import { v4 as uuidv4 } from 'uuid'
@@ -125,7 +125,8 @@ export class OrderService {
                     ProductOrder: true,
                     OrderShipping: true,
                     OrderVoucher: true,
-                    OrderFlow: true
+                    OrderFlow: true,
+                    OrderRefund: true
                 }
             })
 
@@ -238,6 +239,13 @@ export class OrderService {
             where: {
                 id: orderId,
                 storeId: user.storeId
+            },
+            include: {
+                OrderRefund: true,
+                OrderShipping: true,
+                OrderVoucher: true,
+                OrderFlow: true,
+                ProductOrder: true
             }
         })
 
@@ -484,18 +492,34 @@ export class OrderService {
     }
 
     async updateStatusOfOrderFlow(
-        user: CurrentUserType,
+        user: CurrentUserType | CurrentStoreType,
         orderId: string,
         body: UpdateStatusOrderFlow
     ): Promise<Return> {
         try {
-            const { id: userId } = user
-            const { status, note, orderFlowId } = body
+            let isStoreType = (
+                obj: CurrentUserType | CurrentStoreType
+            ): obj is CurrentStoreType => {
+                return 'userId' in obj
+            }
+
+            let userId = undefined
+            let key = ''
+
+            if (isStoreType(user)) {
+                userId = user.storeId
+                key = 'storeId'
+            } else {
+                userId = user.id
+                key = 'userId'
+            }
+
+            const { status, note, orderRefundId } = body
 
             const orderExist = await this.prisma.order.findUnique({
                 where: {
                     id: orderId,
-                    userId: user.id
+                    [key]: userId
                 },
                 select: {
                     storeId: true,
@@ -615,7 +639,7 @@ export class OrderService {
                     await updateStatus(tx, orderId, status)
                 })
             } else if (RefundStatus?.[status]) {
-                if (!orderFlowId) {
+                if (!orderRefundId) {
                     throw new BadRequestException('Id của đơn hoàn đổi là bắt buộc')
                 }
 
@@ -655,7 +679,7 @@ export class OrderService {
                             arr.push(
                                 tx.orderRefund.update({
                                     where: {
-                                        id: orderFlowId
+                                        id: orderRefundId
                                     },
                                     data: {
                                         status: OrderFlowEnum.FINISH,
@@ -668,7 +692,7 @@ export class OrderService {
                         await Promise.all([
                             tx.orderRefund.update({
                                 where: {
-                                    id: orderFlowId
+                                    id: orderRefundId
                                 },
                                 data: {
                                     status
@@ -677,6 +701,7 @@ export class OrderService {
                             ...arr
                         ])
                     } catch (err) {
+                        console.log('error', err)
                         throw new BadRequestException('Đơn hoản đổi không tồn tại')
                     }
                 })
@@ -707,7 +732,7 @@ export class OrderService {
                 where: {
                     id: orderId,
                     status: {
-                        equals: OrderFlowEnum.SHIPING_SUCCESS
+                        in: [OrderFlowEnum.SHIPING_SUCCESS, OrderFlowEnum.CANCEL_REFUND]
                     }
                 },
                 select: {
@@ -722,7 +747,7 @@ export class OrderService {
                 )
             }
 
-            if (compareDesc(orderExist.createdAt, sub(new Date(), { days: 3 }))) {
+            if (isPast(add(orderExist.createdAt, { days: 3 }))) {
                 throw new BadRequestException(
                     'Không thể yêu cầu hoàn đổi khi đơn hàng đã quá 3 ngày'
                 )
@@ -738,6 +763,7 @@ export class OrderService {
                             createdBy: userId,
                             orderId,
                             status: OrderFlowEnum.REQUEST_REFUND,
+                            createdAt: new Date(),
                             RefundMaterial: {
                                 createMany: {
                                     data: materials.map(({ type, url, description }) => ({

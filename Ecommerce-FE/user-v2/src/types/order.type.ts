@@ -1,3 +1,4 @@
+import { OrderFlowEnum } from 'src/constants/order-status'
 import { Product } from './product.type'
 
 export type OrderDelivery = {
@@ -94,9 +95,45 @@ export type OrderResponse = {
     query: Omit<OrderQuery, 'page'> & { page_size: number; page: number }
 }
 
+export type OrderRefund = {
+    id: string
+    orderId: string
+    status: string
+    title: string
+    description: string
+    createdAt: string
+    createdBy: string
+    updatedAt?: string
+    updatedBy?: string
+}
+
 export type OrderDetailResponse = Order & {
     OrderFlow: OrderFlow[]
     OrderShipping: OrderShipping[]
     OrderVoucher: OrderVoucher[]
     ProductOrder: (ProductOrder & Pick<Product, 'name' | 'image' | 'category'> & { current_price_after: number })[]
+    OrderRefund: OrderRefund[]
+}
+
+export type UpdateOrderStatus = {
+    status: OrderFlowEnum
+    note?: string
+    orderRefundId?: string
+}
+
+export type RefundMaterial = {
+    url: string
+    type: string
+}
+
+export type ProductOrderRefund = {
+    productOrderId: string
+    quantity: number
+}
+
+export type CreateOrderRefund = {
+    title: string
+    description: string
+    productOrders: ProductOrderRefund[]
+    materials: RefundMaterial[]
 }

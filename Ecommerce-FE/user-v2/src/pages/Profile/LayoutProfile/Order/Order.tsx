@@ -31,7 +31,7 @@ import { RatingApi } from 'src/apis/rating.api'
 import { UploadApi } from 'src/apis/upload_file.api'
 import { DatePickerWithRange } from 'src/components/Shadcn/dateRange'
 import Table from 'src/components/Table'
-import { OrderStatus } from 'src/constants/order-status'
+import { OrderFlowEnum, OrderStatus } from 'src/constants/order-status'
 import { OrderQuery, Order as OrderType } from 'src/types/order.type'
 import { RatingBody } from 'src/types/rating.type'
 import { convertCurrentcy } from 'src/utils/utils.ts'
@@ -119,52 +119,54 @@ const Order = () => {
                 )
             },
             cell: ({ row }) => (
-                <Badge size={'3'} color={OrderStatus[row.original.status][1] as any}>
-                    {OrderStatus[row.original.status][0]}
-                </Badge>
+                <div className='text-left'>
+                    <Badge color={(OrderStatus?.[row.original.status]?.color as any) || 'red'} size={'2'}>
+                        {OrderStatus?.[row.original.status]?.label}
+                    </Badge>
+                </div>
             )
         },
         {
             accessorKey: 'Tổng tiền',
             header: () => {
                 return (
-                    <div className='flex items-center gap-x-2'>
+                    <div className='flex items-center justify-center gap-x-2'>
                         Tổng tiền
                         <BiSolidSortAlt />
                     </div>
                 )
             },
-            cell: ({ row }) => <div className='capitalize'>{convertCurrentcy(row.original.total)}</div>
+            cell: ({ row }) => <div className='capitalize text-center'>{convertCurrentcy(row.original.total)}</div>
         },
         {
             accessorKey: 'Giảm giá',
             header: () => {
                 return (
-                    <div className='flex items-center gap-x-2'>
+                    <div className='flex justify-center items-center gap-x-2'>
                         Giảm giá
                         <BiSolidSortAlt />
                     </div>
                 )
             },
-            cell: ({ row }) => <div className='capitalize'>{convertCurrentcy(row.original.discount)}</div>
+            cell: ({ row }) => <div className='capitalize text-center'>{convertCurrentcy(row.original.discount)}</div>
         },
         {
             accessorKey: 'Số tiền cần trả',
             header: () => {
                 return (
-                    <div className='flex items-center gap-x-2'>
+                    <div className='flex items-center gap-x-2 justify-center'>
                         Số tiền cần trả
                         <BiSolidSortAlt />
                     </div>
                 )
             },
-            cell: ({ row }) => <div className='capitalize'>{convertCurrentcy(row.original.pay)}</div>
+            cell: ({ row }) => <div className='capitalize text-center'>{convertCurrentcy(row.original.pay)}</div>
         },
         {
             accessorKey: 'Thời gian tạo',
             header: () => {
                 return (
-                    <div className='flex items-center gap-x-2'>
+                    <div className='flex justify-center items-center gap-x-2'>
                         Thời gian tạo
                         <BiSolidSortAlt />
                     </div>
@@ -181,6 +183,7 @@ const Order = () => {
             accessorKey: ' ',
             cell: ({ row }) => {
                 let isFetching = row.original.id === orderId && isOrderDetailFetching
+                let isCanRate = OrderFlowEnum.FINISH !== row.original.status
                 return (
                     <Flex gapX={'2'} align={'center'}>
                         <Tooltip content='Xem chi tiết'>
@@ -209,7 +212,9 @@ const Order = () => {
                                 color='red'
                                 onClick={() => setOpenCancel(!openCancel)}
                                 onMouseEnter={handleFetchOrderDetailWhenHovering(row.original.id)}
-                                disabled={['CANCEL', 'SUCCESS'].includes(row.original.status)}
+                                disabled={
+                                    ![OrderFlowEnum.WAITING_CONFIRM].includes(row.original.status as OrderFlowEnum)
+                                }
                             >
                                 <Cross2Icon />
                             </IconButton>
@@ -220,10 +225,7 @@ const Order = () => {
                                 color='green'
                                 onClick={onOpenRatingClick(row.original.id, row.original.storeId)}
                                 onMouseEnter={handleFetchOrderDetailWhenHovering(row.original.id)}
-                                disabled={
-                                    row.original.isRated == 1 ||
-                                    ['CANCEL', 'WAITING_CONFIRM', 'SHIPPING'].includes(row.original.status)
-                                }
+                                disabled={isCanRate}
                             >
                                 <StarIcon />
                             </IconButton>
@@ -425,7 +427,7 @@ const Order = () => {
                     columns={columns}
                     data={data?.data.result.data || []}
                     tableMaxHeight='520px'
-                    className='w-[1300px] max-w-[1300px]'
+                    className='w-[1200px] max-w-[1300px]'
                 />
             </Flex>
             <AlertDialog.Root>
@@ -455,6 +457,7 @@ const Order = () => {
                 setIsOpen={setOpenDetail}
                 data={orderDetailData || []}
                 orderData={orderDetailData}
+                orderRefetch={orderRefetch}
             />
             <OrderEdit
                 isOpen={openEdit}

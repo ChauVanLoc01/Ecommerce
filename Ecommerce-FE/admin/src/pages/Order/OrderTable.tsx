@@ -1,17 +1,19 @@
 import { CounterClockwiseClockIcon, InfoCircledIcon } from '@radix-ui/react-icons'
 import { Badge, Flex, IconButton, Text, Tooltip } from '@radix-ui/themes'
-import { QueryObserverResult, RefetchOptions, useQuery } from '@tanstack/react-query'
+import { QueryObserverResult, RefetchOptions, useMutation, useQuery } from '@tanstack/react-query'
 import { ColumnDef } from '@tanstack/react-table'
-import { compareAsc, format, formatDistance } from 'date-fns'
+import { format, formatDistance } from 'date-fns'
 import { vi } from 'date-fns/locale'
 import { useEffect, useState } from 'react'
 import { BiSolidSortAlt } from 'react-icons/bi'
+import { toast } from 'sonner'
 import { OrderApi } from 'src/apis/order.api'
 import Table from 'src/components/Table'
-import { OrderStatus } from 'src/constants/order.status'
+import { OrderFlowEnum, OrderStatus } from 'src/constants/order.status'
 import { Order, OrderQuery } from 'src/types/order.type'
 import { convertCurrentcy } from 'src/utils/utils'
-import OrderChangeStatus from './OrderStatus'
+import OrderChangeStatus from './OrderFlow/OrderStatus'
+import { isAxiosError } from 'axios'
 
 type OrderTableProps = {
     data: Order[]
@@ -46,23 +48,40 @@ const OrderTable = ({ data, orderListRefetch, analyticOrderStoreRefetching }: Or
     const [openChangeStatus, setOpenChangeStatus] = useState<boolean>(false)
     const [choosedProduct, setChoosedProduct] = useState<string>('')
 
-    const { refetch: orderDetailRefetch } = useQuery({
+    const { refetch: orderDetailRefetch, data: orderDetailData } = useQuery({
         queryKey: ['orderDetail', choosedProduct],
         queryFn: () => OrderApi.getOrderDetail(choosedProduct),
-        staleTime: 1000 * 60 * 3,
-        enabled: false
-    })
-
-    const { refetch: orderStatusRefetch, data: orderStatusData } = useQuery({
-        queryKey: ['orderStatus', choosedProduct],
-        queryFn: () => OrderApi.getOrderStatus(choosedProduct),
-        staleTime: 1000 * 60 * 3,
+        staleTime: 1000 * 60 * 2,
         enabled: false,
         select: (data) => data.data.result
     })
 
-    const handleChooseProduct = (type: 'DETAIL' | 'STATUS', id: string) => () => {
+    const { mutate: updateOrderStatusMutation, isPending: isUpdateing } = useMutation({
+        mutationFn: OrderApi.updateStatusOrder(choosedProduct),
+        onSuccess: () => {
+            handleFetchAll()
+            toast.success('Cập nhật trạng thái đơn hàng thành công')
+        },
+        onError: (err) => {
+            if (isAxiosError(err)) {
+                toast.error(err.response?.data?.message || 'Cập nhật thất bại')
+            }
+        }
+    })
+
+    const updateStatusOfOrder = (status: OrderFlowEnum, note?: string, orderRefundId?: string) => () => {
+        updateOrderStatusMutation({
+            status,
+            note: '',
+            orderRefundId
+        })
+    }
+
+    const handleChooseProduct = (id: string) => () => {
         setChoosedProduct(id)
+    }
+
+    const handleOpenOrderStatus = (type: 'DETAIL' | 'STATUS') => () => {
         switch (type) {
             case 'DETAIL':
                 setOpenDetail(true)
@@ -73,15 +92,11 @@ const OrderTable = ({ data, orderListRefetch, analyticOrderStoreRefetching }: Or
         }
     }
 
-    const handleFetchData = async () => await Promise.all([orderDetailRefetch(), orderStatusRefetch()])
+    const handleFetchData = async () => await Promise.all([orderDetailRefetch()])
 
-    const handleFetchAll = async () =>
-        await Promise.all([
-            orderListRefetch(),
-            orderDetailRefetch(),
-            orderStatusRefetch(),
-            analyticOrderStoreRefetching()
-        ])
+    const handleFetchAll = async () => {
+        await Promise.all([orderListRefetch(), orderDetailRefetch(), analyticOrderStoreRefetching()])
+    }
 
     const columns: ColumnDef<Order>[] = [
         {
@@ -108,8 +123,8 @@ const OrderTable = ({ data, orderListRefetch, analyticOrderStoreRefetching }: Or
             },
             cell: ({ row }) => (
                 <div className='text-center'>
-                    <Badge color={OrderStatus[row.original.status].color as any}>
-                        {OrderStatus[row.original.status].lable}
+                    <Badge color={(OrderStatus?.[row.original.status]?.color as any) || 'red'} size={'3'}>
+                        {OrderStatus?.[row.original.status]?.label}
                     </Badge>
                 </div>
             )
@@ -210,7 +225,7 @@ const OrderTable = ({ data, orderListRefetch, analyticOrderStoreRefetching }: Or
             cell: ({ row }) => (
                 <Flex gapX={'2'} align={'center'}>
                     <Tooltip content='Xem chi tiết'>
-                        <IconButton variant='soft' onClick={handleChooseProduct('DETAIL', row.original.id)}>
+                        <IconButton variant='soft' onMouseOver={handleChooseProduct(row.original.id)}>
                             <InfoCircledIcon />
                         </IconButton>
                     </Tooltip>
@@ -218,7 +233,8 @@ const OrderTable = ({ data, orderListRefetch, analyticOrderStoreRefetching }: Or
                         <IconButton
                             variant='soft'
                             color='yellow'
-                            onClick={handleChooseProduct('STATUS', row.original.id)}
+                            onMouseEnter={handleChooseProduct(row.original.id)}
+                            onClick={handleOpenOrderStatus('STATUS')}
                         >
                             <CounterClockwiseClockIcon />
                         </IconButton>
@@ -238,13 +254,16 @@ const OrderTable = ({ data, orderListRefetch, analyticOrderStoreRefetching }: Or
         <>
             <Table<Order> columns={columns} data={data} tableMaxHeight='500px' className='w-[1500px]' />
             {/* <OrderDetail open={openDetail} setOpen={setOpenDetail} data={orderDetailData ?? []} /> */}
-            <OrderChangeStatus
-                open={openChangeStatus}
-                setOpen={setOpenChangeStatus}
-                handleFetchAll={handleFetchAll as any}
-                orderId={choosedProduct}
-                data={orderStatusData ? orderStatusData?.sort((a, b) => compareAsc(a.createdAt, b.createdAt)) : []}
-            />
+            {orderDetailData && openChangeStatus && (
+                <OrderChangeStatus
+                    open={openChangeStatus}
+                    setOpen={setOpenChangeStatus}
+                    handleFetchAll={handleFetchAll as any}
+                    orderDetailData={orderDetailData}
+                    updateStatusOfOrder={updateStatusOfOrder}
+                    isUpdateing={isUpdateing}
+                />
+            )}
         </>
     )
 }

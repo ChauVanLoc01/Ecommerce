@@ -1,4 +1,5 @@
 import { ColumnDef, flexRender, getCoreRowModel, TableOptions, useReactTable } from '@tanstack/react-table'
+import { v4 as uuid } from 'uuid'
 import { TableBody, TableCell, TableHead, TableHeader, Table as TableLib, TableRow } from '../Shadcn/table'
 
 type TableProps<T> = {
@@ -7,6 +8,7 @@ type TableProps<T> = {
     tableMaxHeight?: string
     className?: string
     onMouseOverInTableRow?: (orderId: string) => () => void
+    bodyClassName?: string
 } & Omit<TableOptions<T>, 'getCoreRowModel'>
 
 const Table = function <T extends { id: string }>({
@@ -14,7 +16,8 @@ const Table = function <T extends { id: string }>({
     data,
     className,
     tableMaxHeight,
-    onMouseOverInTableRow
+    onMouseOverInTableRow,
+    bodyClassName
 }: TableProps<T>) {
     const table = useReactTable<T>({
         data,
@@ -29,7 +32,7 @@ const Table = function <T extends { id: string }>({
                     <TableRow key={headerGroup.id}>
                         {headerGroup.headers.map((header) => {
                             return (
-                                <TableHead key={header.id}>
+                                <TableHead key={uuid()}>
                                     {header.isPlaceholder
                                         ? null
                                         : flexRender(header.column.columnDef.header, header.getContext())}
@@ -39,17 +42,17 @@ const Table = function <T extends { id: string }>({
                     </TableRow>
                 ))}
             </TableHeader>
-            <TableBody>
+            <TableBody className={bodyClassName}>
                 {table.getRowModel().rows?.length ? (
                     table.getRowModel().rows.map((row) => (
                         <TableRow
                             onMouseOver={onMouseOverInTableRow && onMouseOverInTableRow(row.original.id)}
                             className='border-none'
-                            key={row.id}
+                            key={uuid()}
                             data-state={row.getIsSelected() && 'selected'}
                         >
                             {row.getVisibleCells().map((cell) => (
-                                <TableCell key={cell.id}>
+                                <TableCell key={uuid()}>
                                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                 </TableCell>
                             ))}

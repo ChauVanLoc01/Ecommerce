@@ -1,20 +1,25 @@
 import { AlertDialog, Button, Flex } from '@radix-ui/themes'
-import { useState } from 'react'
-import { OrderFlow as OrderFlowType } from 'src/types/order.type'
-import OrderFlow from './OrderFlow'
+import { OrderFlowEnum } from 'src/constants/order.status'
+import { OrderDetailResponse } from 'src/types/order.type'
+import OrderFlow from './components/OrderFlow'
 
 type OrderStatusProps = {
     open: boolean
     setOpen: React.Dispatch<React.SetStateAction<boolean>>
-    data: OrderFlowType[]
     handleFetchAll: () => Promise<[any]>
-    orderId: string
+    orderDetailData: OrderDetailResponse
+    updateStatusOfOrder: (status: OrderFlowEnum, note?: string, orderRefundId?: string) => () => void
+    isUpdateing: boolean
 }
 
-const OrderStatus = ({ open, setOpen, data, handleFetchAll, orderId }: OrderStatusProps) => {
-    const [openWaitingConfirm, setOpenWaitingConfirm] = useState<boolean>(false)
-    const [openDelivery, setOpenDelivery] = useState<boolean>(false)
-
+const OrderStatus = ({
+    open,
+    isUpdateing,
+    setOpen,
+    handleFetchAll,
+    orderDetailData,
+    updateStatusOfOrder
+}: OrderStatusProps) => {
     return (
         <>
             <AlertDialog.Root open={open} onOpenChange={setOpen}>
@@ -26,9 +31,14 @@ const OrderStatus = ({ open, setOpen, data, handleFetchAll, orderId }: OrderStat
                     </AlertDialog.Description>
                     <div className='mt-5'>
                         <OrderFlow
-                            orderFlows={data.sort(
+                            orderFlows={orderDetailData.OrderFlow.sort(
                                 (a, b) => (new Date(a.createdAt) as any) - (new Date(b.createdAt) as any)
                             )}
+                            updateStatusOfOrder={updateStatusOfOrder}
+                            isUpdateing={isUpdateing}
+                            orderRefunds={orderDetailData.OrderRefund.filter(
+                                (refund) => refund.status !== OrderFlowEnum.CANCEL_REFUND
+                            ).sort((a, b) => (new Date(a.createdAt) as any) - (new Date(b.createdAt) as any))}
                         />
                     </div>
                     <Flex gap='3' mt='7' justify='end'>

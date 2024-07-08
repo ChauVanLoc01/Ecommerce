@@ -39,7 +39,6 @@ export class OrderController {
         return this.ordersService.doneTask()
     }
 
-    @ApiBearerAuth()
     @Roles(Role.USER)
     @Get('user-order')
     getAllOrderByUser(@CurrentUser() user: CurrentUserType, @Query() query: QueryOrderDTO) {
@@ -131,10 +130,10 @@ export class OrderController {
         return this.ordersService.commitOrder(actionId)
     }
 
-    @Roles(Role.USER)
-    @Put('user-order/:orderId/status')
+    @Roles(Role.USER, Role.EMPLOYEE, Role.STORE_OWNER)
+    @Put(':orderId/status')
     updateStatusOfOrderFlow(
-        @CurrentUser() user: CurrentUserType,
+        @CurrentUser() user: CurrentUserType | CurrentStoreType,
         @Param('orderId') orderId: string,
         @Body() body: UpdateStatusOrderFlow
     ) {
@@ -142,7 +141,7 @@ export class OrderController {
     }
 
     @Roles(Role.USER)
-    @Post('user-order/:orderId/refund')
+    @Post(':orderId/refund')
     requestRefund(
         @CurrentUser() user: CurrentUserType,
         @Param('orderId') orderId: string,

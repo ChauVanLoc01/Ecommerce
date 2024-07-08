@@ -5,6 +5,7 @@ import UploadFile from '../UpdateFile/UploadFile'
 export type MultiUploadFileProps = {
     size?: number
     min: number
+    total?: number
     files: {
         files: Map<number, File>
         primary?: number
@@ -18,18 +19,18 @@ export type MultiUploadFileProps = {
     children?: (total: number, current: number, min: number) => ReactNode
 }
 
-const MultiUploadFile = ({ size = 4, files, min, setFiles, children }: MultiUploadFileProps) => {
+const MultiUploadFile = ({ total = 10, size = 4, files, min, setFiles, children }: MultiUploadFileProps) => {
     return (
         <div>
             <Carousel className='w-full'>
                 <CarouselContent className='gap-x-5 !ml-0'>
-                    {Array(size)
+                    {Array(total)
                         .fill(0)
                         .map((_, idx) => (
                             <div
                                 key={idx}
                                 data-size={size}
-                                className='data-[size="4"]:basis-1/4 data-[size="5"]:basis-1/5 data-[size="6"]:basis-1/6 last:mr-0 flex-shrink-0'
+                                className='data-[size="3"]:basis-1/3 data-[size="4"]:basis-1/4 data-[size="5"]:basis-1/5 data-[size="6"]:basis-1/6 last:mr-0 flex-shrink-0'
                             >
                                 <UploadFile id={idx} files={files} setFiles={setFiles} key={idx} />
                             </div>

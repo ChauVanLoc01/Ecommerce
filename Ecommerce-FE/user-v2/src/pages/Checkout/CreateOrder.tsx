@@ -40,9 +40,11 @@ const CreateOrder = ({ open, setOpen, data, setStep }: CreateOrderProps) => {
                 )
             },
             cell: ({ row }) => (
-                <Badge size={'3'} color={OrderStatus[row.original.status][1] as any}>
-                    {OrderStatus[row.original.status][0]}
-                </Badge>
+                <div className='text-center'>
+                    <Badge color={(OrderStatus?.[row.original.status]?.color as any) || 'red'} size={'3'}>
+                        {OrderStatus?.[row.original.status]?.label}
+                    </Badge>
+                </div>
             )
         },
         {

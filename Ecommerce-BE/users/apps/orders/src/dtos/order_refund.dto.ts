@@ -89,5 +89,5 @@ export class UpdateStatusOrderFlow {
     @ApiPropertyOptional()
     @IsOptional()
     @IsString()
-    orderFlowId?: string
+    orderRefundId?: string
 }
