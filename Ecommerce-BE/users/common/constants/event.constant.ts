@@ -68,3 +68,5 @@ export const updateQuantityVoucher = 'update::quantity::voucher'
 export const updateQuantityProductSalePromotion = 'update::quantitty::product::sale::promotion'
 
 export const currentSalePromotion = 'current::sale::promotino'
+
+export const getProductSaleEvent = 'get::product::sale::event'

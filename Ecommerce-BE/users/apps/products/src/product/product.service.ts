@@ -16,6 +16,7 @@ import { Cache } from 'cache-manager'
 import {
     checkVoucherExistToCreateOrder,
     commitOrder,
+    getProductSaleEvent,
     getStoreDetail,
     rollbackOrder,
     statusOfOrder,
@@ -307,7 +308,10 @@ export class ProductService {
             this.prisma.product.findUnique({
                 where: {
                     id: productId,
-                    status: Status.ACTIVE
+                    status: Status.ACTIVE,
+                    currentQuantity: {
+                        gt: 0
+                    }
                 }
             }),
             this.cacheManager.get<string>(hash('product', productId)),
@@ -315,7 +319,8 @@ export class ProductService {
                 where: {
                     productId
                 }
-            })
+            }),
+            this.store_client.send(getProductSaleEvent, productId)
         ])
 
         if (!productExist) throw new NotFoundException('Sản phẩm không tồn tại')

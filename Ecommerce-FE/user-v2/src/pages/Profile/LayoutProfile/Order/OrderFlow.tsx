@@ -58,6 +58,7 @@ const OrderFlow = ({ orderData, orderRefetch, refetch }: OrderFlowProps) => {
         onSuccess: () => {
             toast.success('Cập nhật trạng thái đơn hàng thành công')
             orderRefetch()
+            refetch()
         },
         onError: (error) => {
             if (isAxiosError(error)) {
@@ -69,8 +70,9 @@ const OrderFlow = ({ orderData, orderRefetch, refetch }: OrderFlowProps) => {
     const { mutate: requestRefundMutation } = useMutation({
         mutationFn: OrderFetching.requestRefund(orderData.id),
         onSuccess: () => {
-            orderRefetch()
             toast.success('Đã gửi yêu cầu hoàn đổi sản đến cửa hàng')
+            orderRefetch()
+            refetch()
         },
         onError: (error) => {
             if (isAxiosError(error)) {

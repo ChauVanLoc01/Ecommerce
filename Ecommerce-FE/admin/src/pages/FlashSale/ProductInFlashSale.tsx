@@ -210,11 +210,11 @@ const ProductInFlashSale = ({
                                 defaultValue={
                                     tab === 2
                                         ? convertCurrentcy(
-                                              joinedProduct.products[row.original.id].quantityInSale,
+                                              joinedProduct?.products?.[row.original.id]?.quantityInSale || 0,
                                               false
                                           )
                                         : convertCurrentcy(
-                                              selectedProduct.products?.[row.original.id].quantityInSale,
+                                              selectedProduct.products?.[row.original.id]?.quantityInSale || 0,
                                               false
                                           )
                                 }
@@ -225,8 +225,8 @@ const ProductInFlashSale = ({
                                         mode as any,
                                         'quantityInSale',
                                         tab === 2
-                                            ? joinedProduct.products[row.original.id].initQuantity
-                                            : selectedProduct.products?.[row.original.id]?.initQuantity
+                                            ? joinedProduct.products[row.original.id].currentQuantity
+                                            : selectedProduct.products?.[row.original.id]?.currentQuantity
                                     )
                                 }
                                 onBlur={handleFocusOut}
@@ -242,9 +242,11 @@ const ProductInFlashSale = ({
                             <TextField.Root
                                 defaultValue={
                                     tab === 2
-                                        ? convertCurrentcy(joinedProduct.products[row.original.id].priceAfterInSale)
+                                        ? convertCurrentcy(
+                                              joinedProduct?.products?.[row.original.id]?.priceAfterInSale || 0
+                                          )
                                         : convertCurrentcy(
-                                              selectedProduct.products?.[row.original.id]?.priceAfterInSale
+                                              selectedProduct.products?.[row.original.id]?.priceAfterInSale || 0
                                           )
                                 }
                                 onChange={(e) =>

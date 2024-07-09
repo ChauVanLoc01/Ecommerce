@@ -13,7 +13,7 @@ import { ClientProxy } from '@nestjs/microservices'
 import { PaginationDTO } from 'common/decorators/pagination.dto'
 import { Status } from 'common/enums/status.enum'
 import { CurrentStoreType } from 'common/types/current.type'
-import { Return } from 'common/types/result.type'
+import { MessageReturn, Return } from 'common/types/result.type'
 import { add, endOfHour, startOfHour } from 'date-fns'
 import { v4 as uuidv4 } from 'uuid'
 import { CreateProductSalePromotionDTO } from './dtos/create-product-sale.dto'
@@ -320,6 +320,77 @@ export class SaleService {
             }
         } catch (err) {
             throw new HttpException(err.message || 'Lỗi Server', err.status || 500)
+        }
+    }
+
+    async getProductSaleEvent(productId: string): Promise<MessageReturn> {
+        try {
+            const currentSale = await this.prisma.salePromotion.findFirst({
+                where: {
+                    startDate: {
+                        gte: add(startOfHour(new Date()), { hours: 7 })
+                    },
+                    endDate: {
+                        lte: add(endOfHour(new Date()), { hours: 7 })
+                    },
+                    status: Status.ACTIVE
+                },
+                select: {
+                    id: true
+                }
+            })
+
+            if (!currentSale) {
+                return {
+                    msg: 'ok',
+                    action: false,
+                    result: null
+                }
+            }
+
+            const productSaleExist = await this.prisma.productPromotion.findFirst({
+                where: {
+                    productId,
+                    quantity: {
+                        gt: 0
+                    },
+                    salePromotionId: currentSale.id
+                },
+                select: {
+                    id: true,
+                    quantity: true,
+                    bought: true,
+                    productId: true
+                }
+            })
+
+            if (!productSaleExist) {
+                return {
+                    msg: 'ok',
+                    action: false,
+                    result: null
+                }
+            }
+
+            if (productSaleExist.quantity === productSaleExist.bought) {
+                return {
+                    msg: 'ok',
+                    action: false,
+                    result: null
+                }
+            }
+
+            return {
+                msg: 'ok',
+                action: true,
+                result: productSaleExist
+            }
+        } catch (err) {
+            return {
+                msg: 'ok',
+                action: false,
+                result: null
+            }
         }
     }
 }

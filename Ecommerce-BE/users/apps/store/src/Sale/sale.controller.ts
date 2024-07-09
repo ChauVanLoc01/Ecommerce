@@ -8,6 +8,8 @@ import { CreateProductSalePromotionDTO } from './dtos/create-product-sale.dto'
 import { QuerySalePromotionDTO } from './dtos/query-promotion.dto'
 import { UpdateProductsSalePromotion } from './dtos/update-product-sale.dto'
 import { SaleService } from './sale.service'
+import { MessagePattern, Payload } from '@nestjs/microservices'
+import { getProductSaleEvent } from 'common/constants/event.constant'
 
 @UseGuards(JwtGuard)
 @Controller('sale-promotion')
@@ -59,5 +61,11 @@ export class SaleController {
         @Body() body: UpdateProductsSalePromotion
     ) {
         return this.saleService.updateProduct(user, body)
+    }
+
+    @Public()
+    @MessagePattern(getProductSaleEvent)
+    getProductSaleEvent(@Payload() productId: string) {
+        return this.saleService.getProductSaleEvent(productId)
     }
 }

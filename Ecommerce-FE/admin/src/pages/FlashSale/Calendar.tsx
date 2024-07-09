@@ -30,8 +30,6 @@ const Calendar = ({ promotionObjs, onSelectEvent, storePromotionObj }: CalendarP
     const scrollableNodeRef = useRef<any>(null)
     const [onTop, setOnTop] = useState<boolean>(true)
 
-    console.log('startOfWeek', startOfHour(new Date()))
-
     const handleCheckPositionScrollTop: DebouncedFunc<(isOnTop: boolean) => void> = debounce(
         (isOnTop: boolean) => setOnTop(isOnTop),
         200
