@@ -74,7 +74,7 @@ model Order {
   pay            Float           @db.Float
   note           String?         @db.VarChar(200)
   isRated        Boolean?        @default(false)
-  status         String          @db.Char(20)
+  status         String          @db.Char(50)
   createdAt      DateTime?       @default(now()) @db.Timestamp(0)
   updatedAt      DateTime?       @db.Timestamp(0)
   numberOfRefund Int?            @default(3)
@@ -93,13 +93,14 @@ model Order {
 }
 
 model OrderFlow {
-  id        String    @id @db.VarChar(50)
-  status    String    @db.VarChar(20)
-  note      String?   @db.Text
-  createdBy String    @db.VarChar(50)
-  createdAt DateTime? @db.Timestamp(0)
-  orderId   String    @db.VarChar(50)
-  Order     Order     @relation(fields: [orderId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "OrderFlow_ibfk_2")
+  id            String    @id @db.VarChar(50)
+  status        String    @db.VarChar(50)
+  note          String?   @db.Text
+  orderRefundId String?   @db.VarChar(50)
+  createdBy     String    @db.VarChar(50)
+  createdAt     DateTime? @db.Timestamp(0)
+  orderId       String    @db.VarChar(50)
+  Order         Order     @relation(fields: [orderId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "OrderFlow_ibfk_2")
 
   @@index([createdBy], map: "createdBy")
   @@index([orderId], map: "orderId")
@@ -499,7 +500,7 @@ model StoreRating {
 model OrderRefund {
   id                 String               @id @db.VarChar(50)
   orderId            String               @db.VarChar(50)
-  status             String               @db.VarChar(20)
+  status             String               @db.VarChar(50)
   title              String               @db.VarChar(1000)
   description        String               @db.TinyText
   createdAt          DateTime?            @db.Timestamp(0)

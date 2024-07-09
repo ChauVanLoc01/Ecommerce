@@ -182,13 +182,13 @@ const OrderEdit = ({ isOpen, setIsOpen, data, orderData }: OrderDetailProps) => 
                         <DataList.Item align='center'>
                             <DataList.Label minWidth='200px'>Thời gian đặt hàng</DataList.Label>
                             <DataList.Value>
-                                <Text>{format(orderData.createdAt, 'HH:mm dd/LL/Y')}</Text>
+                                <Text>{format(orderData.createdAt, 'HH:mm dd/LL/y')}</Text>
                             </DataList.Value>
                         </DataList.Item>
                         <DataList.Item align='center'>
                             <DataList.Label minWidth='200px'>Thời gian hoàn thành</DataList.Label>
                             <DataList.Value>
-                                <Text>{orderData.updatedAt ? format(orderData.createdAt, 'HH:mm dd/LL/Y') : '_'}</Text>
+                                <Text>{orderData.updatedAt ? format(orderData.createdAt, 'HH:mm dd/LL/y') : '_'}</Text>
                             </DataList.Value>
                         </DataList.Item>
                         <DataList.Item align='center'>

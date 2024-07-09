@@ -8,17 +8,20 @@ type OrderStatusProps = {
     setOpen: React.Dispatch<React.SetStateAction<boolean>>
     handleFetchAll: () => Promise<[any]>
     orderDetailData: OrderDetailResponse
-    updateStatusOfOrder: (status: OrderFlowEnum, note?: string, orderRefundId?: string) => () => void
-    isUpdateing: boolean
+    updateStatusOfOrder: (id: number, status: OrderFlowEnum, note?: string, orderRefundId?: string) => () => void
+    updating: {
+        id?: number
+        isUpdating: boolean
+    }
 }
 
 const OrderStatus = ({
     open,
-    isUpdateing,
     setOpen,
     handleFetchAll,
     orderDetailData,
-    updateStatusOfOrder
+    updateStatusOfOrder,
+    updating
 }: OrderStatusProps) => {
     return (
         <>
@@ -31,11 +34,11 @@ const OrderStatus = ({
                     </AlertDialog.Description>
                     <div className='mt-5'>
                         <OrderFlow
+                            updating={updating}
                             orderFlows={orderDetailData.OrderFlow.sort(
                                 (a, b) => (new Date(a.createdAt) as any) - (new Date(b.createdAt) as any)
                             )}
                             updateStatusOfOrder={updateStatusOfOrder}
-                            isUpdateing={isUpdateing}
                             orderRefunds={orderDetailData.OrderRefund.filter(
                                 (refund) => refund.status !== OrderFlowEnum.CANCEL_REFUND
                             ).sort((a, b) => (new Date(a.createdAt) as any) - (new Date(b.createdAt) as any))}

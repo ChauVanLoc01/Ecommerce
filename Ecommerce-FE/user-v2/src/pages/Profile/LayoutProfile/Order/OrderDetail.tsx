@@ -6,18 +6,23 @@ import { BiSolidSortAlt } from 'react-icons/bi'
 import { Link } from 'react-router-dom'
 import Table from 'src/components/Table'
 import { OrderStatus } from 'src/constants/order-status'
-import { OrderDetailResponse } from 'src/types/order.type'
+import { OrderDetailResponse, OrderResponse } from 'src/types/order.type'
 import { convertCurrentcy, convertDigitalNumber, removeSpecialCharacter } from 'src/utils/utils.ts'
 import OrderFlow from './OrderFlow'
+import { AxiosResponse } from 'axios'
+import { Return } from 'src/types/return.type'
 
 type OrderDetailProps = {
     isOpen: boolean
     setIsOpen: React.Dispatch<React.SetStateAction<boolean>>
     orderData?: OrderDetailResponse
     orderRefetch: (options?: RefetchOptions) => Promise<QueryObserverResult<OrderDetailResponse, Error>>
+    refetch: (
+        options?: RefetchOptions
+    ) => Promise<QueryObserverResult<AxiosResponse<Return<OrderResponse>, any>, Error>>
 }
 
-const OrderDetail = ({ isOpen, setIsOpen, orderData, orderRefetch }: OrderDetailProps) => {
+const OrderDetail = ({ isOpen, setIsOpen, orderData, refetch, orderRefetch }: OrderDetailProps) => {
     const columns: ColumnDef<OrderDetailResponse['ProductOrder'][number]>[] = [
         {
             accessorKey: 'Hình ảnh',
@@ -191,14 +196,14 @@ const OrderDetail = ({ isOpen, setIsOpen, orderData, orderRefetch }: OrderDetail
                                 <DataList.Item align='center'>
                                     <DataList.Label minWidth='200px'>Thời gian đặt hàng</DataList.Label>
                                     <DataList.Value>
-                                        <Text>{format(orderData.createdAt, 'HH:mm dd/LL/Y')}</Text>
+                                        <Text>{format(orderData.createdAt, 'HH:mm dd/LL/y')}</Text>
                                     </DataList.Value>
                                 </DataList.Item>
                                 <DataList.Item align='center'>
                                     <DataList.Label minWidth='200px'>Thời gian hoàn thành</DataList.Label>
                                     <DataList.Value>
                                         <Text>
-                                            {orderData.updatedAt ? format(orderData.createdAt, 'HH:mm dd/LL/Y') : '_'}
+                                            {orderData.updatedAt ? format(orderData.createdAt, 'HH:mm dd/LL/y') : '_'}
                                         </Text>
                                     </DataList.Value>
                                 </DataList.Item>
@@ -217,13 +222,13 @@ const OrderDetail = ({ isOpen, setIsOpen, orderData, orderRefetch }: OrderDetail
                             </DataList.Root>
                         </div>
                         <div className='basis-1/2 flex-shrink-0 flex-grow'>
-                            <OrderFlow orderData={orderData} orderRefetch={orderRefetch} />
+                            <OrderFlow orderData={orderData} orderRefetch={orderRefetch} refetch={refetch} />
                         </div>
                     </Flex>
                     <Table<OrderDetailResponse['ProductOrder'][number]>
                         columns={columns}
                         data={orderData.ProductOrder}
-                        className='w-[1400px]'
+                        className='w-full'
                         tableMaxHeight='300px'
                     />
                     <Flex gap='3' mt='4' justify='end'>

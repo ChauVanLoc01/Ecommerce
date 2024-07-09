@@ -175,7 +175,7 @@ const Order = () => {
             cell: ({ row }) => (
                 <Flex align={'center'} justify={'center'} direction={'column'}>
                     <Text>{format(row.original.createdAt, 'HH:mm')}</Text>
-                    <Text>{format(row.original.createdAt, 'dd/LL/Y')}</Text>
+                    <Text>{format(row.original.createdAt, 'dd/LL/y')}</Text>
                 </Flex>
             )
         },
@@ -187,11 +187,7 @@ const Order = () => {
                 return (
                     <Flex gapX={'2'} align={'center'}>
                         <Tooltip content='Xem chi tiết'>
-                            <IconButton
-                                variant='soft'
-                                onClick={() => setOpenDetail(!openDetail)}
-                                onMouseEnter={handleFetchOrderDetailWhenHovering(row.original.id)}
-                            >
+                            <IconButton variant='soft' onClick={() => setOpenDetail(!openDetail)}>
                                 {isFetching ? <Spinner /> : <InfoCircledIcon />}
                             </IconButton>
                         </Tooltip>
@@ -200,7 +196,6 @@ const Order = () => {
                                 variant='soft'
                                 color='orange'
                                 onClick={() => setOpenEdit(!openEdit)}
-                                onMouseEnter={handleFetchOrderDetailWhenHovering(row.original.id)}
                                 disabled={['CANCEL', 'SUCCESS'].includes(row.original.status)}
                             >
                                 <Pencil1Icon />
@@ -211,7 +206,6 @@ const Order = () => {
                                 variant='soft'
                                 color='red'
                                 onClick={() => setOpenCancel(!openCancel)}
-                                onMouseEnter={handleFetchOrderDetailWhenHovering(row.original.id)}
                                 disabled={
                                     ![OrderFlowEnum.WAITING_CONFIRM].includes(row.original.status as OrderFlowEnum)
                                 }
@@ -251,7 +245,7 @@ const Order = () => {
         queryKey: ['orderDetail', orderId],
         queryFn: ({ signal }) => OrderFetching.getOrderDetail(orderId, signal),
         enabled: false,
-        staleTime: 1000 * 60 * 5,
+        staleTime: 1000 * 60 * 2,
         select: (data) => data.data.result
     })
 
@@ -428,6 +422,7 @@ const Order = () => {
                     data={data?.data.result.data || []}
                     tableMaxHeight='520px'
                     className='w-[1200px] max-w-[1300px]'
+                    onMouseOverInTableRow={handleFetchOrderDetailWhenHovering}
                 />
             </Flex>
             <AlertDialog.Root>
@@ -458,6 +453,7 @@ const Order = () => {
                 data={orderDetailData || []}
                 orderData={orderDetailData}
                 orderRefetch={orderRefetch}
+                refetch={refetch}
             />
             <OrderEdit
                 isOpen={openEdit}

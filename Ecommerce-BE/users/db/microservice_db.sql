@@ -139,7 +139,7 @@ CREATE TABLE `Order` (
   `pay` float NOT NULL,
   `note` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `isRated` tinyint(1) DEFAULT '0',
-  `status` char(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `status` char(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `createdAt` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `updatedAt` timestamp NULL DEFAULT NULL,
   `numberOfRefund` int DEFAULT '3',
@@ -2772,4 +2772,4 @@ CREATE TABLE `Voucher` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
--- 2024-07-08 17:59:50
+-- 2024-07-08 18:06:06

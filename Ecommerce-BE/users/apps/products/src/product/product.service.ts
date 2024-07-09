@@ -917,10 +917,9 @@ export class ProductService {
 
     async updateQuantiyProductsWhenCancelOrder(payload: {
         storeId: string
-        products: { id: string; quantity: number }[]
+        products: { productId: string; quantity: number }[]
     }): Promise<MessageReturn> {
         let { storeId, products } = payload
-
         let process = async (
             tx: Omit<
                 PrismaClient<Prisma.PrismaClientOptions, never, DefaultArgs>,
@@ -960,7 +959,8 @@ export class ProductService {
                         }
                     }
                 })
-            } catch (_) {
+            } catch (err) {
+                console.log('error process', err)
                 Promise.reject('Lỗi cập nhật số lượng sản phẩm')
             }
         }
@@ -968,8 +968,11 @@ export class ProductService {
         try {
             await this.prisma.$transaction(async (tx) => {
                 try {
-                    await Promise.all(products.map(({ id, quantity }) => process(tx, id, quantity)))
+                    await Promise.all(
+                        products.map(({ productId, quantity }) => process(tx, productId, quantity))
+                    )
                 } catch (err) {
+                    console.log('error transaction', err)
                     throw new Error('Lỗi Cập nhật sản phẩm')
                 }
             })
@@ -979,6 +982,7 @@ export class ProductService {
                 result: null
             }
         } catch (err) {
+            console.log('error update all', err)
             await this.rollbackUpdateQuantityWhenCancelOrder({ storeId, products })
             return {
                 msg: err?.message || 'Cập nhật lại số lượng sản phẩm không thành công',
@@ -990,7 +994,7 @@ export class ProductService {
 
     async rollbackUpdateQuantityWhenCancelOrder(payload: {
         storeId: string
-        products: { id: string; quantity: number }[]
+        products: { productId: string; quantity: number }[]
     }) {
         let { products, storeId } = payload
 
@@ -999,18 +1003,23 @@ export class ProductService {
                 PrismaClient<Prisma.PrismaClientOptions, never, DefaultArgs>,
                 '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
             >,
-            product: { quantity: number; id: string }
+            product: { quantity: number; productId: string }
         ) => {
             try {
-                let { id, quantity: buy } = product
-                let hashValue = hash('product', id)
+                let { productId, quantity: buy } = product
+                let hashValue = hash('product', productId)
                 let fromCache = await this.cacheManager.get<string>(hashValue)
                 if (fromCache) {
                     let { quantity: quantityFromCache, priceAfter } = JSON.parse(fromCache) as {
                         quantity: number
                         priceAfter: number
                     }
-                    this.emitUpdateProductToSocket(storeId, id, quantityFromCache - 1, priceAfter)
+                    this.emitUpdateProductToSocket(
+                        storeId,
+                        productId,
+                        quantityFromCache - 1,
+                        priceAfter
+                    )
                     return {
                         msg: 'ok',
                         action: true,
@@ -1019,7 +1028,7 @@ export class ProductService {
                 }
                 return tx.product.update({
                     where: {
-                        id
+                        id: productId
                     },
                     data: {
                         currentQuantity: {
@@ -1028,6 +1037,7 @@ export class ProductService {
                     }
                 })
             } catch (err) {
+                console.log('rollback one', err)
                 return Promise.reject('Lỗi rollback sản phẩm')
             }
         }
@@ -1041,6 +1051,7 @@ export class ProductService {
                 }
             })
         } catch (err) {
+            console.log('rollback all', err)
             throw new Error('Lỗi rollback sản phẩm')
         }
     }

@@ -96,7 +96,7 @@ const CreateOrder = ({ open, setOpen, data, setStep }: CreateOrderProps) => {
             cell: ({ row }) => (
                 <Flex align={'center'} justify={'center'} direction={'column'}>
                     <Text>{format(row.original.createdAt, 'HH:mm')}</Text>
-                    <Text>{format(row.original.createdAt, 'dd/LL/Y')}</Text>
+                    <Text>{format(row.original.createdAt, 'dd/LL/y')}</Text>
                 </Flex>
             )
         }

@@ -151,7 +151,7 @@ export class ProductController {
         @Payload()
         payload: {
             storeId: string
-            products: { id: string; quantity: number }[]
+            products: { productId: string; quantity: number }[]
         }
     ) {
         return this.productsService.updateQuantiyProductsWhenCancelOrder(payload)
@@ -163,7 +163,7 @@ export class ProductController {
         @Payload()
         payload: {
             storeId: string
-            products: { id: string; quantity: number }[]
+            products: { productId: string; quantity: number }[]
         }
     ) {
         return this.productsService.rollbackUpdateQuantityWhenCancelOrder(payload)

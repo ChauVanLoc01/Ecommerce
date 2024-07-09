@@ -2,6 +2,7 @@ import { CounterClockwiseClockIcon, InfoCircledIcon } from '@radix-ui/react-icon
 import { Badge, Flex, IconButton, Text, Tooltip } from '@radix-ui/themes'
 import { QueryObserverResult, RefetchOptions, useMutation, useQuery } from '@tanstack/react-query'
 import { ColumnDef } from '@tanstack/react-table'
+import { isAxiosError } from 'axios'
 import { format, formatDistance } from 'date-fns'
 import { vi } from 'date-fns/locale'
 import { useEffect, useState } from 'react'
@@ -13,7 +14,6 @@ import { OrderFlowEnum, OrderStatus } from 'src/constants/order.status'
 import { Order, OrderQuery } from 'src/types/order.type'
 import { convertCurrentcy } from 'src/utils/utils'
 import OrderChangeStatus from './OrderFlow/OrderStatus'
-import { isAxiosError } from 'axios'
 
 type OrderTableProps = {
     data: Order[]
@@ -47,20 +47,21 @@ const OrderTable = ({ data, orderListRefetch, analyticOrderStoreRefetching }: Or
     const [openDetail, setOpenDetail] = useState<boolean>(false)
     const [openChangeStatus, setOpenChangeStatus] = useState<boolean>(false)
     const [choosedProduct, setChoosedProduct] = useState<string>('')
+    const [updating, setUpdating] = useState<{ id?: number; isUpdating: boolean }>({ isUpdating: false })
 
     const { refetch: orderDetailRefetch, data: orderDetailData } = useQuery({
         queryKey: ['orderDetail', choosedProduct],
         queryFn: () => OrderApi.getOrderDetail(choosedProduct),
-        staleTime: 1000 * 60 * 2,
+        staleTime: 1000 * 60 * 1,
         enabled: false,
         select: (data) => data.data.result
     })
 
-    const { mutate: updateOrderStatusMutation, isPending: isUpdateing } = useMutation({
+    const { mutateAsync: updateOrderStatusMutation } = useMutation({
         mutationFn: OrderApi.updateStatusOrder(choosedProduct),
         onSuccess: () => {
-            handleFetchAll()
             toast.success('Cập nhật trạng thái đơn hàng thành công')
+            handleFetchAll()
         },
         onError: (err) => {
             if (isAxiosError(err)) {
@@ -69,12 +70,13 @@ const OrderTable = ({ data, orderListRefetch, analyticOrderStoreRefetching }: Or
         }
     })
 
-    const updateStatusOfOrder = (status: OrderFlowEnum, note?: string, orderRefundId?: string) => () => {
+    const updateStatusOfOrder = (id: number, status: OrderFlowEnum, note?: string, orderRefundId?: string) => () => {
+        setUpdating({ id, isUpdating: true })
         updateOrderStatusMutation({
             status,
             note: '',
             orderRefundId
-        })
+        }).then(() => setUpdating({ id, isUpdating: false }))
     }
 
     const handleChooseProduct = (id: string) => () => {
@@ -115,9 +117,11 @@ const OrderTable = ({ data, orderListRefetch, analyticOrderStoreRefetching }: Or
             accessorKey: 'Trạng thái',
             header: () => {
                 return (
-                    <div className='flex items-center justify-evenly gap-x-2'>
-                        Trạng thái
-                        <BiSolidSortAlt />
+                    <div className='text-center'>
+                        <Flex className='space-x-2 inline-flex items-center'>
+                            <Text>Trạng thái</Text>
+                            <BiSolidSortAlt />
+                        </Flex>
                     </div>
                 )
             },
@@ -250,6 +254,10 @@ const OrderTable = ({ data, orderListRefetch, analyticOrderStoreRefetching }: Or
         }
     }, [choosedProduct])
 
+    useEffect(() => {
+        choosedProduct && orderDetailRefetch()
+    }, [JSON.stringify(data)])
+
     return (
         <>
             <Table<Order> columns={columns} data={data} tableMaxHeight='500px' className='w-[1500px]' />
@@ -261,7 +269,7 @@ const OrderTable = ({ data, orderListRefetch, analyticOrderStoreRefetching }: Or
                     handleFetchAll={handleFetchAll as any}
                     orderDetailData={orderDetailData}
                     updateStatusOfOrder={updateStatusOfOrder}
-                    isUpdateing={isUpdateing}
+                    updating={updating}
                 />
             )}
         </>

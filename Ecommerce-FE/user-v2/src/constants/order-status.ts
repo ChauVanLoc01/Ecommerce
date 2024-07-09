@@ -8,7 +8,7 @@ export const OrderStatus: { [key: string]: { label: string; color: string } } = 
         color: 'red'
     },
     REQUEST_CANCEL: {
-        label: 'Yêu cầu hủy đơn với khách hàng',
+        label: 'Cửa hàng mong muốn hủy đơn',
         color: 'red'
     },
     ACCEPT_CANCEL: {
@@ -16,12 +16,12 @@ export const OrderStatus: { [key: string]: { label: string; color: string } } = 
         color: 'red'
     },
     CONFIRM_AND_SHIPPING: {
-        label: 'Xác nhận và đang giao hàng',
+        label: 'Đã xác nhận và đang giao hàng',
         color: 'yellow'
     },
     SHIPING_SUCCESS: {
         label: 'Giao hàng thành công',
-        color: 'green'
+        color: 'emeral'
     },
     REQUEST_REFUND: {
         label: 'Yêu cầu hoàn đổi',
@@ -54,6 +54,10 @@ export const OrderStatus: { [key: string]: { label: string; color: string } } = 
     FINISH: {
         label: 'Hoàn thành',
         color: 'green'
+    },
+    REJECT_CANCEL: {
+        label: 'Bạn đã từ chối hủy đơn',
+        color: 'purple'
     }
 }
 
@@ -62,6 +66,7 @@ export enum OrderFlowEnum {
     CLIENT_CANCEL = 'CLIENT_CANCEL',
     REQUEST_CANCEL = 'REQUEST_CANCEL',
     ACCEPT_CANCEL = 'ACCEPT_CANCEL',
+    REJECT_CANCEL = 'REJECT_CANCEL',
     CONFIRM_AND_SHIPPING = 'CONFIRM_AND_SHIPPING',
     SHIPING_SUCCESS = 'SHIPING_SUCCESS',
     REQUEST_REFUND = 'REQUEST_REFUND',
@@ -78,6 +83,7 @@ export const order_next_flow = {
     [OrderFlowEnum.WAITING_CONFIRM]: [OrderFlowEnum.CLIENT_CANCEL],
     [OrderFlowEnum.SHIPING_SUCCESS]: [OrderFlowEnum.REQUEST_REFUND, OrderFlowEnum.FINISH],
     [OrderFlowEnum.REQUEST_REFUND]: [OrderFlowEnum.UPDATE_REFUND, OrderFlowEnum.CANCEL_REFUND],
+    [OrderFlowEnum.REQUEST_CANCEL]: [OrderFlowEnum.ACCEPT_CANCEL, OrderFlowEnum.REJECT_CANCEL],
     [OrderFlowEnum.UPDATE_REFUND]: [OrderFlowEnum.CANCEL_REFUND],
     [OrderFlowEnum.CANCEL_REFUND]: [OrderFlowEnum.REQUEST_REFUND, OrderFlowEnum.FINISH],
     [OrderFlowEnum.REFUND_SHIPPING_SUCCESS]: [OrderFlowEnum.RE_OPEN_REFUND, OrderFlowEnum.CLOSE_REFUND]
@@ -86,7 +92,7 @@ export const order_next_flow = {
 export const OrderFlowLabel = {
     WAITING_CONFIRM: 'Đơn hàng chờ xác nhận',
     CLIENT_CANCEL: 'Bạn đã hủy đơn hàng',
-    REQUEST_CANCEL: 'Yêu cầu hủy',
+    REQUEST_CANCEL: 'Cửa hàng mong muốn hủy đơn hàng',
     ACCEPT_CANCEL: 'Đồng ý hủy',
     CONFIRM_AND_SHIPPING: 'Cửa hàng đã xác nhận và đang giao hàng',
     SHIPING_SUCCESS: 'Giao hàng thành công',
@@ -94,10 +100,11 @@ export const OrderFlowLabel = {
     CANCEL_REFUND: 'Bạn đã hủy đơn hoàn đổi',
     UPDATE_REFUND: 'Bạn đã cập nhật đơn hoàn đổi?',
     ACCEPT_REFUND_AND_SHIPPING: 'Cửa hàng đồng ý hoàn đổi sản phẩm và đang giao hàng',
-    REFUND_SHIPPING_SUCCESS: 'Giao đơn hoàn đổi thành công',
+    REFUND_SHIPPING_SUCCESS: 'Đơn hoàn đổi đã được giao tới bạn',
     RE_OPEN_REFUND: 'Bạn đã yêu cầu hoàn đổi tiếp tục',
     CLOSE_REFUND: 'Bạn đã đóng yêu cầu hoàn đổi sản phẩm',
-    FINISH: 'Bạn đã xác nhận hoàn thành đơn hàng?'
+    FINISH: 'Đơn hàng đã hoàn thành',
+    REJECT_CANCEL: 'Bạn đã từ chối hủy đơn'
 }
 
 export const OrderNextFlowLabel = {
@@ -111,8 +118,11 @@ export const OrderNextFlowLabel = {
     CANCEL_REFUND: 'Bạn muốn hủy đơn hoàn đổi?',
     UPDATE_REFUND: 'Bạn muốn cập nhật đơn hoàn đổi?',
     ACCEPT_REFUND_AND_SHIPPING: 'Cửa hàng đồng ý hoàn đổi sản phẩm và đang giao hàng',
-    REFUND_SHIPPING_SUCCESS: 'Giao đơn hoàn đổi thành công',
-    RE_OPEN_REFUND: 'Mở lại yêu cầu hoàn đổi sản phẩm',
-    CLOSE_REFUND: 'Đóng yêu cầu hoàn đổi sản phẩm',
-    FINISH: 'Xác nhận hoàn thành đơn hàng?'
+    REFUND_SHIPPING_SUCCESS: 'Đơn hoàn đổi đã được giao tới bạn',
+    RE_OPEN_REFUND: 'Sản phẩm không như mong đợi. Bạn muốn tiếp tục hoàn đổi?',
+    CLOSE_REFUND: 'Hoàn thành đơn hàng?',
+    FINISH: 'Xác nhận hoàn thành đơn hàng?',
+    REJECT_CANCEL: 'Từ chối hủy đơn?'
 }
+
+export const ValidRequestRefund = [OrderFlowEnum.ACCEPT_CANCEL, OrderFlowEnum.RE_OPEN_REFUND]

@@ -31,7 +31,7 @@ import { OrderPayload } from 'common/types/order_payload.type'
 import { MessageReturn, Return } from 'common/types/result.type'
 import { hash } from 'common/utils/helper'
 import { CronJob } from 'cron'
-import { add, addHours, compareAsc, compareDesc, isPast, sub, subDays } from 'date-fns'
+import { add, addHours, compareDesc, isPast, sub, subDays } from 'date-fns'
 import { Dictionary, isUndefined, max, omitBy, sumBy } from 'lodash'
 import { firstValueFrom } from 'rxjs'
 import { v4 as uuidv4 } from 'uuid'
@@ -126,7 +126,12 @@ export class OrderService {
                     OrderShipping: true,
                     OrderVoucher: true,
                     OrderFlow: true,
-                    OrderRefund: true
+                    OrderRefund: {
+                        include: {
+                            RefundMaterial: true,
+                            ProductOrderRefund: true
+                        }
+                    }
                 }
             })
 
@@ -595,7 +600,7 @@ export class OrderService {
                             }
                         })
                     ])
-
+                    await updateStatus(tx, orderId, status)
                     try {
                         const [updatedProduct, updatedVoucher] = await Promise.all([
                             firstValueFrom<MessageReturn>(
@@ -619,8 +624,6 @@ export class OrderService {
                         if (!updatedVoucher.action) {
                             throw new Error(updatedVoucher.msg)
                         }
-
-                        await updateStatus(tx, orderId, status)
                     } catch (err) {
                         let storeId = orderExist.storeId
                         this.productClient.emit(rollbackUpdateQuantiyProductsWhenCancelOrder, {
@@ -701,8 +704,7 @@ export class OrderService {
                             ...arr
                         ])
                     } catch (err) {
-                        console.log('error', err)
-                        throw new BadRequestException('Đơn hoản đổi không tồn tại')
+                        throw new BadRequestException('Cập nhật trạng thái thất bại')
                     }
                 })
             }
@@ -711,6 +713,7 @@ export class OrderService {
                 result: undefined
             }
         } catch (err) {
+            console.log('error', err)
             throw new HttpException(
                 (err?.message as string).length > 100 ? 'Lỗi server' : err?.message || 'Lỗi server',
                 err?.statusCode || 500
@@ -732,12 +735,17 @@ export class OrderService {
                 where: {
                     id: orderId,
                     status: {
-                        in: [OrderFlowEnum.SHIPING_SUCCESS, OrderFlowEnum.CANCEL_REFUND]
+                        in: [
+                            OrderFlowEnum.SHIPING_SUCCESS,
+                            OrderFlowEnum.REFUND_SHIPPING_SUCCESS,
+                            OrderFlowEnum.CANCEL_REFUND
+                        ]
                     }
                 },
                 select: {
                     id: true,
-                    createdAt: true
+                    createdAt: true,
+                    numberOfRefund: true
                 }
             })
 
@@ -753,11 +761,19 @@ export class OrderService {
                 )
             }
 
+            if (!orderExist.numberOfRefund) {
+                throw new BadRequestException(
+                    'Giới hạn 3 lần tạo đơn hoàn đổi. Bạn đã sử dụng hết lượt hoàn đổi'
+                )
+            }
+
+            let orderRefundId = uuidv4()
+
             await this.prisma.$transaction(async (tx) => {
                 return await Promise.all([
                     tx.orderRefund.create({
                         data: {
-                            id: uuidv4(),
+                            id: orderRefundId,
                             title,
                             description,
                             createdBy: userId,
@@ -794,7 +810,8 @@ export class OrderService {
                             orderId,
                             status: OrderFlowEnum.REQUEST_REFUND,
                             createdAt: new Date(),
-                            createdBy: userId
+                            createdBy: userId,
+                            orderRefundId
                         }
                     }),
                     tx.order.update({
@@ -817,6 +834,7 @@ export class OrderService {
                 result: undefined
             }
         } catch (err) {
+            console.log('error', err)
             throw new HttpException(
                 (err?.message as string).length > 100 ? 'Tạo đơn hoàn hàng thất bại' : err.message,
                 err?.statusCode || HttpStatus.INTERNAL_SERVER_ERROR

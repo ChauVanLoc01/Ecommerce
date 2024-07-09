@@ -1,4 +1,4 @@
-import { Button, Flex, TextArea } from '@radix-ui/themes'
+import { Button, Flex, Spinner, TextArea } from '@radix-ui/themes'
 import { format } from 'date-fns'
 import { useState } from 'react'
 import { FaQuestion } from 'react-icons/fa6'
@@ -12,11 +12,14 @@ import { cn } from 'src/utils/utils'
 type OrderFlowProps = {
     orderFlows: OrderFlowType[]
     orderRefunds: OrderRefund[]
-    updateStatusOfOrder: (status: OrderFlowEnum, note?: string, orderRefundId?: string) => () => void
-    isUpdateing: boolean
+    updateStatusOfOrder: (id: number, status: OrderFlowEnum, note?: string, orderRefundId?: string) => () => void
+    updating: {
+        id?: number
+        isUpdating: boolean
+    }
 }
 
-const OrderFlow = ({ orderFlows, updateStatusOfOrder, orderRefunds }: OrderFlowProps) => {
+const OrderFlow = ({ orderFlows, updateStatusOfOrder, orderRefunds, updating }: OrderFlowProps) => {
     const [note, setNote] = useState<string>('')
 
     const handleChangeNote = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -54,7 +57,7 @@ const OrderFlow = ({ orderFlows, updateStatusOfOrder, orderRefunds }: OrderFlowP
                 })}
                 {order_next_flow?.[orderFlows[orderFlows.length - 1].status as keyof typeof order_next_flow] &&
                     order_next_flow[orderFlows[orderFlows.length - 1].status as keyof typeof order_next_flow].map(
-                        (new_flow) => (
+                        (new_flow, id) => (
                             <VerticalTimelineElement
                                 key={new_flow}
                                 className='vertical-timeline-element--work !mb-0'
@@ -80,11 +83,13 @@ const OrderFlow = ({ orderFlows, updateStatusOfOrder, orderRefunds }: OrderFlowP
                                         <Button
                                             type='button'
                                             onClick={updateStatusOfOrder(
+                                                id,
                                                 new_flow,
                                                 note,
-                                                orderRefunds[orderRefunds.length - 1].id
+                                                orderRefunds[orderRefunds.length - 1]?.id || ''
                                             )}
                                         >
+                                            {updating.id === id && updating.isUpdating && <Spinner />}
                                             Xác nhận
                                         </Button>
                                     </Flex>

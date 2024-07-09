@@ -95,6 +95,22 @@ export type OrderResponse = {
     query: Omit<OrderQuery, 'page'> & { page_size: number; page: number }
 }
 
+export type ProductOrderRefundType = {
+    id: string
+    orderRefundId: string
+    productOrderId: string
+    quantity: number
+    description?: null
+}
+
+export type RefundMaterialType = {
+    id: string
+    orderRefundId: string
+    url: string
+    type: string
+    description: null
+}
+
 export type OrderRefund = {
     id: string
     orderId: string
@@ -105,6 +121,8 @@ export type OrderRefund = {
     createdBy: string
     updatedAt?: string
     updatedBy?: string
+    ProductOrderRefund: ProductOrderRefund[]
+    RefundMaterial: RefundMaterialType[]
 }
 
 export type OrderDetailResponse = Order & {
