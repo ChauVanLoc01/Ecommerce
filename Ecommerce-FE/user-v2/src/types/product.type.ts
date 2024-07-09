@@ -56,7 +56,10 @@ export type ProductListResponse = {
     query: ProductListQuery & { page_size: number }
 }
 
-export type ProductDetailResponse = Product & { productImages: { url: string }[] }
+export type ProductDetailResponse = Product & {
+    productImages: { url: string }[]
+    sale: { id: string; productId: string; quantity: number; bought: number }
+}
 
 export type RefreshProduct = { [key: string]: Product }
 
@@ -73,6 +76,4 @@ export type SalesPromotionAndProduct = {
     productPromotion: []
 }
 
-export type ProductRating = {
-    
-}
+export type ProductRating = {}

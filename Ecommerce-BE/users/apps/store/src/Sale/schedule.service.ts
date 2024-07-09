@@ -79,11 +79,9 @@ export class ScheduleService {
         console.log('ok')
     }
 
-    @Cron(CronExpression.EVERY_HOUR)
+    @Cron(CronExpression.EVERY_10_SECONDS)
     async setCurrentSalePromotion() {
         let currentDate = add(startOfHour(new Date()), { hours: 7 }).toISOString()
-        let lastOfHour = add(endOfHour(new Date()), { hours: 7 }).toISOString()
-
         let process = async (
             tx: Omit<
                 PrismaClient<Prisma.PrismaClientOptions, never, DefaultArgs>,
@@ -92,12 +90,7 @@ export class ScheduleService {
         ) => {
             const current = await tx.salePromotion.findFirst({
                 where: {
-                    startDate: {
-                        gte: currentDate
-                    },
-                    endDate: {
-                        lte: lastOfHour
-                    }
+                    startDate: currentDate
                 },
                 select: {
                     id: true

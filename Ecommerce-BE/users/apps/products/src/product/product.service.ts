@@ -304,7 +304,7 @@ export class ProductService {
     }
 
     async getProductDetail(productId: string): Promise<Return> {
-        const [productExist, cached, imgs] = await Promise.all([
+        const [productExist, cached, imgs, productSale] = await Promise.all([
             this.prisma.product.findUnique({
                 where: {
                     id: productId,
@@ -320,7 +320,7 @@ export class ProductService {
                     productId
                 }
             }),
-            this.store_client.send(getProductSaleEvent, productId)
+            firstValueFrom(this.store_client.send<MessageReturn>(getProductSaleEvent, productId))
         ])
 
         if (!productExist) throw new NotFoundException('Sản phẩm không tồn tại')
@@ -330,7 +330,10 @@ export class ProductService {
             result: {
                 ...productExist,
                 productImages: imgs,
-                currentQuantity: cached ? JSON.parse(cached).quantity : productExist.currentQuantity
+                currentQuantity: cached
+                    ? JSON.parse(cached).quantity
+                    : productExist.currentQuantity,
+                sale: productSale.action ? productSale.result : null
             } as Product
         }
     }

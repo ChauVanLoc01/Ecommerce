@@ -18,6 +18,7 @@ import { ls } from 'src/utils/localStorage'
 import { convertCurrentcy } from 'src/utils/utils.ts'
 import ProductRecomend from './ProductRecomend'
 import Rating from './Rating'
+import Countdown from '../ProductList/FlashSale/Countdown'
 
 const Product = () => {
     const { setProducts, products, profile } = useContext(AppContext)
@@ -146,6 +147,12 @@ const Product = () => {
                     </Carousel>
                 </div>
                 <div className='space-y-3'>
+                    <Flex className='space-x-3'>
+                        <h3 className='font-semibold font-mono text-xl bg-gradient-to-tr to-[#fcb045] via-[#fd1d1d] from-[#833ab4] bg-clip-text text-transparent'>
+                            Sản phẩm đang giảm giá
+                        </h3>
+                        <Countdown />
+                    </Flex>
                     <h3 className='font-semibold text-2xl'>{productDetail.name}</h3>
                     <Link to={`/store/${storeDetail.id}`} className='inline-block'>
                         <Flex align={'center'} gapX={'4'}>

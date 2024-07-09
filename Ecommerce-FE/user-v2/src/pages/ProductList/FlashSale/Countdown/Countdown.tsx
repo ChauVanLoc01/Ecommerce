@@ -1,12 +1,16 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from 'react'
 
+import { add, endOfHour, startOfHour } from 'date-fns'
 import Digits from './Digits'
 
-const Countdown = ({ targetTime }: any) => {
-    const [now, setNow] = useState(new Date().getTime())
+type CountDownProps = {
+    targetTime?: Date
+}
+
+const Countdown = ({ targetTime = add(endOfHour(new Date()), { hours: 7 }) }: CountDownProps) => {
+    const [now, setNow] = useState(add(startOfHour(new Date()), { hours: 7 }).getTime())
     useEffect(() => {
-        const interval = setInterval(() => setNow(new Date().getTime()), 1000)
+        const interval = setInterval(() => setNow(add(new Date(), { hours: 7 }).getTime()), 1000)
         return () => clearInterval(interval)
     }, [])
     const millisecs = targetTime.getTime() - now

@@ -1,4 +1,5 @@
 import { PrismaService } from '@app/common/prisma/prisma.service'
+import { CACHE_MANAGER } from '@nestjs/cache-manager'
 import {
     BadRequestException,
     HttpException,
@@ -10,6 +11,8 @@ import {
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { ClientProxy } from '@nestjs/microservices'
+import { Cache } from 'cache-manager'
+import { currentSalePromotion } from 'common/constants/event.constant'
 import { PaginationDTO } from 'common/decorators/pagination.dto'
 import { Status } from 'common/enums/status.enum'
 import { CurrentStoreType } from 'common/types/current.type'
@@ -25,7 +28,8 @@ export class SaleService {
     constructor(
         private readonly prisma: PrismaService,
         private readonly configService: ConfigService,
-        @Inject('PRODUCT_SERVICE') private productClient: ClientProxy
+        @Inject('PRODUCT_SERVICE') private productClient: ClientProxy,
+        @Inject(CACHE_MANAGER) private cacheManager: Cache
     ) {}
 
     async getSalePromotionDetail(storePromotionId: string): Promise<Return> {
@@ -325,22 +329,33 @@ export class SaleService {
 
     async getProductSaleEvent(productId: string): Promise<MessageReturn> {
         try {
-            const currentSale = await this.prisma.salePromotion.findFirst({
-                where: {
-                    startDate: {
-                        gte: add(startOfHour(new Date()), { hours: 7 })
-                    },
-                    endDate: {
-                        lte: add(endOfHour(new Date()), { hours: 7 })
-                    },
-                    status: Status.ACTIVE
-                },
-                select: {
-                    id: true
-                }
-            })
+            const fromCache = await this.cacheManager.get<string>(currentSalePromotion)
 
-            if (!currentSale) {
+            let currentSaleId = ''
+            console.log('fromCache', fromCache)
+            if (fromCache) {
+                currentSaleId = fromCache
+            } else {
+                const currentSale = await this.prisma.salePromotion.findFirst({
+                    where: {
+                        startDate: {
+                            gte: add(startOfHour(new Date()), { hours: 7 })
+                        },
+                        endDate: {
+                            lte: add(endOfHour(new Date()), { hours: 7 })
+                        },
+                        status: Status.ACTIVE
+                    },
+                    select: {
+                        id: true
+                    }
+                })
+                currentSaleId = currentSale.id
+            }
+
+            console.log('currentSaleId', currentSaleId)
+
+            if (!currentSaleId) {
                 return {
                     msg: 'ok',
                     action: false,
@@ -354,7 +369,7 @@ export class SaleService {
                     quantity: {
                         gt: 0
                     },
-                    salePromotionId: currentSale.id
+                    salePromotionId: currentSaleId
                 },
                 select: {
                     id: true,
@@ -363,6 +378,7 @@ export class SaleService {
                     productId: true
                 }
             })
+            console.log('productsaleExist', productSaleExist)
 
             if (!productSaleExist) {
                 return {

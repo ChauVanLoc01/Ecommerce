@@ -8,7 +8,7 @@ type DigitProps = {
 
 const Digit = ({ value, digitClassName }: DigitProps) => {
     return (
-        <div style={{ width: 20, height: 25 }}>
+        <div style={{ width: 20, height: 20 }}>
             <AnimatePresence>
                 <motion.div
                     key={value}
@@ -19,10 +19,7 @@ const Digit = ({ value, digitClassName }: DigitProps) => {
                         times: [0.2, 0.2, 0.45],
                         ease: 'linear'
                     }}
-                    className={classNames(
-                        'absolute text-white text-sm font-semibold',
-                        digitClassName
-                    )}
+                    className={classNames('absolute text-white text-sm font-semibold', digitClassName)}
                 >
                     {value}
                 </motion.div>
