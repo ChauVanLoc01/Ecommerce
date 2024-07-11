@@ -251,8 +251,13 @@ const OrderFlow = ({ orderData, orderRefetch, refetch }: OrderFlowProps) => {
                         let isLast = OrderFlow.length === idx + 1
                         let isRequestRefund = flow.status === OrderFlowEnum.REQUEST_REFUND
                         let orderRefund = isRequestRefund
-                            ? orderData?.OrderRefund.find((refund) => refund.status === OrderFlowEnum.REQUEST_REFUND)
+                            ? orderData?.OrderRefund.find(
+                                  (refund) =>
+                                      refund.status === OrderFlowEnum.REQUEST_REFUND &&
+                                      flow?.orderRefundId === refund.id
+                              )
                             : undefined
+                        console.log('orderRefund', orderRefund)
                         return (
                             <VerticalTimelineElement
                                 key={flow.id}
@@ -260,7 +265,7 @@ const OrderFlow = ({ orderData, orderRefetch, refetch }: OrderFlowProps) => {
                                 position='right'
                                 contentStyle={{ background: '#91A4D0', color: '#FBF9F9' }}
                                 contentArrowStyle={{ borderRight: '7px solid  #91A4D0' }}
-                                date={format(flow.createdAt, defaultFormat)}
+                                date={format(flow?.createdAt, defaultFormat)}
                                 dateClassName='!pb-0 text-[#FBF9F9]'
                                 iconStyle={{
                                     background: isLast ? '#DE5B18' : '#91A4D0'

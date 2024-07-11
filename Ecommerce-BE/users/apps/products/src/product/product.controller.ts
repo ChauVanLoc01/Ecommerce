@@ -140,7 +140,6 @@ export class ProductController {
     @Public()
     @EventPattern(commitUpdateQuantityProducts)
     commitUpdateQuantityProduct(payload: { actionId: string; productActionId: string }) {
-        console.log('commit update quantity product')
         let { actionId, productActionId } = payload
         return this.productsService.commitUpdateQuantityProduct(actionId, productActionId)
     }
@@ -200,11 +199,5 @@ export class ProductController {
     @Get('testing/testing')
     testing() {
         return this.productsService.testing()
-    }
-
-    @Public()
-    @MessagePattern('testing')
-    testingPattern() {
-        return this.productsService.testingPattern()
     }
 }

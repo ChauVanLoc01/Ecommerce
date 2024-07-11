@@ -105,28 +105,24 @@ export class OrderController {
     @Public()
     @EventPattern(processStepOneToCreatOrder)
     checkCache(payload: OrderPayload) {
-        console.log('step 1')
         return this.ordersService.checkCache(payload.user, payload.body)
     }
 
     @Public()
     @EventPattern(processStepTwoToCreateOrder)
     processOrder(data: OrderPayload) {
-        console.log('step 2')
         return this.ordersService.processOrder(data.user, data.body)
     }
 
     @Public()
     @EventPattern(rollbackOrder)
     rollbackOrder(actionId: string) {
-        console.log('rollbackOrder', actionId)
         return this.ordersService.rollbackOrder(actionId)
     }
 
     @Public()
     @EventPattern(commitOrder)
     commitOrder(actionId: string) {
-        console.log('commitOrder')
         return this.ordersService.commitOrder(actionId)
     }
 

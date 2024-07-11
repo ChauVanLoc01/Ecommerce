@@ -767,7 +767,7 @@ export class OrderService {
                 )
             }
 
-            let orderRefundId = uuidv4()
+            const orderRefundId = uuidv4()
 
             await this.prisma.$transaction(async (tx) => {
                 return await Promise.all([

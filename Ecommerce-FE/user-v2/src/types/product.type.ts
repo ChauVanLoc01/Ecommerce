@@ -58,7 +58,7 @@ export type ProductListResponse = {
 
 export type ProductDetailResponse = Product & {
     productImages: { url: string }[]
-    sale: { id: string; productId: string; quantity: number; bought: number }
+    sale: { id: string; productId: string; quantity: number; bought: number; priceAfter: number }
 }
 
 export type RefreshProduct = { [key: string]: Product }

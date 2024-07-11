@@ -353,8 +353,6 @@ export class SaleService {
                 currentSaleId = currentSale.id
             }
 
-            console.log('currentSaleId', currentSaleId)
-
             if (!currentSaleId) {
                 return {
                     msg: 'ok',
@@ -375,10 +373,10 @@ export class SaleService {
                     id: true,
                     quantity: true,
                     bought: true,
-                    productId: true
+                    productId: true,
+                    priceAfter: true
                 }
             })
-            console.log('productsaleExist', productSaleExist)
 
             if (!productSaleExist) {
                 return {

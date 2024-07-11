@@ -436,6 +436,7 @@ export class VoucherService {
     }
 
     async emitUpdateQuantityVoucherToSocket(voucherId: string, storeId: string, quantity: number) {
+        console.log('emit quantity voucher')
         await this.cacheManager.set(hash('voucher', voucherId), quantity)
         this.socketClient.emit(updateQuantityVoucher, {
             voucherId,
@@ -463,6 +464,7 @@ export class VoucherService {
                     }
                     let hashValue = hash('voucher', voucherId)
                     let quantityFromCache = await this.cacheManager.get<number>(hashValue)
+                    let quantityTmp = 0
 
                     if (quantityFromCache) {
                         if (quantityFromCache == 1) {
@@ -475,21 +477,16 @@ export class VoucherService {
                                 }
                             })
                         }
-                        tmp.push({ quantity: quantityFromCache - 1, storeId, voucherId })
+                        quantityTmp = quantityFromCache - 1
                     } else {
                         const voucherExist = await tx.voucher.findUnique({
                             where: {
-                                id: voucherId,
-                                currentQuantity: {
-                                    gt: 0
-                                }
+                                id: voucherId
                             }
                         })
-
                         if (!voucherExist) {
                             throw new Error('Voucher không tồn tại')
                         }
-
                         if (voucherExist.currentQuantity == 1) {
                             await tx.voucher.update({
                                 where: {
@@ -500,17 +497,12 @@ export class VoucherService {
                                 }
                             })
                         }
-
-                        tmp.push({
-                            storeId,
-                            quantity: voucherExist.currentQuantity - 1,
-                            voucherId
-                        })
+                        quantityTmp = voucherExist.currentQuantity - 1
                     }
+                    tmp.push({ storeId, quantity: quantityTmp, voucherId })
                 }
             })
             .then(async () => {
-                console.log('voucher success')
                 this.commitCreateOrderSuccess(body.body.actionId, body.productActionId)
                 this.socketClient.emit(statusOfOrder, {
                     id: body.body.actionId,
@@ -519,13 +511,13 @@ export class VoucherService {
                     result: body.body.actionId
                 })
                 await Promise.all(
-                    tmp.map(async ({ quantity, storeId, voucherId }) => {
+                    tmp.map(({ quantity, storeId, voucherId }) =>
                         this.emitUpdateQuantityVoucherToSocket(voucherId, storeId, quantity)
-                    })
+                    )
                 )
             })
             .catch(async (err) => {
-                console.log('err voucher', err)
+                console.log('error', err)
                 this.socketClient.emit(statusOfOrder, {
                     id: body.body.actionId,
                     msg: 'Lỗi cập nhật voucher',

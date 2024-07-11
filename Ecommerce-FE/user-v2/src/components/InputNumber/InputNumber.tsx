@@ -25,7 +25,7 @@ const InputNumber = ({ quantity, setQuantity, currentQuantity }: InputNumberProp
     return (
         <div
             className={cn(
-                'flex items-center bg-[#FFFFFF] rounded border border-border/30 flex-grow-0 w-fit relative pb-2'
+                'flex items-center bg-[#FFFFFF] rounded border border-border/30 flex-grow-0 w-fit relative pb-4 pt-1'
             )}
         >
             <button
@@ -38,7 +38,7 @@ const InputNumber = ({ quantity, setQuantity, currentQuantity }: InputNumberProp
             <input
                 type='text'
                 id='Quantity'
-                className='h-5 w-14 border-transparent text-center text-sm font-semibold font-mono flex justify-center items-center'
+                className='h-5 w-14 border-transparent text-center text-lg font-semibold font-mono flex justify-center items-center'
                 value={quantity}
                 onChange={handleOnChange}
             />

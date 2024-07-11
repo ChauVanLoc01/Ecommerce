@@ -67,6 +67,7 @@ export type OrderFlow = {
     createdBy: string
     createdAt: string
     orderId: string
+    orderRefundId: string
 }
 
 export type OrderShipping = {
