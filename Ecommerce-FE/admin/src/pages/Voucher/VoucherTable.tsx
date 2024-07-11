@@ -1,15 +1,16 @@
-import { InfoCircledIcon, Pencil1Icon } from '@radix-ui/react-icons'
+import { InfoCircledIcon } from '@radix-ui/react-icons'
 import { Badge, Flex, IconButton, Text, Tooltip } from '@radix-ui/themes'
 import { ColumnDef } from '@tanstack/react-table'
-import { format, formatDistance, isAfter, isPast } from 'date-fns'
+import { format, formatDistance, isPast } from 'date-fns'
 import { vi } from 'date-fns/locale'
 import { BiSolidSortAlt } from 'react-icons/bi'
 import Table from 'src/components/Table'
 import { UserStatus } from 'src/constants/order.status'
+import { order_status } from 'src/constants/product.status'
 import { Voucher } from 'src/types/voucher.type'
 import { checkExpired, convertCurrentcy } from 'src/utils/utils'
+import VoucherUpdate from './VoucherUpdate'
 import VoucherUpdateStatus from './VoucherUpdateStatus'
-import { order_status } from 'src/constants/product.status'
 
 type VoucherTableProps = {
     data: Voucher[]
@@ -195,15 +196,7 @@ const VoucherTable = ({ data, refetchDataAll }: VoucherTableProps) => {
                             <InfoCircledIcon />
                         </IconButton>
                     </Tooltip>
-                    <Tooltip content='Chỉnh sửa'>
-                        <IconButton
-                            variant='soft'
-                            color='orange'
-                            disabled={['CANCEL', 'SUCCESS'].includes(row.original.status)}
-                        >
-                            <Pencil1Icon />
-                        </IconButton>
-                    </Tooltip>
+                    <VoucherUpdate refetchDataAll={refetchDataAll} voucher={row.original} />
                     <VoucherUpdateStatus
                         row={row}
                         refetchAll={refetchDataAll}

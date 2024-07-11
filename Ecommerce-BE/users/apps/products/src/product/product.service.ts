@@ -485,8 +485,6 @@ export class ProductService {
 
         const { category, description, initQuantity, name, priceAfter, priceBefore, status } = body
 
-        const init = initQuantity ?? 0
-
         return {
             msg: 'Cập nhật sản phẩm thành công',
             result: await this.prisma.product.update({
@@ -496,22 +494,7 @@ export class ProductService {
                 },
                 data: {
                     category,
-                    initQuantity:
-                        init > 0
-                            ? {
-                                  increment: init
-                              }
-                            : {
-                                  decrement: init
-                              },
-                    currentQuantity:
-                        init > 0
-                            ? {
-                                  increment: init
-                              }
-                            : {
-                                  decrement: init
-                              },
+                    initQuantity,
                     name,
                     description,
                     priceAfter,

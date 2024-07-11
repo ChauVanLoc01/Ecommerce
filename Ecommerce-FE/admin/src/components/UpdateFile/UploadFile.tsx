@@ -29,6 +29,7 @@ const UploadFile = ({ id, setFiles, files }: UploadFileProps) => {
     }
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        e.stopPropagation()
         const files = e.currentTarget.files
         if (files && files[0]) {
             setFiles((pre) => ({
@@ -45,6 +46,20 @@ const UploadFile = ({ id, setFiles, files }: UploadFileProps) => {
             ...pre,
             primary: id
         }))
+    }
+
+    const handleRemove = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+        e.stopPropagation()
+        console.log('handle remove')
+        setFiles((pre) => {
+            if (pre) {
+                pre.files.delete(id)
+                return {
+                    ...pre
+                }
+            }
+            return pre
+        })
     }
 
     useEffect(() => {
@@ -78,12 +93,17 @@ const UploadFile = ({ id, setFiles, files }: UploadFileProps) => {
                         </IconButton>
                     </Tooltip>
                     <Tooltip content='Xóa'>
-                        <IconButton color='red' size={'1'}>
+                        <IconButton color='red' size={'1'} onClick={handleRemove} type='button'>
                             <TrashIcon />
                         </IconButton>
                     </Tooltip>
                     <Tooltip content={isPrimary ? 'Đang là mặc định' : 'Đặt làm mặc định'}>
-                        <IconButton color={isPrimary ? 'blue' : 'crimson'} onClick={handlePrimaryImage} size={'1'}>
+                        <IconButton
+                            color={isPrimary ? 'blue' : 'crimson'}
+                            type='button'
+                            onClick={handlePrimaryImage}
+                            size={'1'}
+                        >
                             {isPrimary ? <CheckIcon /> : <DrawingPinIcon />}
                         </IconButton>
                     </Tooltip>

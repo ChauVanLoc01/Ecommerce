@@ -53,7 +53,7 @@ const EmployeeEdit = ({ open, setOpen, data, refetch }: EmployeeEditProps) => {
         <AlertDialog.Root open={open} onOpenChange={setOpen}>
             <AlertDialog.Content maxWidth='450px' className='!rounded-8'>
                 <form onSubmit={handleSubmit(onSubmit)}>
-                    <AlertDialog.Title>Chỉnh sửa thông tin nhân viên</AlertDialog.Title>
+                    <AlertDialog.Title>Cấp lại mật khẩu</AlertDialog.Title>
                     <DataList.Root className='space-y-2'>
                         <DataList.Item align='center'>
                             <DataList.Label minWidth='130px'>Họ tên</DataList.Label>

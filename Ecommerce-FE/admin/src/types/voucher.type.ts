@@ -12,8 +12,8 @@ export type Voucher = {
     storeId: string
     percent: number
     maximum: number
-    startDate: string
-    endDate: string
+    startDate: Date
+    endDate: Date
     createdBy: string
     createdAt: string
     updatedBy?: string

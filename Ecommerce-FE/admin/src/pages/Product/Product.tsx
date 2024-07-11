@@ -1,22 +1,36 @@
 import { Flex, TextField } from '@radix-ui/themes'
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { useContext, useEffect, useState } from 'react'
 import { useLoaderData } from 'react-router-dom'
+import { toast } from 'sonner'
 import { ProductApi } from 'src/apis/product.api'
 import Pagination from 'src/components/Pagination/Pagination'
 import { AppContext } from 'src/contexts/AppContext'
 import { Store } from 'src/types/auth.type'
-import { Category, ProductAnalyticResponse, ProductQueryAndPagination } from 'src/types/product.type'
+import {
+    Category,
+    ProductAnalyticResponse,
+    ProductQueryAndPagination,
+    Product as ProductType
+} from 'src/types/product.type'
 import LayoutProfile from '../Profile/LayoutProfile'
 import ProductAnalytics from './ProductAnalytics'
+import ProductDetail from './ProductDetail'
 import ProductFilter from './ProductFilter'
 import ProductTable from './ProductTable'
+import ProductUpdate from './ProductUpdate'
 
 const Product = () => {
     const { store } = useContext(AppContext)
+    const [open, setOpen] = useState<Record<'detail' | 'update', boolean>>({ detail: false, update: false })
+    const [selectedProduct, setSelectedProduct] = useState<ProductType | undefined>(undefined)
     const [query, setQuery] = useState<ProductQueryAndPagination>({ limit: import.meta.env.VITE_LIMIT })
-
     const [_, categories] = useLoaderData() as [ProductAnalyticResponse, { [key: string]: Category }]
+
+    const onOpen = (type: keyof typeof open, productSelected?: ProductType) => () => {
+        setOpen((pre) => ({ ...pre, [type]: !pre[type] }))
+        setSelectedProduct(productSelected)
+    }
 
     const { refetch: productListRefetch, data } = useQuery({
         queryKey: ['productList', JSON.stringify(query)],
@@ -30,6 +44,17 @@ const Product = () => {
         queryKey: ['productAnalytic'],
         queryFn: ProductApi.productAnalytic,
         enabled: false
+    })
+
+    const { mutate: updateProductMute } = useMutation({
+        mutationFn: ProductApi.updateProduct,
+        onSuccess: () => {
+            toast.success('Cập nhật sản phẩm thành công')
+            Promise.all([productListRefetch(), onOpen('update')])
+        },
+        onError: () => {
+            toast.error('Cập nhật sản phẩm thất bại')
+        }
     })
 
     useEffect(() => {
@@ -76,8 +101,30 @@ const Product = () => {
                         setQuery={setQuery}
                     />
                 </Flex>
-                <ProductTable data={data?.data ?? []} categories={categories} />
+                <ProductTable
+                    onOpen={onOpen}
+                    data={data?.data ?? []}
+                    categories={categories}
+                    setSelectedProduct={setSelectedProduct}
+                />
             </div>
+            {selectedProduct && (
+                <>
+                    <ProductDetail
+                        selectedProduct={selectedProduct}
+                        open={open['detail']}
+                        setOpenCreate={onOpen('detail')}
+                    />
+                    <ProductUpdate
+                        selectedProduct={selectedProduct}
+                        open={open['update']}
+                        setOpenCreate={onOpen('update')}
+                        analyticsRefetch={analyticsRefetch}
+                        productListRefetch={productListRefetch}
+                        categories={categories}
+                    />
+                </>
+            )}
         </LayoutProfile>
     )
 }

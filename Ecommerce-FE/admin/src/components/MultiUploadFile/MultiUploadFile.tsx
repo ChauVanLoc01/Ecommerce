@@ -1,5 +1,4 @@
 import { ReactNode } from 'react'
-import { cn } from 'src/utils/utils'
 import { Carousel, CarouselContent, CarouselNext, CarouselPrevious } from '../Shadcn/carousel'
 import UploadFile from '../UpdateFile/UploadFile'
 

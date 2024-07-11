@@ -408,6 +408,7 @@ export class OrderService {
                 )
             )
             .then((result) => {
+                console.log('tạo đơn hàng thành công')
                 let orderIds = []
                 let productOrderIds = []
                 let orderFlowIds = []
@@ -617,6 +618,8 @@ export class OrderService {
                             )
                         ])
 
+                        console.log('update voucher', updatedVoucher)
+
                         if (!updatedProduct.action) {
                             throw new Error(updatedProduct.msg)
                         }
@@ -625,6 +628,7 @@ export class OrderService {
                             throw new Error(updatedVoucher.msg)
                         }
                     } catch (err) {
+                        console.log('error', err)
                         let storeId = orderExist.storeId
                         this.productClient.emit(rollbackUpdateQuantiyProductsWhenCancelOrder, {
                             storeId,

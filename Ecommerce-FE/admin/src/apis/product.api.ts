@@ -20,7 +20,7 @@ export const ProductApi = {
         })
     },
     updateProduct: (data: { productId: string; body: UpdateProductBody }) => {
-        return http.put<Product>(`product/product/${data.productId}`, data.body)
+        return http.put<Partial<Product>>(`product/product/${data.productId}`, data.body)
     },
     productAnalytic: () => {
         return http.get<ProductAnalyticResponse>('product/product/analytic')

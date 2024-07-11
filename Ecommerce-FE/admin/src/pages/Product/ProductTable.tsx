@@ -1,4 +1,4 @@
-import { Cross2Icon, InfoCircledIcon, Pencil1Icon } from '@radix-ui/react-icons'
+import { InfoCircledIcon, Pencil1Icon } from '@radix-ui/react-icons'
 import { Badge, Flex, IconButton, Inset, Text, Tooltip } from '@radix-ui/themes'
 import { ColumnDef } from '@tanstack/react-table'
 import { format, formatDistance } from 'date-fns'
@@ -12,9 +12,11 @@ import { convertCurrentcy } from 'src/utils/utils'
 type ProductTableProps = {
     data: Product[]
     categories: { [key: string]: Category }
+    onOpen: (type: 'detail' | 'update', productSelected?: Product) => () => void
+    setSelectedProduct: React.Dispatch<React.SetStateAction<Product | undefined>>
 }
 
-const ProductTable = ({ data, categories }: ProductTableProps) => {
+const ProductTable = ({ data, categories, onOpen, setSelectedProduct }: ProductTableProps) => {
     const columns: ColumnDef<Product>[] = [
         {
             accessorKey: 'image',
@@ -137,10 +139,10 @@ const ProductTable = ({ data, categories }: ProductTableProps) => {
         },
         {
             accessorKey: ' ',
-            cell: ({ row }) => (
+            cell: ({ row: { original } }) => (
                 <Flex gapX={'2'} align={'center'}>
                     <Tooltip content='Xem chi tiết'>
-                        <IconButton variant='soft'>
+                        <IconButton variant='soft' onClick={onOpen('detail', original)}>
                             <InfoCircledIcon />
                         </IconButton>
                     </Tooltip>
@@ -148,18 +150,10 @@ const ProductTable = ({ data, categories }: ProductTableProps) => {
                         <IconButton
                             variant='soft'
                             color='orange'
-                            disabled={['CANCEL', 'SUCCESS'].includes(row.original.status)}
+                            disabled={['CANCEL', 'SUCCESS'].includes(original.status)}
+                            onClick={onOpen('update', original)}
                         >
                             <Pencil1Icon />
-                        </IconButton>
-                    </Tooltip>
-                    <Tooltip content='Hủy đơn'>
-                        <IconButton
-                            variant='soft'
-                            color='red'
-                            disabled={['CANCEL', 'SUCCESS'].includes(row.original.status)}
-                        >
-                            <Cross2Icon />
                         </IconButton>
                     </Tooltip>
                 </Flex>

@@ -1,4 +1,6 @@
-export const ProductStatus: { [key: string]: string } = {
+import { BadgeProps } from '@radix-ui/themes'
+
+export const ProductStatus: { [key: string]: BadgeProps['color'] } = {
     ACTIVE: 'green',
     BLOCK: 'red'
 }

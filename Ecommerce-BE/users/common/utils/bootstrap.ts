@@ -62,6 +62,7 @@ export async function bootstrap(mainModule: any) {
                             statusCode: 400
                         })
                     } catch (err) {
+                        console.log('erorr', err.response.message)
                         throw new BadRequestException({
                             message: 'Lỗi dữ liệu đầu vào',
                             error: 'Bad Request',

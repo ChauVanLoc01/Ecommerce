@@ -8,6 +8,7 @@ export const update_product_schema = yup.object({
     priceBefore: yup.number().optional(),
     initQuantity: yup.number().optional()
 })
+
 export const create_product_schema = yup.object({
     name: yup.string().required('Bắt buộc'),
     description: yup.string().optional(),

@@ -217,7 +217,11 @@ const EmployeeTable = ({ data, refetch, analyticsRefetch }: EmployeeTableProps) 
                             <Pencil1Icon />
                         </IconButton>
                     </Tooltip>
-                    <Tooltip content={row.original.User_Account_userIdToUser.status === 'ACTIVE' ? 'Xóa' : 'Mở khóa'}>
+                    <Tooltip
+                        content={
+                            row.original.User_Account_userIdToUser.status === 'ACTIVE' ? 'Khóa tài khoản' : 'Mở khóa'
+                        }
+                    >
                         <IconButton
                             variant='soft'
                             onClick={handleOpenModal('delete', row.original)}

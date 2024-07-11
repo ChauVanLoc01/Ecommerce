@@ -8,6 +8,7 @@ import {
     getProductImageByProductSalePromotion,
     getProductOrderByRating,
     rollbackUpdateQuantityProducts,
+    rollbackUpdateQuantiyProductsWhenCancelOrder,
     updateQuantityProducts,
     updateQuantiyProductsWhenCancelOrder
 } from 'common/constants/event.constant'
@@ -125,7 +126,7 @@ export class ProductController {
     @Public()
     @EventPattern(updateQuantityProducts)
     updateQuantiyProducts(payload: OrderPayload) {
-        console.log('update quantity product')
+        console.log('Bước 2: Cập nhật lại số lượng product')
         return this.productsService.updateQuantityProducts(payload)
     }
 
@@ -157,7 +158,7 @@ export class ProductController {
     }
 
     @Public()
-    @EventPattern(updateQuantiyProductsWhenCancelOrder)
+    @EventPattern(rollbackUpdateQuantiyProductsWhenCancelOrder)
     rollbackUpdateQuantiyProductsWhenCancelOrder(
         @Payload()
         payload: {
