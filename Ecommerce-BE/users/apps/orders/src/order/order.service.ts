@@ -409,7 +409,7 @@ export class OrderService {
             )
             .then((result) => {
                 try {
-                    console.log('********Tạo đơn hàng thành công********')
+                    console.log('********Tạo đơn, flow, ship thành công********')
                     let orderIds = []
                     let productOrderIds = []
                     let orderFlowIds = []
@@ -427,6 +427,7 @@ export class OrderService {
                     let hashValue = hash('order', body.actionId)
                     const roll_back_job = new CronJob(CronExpression.EVERY_SECOND, async () => {
                         await this.prisma.$transaction(async (tx) => {
+                            console.log('tien hanfh chay cron job roll back order')
                             try {
                                 await Promise.all([
                                     tx.productOrder.deleteMany({
@@ -478,7 +479,7 @@ export class OrderService {
 
                     this.productClient.emit(updateQuantityProducts, { user, body } as OrderPayload)
                 } catch (err) {
-                    console.log('*******Lỗi ở then ở bước tạo order (LINE 479) **********')
+                    console.log('*******Lỗi ở then ở bước tạo order (LINE 479) **********', err)
                 }
             })
             .catch((err) => {
@@ -494,6 +495,7 @@ export class OrderService {
 
     async rollbackOrder(actionId: string) {
         try {
+            console.log('roll back order')
             let hashValue = hash('order', actionId)
             const job = this.schedulerRegistry.getCronJob(hashValue)
             if (job) {
@@ -506,6 +508,7 @@ export class OrderService {
 
     async commitOrder(actionId: string) {
         try {
+            console.log('commit order')
             let hashValue = hash('order', actionId)
             const job = this.schedulerRegistry.getCronJob(hashValue)
             if (job) {

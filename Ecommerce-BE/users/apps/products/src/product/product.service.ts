@@ -561,12 +561,11 @@ export class ProductService {
         }[] = []
         this.prisma
             .$transaction(async (tx) => {
-                for (let order of body.orders) {
-                    for (let { productId, quantity: buy } of order.productOrders) {
-                        try {
+                try {
+                    for (let order of body.orders) {
+                        for (let { productId, quantity: buy } of order.productOrders) {
                             let hashValue = hash('product', productId)
                             let fromCache = await this.cacheManager.get<string>(hashValue)
-
                             if (fromCache) {
                                 let { quantity, priceAfter } = JSON.parse(fromCache) as {
                                     quantity: number
@@ -575,6 +574,10 @@ export class ProductService {
 
                                 if (quantity == 0) {
                                     throw new Error('Sản phẩm đã hết hàng')
+                                }
+
+                                if (buy > quantity) {
+                                    throw new Error('Sản phẩm không đủ số lượng')
                                 }
 
                                 tmp.push({
@@ -639,10 +642,14 @@ export class ProductService {
                                     })
                                 }
                             }
-                        } catch (err) {
-                            console.log('*******Lỗi Bước 2 transaction (LINE 643)********')
                         }
                     }
+                } catch (err) {
+                    let msg =
+                        (err?.message as string).length > 100
+                            ? 'Tạo đơn hàng thất bại'
+                            : err?.message
+                    throw new Error(msg)
                 }
             })
             .then(async (_) => {
@@ -741,10 +748,18 @@ export class ProductService {
                     )
 
                     // tạo croll back tổng cho product. Những sản phẩm nào quantity = 0 thì sẽ cập nhật lại dưới db và còn lại thì cập nhật emit
-                    const rollback_job = new CronJob(hash('product', productActionId), async () => {
+                    const rollback_job = new CronJob(CronExpression.EVERY_SECOND, async () => {
                         console.log('******Tiến hành roll back product**********')
                         await Promise.all(
                             tmp.map(({ storeId, productId, priceAfter, original_quantity }) => {
+                                let hashValue = hash('product', productId)
+                                let is_exist_cron_job_for_each_of_product =
+                                    this.schedulerRegistry.doesExist('cron', hashValue)
+                                if (is_exist_cron_job_for_each_of_product) {
+                                    let cron_job = this.schedulerRegistry.getCronJob(hashValue)
+                                    cron_job.stop()
+                                    this.schedulerRegistry.deleteCronJob(hashValue)
+                                }
                                 return this.emitUpdateProductToSocket(
                                     storeId,
                                     productId,
@@ -808,7 +823,8 @@ export class ProductService {
                     }
                 } catch (err) {
                     console.log(
-                        '******Bước 2: Lỗi rollback khi cập nhật product ở THEN (LINE 775)********'
+                        '******Bước 2: Lỗi rollback khi cập nhật product ở THEN (LINE 775)********',
+                        err
                     )
                 }
             })
@@ -825,14 +841,10 @@ export class ProductService {
                         action: false,
                         result: null
                     })
-                    let roll_back_job = this.schedulerRegistry.getCronJob(productActionId)
-                    if (roll_back_job) {
-                        roll_back_job.stop()
-                        this.schedulerRegistry.deleteCronJob(productActionId)
-                    }
                 } catch (err) {
                     console.log(
-                        '*****Bước 2: Lỗi rollback product ở bước try catch (LINE 795)*******'
+                        '*****Bước 2: Lỗi rollback product ở bước try catch (LINE 795)*******',
+                        err
                     )
                 }
             })
@@ -842,9 +854,12 @@ export class ProductService {
         console.log('*******Tiến hành rollback (LINE 838)***********')
         try {
             this.order_client.emit(rollbackOrder, actionId)
-            let update_quantity_product_job = this.schedulerRegistry.getCronJob(productActionId)
-            if (update_quantity_product_job) {
-                update_quantity_product_job.start()
+            let is_exist_update_quantity_product_job = this.schedulerRegistry.doesExist(
+                'cron',
+                productActionId
+            )
+            if (is_exist_update_quantity_product_job) {
+                this.schedulerRegistry.getCronJob(productActionId).start()
             }
         } catch (err) {
             console.log(
