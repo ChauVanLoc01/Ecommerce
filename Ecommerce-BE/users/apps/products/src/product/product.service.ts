@@ -14,13 +14,13 @@ import { Prisma, PrismaClient, Product } from '@prisma/client'
 import { DefaultArgs } from '@prisma/client/runtime/library'
 import { Cache } from 'cache-manager'
 import {
-    checkVoucherExistToCreateOrder,
     commitOrder,
     getProductSaleEvent,
     getStoreDetail,
     rollbackOrder,
     statusOfOrder,
-    updateQuantityProduct
+    updateQuantityProduct,
+    updateVoucherWhenCreatingOrder
 } from 'common/constants/event.constant'
 import { Status } from 'common/enums/status.enum'
 import { CurrentStoreType } from 'common/types/current.type'
@@ -549,7 +549,7 @@ export class ProductService {
         }
     }
 
-    async updateQuantityProducts(order_payload: OrderPayload) {
+    async updateProductWhenCreatingOrder(order_payload: OrderPayload) {
         let { body, user } = order_payload
         let productActionId = hash('product', uuidv4())
         var tmp: {
@@ -563,32 +563,20 @@ export class ProductService {
             .$transaction(async (tx) => {
                 for (let order of body.orders) {
                     for (let { productId, quantity: buy } of order.productOrders) {
-                        let hashValue = hash('product', productId)
-                        let fromCache = await this.cacheManager.get<string>(hashValue)
+                        try {
+                            let hashValue = hash('product', productId)
+                            let fromCache = await this.cacheManager.get<string>(hashValue)
 
-                        if (fromCache) {
-                            let { quantity, priceAfter } = JSON.parse(fromCache) as {
-                                quantity: number
-                                priceAfter: number
-                            }
-                            if (quantity === buy) {
-                                tmp.push({
-                                    productId,
-                                    quantity: 0,
-                                    priceAfter,
-                                    original_quantity: buy,
-                                    storeId: order.storeId
-                                })
-                                await tx.product.update({
-                                    where: {
-                                        id: productId
-                                    },
-                                    data: {
-                                        currentQuantity: 0,
-                                        updatedAt: new Date()
-                                    }
-                                })
-                            } else {
+                            if (fromCache) {
+                                let { quantity, priceAfter } = JSON.parse(fromCache) as {
+                                    quantity: number
+                                    priceAfter: number
+                                }
+
+                                if (quantity == 0) {
+                                    throw new Error('Sản phẩm đã hết hàng')
+                                }
+
                                 tmp.push({
                                     productId,
                                     original_quantity: quantity,
@@ -596,164 +584,287 @@ export class ProductService {
                                     priceAfter,
                                     storeId: order.storeId
                                 })
-                            }
-                        } else {
-                            const productExist = await tx.product.findUnique({
-                                where: {
-                                    id: productId,
-                                    currentQuantity: {
-                                        gt: 0
-                                    }
-                                },
-                                select: {
-                                    currentQuantity: true,
-                                    priceAfter: true
+
+                                if (quantity === buy) {
+                                    await tx.product.update({
+                                        where: {
+                                            id: productId
+                                        },
+                                        data: {
+                                            currentQuantity: 0,
+                                            updatedAt: new Date()
+                                        }
+                                    })
                                 }
-                            })
-
-                            if (!productExist) {
-                                throw new Error('Sản phẩm không tồn tại')
-                            }
-
-                            if (productExist.currentQuantity < buy) {
-                                throw new Error('Sản phẩm không đủ số lượng')
-                            }
-
-                            if (productExist.currentQuantity === buy) {
-                                await tx.product.update({
+                            } else {
+                                const productExist = await tx.product.findUnique({
                                     where: {
                                         id: productId
                                     },
-                                    data: {
-                                        currentQuantity: 0,
-                                        updatedAt: new Date()
+                                    select: {
+                                        currentQuantity: true,
+                                        priceAfter: true
                                     }
                                 })
+
+                                if (!productExist) {
+                                    throw new Error('Sản phẩm không tồn tại')
+                                }
+
+                                if (productExist.currentQuantity == 0) {
+                                    throw new Error('Sản phẩm đã hết hàng')
+                                }
+
+                                if (productExist.currentQuantity < buy) {
+                                    throw new Error('Sản phẩm không đủ số lượng')
+                                }
+
                                 tmp.push({
                                     productId,
-                                    quantity: 0,
+                                    quantity: productExist.currentQuantity - buy,
                                     priceAfter: productExist.priceAfter,
-                                    original_quantity: buy,
+                                    original_quantity: productExist.currentQuantity,
                                     storeId: order.storeId
                                 })
+
+                                if (productExist.currentQuantity === buy) {
+                                    await tx.product.update({
+                                        where: {
+                                            id: productId
+                                        },
+                                        data: {
+                                            currentQuantity: 0,
+                                            updatedAt: new Date()
+                                        }
+                                    })
+                                }
                             }
-                            tmp.push({
-                                productId,
-                                quantity: productExist.currentQuantity - buy,
-                                priceAfter: productExist.priceAfter,
-                                original_quantity: productExist.currentQuantity,
-                                storeId: order.storeId
-                            })
+                        } catch (err) {
+                            console.log('*******Lỗi Bước 2 transaction (LINE 643)********')
                         }
                     }
                 }
             })
             .then(async (_) => {
-                const update_quantity_job = new CronJob(CronExpression.EVERY_SECOND, async () => {
-                    for (let { productId, priceAfter, quantity, storeId } of tmp) {
-                        let hashValue = hash('product', productId)
-                        await this.emitUpdateProductToSocket(
-                            storeId,
-                            productId,
-                            quantity,
-                            priceAfter
-                        )
-                        let is_exist_cron_job = this.schedulerRegistry.doesExist('cron', hashValue)
-                        if (is_exist_cron_job) return
-                        let update_product_quantity_job = new CronJob(
-                            CronExpression.EVERY_5_MINUTES,
-                            async () => {
-                                let dataProductFromCache =
-                                    await this.cacheManager.get<string>(hashValue)
+                try {
+                    // Tạo cron job cho từng sản phẩm
+                    await Promise.all(
+                        tmp.map(async ({ productId, priceAfter }) => {
+                            let hashValue = hash('product', productId)
+                            let is_exist_cron_job = this.schedulerRegistry.doesExist(
+                                'cron',
+                                hashValue
+                            )
+                            if (is_exist_cron_job) return
 
-                                if (dataProductFromCache) {
-                                    let { quantity: quantityFromCache, times } = JSON.parse(
-                                        dataProductFromCache
-                                    ) as {
-                                        quantity: number
-                                        priceAfter: number
-                                        times: number
-                                    }
+                            let update_product_quantity_job = new CronJob(
+                                CronExpression.EVERY_5_MINUTES,
+                                async () => {
+                                    let dataProductFromCache =
+                                        await this.cacheManager.get<string>(hashValue)
 
-                                    const quantityFromDB = await this.prisma.product.findUnique({
-                                        where: {
-                                            id: productId
-                                        },
-                                        select: {
-                                            currentQuantity: true
+                                    if (dataProductFromCache) {
+                                        let { quantity: quantityFromCache, times } = JSON.parse(
+                                            dataProductFromCache
+                                        ) as {
+                                            quantity: number
+                                            priceAfter: number
+                                            times: number
                                         }
-                                    })
-
-                                    let isNotReach =
-                                        quantityFromDB.currentQuantity == quantityFromCache &&
-                                        !times
-
-                                    await this.prisma.product.update({
-                                        where: {
-                                            id: productId
-                                        },
-                                        data: {
-                                            currentQuantity: quantityFromCache,
-                                            updatedAt: new Date()
-                                        }
-                                    })
-
-                                    if (!isNotReach) {
-                                        await this.cacheManager.set(
-                                            hash('product', productId),
-                                            JSON.stringify({
-                                                quantity: quantityFromCache,
-                                                priceAfter,
-                                                times: times - 1
-                                            })
+                                        const quantityFromDB = await this.prisma.product.findUnique(
+                                            {
+                                                where: {
+                                                    id: productId
+                                                },
+                                                select: {
+                                                    currentQuantity: true
+                                                }
+                                            }
                                         )
-                                    }
-                                    if (quantity == 0 || isNotReach) {
-                                        this.cacheManager.del(hashValue)
-                                        this.schedulerRegistry.getCronJob(hashValue).stop()
-                                        this.schedulerRegistry.deleteCronJob(hashValue)
+
+                                        if (!quantityFromDB) {
+                                            return
+                                        }
+
+                                        let isActive = times == 1
+
+                                        await Promise.all([
+                                            this.prisma.product.update({
+                                                where: {
+                                                    id: productId
+                                                },
+                                                data: {
+                                                    currentQuantity: quantityFromCache,
+                                                    updatedAt: new Date()
+                                                }
+                                            }),
+                                            this.cacheManager.set(
+                                                hashValue,
+                                                JSON.stringify({
+                                                    quantity: quantityFromCache,
+                                                    priceAfter,
+                                                    times: times - 1
+                                                })
+                                            )
+                                        ])
+                                        if (!isActive) {
+                                            await this.cacheManager.del(hashValue)
+                                            let cron_job =
+                                                this.schedulerRegistry.getCronJob(hashValue)
+                                            if (cron_job) {
+                                                cron_job.stop()
+                                                this.schedulerRegistry.deleteCronJob(hashValue)
+                                            }
+                                        }
                                     }
                                 }
-                            }
+                            )
+                            this.schedulerRegistry.addCronJob(
+                                hashValue,
+                                update_product_quantity_job
+                            )
+                            update_product_quantity_job.start()
+                            return Promise.resolve('ok')
+                        })
+                    )
+
+                    // Emit cập nhật số lượng và cache cho từng sản phẩm
+                    await Promise.all(
+                        tmp.map(({ storeId, productId, quantity, priceAfter }) => {
+                            return this.emitUpdateProductToSocket(
+                                storeId,
+                                productId,
+                                quantity,
+                                priceAfter
+                            )
+                        })
+                    )
+
+                    // tạo croll back tổng cho product. Những sản phẩm nào quantity = 0 thì sẽ cập nhật lại dưới db và còn lại thì cập nhật emit
+                    const rollback_job = new CronJob(hash('product', productActionId), async () => {
+                        console.log('******Tiến hành roll back product**********')
+                        await Promise.all(
+                            tmp.map(({ storeId, productId, priceAfter, original_quantity }) => {
+                                return this.emitUpdateProductToSocket(
+                                    storeId,
+                                    productId,
+                                    original_quantity,
+                                    priceAfter
+                                )
+                            })
                         )
-                        this.schedulerRegistry.addCronJob(hashValue, update_product_quantity_job)
-                        update_product_quantity_job.start()
+                        const product_out_of_stock = tmp.filter((item) => !item.quantity)
+                        try {
+                            await this.prisma.$transaction(async (tx) => {
+                                try {
+                                    await Promise.all(
+                                        product_out_of_stock.map(
+                                            ({ productId, original_quantity }) => {
+                                                return tx.product.update({
+                                                    where: {
+                                                        id: productId
+                                                    },
+                                                    data: {
+                                                        currentQuantity: original_quantity
+                                                    }
+                                                })
+                                            }
+                                        )
+                                    )
+                                } catch (error) {
+                                    throw new Error(
+                                        'Có lỗi trong quá trình chạy cron_job để rollback sản phẩm khi tạo đơn hàng'
+                                    )
+                                }
+                            })
+                        } catch (error) {
+                            console.log(':::::Lỗi rollback đặt hàng:::::', error)
+                        }
+                    })
+                    rollback_job.runOnce = true
+                    this.schedulerRegistry.addCronJob(productActionId, rollback_job)
+
+                    let isHasVoucher = false
+                    body.orders.forEach(({ voucherId }) => {
+                        if (voucherId) {
+                            isHasVoucher = true
+                            return
+                        }
+                    })
+
+                    if (isHasVoucher) {
+                        this.store_client.emit(updateVoucherWhenCreatingOrder, {
+                            user,
+                            body,
+                            productActionId
+                        } as OrderPayload & { productActionId: string })
+                    } else {
+                        this.socket_client.emit(statusOfOrder, {
+                            id: body.actionId,
+                            msg: 'Đặt hàng thành công',
+                            action: true,
+                            result: null
+                        })
                     }
-                })
-                update_quantity_job.runOnce = true
-                this.schedulerRegistry.addCronJob(productActionId, update_quantity_job)
-                this.store_client.emit(checkVoucherExistToCreateOrder, {
-                    user,
-                    body,
-                    productActionId
-                } as OrderPayload & { productActionId: string })
+                } catch (err) {
+                    console.log(
+                        '******Bước 2: Lỗi rollback khi cập nhật product ở THEN (LINE 775)********'
+                    )
+                }
             })
             .catch((err) => {
-                this.order_client.emit(rollbackOrder, body.actionId)
-                setTimeout(() => {
+                try {
+                    console.log(
+                        '********Cập nhật số lượng sản phẩm khi đặt hàng thất bại********',
+                        err
+                    )
+                    this.order_client.emit(rollbackOrder, body.actionId)
                     this.socket_client.emit(statusOfOrder, {
                         id: body.actionId,
-                        msg: err?.message || 'Lỗi sản phẩm',
+                        msg: err?.message || 'Đặt hàng không thành công',
                         action: false,
                         result: null
                     })
-                }, 500)
+                    let roll_back_job = this.schedulerRegistry.getCronJob(productActionId)
+                    if (roll_back_job) {
+                        roll_back_job.stop()
+                        this.schedulerRegistry.deleteCronJob(productActionId)
+                    }
+                } catch (err) {
+                    console.log(
+                        '*****Bước 2: Lỗi rollback product ở bước try catch (LINE 795)*******'
+                    )
+                }
             })
     }
 
-    async rolloutUpdateQuantityProduct(actionId: string, productActionId: string) {
-        this.order_client.emit(rollbackOrder, actionId)
-        let update_quantity_product_job = this.schedulerRegistry.getCronJob(productActionId)
-        if (update_quantity_product_job) {
-            this.schedulerRegistry.deleteCronJob(productActionId)
+    async rollbackUpdateQuantityProduct(actionId: string, productActionId: string) {
+        console.log('*******Tiến hành rollback (LINE 838)***********')
+        try {
+            this.order_client.emit(rollbackOrder, actionId)
+            let update_quantity_product_job = this.schedulerRegistry.getCronJob(productActionId)
+            if (update_quantity_product_job) {
+                update_quantity_product_job.start()
+            }
+        } catch (err) {
+            console.log(
+                '*****Bước 2: rollback cập nhật số lượng từ voucher đến product bị lỗi (LINE 815) ********',
+                err
+            )
         }
     }
 
     async commitUpdateQuantityProduct(actionId: string, productActionId: string) {
-        this.order_client.emit(commitOrder, actionId)
-        let cron_job = this.schedulerRegistry.getCronJob(productActionId)
-        if (cron_job) {
-            cron_job.start()
+        try {
+            console.log('*********commit cập nhật lại product********')
+            this.order_client.emit(commitOrder, actionId)
+            let cron_job = this.schedulerRegistry.getCronJob(productActionId)
+            if (cron_job) {
+                cron_job.stop()
+                this.schedulerRegistry.deleteCronJob(productActionId)
+            }
+        } catch (err) {
+            console.log('******Bước 2: Lỗi commit product (LINE 829) *******')
         }
     }
 

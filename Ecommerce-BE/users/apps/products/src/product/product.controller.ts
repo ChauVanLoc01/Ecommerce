@@ -125,17 +125,17 @@ export class ProductController {
 
     @Public()
     @EventPattern(updateQuantityProducts)
-    updateQuantiyProducts(payload: OrderPayload) {
-        console.log('Bước 2: Cập nhật lại số lượng product')
-        return this.productsService.updateQuantityProducts(payload)
+    updateProductWhenCreatingOrder(payload: OrderPayload) {
+        console.log('::::::Bước 2: Cập nhật lại số lượng product::::::::')
+        return this.productsService.updateProductWhenCreatingOrder(payload)
     }
 
     @Public()
     @EventPattern(rollbackUpdateQuantityProducts)
     rollbackUpdateQuantityProduct(payload: { actionId: string; productActionId: string }) {
-        console.log('roll back update quantity product')
+        console.log('*****Roll Back Bước 2: Cập nhật voucher******')
         let { actionId, productActionId } = payload
-        return this.productsService.rolloutUpdateQuantityProduct(actionId, productActionId)
+        return this.productsService.rollbackUpdateQuantityProduct(actionId, productActionId)
     }
 
     @Public()

@@ -2,9 +2,9 @@ import { Body, Controller, Get, Param, Post, Put, UseGuards } from '@nestjs/comm
 import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices'
 import { ApiBearerAuth } from '@nestjs/swagger'
 import {
-    checkVoucherExistToCreateOrder,
     rollbackUpdateVoucherWhenCancelOrder,
-    updateVoucherWhenCancelOrder
+    updateVoucherWhenCancelOrder,
+    updateVoucherWhenCreatingOrder
 } from 'common/constants/event.constant'
 import { CurrentUser } from 'common/decorators/current_user.decorator'
 import { Public } from 'common/decorators/public.decorator'
@@ -68,10 +68,10 @@ export class VoucherController {
     }
 
     @Public()
-    @EventPattern(checkVoucherExistToCreateOrder)
-    checkVoucherExistToCreateOrder(body: OrderPayload & { productActionId: string }) {
-        console.log('update quantity voucher')
-        return this.voucherService.checkVoucherExistToCreateOrder(body)
+    @EventPattern(updateVoucherWhenCreatingOrder)
+    updateVoucherWhenCreatingOrder(body: OrderPayload & { productActionId: string }) {
+        console.log('*********Bước 3: Câp nhật voucher*********')
+        return this.voucherService.updateVoucherWhenCreatingOrder(body)
     }
 
     @Public()

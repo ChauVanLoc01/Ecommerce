@@ -40,7 +40,7 @@ export const getProductImageByProductSalePromotion =
 
 export const getProductBySalePromotion = 'get::product::by::sale::promotion'
 
-export const checkVoucherExistToCreateOrder = 'checkVoucherExistToCreateOrder'
+export const updateVoucherWhenCreatingOrder = 'update::voucher::when::creating::order'
 
 export const updateVoucherWhenCancelOrder = 'update::voucher::when::cancel::order'
 

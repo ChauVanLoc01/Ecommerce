@@ -408,70 +408,81 @@ export class OrderService {
                 )
             )
             .then((result) => {
-                console.log('tạo đơn hàng thành công')
-                let orderIds = []
-                let productOrderIds = []
-                let orderFlowIds = []
-                let orderVoucherIds = []
-                let orderShippingIds = []
+                try {
+                    console.log('********Tạo đơn hàng thành công********')
+                    let orderIds = []
+                    let productOrderIds = []
+                    let orderFlowIds = []
+                    let orderVoucherIds = []
+                    let orderShippingIds = []
 
-                result.forEach((order) => {
-                    orderIds.push(order.id)
-                    productOrderIds.push(...order.ProductOrder.map((product) => product.id))
-                    orderFlowIds.push(order.OrderFlow[0].id)
-                    orderVoucherIds.push(...order.OrderVoucher.map((voucher) => voucher.id))
-                    orderShippingIds.push(order.OrderShipping[0].id)
-                })
+                    result.forEach((order) => {
+                        orderIds.push(order.id)
+                        productOrderIds.push(...order.ProductOrder.map((product) => product.id))
+                        orderFlowIds.push(order.OrderFlow[0].id)
+                        orderVoucherIds.push(...order.OrderVoucher.map((voucher) => voucher.id))
+                        orderShippingIds.push(order.OrderShipping[0].id)
+                    })
 
-                let hashValue = hash('order', body.actionId)
-                const roll_back_job = new CronJob(CronExpression.EVERY_SECOND, async () => {
-                    await this.prisma.$transaction(async (tx) => {
-                        await Promise.all([
-                            tx.productOrder.deleteMany({
-                                where: {
-                                    id: {
-                                        in: productOrderIds
+                    let hashValue = hash('order', body.actionId)
+                    const roll_back_job = new CronJob(CronExpression.EVERY_SECOND, async () => {
+                        await this.prisma.$transaction(async (tx) => {
+                            try {
+                                await Promise.all([
+                                    tx.productOrder.deleteMany({
+                                        where: {
+                                            id: {
+                                                in: productOrderIds
+                                            }
+                                        }
+                                    }),
+                                    tx.orderFlow.deleteMany({
+                                        where: {
+                                            id: {
+                                                in: orderFlowIds
+                                            }
+                                        }
+                                    }),
+                                    tx.orderVoucher.deleteMany({
+                                        where: {
+                                            id: {
+                                                in: orderVoucherIds.length
+                                                    ? orderFlowIds
+                                                    : undefined
+                                            }
+                                        }
+                                    }),
+                                    tx.orderShipping.deleteMany({
+                                        where: {
+                                            id: {
+                                                in: orderShippingIds
+                                            }
+                                        }
+                                    })
+                                ])
+                                await tx.order.deleteMany({
+                                    where: {
+                                        id: {
+                                            in: orderIds
+                                        }
                                     }
-                                }
-                            }),
-                            tx.orderFlow.deleteMany({
-                                where: {
-                                    id: {
-                                        in: orderFlowIds
-                                    }
-                                }
-                            }),
-                            tx.orderVoucher.deleteMany({
-                                where: {
-                                    id: {
-                                        in: orderVoucherIds.length ? orderFlowIds : undefined
-                                    }
-                                }
-                            }),
-                            tx.orderShipping.deleteMany({
-                                where: {
-                                    id: {
-                                        in: orderShippingIds
-                                    }
-                                }
-                            })
-                        ])
-                        await tx.order.deleteMany({
-                            where: {
-                                id: {
-                                    in: orderIds
-                                }
+                                })
+                            } catch (err) {
+                                console.log('Lỗi trong roll_back_job')
+                                throw new Error(err)
                             }
                         })
                     })
-                })
-                roll_back_job.runOnce = true
-                this.schedulerRegistry.addCronJob(hashValue, roll_back_job)
+                    roll_back_job.runOnce = true
+                    this.schedulerRegistry.addCronJob(hashValue, roll_back_job)
 
-                this.productClient.emit(updateQuantityProducts, { user, body } as OrderPayload)
+                    this.productClient.emit(updateQuantityProducts, { user, body } as OrderPayload)
+                } catch (err) {
+                    console.log('*******Lỗi ở then ở bước tạo order (LINE 479) **********')
+                }
             })
             .catch((err) => {
-                console.log('error step 2', err)
+                console.log('******Gặp lại ở ngay bước đầu tạo order (LINE 485) *********', err)
                 this.updateStatusOfOrderToClient(
                     body.actionId,
                     'Tạo đơn hàng không thành công',
@@ -482,18 +493,26 @@ export class OrderService {
     }
 
     async rollbackOrder(actionId: string) {
-        let hashValue = hash('order', actionId)
-        const job = this.schedulerRegistry.getCronJob(hashValue)
-        if (job) {
-            job.start()
+        try {
+            let hashValue = hash('order', actionId)
+            const job = this.schedulerRegistry.getCronJob(hashValue)
+            if (job) {
+                job.start()
+            }
+        } catch (err) {
+            console.log('*******Roll back order gặp lỗi (LINE 503) ********', err)
         }
     }
 
     async commitOrder(actionId: string) {
-        let hashValue = hash('order', actionId)
-        const job = this.schedulerRegistry.getCronJob(hashValue)
-        if (job) {
-            this.schedulerRegistry.deleteCronJob(hashValue)
+        try {
+            let hashValue = hash('order', actionId)
+            const job = this.schedulerRegistry.getCronJob(hashValue)
+            if (job) {
+                this.schedulerRegistry.deleteCronJob(hashValue)
+            }
+        } catch (err) {
+            console.log('********Lỗi ở commit order (LINE 515)*********', err)
         }
     }
 
