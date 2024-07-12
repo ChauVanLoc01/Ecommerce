@@ -78,6 +78,7 @@ model Order {
   createdAt      DateTime?       @default(now()) @db.Timestamp(0)
   updatedAt      DateTime?       @db.Timestamp(0)
   numberOfRefund Int?            @default(3)
+  isDraf         Boolean?        @default(true)
   User           User            @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Order_ibfk_1")
   Store          Store           @relation(fields: [storeId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Order_ibfk_3")
   OrderFlow      OrderFlow[]
@@ -96,10 +97,10 @@ model OrderFlow {
   id            String    @id @db.VarChar(50)
   status        String    @db.VarChar(50)
   note          String?   @db.Text
-  orderRefundId String?   @db.VarChar(50)
   createdBy     String    @db.VarChar(50)
   createdAt     DateTime? @db.Timestamp(0)
   orderId       String    @db.VarChar(50)
+  orderRefundId String?   @db.VarChar(50)
   Order         Order     @relation(fields: [orderId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "OrderFlow_ibfk_2")
 
   @@index([createdBy], map: "createdBy")
