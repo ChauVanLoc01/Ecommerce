@@ -106,3 +106,11 @@ function dataURLtoFile(dataurl: any, filename: string) {
 export const convertToFile = async (url: string, fileName: string) => {
     return toDataURL(url).then((result) => dataURLtoFile(result, fileName))
 }
+
+export const formatQuantityInput = (s: number) => {
+    return convertCurrentcy(+String(s).replace(/\D/img, ''), false)
+}
+
+export const formatCurrencyInput = (s: number) => {
+    return convertCurrentcy(+String(s).replace(/\D/img, ''))
+}

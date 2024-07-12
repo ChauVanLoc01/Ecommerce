@@ -48,7 +48,7 @@ const ProductDetail = ({ open, setOpenCreate, selectedProduct }: ProductDetailPr
                                 </Flex>
                             </DataList.Label>
                             <DataList.Value>
-                                <TextArea className='flex-grow h-full' value={selectedProduct.name} />
+                                <Text>{selectedProduct.name}</Text>
                             </DataList.Value>
                         </DataList.Item>
                         <DataList.Item align='start'>
@@ -59,6 +59,7 @@ const ProductDetail = ({ open, setOpenCreate, selectedProduct }: ProductDetailPr
                             </DataList.Label>
                             <DataList.Value>
                                 <TextField.Root
+                                    disabled
                                     className='!flex-grow'
                                     value={
                                         selectedProduct.priceBefore ? convertCurrentcy(selectedProduct.priceBefore) : ''
@@ -75,6 +76,7 @@ const ProductDetail = ({ open, setOpenCreate, selectedProduct }: ProductDetailPr
                             <DataList.Value>
                                 <TextField.Root
                                     className='!flex-grow'
+                                    disabled
                                     value={convertCurrentcy(selectedProduct.priceAfter)}
                                 />
                             </DataList.Value>

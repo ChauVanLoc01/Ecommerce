@@ -1,7 +1,7 @@
 import { PrismaService } from '@app/common/prisma/prisma.service'
 import { CACHE_MANAGER } from '@nestjs/cache-manager'
 import { Inject, Injectable } from '@nestjs/common'
-import { Cron, CronExpression, SchedulerRegistry } from '@nestjs/schedule'
+import { Cron, CronExpression, SchedulerRegistry, Timeout } from '@nestjs/schedule'
 import { Prisma, PrismaClient } from '@prisma/client'
 import { DefaultArgs } from '@prisma/client/runtime/library'
 import { Cache } from 'cache-manager'

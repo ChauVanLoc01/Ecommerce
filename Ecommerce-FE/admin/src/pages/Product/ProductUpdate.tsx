@@ -23,6 +23,7 @@ import { Carousel, CarouselContent, CarouselNext, CarouselPrevious } from 'src/c
 import { Category, Product, ProductAnalyticResponse, ProductQueryAndPagination } from 'src/types/product.type'
 import { update_product_schema, UpdateProductSchema } from 'src/utils/product.schema'
 import ProductUploadFile from './ProductUploadFile'
+import { formatCurrencyInput, formatQuantityInput } from 'src/utils/utils'
 
 type ProductUpdateProps = {
     categories: { [key: string]: Category }
@@ -217,6 +218,7 @@ const ProductUpdate = ({
                                     render={({ field }) => (
                                         <TextField.Root
                                             {...field}
+                                            value={formatCurrencyInput(field?.value || 0)}
                                             color={errors.priceBefore ? 'red' : 'blue'}
                                             className='!flex-grow'
                                         />
@@ -243,6 +245,7 @@ const ProductUpdate = ({
                                         <TextField.Root
                                             color={errors.priceAfter ? 'red' : 'blue'}
                                             {...field}
+                                            value={formatCurrencyInput(field?.value || 0)}
                                             className='!flex-grow'
                                         />
                                     )}
@@ -268,6 +271,7 @@ const ProductUpdate = ({
                                         <TextField.Root
                                             {...field}
                                             color={errors.initQuantity ? 'red' : 'blue'}
+                                            value={formatQuantityInput(field?.value || 0)}
                                             type='number'
                                             className='!flex-grow'
                                         />

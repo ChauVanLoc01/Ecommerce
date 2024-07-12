@@ -499,7 +499,8 @@ export class OrderService {
             let hashValue = hash('order', actionId)
             const job = this.schedulerRegistry.getCronJob(hashValue)
             if (job) {
-                job.start()
+                job.runOnce
+                // job.start()
             }
         } catch (err) {
             console.log('*******Roll back order gặp lỗi (LINE 503) ********', err)
