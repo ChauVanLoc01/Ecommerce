@@ -1,7 +1,21 @@
-import { CreateOrderDTO } from 'common/dtos/create_order.dto'
-import { CurrentUserType } from './current.type'
+type PayloadUpdateKey =
+    | 'orderIds'
+    | 'productOrderIds'
+    | 'shippingOrderIds'
+    | 'orderFlowIds'
+    | 'voucherOrderIds'
 
-export type OrderPayload = {
-    user: CurrentUserType
-    body: InstanceType<typeof CreateOrderDTO>
+export type PayloadUpdate = {
+    products: {
+        id: string
+        isSale?: boolean
+    }[]
+    order: {
+        [key in PayloadUpdateKey]: string[]
+    }
+}
+
+export type CreateOrderPayload = {
+    userId: string
+    payload: PayloadUpdate
 }

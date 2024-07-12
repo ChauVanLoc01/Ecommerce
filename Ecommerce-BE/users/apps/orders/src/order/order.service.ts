@@ -10,7 +10,7 @@ import {
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { ClientProxy } from '@nestjs/microservices'
-import { CronExpression, SchedulerRegistry } from '@nestjs/schedule'
+import { SchedulerRegistry } from '@nestjs/schedule'
 import { Prisma, PrismaClient, Product } from '@prisma/client'
 import { DefaultArgs } from '@prisma/client/runtime/library'
 import { Cache } from 'cache-manager'
@@ -27,10 +27,9 @@ import {
 } from 'common/constants/event.constant'
 import { NormalStatus, OrderFlowEnum, RefundStatus } from 'common/enums/orderStatus.enum'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
-import { OrderPayload } from 'common/types/order_payload.type'
+import { CreateOrderPayload, PayloadUpdate } from 'common/types/order_payload.type'
 import { MessageReturn, Return } from 'common/types/result.type'
 import { hash } from 'common/utils/helper'
-import { CronJob } from 'cron'
 import { add, addHours, compareDesc, isPast, sub, subDays } from 'date-fns'
 import { Dictionary, isUndefined, max, omitBy, sumBy } from 'lodash'
 import { firstValueFrom } from 'rxjs'
@@ -281,38 +280,55 @@ export class OrderService {
             orders.map(async ({ voucherId, productOrders }) => {
                 try {
                     if (voucherId) {
-                        let hahsVoucher = hash('voucher', voucherId)
-                        let quantityVoucherCache = await this.cacheManager.get<number>(hahsVoucher)
-                        if (quantityVoucherCache == 0) {
-                            return Promise.reject('Voucher đã hết lượt sử dụng')
-                        }
-                    }
-                    productOrders.forEach(async ({ productId }) => {
-                        let hashProductId = hash('product', productId)
-                        let fromCache = await this.cacheManager.get<string>(hashProductId)
-                        if (fromCache) {
-                            let { quantity } = JSON.parse(fromCache) as { quantity: number }
+                        let hashValue = hash('voucher', voucherId)
+                        let quantityVoucherCache = await this.cacheManager.get<string>(hashValue)
+                        if (quantityVoucherCache) {
+                            let { quantity } = JSON.parse(quantityVoucherCache) as {
+                                quantity: number
+                            }
                             if (quantity == 0) {
-                                throw new Error('Sản phẩm không đủ số lượng')
+                                throw new Error('Mã giảm giá đã hết lượt sử dụng')
                             }
                         }
-                        return { msg: 'ok', result: null }
-                    })
+                    }
                 } catch (err) {
-                    return Promise.reject({ msg: err.message, action: false, result: null })
+                    console.log('::::check cache voucher::::', err)
+                    throw new Error('Có lỗi trong quá trình tạo đơn hàng với mã giảm giá')
                 }
-
-                return { msg: 'ok' }
+                try {
+                    await Promise.all(
+                        productOrders.map(async ({ productId, quantity }) => {
+                            let hashProductId = hash('product', productId)
+                            let fromCache = await this.cacheManager.get<string>(hashProductId)
+                            if (fromCache) {
+                                let { quantity: quantityFromCache } = JSON.parse(fromCache) as {
+                                    quantity: number
+                                }
+                                if (quantityFromCache == 0) {
+                                    throw new Error('Sản phẩm đã hết hàng')
+                                }
+                                if (quantity > quantityFromCache) {
+                                    throw new Error('Sản phẩm không đủ số lượng')
+                                }
+                            }
+                            return Promise.resolve()
+                        })
+                    )
+                } catch (err) {
+                    console.log(':::check cache product::::', err)
+                    throw new Error('Có lỗi trong quá trình tạo đơn hàng với sản phẩm')
+                }
+                return Promise.resolve()
             })
         )
             .then((_) => {
                 this.orderClient.emit(processStepTwoToCreateOrder, { user, body })
             })
             .catch((err) => {
-                console.log('error at order', err)
+                console.log('*****Lỗi tại bước check cache********', err)
                 this.updateStatusOfOrderToClient(
                     body.actionId,
-                    err?.msg || 'Tạo đơn hàng không thành công',
+                    err?.message || 'Tạo đơn hàng không thành công',
                     false,
                     err?.result || null
                 )
@@ -322,12 +338,64 @@ export class OrderService {
     async processOrder(user: CurrentUserType, body: CreateOrderDTO) {
         const { id } = user
         const { orders, globalVoucherId, delivery_info } = body
+
+        let tmp: PayloadUpdate = {
+            order: {
+                orderIds: [],
+                productOrderIds: [],
+                shippingOrderIds: [],
+                orderFlowIds: [],
+                voucherOrderIds: []
+            },
+            products: []
+        }
         this.prisma
             .$transaction(
-                orders.map((order) =>
-                    this.prisma.order.create({
+                orders.map((order) => {
+                    let [orderId, productOrderId, orderShippingId, orderFlowId] =
+                        Array(4).fill(uuidv4())
+                    tmp.order.orderIds.push(orderId)
+                    tmp.order.productOrderIds.push(productOrderId)
+                    tmp.order.shippingOrderIds.push(orderShippingId)
+                    tmp.order.orderFlowIds.push(orderFlowId)
+
+                    let createProductOrders: Prisma.OrderCreateInput['ProductOrder'] = {
+                        createMany: {
+                            data: order.productOrders.map(
+                                ({ productId, quantity, priceAfter, priceBefore, isSale }) => {
+                                    tmp.products.push({ id: productId, isSale })
+                                    return {
+                                        id: productOrderId,
+                                        productId,
+                                        quantity,
+                                        priceBefore,
+                                        priceAfter
+                                    }
+                                }
+                            )
+                        }
+                    }
+
+                    let voucherIds = [order.voucherId, globalVoucherId].filter(Boolean)
+                    let createVoucherOrders: Prisma.OrderCreateInput['OrderVoucher'] = undefined
+                    if (voucherIds.length) {
+                        let voucherOrderIds = Array(voucherIds.length).fill(uuidv4())
+                        tmp.order.voucherOrderIds.push(...voucherOrderIds)
+                        createVoucherOrders = {
+                            createMany: {
+                                data: voucherIds.map((voucherId, idx) => ({
+                                    id: voucherOrderIds[idx],
+                                    createdAt: new Date(),
+                                    orderId,
+                                    voucherId
+                                }))
+                            }
+                        }
+                    }
+
+                    return this.prisma.order.create({
                         data: {
-                            id: uuidv4(),
+                            id: orderId,
                             total: order.total,
                             discount: order.discount,
                             pay: order.pay,
@@ -336,24 +404,10 @@ export class OrderService {
                             note: order.note,
                             userId: id,
                             createdAt: new Date(),
-                            ProductOrder: {
-                                createMany: {
-                                    data: order.productOrders.map(
-                                        ({ productId, quantity, priceAfter, priceBefore }) => {
-                                            return {
-                                                id: uuidv4(),
-                                                productId,
-                                                quantity,
-                                                priceBefore,
-                                                priceAfter
-                                            }
-                                        }
-                                    )
-                                }
-                            },
+                            ProductOrder: createProductOrders,
                             OrderShipping: {
                                 create: {
-                                    id: uuidv4(),
+                                    id: orderShippingId,
                                     address: delivery_info.address,
                                     name: delivery_info.name,
                                     type: OrderFlowEnum.WAITING_CONFIRM,
@@ -362,25 +416,13 @@ export class OrderService {
                             },
                             OrderFlow: {
                                 create: {
-                                    id: uuidv4(),
+                                    id: orderFlowId,
                                     status: OrderFlowEnum.WAITING_CONFIRM,
                                     createdBy: id,
                                     createdAt: new Date()
                                 }
                             },
-                            OrderVoucher: [order.voucherId, globalVoucherId].filter(Boolean).length
-                                ? {
-                                      createMany: {
-                                          data: [order.voucherId, globalVoucherId]
-                                              .filter(Boolean)
-                                              .map((voucherId) => ({
-                                                  id: uuidv4(),
-                                                  voucherId,
-                                                  createdAt: new Date()
-                                              }))
-                                      }
-                                  }
-                                : undefined
+                            OrderVoucher: createVoucherOrders
                         },
                         include: {
                             OrderShipping: {
@@ -405,79 +447,16 @@ export class OrderService {
                             }
                         }
                     })
-                )
+                })
             )
             .then((result) => {
                 try {
                     console.log('********Tạo đơn, flow, ship thành công********')
-                    let orderIds = []
-                    let productOrderIds = []
-                    let orderFlowIds = []
-                    let orderVoucherIds = []
-                    let orderShippingIds = []
-
-                    result.forEach((order) => {
-                        orderIds.push(order.id)
-                        productOrderIds.push(...order.ProductOrder.map((product) => product.id))
-                        orderFlowIds.push(order.OrderFlow[0].id)
-                        orderVoucherIds.push(...order.OrderVoucher.map((voucher) => voucher.id))
-                        orderShippingIds.push(order.OrderShipping[0].id)
-                    })
-
-                    let hashValue = hash('order', body.actionId)
-                    const roll_back_job = new CronJob(CronExpression.EVERY_SECOND, async () => {
-                        await this.prisma.$transaction(async (tx) => {
-                            console.log('tien hanfh chay cron job roll back order')
-                            try {
-                                await Promise.all([
-                                    tx.productOrder.deleteMany({
-                                        where: {
-                                            id: {
-                                                in: productOrderIds
-                                            }
-                                        }
-                                    }),
-                                    tx.orderFlow.deleteMany({
-                                        where: {
-                                            id: {
-                                                in: orderFlowIds
-                                            }
-                                        }
-                                    }),
-                                    tx.orderVoucher.deleteMany({
-                                        where: {
-                                            id: {
-                                                in: orderVoucherIds.length
-                                                    ? orderFlowIds
-                                                    : undefined
-                                            }
-                                        }
-                                    }),
-                                    tx.orderShipping.deleteMany({
-                                        where: {
-                                            id: {
-                                                in: orderShippingIds
-                                            }
-                                        }
-                                    })
-                                ])
-                                await tx.order.deleteMany({
-                                    where: {
-                                        id: {
-                                            in: orderIds
-                                        }
-                                    }
-                                })
-                            } catch (err) {
-                                console.log('Lỗi trong roll_back_job')
-                                throw new Error(err)
-                            }
-                        })
-                    })
-                    roll_back_job.runOnce = true
-                    this.schedulerRegistry.addCronJob(hashValue, roll_back_job)
-
-                    this.productClient.emit(updateQuantityProducts, { user, body } as OrderPayload)
+                    // roll_back_job.runOnce = true
+                    this.productClient.emit(updateQuantityProducts, {
+                        userId: user.id,
+                        payload: tmp
+                    } as CreateOrderPayload)
                 } catch (err) {
                     console.log('*******Lỗi ở then ở bước tạo order (LINE 479) **********', err)
                 }
@@ -500,7 +479,7 @@ export class OrderService {
             const job = this.schedulerRegistry.getCronJob(hashValue)
             if (job) {
                 job.runOnce
-                // job.start()
+                job.start()
             }
         } catch (err) {
             console.log('*******Roll back order gặp lỗi (LINE 503) ********', err)

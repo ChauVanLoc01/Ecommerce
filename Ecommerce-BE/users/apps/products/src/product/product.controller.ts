@@ -18,7 +18,7 @@ import { Roles } from 'common/decorators/roles.decorator'
 import { Role } from 'common/enums/role.enum'
 import { JwtGuard } from 'common/guards/jwt.guard'
 import { CurrentStoreType } from 'common/types/current.type'
-import { OrderPayload } from 'common/types/order_payload.type'
+import { CreateOrderPayload } from 'common/types/order_payload.type'
 import { AnalyticsProductDTO } from './dtos/analytics-product.dto'
 import { CreateUserAddProductToCartDTO } from './dtos/create-product-add-to-cart.dto'
 import { CreateUserViewProductDto } from './dtos/create-product-view.dto'
@@ -125,7 +125,7 @@ export class ProductController {
 
     @Public()
     @EventPattern(updateQuantityProducts)
-    updateProductWhenCreatingOrder(payload: OrderPayload) {
+    updateProductWhenCreatingOrder(payload: CreateOrderPayload) {
         console.log('::::::Bước 2: Cập nhật lại số lượng product::::::::')
         return this.productsService.updateProductWhenCreatingOrder(payload)
     }

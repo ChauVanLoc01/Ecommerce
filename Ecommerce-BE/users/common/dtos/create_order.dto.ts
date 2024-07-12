@@ -2,6 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 import { Type } from 'class-transformer'
 import {
     IsArray,
+    IsBoolean,
     IsInt,
     IsNotEmpty,
     IsNumber,
@@ -27,6 +28,10 @@ class ProductOrder {
     @IsInt()
     @IsNotEmpty()
     quantity: number
+
+    @IsBoolean()
+    @IsOptional()
+    isSale?: boolean
 }
 
 export class OrderDetail {
