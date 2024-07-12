@@ -3,14 +3,14 @@ import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices'
 import { ApiBearerAuth } from '@nestjs/swagger'
 import {
     rollbackUpdateVoucherWhenCancelOrder,
-    updateVoucherWhenCancelOrder,
-    updateVoucherWhenCreatingOrder
+    update_voucher_whenCreatingOrder,
+    updateVoucherWhenCancelOrder
 } from 'common/constants/event.constant'
 import { CurrentUser } from 'common/decorators/current_user.decorator'
 import { Public } from 'common/decorators/public.decorator'
 import { JwtGuard } from 'common/guards/jwt.guard'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
-import { OrderPayload } from 'common/types/order_payload.type'
+import { VoucherStep } from 'common/types/order_payload.type'
 import { CreateVoucherDTO } from './dtos/CreateVoucher.dto'
 import { VoucherQueryDTO } from './dtos/QueryVoucher.dto'
 import { SearchCodeDTO } from './dtos/search-code.dto'
@@ -68,8 +68,8 @@ export class VoucherController {
     }
 
     @Public()
-    @EventPattern(updateVoucherWhenCreatingOrder)
-    updateVoucherWhenCreatingOrder(body: OrderPayload & { productActionId: string }) {
+    @EventPattern(update_voucher_whenCreatingOrder)
+    updateVoucherWhenCreatingOrder(body: VoucherStep) {
         console.log('*********Bước 3: Câp nhật voucher*********')
         return this.voucherService.updateVoucherWhenCreatingOrder(body)
     }

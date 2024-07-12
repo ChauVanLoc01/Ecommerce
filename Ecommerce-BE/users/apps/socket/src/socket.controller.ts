@@ -1,11 +1,16 @@
 import { Controller, Get } from '@nestjs/common'
 import { EventPattern } from '@nestjs/microservices'
 import {
+    emit_update_product_whenCreatingOrder,
+    emit_update_voucher_whenCreatingOrder,
     statusOfOrder,
-    updateQuantityProduct,
-    updateQuantityProductSalePromotion,
-    updateQuantityVoucher
+    updateQuantityProductSalePromotion
 } from 'common/constants/event.constant'
+import {
+    OrderStatusPayload,
+    Update_Product_WhenCreatingOrderPayload,
+    Update_Voucher_WhenCreatingOrderPayload
+} from 'common/types/order_payload.type'
 import { SocketGateway } from './socket.gateway'
 
 @Controller()
@@ -18,24 +23,19 @@ export class SocketController {
     }
 
     @EventPattern(statusOfOrder)
-    statusOfOrder(payload: { id: string; msg: string; action: boolean; result: string[] | null }) {
+    statusOfOrder(payload: OrderStatusPayload) {
         let { action, id, result, msg } = payload
         this.socketGateway.checkStatusOfOrder(id, msg, action, result)
     }
 
-    @EventPattern(updateQuantityVoucher)
-    updateQuantityVoucher(payload: { voucherId: string; storeId: string; quantity: number }) {
+    @EventPattern(emit_update_voucher_whenCreatingOrder)
+    updateQuantityVoucher(payload: Update_Voucher_WhenCreatingOrderPayload) {
         let { quantity, voucherId, storeId } = payload
         this.socketGateway.updateQuantityVoucher(voucherId, storeId, quantity)
     }
 
-    @EventPattern(updateQuantityProduct)
-    updateProduct(payload: {
-        productId: string
-        storeId: string
-        quantity: number
-        priceAfter: number
-    }) {
+    @EventPattern(emit_update_product_whenCreatingOrder)
+    updateProduct(payload: Update_Product_WhenCreatingOrderPayload) {
         let { quantity, productId, storeId, priceAfter } = payload
         this.socketGateway.updateProduct(productId, storeId, quantity, priceAfter)
     }

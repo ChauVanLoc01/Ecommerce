@@ -1,4 +1,5 @@
 import { ConfigModule } from '@app/common'
+import { BullModule } from '@nestjs/bull'
 import { CacheModule } from '@nestjs/cache-manager'
 import { Module } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
@@ -8,6 +9,7 @@ import * as redisStore from 'cache-manager-redis-store'
 import { QueueName } from 'common/constants/queue.constant'
 import { OrderModule } from './order/order.module'
 import { PaymentModule } from './payment/payment.module'
+import { BackgroundName } from 'common/constants/background-job.constant'
 
 @Module({
     imports: [
@@ -63,6 +65,17 @@ import { PaymentModule } from './payment/payment.module'
             })
         }),
         ScheduleModule.forRoot(),
+        BullModule.forRootAsync({
+            imports: [ConfigModule],
+            inject: [ConfigService],
+            useFactory: async (configService: ConfigService) => ({
+                redis: {
+                    host: configService.get<string>('bullqueue.host'),
+                    port: configService.get<number>('bullqueue.port'),
+                    name: BackgroundName.order
+                }
+            })
+        }),
         OrderModule,
         PaymentModule
     ],

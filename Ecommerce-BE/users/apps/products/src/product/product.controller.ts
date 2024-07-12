@@ -9,7 +9,7 @@ import {
     getProductOrderByRating,
     rollbackUpdateQuantityProducts,
     rollbackUpdateQuantiyProductsWhenCancelOrder,
-    updateQuantityProducts,
+    update_Product_WhenCreatingOrder,
     updateQuantiyProductsWhenCancelOrder
 } from 'common/constants/event.constant'
 import { CurrentUser } from 'common/decorators/current_user.decorator'
@@ -18,7 +18,7 @@ import { Roles } from 'common/decorators/roles.decorator'
 import { Role } from 'common/enums/role.enum'
 import { JwtGuard } from 'common/guards/jwt.guard'
 import { CurrentStoreType } from 'common/types/current.type'
-import { CreateOrderPayload } from 'common/types/order_payload.type'
+import { ProductStep, VoucherStep } from 'common/types/order_payload.type'
 import { AnalyticsProductDTO } from './dtos/analytics-product.dto'
 import { CreateUserAddProductToCartDTO } from './dtos/create-product-add-to-cart.dto'
 import { CreateUserViewProductDto } from './dtos/create-product-view.dto'
@@ -124,25 +124,23 @@ export class ProductController {
     }
 
     @Public()
-    @EventPattern(updateQuantityProducts)
-    updateProductWhenCreatingOrder(payload: CreateOrderPayload) {
+    @EventPattern(update_Product_WhenCreatingOrder)
+    updateProductWhenCreatingOrder(payload: ProductStep) {
         console.log('::::::Bước 2: Cập nhật lại số lượng product::::::::')
         return this.productsService.updateProductWhenCreatingOrder(payload)
     }
 
     @Public()
     @EventPattern(rollbackUpdateQuantityProducts)
-    rollbackUpdateQuantityProduct(payload: { actionId: string; productActionId: string }) {
+    rollbackUpdateQuantityProduct(payload: VoucherStep) {
         console.log('*****Roll Back Bước 2: Cập nhật voucher******')
-        let { actionId, productActionId } = payload
-        return this.productsService.rollbackUpdateQuantityProduct(actionId, productActionId)
+        return this.productsService.rollbackUpdateQuantityProduct(payload)
     }
 
     @Public()
     @EventPattern(commitUpdateQuantityProducts)
-    commitUpdateQuantityProduct(payload: { actionId: string; productActionId: string }) {
-        let { actionId, productActionId } = payload
-        return this.productsService.commitUpdateQuantityProduct(actionId, productActionId)
+    commitUpdateQuantityProduct(payload: VoucherStep) {
+        return this.productsService.commitUpdateQuantityProduct(payload)
     }
 
     @Public()

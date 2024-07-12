@@ -103,3 +103,5 @@ export class CreateOrderDTO {
     @Type(() => OrderDeliveryDTO)
     delivery_info: OrderDeliveryDTO
 }
+
+export type CreateOrder = InstanceType<typeof CreateOrderDTO>

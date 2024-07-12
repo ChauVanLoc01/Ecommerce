@@ -2,7 +2,7 @@ import { Body, Controller, Get, Param, Post, Put, Query, UseGuards } from '@nest
 import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices'
 import { ApiBearerAuth } from '@nestjs/swagger'
 import {
-    commitOrder,
+    commit_order_success,
     getOrderByRating,
     processStepOneToCreatOrder,
     processStepTwoToCreateOrder,
@@ -14,11 +14,10 @@ import { Roles } from 'common/decorators/roles.decorator'
 import { Role } from 'common/enums/role.enum'
 import { JwtGuard } from 'common/guards/jwt.guard'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
-import { OrderPayload } from 'common/types/order_payload.type'
+import { OrderStep, VoucherStep } from 'common/types/order_payload.type'
 import { CreateOrderDTO } from '../../../../common/dtos/create_order.dto'
 import { AnalyticsOrderDTO } from '../dtos/analytics_order.dto'
 import {
-    CloseOrderRefundDTO,
     CreateOrderRefundDTO,
     ReOpenOrderRefundDTO,
     UpdateOrderRefundDTO,
@@ -104,26 +103,26 @@ export class OrderController {
 
     @Public()
     @EventPattern(processStepOneToCreatOrder)
-    checkCache(payload: OrderPayload) {
-        return this.ordersService.checkCache(payload.user, payload.body)
+    checkCache(payload: OrderStep) {
+        return this.ordersService.checkCache(payload.userId, payload.payload)
     }
 
     @Public()
     @EventPattern(processStepTwoToCreateOrder)
-    processOrder(data: OrderPayload) {
-        return this.ordersService.processOrder(data.user, data.body)
+    processOrder(data: OrderStep) {
+        return this.ordersService.processOrder(data.userId, data.payload)
     }
 
     @Public()
     @EventPattern(rollbackOrder)
-    rollbackOrder(actionId: string) {
-        return this.ordersService.rollbackOrder(actionId)
+    rollbackOrder(payload: VoucherStep) {
+        return this.ordersService.rollbackOrder(payload)
     }
 
     @Public()
-    @EventPattern(commitOrder)
-    commitOrder(actionId: string) {
-        return this.ordersService.commitOrder(actionId)
+    @EventPattern(commit_order_success)
+    commitOrder(payload: VoucherStep) {
+        return this.ordersService.commitOrder(payload)
     }
 
     @Roles(Role.USER, Role.EMPLOYEE, Role.STORE_OWNER)

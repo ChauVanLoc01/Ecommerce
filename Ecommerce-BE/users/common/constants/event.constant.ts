@@ -1,6 +1,6 @@
 export const checkDeliveryInformationId = 'user::delivery::check'
 
-export const updateQuantityProducts = 'product::quantity::update'
+export const update_Product_WhenCreatingOrder = 'update::product::when::creating::order'
 
 export const updateQuantiyProductsWhenCancelOrder = 'updateQuantiyProductsWhenCancelOrder'
 
@@ -9,7 +9,7 @@ export const rollbackUpdateQuantiyProductsWhenCancelOrder =
 
 export const rollbackOrder = 'roll::back::order'
 
-export const commitOrder = 'commit::order'
+export const commit_order_success = 'commit::order::success'
 
 export const rollbackUpdateQuantityProducts = 'rollback::update::quantity::product'
 
@@ -40,7 +40,7 @@ export const getProductImageByProductSalePromotion =
 
 export const getProductBySalePromotion = 'get::product::by::sale::promotion'
 
-export const updateVoucherWhenCreatingOrder = 'update::voucher::when::creating::order'
+export const update_voucher_whenCreatingOrder = 'update::voucher::when::creating::order'
 
 export const updateVoucherWhenCancelOrder = 'update::voucher::when::cancel::order'
 
@@ -61,9 +61,9 @@ export const statusOfProduct = 'status::of::product'
 
 export const statusOfVoucher = 'status::of::voucher'
 
-export const updateQuantityProduct = 'update::quantity::product'
+export const emit_update_product_whenCreatingOrder = 'emit::update::product::when::creating::order'
 
-export const updateQuantityVoucher = 'update::quantity::voucher'
+export const emit_update_voucher_whenCreatingOrder = 'emit::update::voucher::when::creating::order'
 
 export const updateQuantityProductSalePromotion = 'update::quantitty::product::sale::promotion'
 

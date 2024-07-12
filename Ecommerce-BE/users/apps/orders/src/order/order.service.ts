@@ -1,4 +1,5 @@
 import { PrismaService } from '@app/common/prisma/prisma.service'
+import { InjectQueue } from '@nestjs/bull'
 import { CACHE_MANAGER } from '@nestjs/cache-manager'
 import {
     BadRequestException,
@@ -13,7 +14,9 @@ import { ClientProxy } from '@nestjs/microservices'
 import { SchedulerRegistry } from '@nestjs/schedule'
 import { Prisma, PrismaClient, Product } from '@prisma/client'
 import { DefaultArgs } from '@prisma/client/runtime/library'
+import { Queue } from 'bull'
 import { Cache } from 'cache-manager'
+import { BackgroundAction, BackgroundName } from 'common/constants/background-job.constant'
 import {
     getAllProductWithProductOrder,
     processStepOneToCreatOrder,
@@ -21,20 +24,23 @@ import {
     rollbackUpdateQuantiyProductsWhenCancelOrder,
     rollbackUpdateVoucherWhenCancelOrder,
     statusOfOrder,
-    updateQuantityProducts,
     updateQuantiyProductsWhenCancelOrder,
     updateVoucherWhenCancelOrder
 } from 'common/constants/event.constant'
 import { NormalStatus, OrderFlowEnum, RefundStatus } from 'common/enums/orderStatus.enum'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
-import { CreateOrderPayload, PayloadUpdate } from 'common/types/order_payload.type'
+import { OrderStep, PayloadUpdate, VoucherStep } from 'common/types/order_payload.type'
 import { MessageReturn, Return } from 'common/types/result.type'
-import { hash } from 'common/utils/helper'
+import {
+    emit_update_Order_WhenCreatingOrder_fn,
+    hash,
+    next_update_product
+} from 'common/utils/order_helper'
 import { add, addHours, compareDesc, isPast, sub, subDays } from 'date-fns'
 import { Dictionary, isUndefined, max, omitBy, sumBy } from 'lodash'
 import { firstValueFrom } from 'rxjs'
 import { v4 as uuidv4 } from 'uuid'
-import { CreateOrderDTO } from '../../../../common/dtos/create_order.dto'
+import { CreateOrder, CreateOrderDTO } from '../../../../common/dtos/create_order.dto'
 import { AnalyticsOrderDTO } from '../dtos/analytics_order.dto'
 import {
     CreateOrderRefundDTO,
@@ -55,7 +61,8 @@ export class OrderService {
         @Inject('USER_SERVICE') private userClient: ClientProxy,
         @Inject('STORE_SERVICE') private storeClient: ClientProxy,
         @Inject('SOCKET_SERVICE') private socketClient: ClientProxy,
-        private schedulerRegistry: SchedulerRegistry
+        private schedulerRegistry: SchedulerRegistry,
+        @InjectQueue(BackgroundName.order) private orderBackgroundQueue: Queue
     ) {}
 
     async getAllOrderByUser(user: CurrentUserType, query: QueryOrderType): Promise<Return> {
@@ -273,7 +280,7 @@ export class OrderService {
         }
     }
 
-    async checkCache(user: CurrentUserType, body: CreateOrderDTO) {
+    async checkCache(userId: string, body: CreateOrder) {
         let { orders } = body
 
         Promise.all(
@@ -322,7 +329,10 @@ export class OrderService {
             })
         )
             .then((_) => {
-                this.orderClient.emit(processStepTwoToCreateOrder, { user, body })
+                this.orderClient.emit(processStepTwoToCreateOrder, {
+                    userId,
+                    payload: body
+                } as OrderStep)
             })
             .catch((err) => {
                 console.log('*****Lỗi tại bước check cache********', err)
@@ -335,10 +345,8 @@ export class OrderService {
             })
     }
 
-    async processOrder(user: CurrentUserType, body: CreateOrderDTO) {
-        const { id } = user
+    async processOrder(userId: string, body: CreateOrder) {
         const { orders, globalVoucherId, delivery_info } = body
-
         let tmp: PayloadUpdate = {
             order: {
                 orderIds: [],
@@ -347,7 +355,8 @@ export class OrderService {
                 orderFlowIds: [],
                 voucherOrderIds: []
             },
-            products: []
+            products: [],
+            vouchers: []
         }
         this.prisma
             .$transaction(
@@ -363,7 +372,13 @@ export class OrderService {
                         createMany: {
                             data: order.productOrders.map(
                                 ({ productId, quantity, priceAfter, priceBefore, isSale }) => {
-                                    tmp.products.push({ id: productId, isSale })
+                                    tmp.products.push({
+                                        id: productId,
+                                        buy: quantity,
+                                        isSale,
+                                        storeId: order.storeId,
+                                        price_after: priceAfter
+                                    })
                                     return {
                                         id: productOrderId,
                                         productId,
@@ -379,6 +394,9 @@ export class OrderService {
                     let voucherIds = [order.voucherId, globalVoucherId].filter(Boolean)
                     let createVoucherOrders: Prisma.OrderCreateInput['OrderVoucher'] = undefined
                     if (voucherIds.length) {
+                        tmp.vouchers.push(
+                            ...voucherIds.map((id) => ({ id, storeId: order.storeId }))
+                        )
                         let voucherOrderIds = Array(voucherIds.length).fill(uuidv4())
                         tmp.order.voucherOrderIds.push(...voucherOrderIds)
                         createVoucherOrders = {
@@ -402,7 +420,7 @@ export class OrderService {
                             status: OrderFlowEnum.WAITING_CONFIRM,
                             storeId: order.storeId,
                             note: order.note,
-                            userId: id,
+                            userId,
                             createdAt: new Date(),
                             ProductOrder: createProductOrders,
                             OrderShipping: {
@@ -411,14 +429,14 @@ export class OrderService {
                                     address: delivery_info.address,
                                     name: delivery_info.name,
                                     type: OrderFlowEnum.WAITING_CONFIRM,
-                                    createdBy: id
+                                    createdBy: userId
                                 }
                             },
                             OrderFlow: {
                                 create: {
                                     id: orderFlowId,
                                     status: OrderFlowEnum.WAITING_CONFIRM,
-                                    createdBy: id,
+                                    createdBy: userId,
                                     createdAt: new Date()
                                 }
                             },
@@ -449,53 +467,102 @@ export class OrderService {
                     })
                 })
             )
-            .then((result) => {
-                try {
-                    console.log('********Tạo đơn, flow, ship thành công********')
-                    // roll_back_job.runOnce = true
-                    this.productClient.emit(updateQuantityProducts, {
-                        userId: user.id,
-                        payload: tmp
-                    } as CreateOrderPayload)
-                } catch (err) {
-                    console.log('*******Lỗi ở then ở bước tạo order (LINE 479) **********', err)
-                }
+            .then((_) => {
+                console.log(
+                    ':::::::Tạo đơn thành công ==> chuyển tới bước cập nhật product::::::::'
+                )
+                next_update_product(this.productClient, {
+                    userId,
+                    payload: { ...tmp, actionId: body.actionId }
+                })
             })
             .catch((err) => {
                 console.log('******Gặp lại ở ngay bước đầu tạo order (LINE 485) *********', err)
-                this.updateStatusOfOrderToClient(
-                    body.actionId,
-                    'Tạo đơn hàng không thành công',
-                    false,
-                    null
-                )
+                emit_update_Order_WhenCreatingOrder_fn(this.socketClient, {
+                    action: true,
+                    id: body.actionId,
+                    msg: err?.message,
+                    result: null
+                })
             })
     }
 
-    async rollbackOrder(actionId: string) {
+    async rollbackOrder(body: VoucherStep) {
+        let {
+            payload: {
+                order: { orderIds },
+                actionId
+            }
+        } = body
         try {
             console.log('roll back order')
-            let hashValue = hash('order', actionId)
-            const job = this.schedulerRegistry.getCronJob(hashValue)
-            if (job) {
-                job.runOnce
-                job.start()
-            }
+            emit_update_Order_WhenCreatingOrder_fn(this.socketClient, {
+                action: true,
+                id: actionId,
+                msg: 'Tạo đơn hàng thất bại',
+                result: null
+            })
+            this.orderBackgroundQueue.add(BackgroundAction.rollBackOrder, orderIds, {
+                priority: 1,
+                attempts: 3,
+                removeOnComplete: true,
+                removeOnFail: true
+            })
         } catch (err) {
             console.log('*******Roll back order gặp lỗi (LINE 503) ********', err)
         }
     }
 
-    async commitOrder(actionId: string) {
-        try {
-            console.log('commit order')
-            let hashValue = hash('order', actionId)
-            const job = this.schedulerRegistry.getCronJob(hashValue)
-            if (job) {
-                this.schedulerRegistry.deleteCronJob(hashValue)
+    async commitOrder(body: VoucherStep) {
+        let {
+            payload: {
+                order: { orderIds },
+                actionId
             }
+        } = body
+        try {
+            await this.prisma.$transaction(
+                orderIds.map((id) =>
+                    this.prisma.order.update({
+                        where: {
+                            id
+                        },
+                        data: {
+                            isDraf: false
+                        }
+                    })
+                )
+            )
+            emit_update_Order_WhenCreatingOrder_fn(this.socketClient, {
+                action: true,
+                msg: 'Đặt hàng thành công',
+                id: actionId,
+                result: null
+            })
         } catch (err) {
-            console.log('********Lỗi ở commit order (LINE 515)*********', err)
+            emit_update_Order_WhenCreatingOrder_fn(this.socketClient, {
+                action: false,
+                msg: 'Hệ thống đang quá tải. Vui lòng đợi trong giây lát',
+                id: actionId,
+                result: null
+            })
+            await this.orderBackgroundQueue.add(
+                BackgroundAction.reUpdateIsDrafOrder,
+                {
+                    orderIds,
+                    actionId
+                },
+                {
+                    priority: 0,
+                    attempts: 3,
+                    removeOnComplete: true,
+                    removeOnFail: true
+                }
+            )
+            console.log(
+                '********Tạo đơn hàng thành công nhưng cập nhật active cho đơn hàng không thành công*********',
+                err
+            )
         }
     }
 
