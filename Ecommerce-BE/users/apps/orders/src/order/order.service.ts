@@ -80,7 +80,8 @@ export class OrderService {
                         lte: end_date,
                         gte: start_date
                     },
-                    status
+                    status,
+                    isDraf: false
                 }
             }),
             this.prisma.order.findMany({
@@ -90,7 +91,8 @@ export class OrderService {
                         lte: end_date,
                         gte: start_date
                     },
-                    status
+                    status,
+                    isDraf: false
                 },
                 orderBy: {
                     createdAt,

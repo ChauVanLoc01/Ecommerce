@@ -13,6 +13,7 @@ import { diskStorage } from 'multer'
 import { v4 as uuidv4 } from 'uuid'
 import { ProductController } from './product.controller'
 import { ProductService } from './product.service'
+import { ProductConsummer } from '../workers/product.worker'
 
 @Module({
     imports: [
@@ -123,8 +124,7 @@ import { ProductService } from './product.service'
         ConfigModule,
         PrismaModule
     ],
-
     controllers: [ProductController],
-    providers: [ProductService, JwtService]
+    providers: [ProductService, JwtService, ProductConsummer]
 })
 export class ProductModule {}
