@@ -31,6 +31,7 @@ export class SocketController {
     @EventPattern(emit_update_voucher_whenCreatingOrder)
     updateQuantityVoucher(payload: Update_Voucher_WhenCreatingOrderPayload) {
         let { quantity, voucherId, storeId } = payload
+        console.log('socket update quantity voucher')
         this.socketGateway.updateQuantityVoucher(voucherId, storeId, quantity)
     }
 

@@ -28,6 +28,7 @@ import { MessageReturn, Return } from 'common/types/result.type'
 import {
     commit_product_creating_order_success,
     emit_roll_back_product,
+    emit_update_Voucher_WhenCreatingOrderPayload,
     hash
 } from 'common/utils/order_helper'
 import { addHours, addMinutes, format } from 'date-fns'
@@ -354,7 +355,7 @@ export class VoucherService {
                 storeId,
                 status: Status.ACTIVE,
                 currentQuantity: {
-                    gte: 1
+                    gt: 0
                 },
                 type: VoucherType.store,
                 endDate: {
@@ -367,9 +368,24 @@ export class VoucherService {
             }
         })
 
+        const result = await Promise.all(
+            vouchersValid.map<Promise<(typeof vouchersValid)[number]>>(async (e) => {
+                let hashValue = hash('voucher', e.id)
+                let fromCache = await this.cacheManager.get<string>(hashValue)
+                if (fromCache) {
+                    let { quantity } = JSON.parse(fromCache) as { quantity: number }
+                    return {
+                        ...e,
+                        currentQuantity: quantity
+                    }
+                }
+                return e
+            })
+        )
+
         return {
             msg: 'ok',
-            result: vouchersValid
+            result: result
         }
     }
 
@@ -524,10 +540,12 @@ export class VoucherService {
                         format(new Date(), 'hh:mm:ss:SSS dd/MM')
                     )
                     commit_product_creating_order_success(this.productClient, payload)
-                    await Promise.all(
-                        tmp.map(({ quantity, storeId, voucherId }) =>
-                            this.emitUpdateQuantityVoucherToSocket(voucherId, storeId, quantity)
-                        )
+                    tmp.forEach(({ quantity, storeId, voucherId }) =>
+                        emit_update_Voucher_WhenCreatingOrderPayload(this.socketClient, {
+                            quantity,
+                            storeId,
+                            voucherId
+                        })
                     )
                     await this.voucherBackgroundQueue.add(
                         BackgroundAction.createCronJobVoucherToUpdateQuanttiy,

@@ -1,4 +1,4 @@
-FROM node:18-alpine
+FROM node:22-alpine
 
 EXPOSE 3000
 
@@ -9,5 +9,7 @@ COPY package*.json .
 RUN yarn install
 
 COPY . .
+
+COPY vite.config.ts .
 
 CMD [ "yarn", "dev" ]

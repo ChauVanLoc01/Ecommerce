@@ -89,6 +89,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     updateQuantityVoucher(voucherId: string, storeId: string, quantity: number) {
         const hash = this.hash(room_obj.voucher, voucherId)
+        console.log('emit so luong')
         this.server.to(hash).emit(room_obj.voucher, {
             msg: 'Cập nhật số lượng',
             action: true,

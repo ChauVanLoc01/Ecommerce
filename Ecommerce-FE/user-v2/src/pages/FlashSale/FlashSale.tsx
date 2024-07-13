@@ -4,9 +4,9 @@ import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { sale_api } from 'src/apis/sale_promotion.api'
+import { PaginationNext, PaginationPrevious } from 'src/components/Shadcn/pagination'
 import FlashsaleHeader from './FlashsaleHeader'
 import FlashSaleProducts from './FlashSaleProducts'
-import { PaginationNext, PaginationPrevious } from 'src/components/Shadcn/pagination'
 
 const FlashSale = () => {
     const params = useParams()
@@ -29,10 +29,12 @@ const FlashSale = () => {
         select: (data) => data.data.result
     })
 
+    console.log('productOfPromotion', product_of_sale_promotion)
+
     return (
         <Flex direction={'column'} gap={'5'} className='pb-10'>
             <FlashsaleHeader salePromotions={sale_promotion_ids} />
-            <FlashSaleProducts products={product_of_sale_promotion?.productSales} />
+            <FlashSaleProducts products={product_of_sale_promotion?.productPromotions} />
             <Flex justify={'end'} gapX={'3'}>
                 <PaginationPrevious />
                 <PaginationNext />

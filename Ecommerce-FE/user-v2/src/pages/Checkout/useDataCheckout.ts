@@ -55,6 +55,8 @@ const useDataCheckout = ({ ids, products, voucherIds, setStep, setProducts, sock
             add(endOfHour(new Date()), { hours: 7 }).getMilliseconds() - add(new Date(), { hours: 7 }).getMilliseconds()
     })
 
+    console.log('current_sale', current_sale_promotino)
+
     const { data: refreshProducts, refetch: refetchProduct } = useQuery({
         queryKey: ['refreshProduct', JSON.stringify(ids.all)],
         queryFn: productFetching.refreshProduct({
@@ -65,6 +67,8 @@ const useDataCheckout = ({ ids, products, voucherIds, setStep, setProducts, sock
         select: (data) => data.data.result,
         placeholderData: (old) => old
     })
+
+    console.log('refreshProduct', refreshProducts)
 
     const { data: refreshStores } = useQuery({
         queryKey: ['refreshStore', JSON.stringify(ids.storeIds)],

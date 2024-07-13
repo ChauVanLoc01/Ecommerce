@@ -571,6 +571,7 @@ export class ProductService {
             isSale: boolean
             currentSaleId?: string
         }[] = []
+        let map = new Map<number, (typeof tmp)[number]>()
         this.prisma
             .$transaction(async (tx) => {
                 await Promise.all(
@@ -589,7 +590,7 @@ export class ProductService {
                             if (buy > quantity) {
                                 throw new Error('Sản phẩm không đủ số lượng')
                             }
-                            tmp.push({
+                            map.set(idx, {
                                 productId,
                                 original_quantity: quantity,
                                 quantity: quantity - buy,
@@ -599,6 +600,7 @@ export class ProductService {
                                 currentSaleId: payload.currentSaleId
                             })
                         } else {
+                            map.set(idx, undefined)
                             const productExist = await tx.product.findUnique({
                                 where: {
                                     id: productId
@@ -608,34 +610,44 @@ export class ProductService {
                                     priceAfter: true
                                 }
                             })
+
                             if (!productExist) {
+                                console.log('Sản phẩm không tồn tại')
                                 throw new Error('Sản phẩm không tồn tại')
                             }
                             if (productExist.currentQuantity == 0) {
+                                console.log('sản phẩm đã hết hàng')
                                 throw new Error('Sản phẩm đã hết hàng')
                             }
                             if (productExist.currentQuantity < buy) {
+                                console.log('Sản phẩm không đủ số lượng')
                                 throw new Error('Sản phẩm không đủ số lượng')
                             }
-                            tmp.push({
-                                productId,
-                                quantity: productExist.currentQuantity - buy,
-                                priceAfter: productExist.priceAfter,
-                                original_quantity: productExist.currentQuantity,
-                                storeId,
-                                isSale,
-                                currentSaleId: payload.currentSaleId
-                            })
+                            if (productExist) {
+                                map.set(idx, {
+                                    productId,
+                                    quantity: productExist.currentQuantity - buy,
+                                    priceAfter: productExist.priceAfter,
+                                    original_quantity: productExist.currentQuantity,
+                                    storeId,
+                                    isSale,
+                                    currentSaleId: payload.currentSaleId
+                                })
+                            }
                         }
-                        let { quantity, priceAfter } = tmp[idx]
                         return this.cacheManager.set(
                             hashValue,
-                            JSON.stringify({ quantity, priceAfter, times: 3 })
+                            JSON.stringify({
+                                quantity: map.get(idx).quantity,
+                                priceAfter: map.get(idx).priceAfter,
+                                times: 3
+                            })
                         )
                     })
                 )
             })
             .then(async (_) => {
+                tmp = [...map.values()]
                 try {
                     console.log(
                         ':::::::::Cập nhật product thành công::::::::::::::',

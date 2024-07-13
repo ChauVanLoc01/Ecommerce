@@ -1,12 +1,14 @@
 import { TrashIcon } from '@radix-ui/react-icons'
 import { AlertDialog, Button, Checkbox, Flex, IconButton, Text, Tooltip } from '@radix-ui/themes'
+import { useQuery } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import { debounce } from 'lodash'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { sale_api } from 'src/apis/sale_promotion.api'
 import InputNumber from 'src/components/InputNumber'
 import Countdown from 'src/pages/ProductList/FlashSale/Countdown'
-import { ProductContextExtends } from 'src/types/context.type'
+import { ProductContextExtends, SaleInProduct } from 'src/types/context.type'
 import { convertCurrentcy, removeSpecialCharacter } from 'src/utils/utils.ts'
 
 type ProductInCartType = {
@@ -18,7 +20,20 @@ type ProductInCartType = {
 
 const ProductIncart = ({ product, handleChecked, handleChangeQuantity, handleDelete }: ProductInCartType) => {
     const [quantity, setQuantity] = useState<number>(product.buy)
-    console.log('product', product)
+
+    const { data: saleId } = useQuery({
+        queryKey: ['current-sale-promotion'],
+        queryFn: sale_api.current_sale_promotin,
+        select: (data) => data.data.result.salePromotion.id
+    })
+    console.log('saleId', saleId)
+    console.log('product', product?.sale?.salePromotionId)
+
+    const isSale = (
+        product: ProductContextExtends
+    ): product is Omit<ProductContextExtends, 'sale'> & { sale: SaleInProduct } => {
+        return !!product?.sale && product?.sale?.salePromotionId === saleId
+    }
 
     useEffect(() => {
         let changeQuantityDebounce = debounce(() => handleChangeQuantity(product.productId, quantity), 2000)
@@ -47,7 +62,7 @@ const ProductIncart = ({ product, handleChecked, handleChangeQuantity, handleDel
                 <img src={product?.image} alt='cart-item' className='object-cover w-16 h-16' />
             </Link>
             <div className='flex-grow flex flex-col'>
-                {product?.sale && (
+                {isSale(product) && (
                     <Flex className='space-x-3 pr-24'>
                         <h3 className='font-semibold font-mono text-xl bg-gradient-to-tr to-[#fcb045] via-[#fd1d1d] from-[#833ab4] bg-clip-text text-transparent'>
                             Sản phẩm giảm giá
@@ -65,7 +80,7 @@ const ProductIncart = ({ product, handleChecked, handleChangeQuantity, handleDel
                 </Link>
             </div>
             <div className='flex items-center space-x-4'>
-                {product?.sale ? (
+                {isSale(product) ? (
                     <h3 className='font-semibold font-mono bg-gradient-to-tr to-[#fcb045] via-[#fd1d1d] from-[#833ab4] bg-clip-text text-transparent'>
                         {convertCurrentcy(product.priceAfter)}
                     </h3>
@@ -73,10 +88,10 @@ const ProductIncart = ({ product, handleChecked, handleChangeQuantity, handleDel
                     <h3 className='font-semibold'>{convertCurrentcy(product.priceAfter)}</h3>
                 )}
                 <InputNumber
-                    quantity={product?.sale ? product?.sale.quantity - product.sale.bought : quantity}
+                    quantity={isSale(product) ? product.sale.quantity - product.sale.bought : quantity}
                     setQuantity={setQuantity}
                     currentQuantity={
-                        product?.sale
+                        isSale(product)
                             ? Math.min(product.sale.quantity - product.sale.bought, product.currentQuantity)
                             : product.currentQuantity || 0
                     }

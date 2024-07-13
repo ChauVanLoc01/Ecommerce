@@ -380,6 +380,7 @@ export class OrderService {
                     tmp.order.productOrderIds.push(productOrderId)
                     tmp.order.shippingOrderIds.push(orderShippingId)
                     tmp.order.orderFlowIds.push(orderFlowId)
+                    console.log('orderId', orderId)
 
                     let createProductOrders: Prisma.OrderCreateInput['ProductOrder'] = {
                         createMany: {
@@ -417,7 +418,6 @@ export class OrderService {
                                 data: voucherIds.map((voucherId, idx) => ({
                                     id: voucherOrderIds[idx],
                                     createdAt: new Date(),
-                                    orderId,
                                     voucherId
                                 }))
                             }

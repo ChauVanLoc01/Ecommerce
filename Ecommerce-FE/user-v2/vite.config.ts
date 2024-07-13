@@ -8,10 +8,7 @@ export default defineConfig({
     plugins: [react()],
     server: {
         host: true,
-        port: 3000,
-        watch: {
-            usePolling: true
-        },
+        port: 3000
     },
     preview: {
         port: 4001
