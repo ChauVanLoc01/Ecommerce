@@ -3,15 +3,12 @@ import { useContext, useState } from 'react'
 import { motion } from 'framer-motion'
 
 import { Button, Spinner } from '@radix-ui/themes'
-import { AxiosResponse } from 'axios'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { AppContext } from 'src/contexts/AppContext'
 import useStep from 'src/hooks/useStep'
-import { queryClient } from 'src/routes/main.route'
 import { Delivery } from 'src/types/delivery.type'
 import { OrderBody } from 'src/types/order.type'
-import { CurrentSalePromotion } from 'src/types/sale.type'
 import CheckoutHeader from './CheckoutHeader'
 import CheckoutSummary from './CheckoutSummary'
 import CreateOrder from './CreateOrder'
@@ -36,10 +33,6 @@ const CheckOutEmpty = () => {
 
 const Checkout = () => {
     const { products, ids, isCanOrder, actionId, setProducts, socket } = useContext(AppContext)
-    const current_sale_promotino = queryClient.getQueryData<AxiosResponse<CurrentSalePromotion>>([
-        'current-sale-promotion'
-    ])?.data.result
-    console.log('current_sale', current_sale_promotino)
 
     if (!ids) {
         return <CheckOutEmpty />

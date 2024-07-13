@@ -1,4 +1,4 @@
-import { Checkbox, Text } from '@radix-ui/themes'
+import { Checkbox, Flex, Text } from '@radix-ui/themes'
 import { motion, Reorder } from 'framer-motion'
 import { isUndefined, omitBy } from 'lodash'
 import { useContext, useState } from 'react'
@@ -94,12 +94,14 @@ const CartItem = ({ products, productIds, store, isCheckedAll, handleRemoveVouch
     return (
         <motion.div className={cn('bg-[#FFFFFF] rounded-8 hover:shadow-md border border-border/30')}>
             <motion.div key={store.id} className='border-b border-border/30 flex-shrink'>
-                <div className='p-24 space-x-5 flex items-center'>
-                    <Checkbox id={store.id} checked={isCheckedAll} onCheckedChange={handleCheckedAll} />
-                    <Text as='label' htmlFor={store.id}>
-                        {store.name}
-                    </Text>
-                </div>
+                <Flex justify={'between'} align={'center'}>
+                    <div className='p-24 space-x-5 flex items-center'>
+                        <Checkbox id={store.id} checked={isCheckedAll} onCheckedChange={handleCheckedAll} />
+                        <Text as='label' htmlFor={store.id}>
+                            {store.name}
+                        </Text>
+                    </div>
+                </Flex>
             </motion.div>
             <Reorder.Group as='ul' axis='y' values={productOrder} onReorder={setProductOrder}>
                 {Object.values(products).map((product) => (

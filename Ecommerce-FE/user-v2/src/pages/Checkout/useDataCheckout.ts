@@ -1,10 +1,12 @@
 import { useMutation, useQueries, useQuery } from '@tanstack/react-query'
+import { add, endOfHour } from 'date-fns'
 import { sumBy } from 'lodash'
 import { useContext, useEffect, useMemo, useState } from 'react'
 import { Socket } from 'socket.io-client'
 import { toast } from 'sonner'
 import { OrderFetching } from 'src/apis/order'
 import { productFetching } from 'src/apis/product'
+import { sale_api } from 'src/apis/sale_promotion.api'
 import { StoreFetching } from 'src/apis/store'
 import { VoucherFetching } from 'src/apis/voucher.api'
 import { channel, join_room, leave_room } from 'src/constants/event'
@@ -44,9 +46,21 @@ const useDataCheckout = ({ ids, products, voucherIds, setStep, setProducts, sock
     const [voucherSocket, setVoucherSocket] = useState<{
         [voucherId: string]: number
     }>({})
-    const { data: refreshProducts } = useQuery({
+
+    const { data: current_sale_promotino } = useQuery({
+        queryKey: ['current-sale-promotion'],
+        queryFn: sale_api.current_sale_promotin,
+        select: (data) => data.data.result,
+        staleTime:
+            add(endOfHour(new Date()), { hours: 7 }).getMilliseconds() - add(new Date(), { hours: 7 }).getMilliseconds()
+    })
+
+    const { data: refreshProducts, refetch: refetchProduct } = useQuery({
         queryKey: ['refreshProduct', JSON.stringify(ids.all)],
-        queryFn: () => productFetching.refreshProduct(ids.all),
+        queryFn: productFetching.refreshProduct({
+            productsId: ids.all,
+            saleId: current_sale_promotino?.salePromotion.id
+        }),
         refetchInterval: 1000 * 30,
         select: (data) => data.data.result,
         placeholderData: (old) => old
@@ -339,6 +353,12 @@ const useDataCheckout = ({ ids, products, voucherIds, setStep, setProducts, sock
             }
         }
     }, [voucherIds])
+
+    useEffect(() => {
+        if (current_sale_promotino) {
+            refetchProduct()
+        }
+    }, [current_sale_promotino])
 
     return {
         orderFn: {

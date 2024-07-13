@@ -31,8 +31,8 @@ export const productFetching = {
             signal
         })
     },
-    refreshProduct: (body: string[]) => {
-        return http.post<Return<RefreshProduct>>('/product/product/refresh-cart', { productsId: body })
+    refreshProduct: (body: { productsId: string[]; saleId?: string }) => () => {
+        return http.post<Return<RefreshProduct>>('/product/product/refresh-cart', body)
     },
     createViewProduct: (body: { productId: string; userId?: string }) => {
         return http.post('/product/product/view-product', body)

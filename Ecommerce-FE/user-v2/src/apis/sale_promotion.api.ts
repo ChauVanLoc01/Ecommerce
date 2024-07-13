@@ -3,7 +3,7 @@ import { http } from './http'
 
 export const sale_api = {
     current_sale_promotin: () => {
-        return http.get('/store/sale-promotion/current-sale')
+        return http.get<GetProductOfSalePromotion>('/store/sale-promotion/current-sale')
     },
     getSalePromotionIds: () => {
         return http.get<SalePromotionIds>('/store/sale-promotion/sale-promotion-in-day')

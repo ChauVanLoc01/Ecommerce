@@ -5,6 +5,7 @@ import { debounce } from 'lodash'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import InputNumber from 'src/components/InputNumber'
+import Countdown from 'src/pages/ProductList/FlashSale/Countdown'
 import { ProductContextExtends } from 'src/types/context.type'
 import { convertCurrentcy, removeSpecialCharacter } from 'src/utils/utils.ts'
 
@@ -44,21 +45,40 @@ const ProductIncart = ({ product, handleChecked, handleChangeQuantity, handleDel
             >
                 <img src={product?.image} alt='cart-item' className='object-cover w-16 h-16' />
             </Link>
-            <div className='space-y-2 flex-grow '>
+            <div className='flex-grow flex flex-col'>
+                {product?.sale && (
+                    <Flex className='space-x-3 pr-24'>
+                        <h3 className='font-semibold font-mono text-xl bg-gradient-to-tr to-[#fcb045] via-[#fd1d1d] from-[#833ab4] bg-clip-text text-transparent'>
+                            Sản phẩm giảm giá
+                        </h3>
+                        <div className='scale-90 flex justify-center items-center'>
+                            <Countdown />
+                        </div>
+                    </Flex>
+                )}
                 <Link
                     to={`/${removeSpecialCharacter(product.name)}-0-${product.productId}`}
                     className='font-semibold line-clamp-2'
                 >
                     <Text>{product?.name}</Text>
                 </Link>
-                <h3 className='text-gray-400'>Red</h3>
             </div>
             <div className='flex items-center space-x-4'>
-                <h3 className='font-semibold'>{convertCurrentcy(product.priceAfter)}</h3>
+                {product?.sale ? (
+                    <h3 className='font-semibold font-mono bg-gradient-to-tr to-[#fcb045] via-[#fd1d1d] from-[#833ab4] bg-clip-text text-transparent'>
+                        {convertCurrentcy(product.priceAfter)}
+                    </h3>
+                ) : (
+                    <h3 className='font-semibold'>{convertCurrentcy(product.priceAfter)}</h3>
+                )}
                 <InputNumber
-                    quantity={quantity}
+                    quantity={product?.sale ? product?.sale.quantity - product.sale.bought : quantity}
                     setQuantity={setQuantity}
-                    currentQuantity={product.currentQuantity || 0}
+                    currentQuantity={
+                        product?.sale
+                            ? Math.min(product.sale.quantity - product.sale.bought, product.currentQuantity)
+                            : product.currentQuantity || 0
+                    }
                 />
                 <AlertDialog.Root>
                     <AlertDialog.Trigger>

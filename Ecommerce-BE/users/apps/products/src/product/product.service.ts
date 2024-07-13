@@ -1149,7 +1149,7 @@ export class ProductService {
         )
 
         let productSale = undefined
-
+        console.log('saleId', body?.saleId)
         if (body.saleId) {
             productSale = await firstValueFrom<MessageReturn>(
                 this.store_client.send(refreshProductSale, {
@@ -1157,6 +1157,7 @@ export class ProductService {
                     productIds: body.productsId
                 })
             )
+            console.log('productsale', productSale)
         }
 
         return {

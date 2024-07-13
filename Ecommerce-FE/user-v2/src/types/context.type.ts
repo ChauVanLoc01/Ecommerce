@@ -17,7 +17,16 @@ export type ProductContext = {
     }
 }
 
-export type ProductContextExtends = ProductContext['products'][string][0] & Product
+export type SaleInProduct = {
+    quantity: number
+    bought: number
+    priceAfter: number
+    productId: string
+    salePromotionId: string
+    id: string
+}
+
+export type ProductContextExtends = ProductContext['products'][string][0] & Product & { sale?: SaleInProduct }
 
 export type ProductConvert = {
     [storeId: string]: {
