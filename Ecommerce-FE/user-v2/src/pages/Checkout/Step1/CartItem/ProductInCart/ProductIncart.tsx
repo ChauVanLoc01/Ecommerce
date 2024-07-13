@@ -18,6 +18,7 @@ type ProductInCartType = {
 
 const ProductIncart = ({ product, handleChecked, handleChangeQuantity, handleDelete }: ProductInCartType) => {
     const [quantity, setQuantity] = useState<number>(product.buy)
+    console.log('product', product)
 
     useEffect(() => {
         let changeQuantityDebounce = debounce(() => handleChangeQuantity(product.productId, quantity), 2000)
