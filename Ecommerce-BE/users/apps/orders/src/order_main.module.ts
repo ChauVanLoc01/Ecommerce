@@ -10,6 +10,7 @@ import { QueueName } from 'common/constants/queue.constant'
 import { OrderModule } from './order/order.module'
 import { PaymentModule } from './payment/payment.module'
 import { BackgroundName } from 'common/constants/background-job.constant'
+import { OrderConsummer } from './workers/order.worker'
 
 @Module({
     imports: [
@@ -71,8 +72,7 @@ import { BackgroundName } from 'common/constants/background-job.constant'
             useFactory: async (configService: ConfigService) => ({
                 redis: {
                     host: configService.get<string>('bullqueue.host'),
-                    port: configService.get<number>('bullqueue.port'),
-                    name: BackgroundName.order
+                    port: configService.get<number>('bullqueue.port')
                 }
             })
         }),

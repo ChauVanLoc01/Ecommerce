@@ -98,6 +98,11 @@ export class CreateOrderDTO {
     @IsNotEmpty()
     actionId: string
 
+    @ApiPropertyOptional()
+    @IsString()
+    @IsOptional()
+    currentSaleId?: string
+
     @ApiProperty()
     @IsObject({ each: true })
     @Type(() => OrderDeliveryDTO)

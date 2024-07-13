@@ -26,7 +26,9 @@ export type PayloadUpdate = {
 
 export type OrderStep = CreateOrderPayload<CreateOrder>
 
-export type ProductStep = CreateOrderPayload<PayloadUpdate & Pick<CreateOrder, 'actionId'>>
+export type ProductStep = CreateOrderPayload<
+    PayloadUpdate & Pick<CreateOrder, 'actionId'> & { currentSaleId?: string }
+>
 
 export type VoucherStep = CreateOrderPayload<{
     actionId: CreateOrder['actionId']
@@ -58,4 +60,6 @@ export type Update_Product_WhenCreatingOrderPayload = {
     storeId: string
     quantity: number
     priceAfter: number
+    isSale: boolean
+    currentSaleId?: string
 }

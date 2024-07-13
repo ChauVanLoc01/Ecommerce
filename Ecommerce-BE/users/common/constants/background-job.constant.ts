@@ -6,11 +6,16 @@ export enum BackgroundAction {
     createOrder = 'createOrder',
     changeQuantityProduct = 'changeQuantityProduct',
     reUpdateIsDrafOrder = 'reUpdateIsDrafOrder',
-    rollBackOrder = 'rollBackOrder'
+    rollBackOrder = 'rollBackOrder',
+    resetValueCacheWhenUpdateProductFail = 'resetValueCacheWhenUpdateProductFail',
+    createCronJobToUpdateProduct = 'createCronJobToUpdateProduct',
+    resetValueVoucherWHenUpdateProductFail = 'resetValueVOucherWhenUpdateProductFail',
+    createCronJobVoucherToUpdateQuanttiy = 'createCronJobVoucherToUpdateQuantity'
 }
 
 export enum BackgroundName {
     mail = 'sendMail',
     product = 'product',
-    order = 'order'
+    order = 'order',
+    voucher = 'voucher'
 }

@@ -1,4 +1,5 @@
 import { ConfigModule, PrismaModule } from '@app/common'
+import { BullModule } from '@nestjs/bull'
 import { CacheModule } from '@nestjs/cache-manager'
 import { Module } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
@@ -20,6 +21,16 @@ import { SearchModule } from './search/search.module'
                 store: redisStore,
                 host: configService.get<string>('bullqueue.host'),
                 port: configService.get<number>('bullqueue.port')
+            })
+        }),
+        BullModule.forRootAsync({
+            imports: [ConfigModule],
+            inject: [ConfigService],
+            useFactory: async (configService: ConfigService) => ({
+                redis: {
+                    host: configService.get<string>('bullqueue.host'),
+                    port: configService.get<number>('bullqueue.port')
+                }
             })
         }),
         ScheduleModule.forRoot(),

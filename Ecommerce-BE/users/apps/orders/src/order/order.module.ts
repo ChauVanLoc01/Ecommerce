@@ -1,9 +1,12 @@
 import { ConfigModule, PrismaModule } from '@app/common'
+import { BullModule } from '@nestjs/bull'
 import { Module } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { JwtModule } from '@nestjs/jwt'
 import { ClientsModule, Transport } from '@nestjs/microservices'
+import { BackgroundName } from 'common/constants/background-job.constant'
 import { QueueName } from 'common/constants/queue.constant'
+import { OrderConsummer } from '../workers/order.worker'
 import { OrderController } from './order.controller'
 import { OrderService } from './order.service'
 
@@ -109,10 +112,13 @@ import { OrderService } from './order.service'
                 }
             ]
         }),
+        BullModule.registerQueue({
+            name: BackgroundName.order
+        }),
         PrismaModule,
         JwtModule
     ],
     controllers: [OrderController],
-    providers: [OrderService]
+    providers: [OrderService, OrderConsummer]
 })
 export class OrderModule {}

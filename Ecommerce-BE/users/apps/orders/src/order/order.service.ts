@@ -36,7 +36,7 @@ import {
     hash,
     next_update_product
 } from 'common/utils/order_helper'
-import { add, addHours, compareDesc, isPast, sub, subDays } from 'date-fns'
+import { add, addHours, compareDesc, format, isPast, sub, subDays } from 'date-fns'
 import { Dictionary, isUndefined, max, omitBy, sumBy } from 'lodash'
 import { firstValueFrom } from 'rxjs'
 import { v4 as uuidv4 } from 'uuid'
@@ -273,7 +273,10 @@ export class OrderService {
     }
 
     async createOrder(user: CurrentUserType, body: CreateOrderDTO): Promise<Return> {
-        this.orderClient.emit(processStepOneToCreatOrder, { user, body })
+        this.orderClient.emit(processStepOneToCreatOrder, {
+            userId: user.id,
+            payload: body
+        } as OrderStep)
         return {
             msg: 'Đơn hàng đang được xử lý',
             result: null
@@ -282,7 +285,7 @@ export class OrderService {
 
     async checkCache(userId: string, body: CreateOrder) {
         let { orders } = body
-
+        console.log(':::::::::Kiểm tra cache:::::::::', format(new Date(), 'hh:mm:ss:SSS dd/MM'))
         Promise.all(
             orders.map(async ({ voucherId, productOrders }) => {
                 try {
@@ -329,6 +332,10 @@ export class OrderService {
             })
         )
             .then((_) => {
+                console.log(
+                    '::::::::::Kiểm tra cache thành công ==> Tiến hành tạo đơn với mode là Draft::::::::::',
+                    format(new Date(), 'hh:mm:ss:SSS dd/MM')
+                )
                 this.orderClient.emit(processStepTwoToCreateOrder, {
                     userId,
                     payload: body
@@ -346,7 +353,11 @@ export class OrderService {
     }
 
     async processOrder(userId: string, body: CreateOrder) {
-        const { orders, globalVoucherId, delivery_info } = body
+        const { orders, globalVoucherId, delivery_info, currentSaleId } = body
+        console.log(
+            ':::::::::::Tiến hành tạo đơn, shipping::::::::::::',
+            format(new Date(), 'hh:mm:ss:SSS dd/MM')
+        )
         let tmp: PayloadUpdate = {
             order: {
                 orderIds: [],
@@ -469,11 +480,12 @@ export class OrderService {
             )
             .then((_) => {
                 console.log(
-                    ':::::::Tạo đơn thành công ==> chuyển tới bước cập nhật product::::::::'
+                    ':::::::Tạo đơn thành công ==> chuyển tới bước cập nhật product::::::::',
+                    format(new Date(), 'hh:mm:ss:SSS dd/MM')
                 )
                 next_update_product(this.productClient, {
                     userId,
-                    payload: { ...tmp, actionId: body.actionId }
+                    payload: { ...tmp, actionId: body.actionId, currentSaleId }
                 })
             })
             .catch((err) => {
@@ -488,6 +500,10 @@ export class OrderService {
     }
 
     async rollbackOrder(body: VoucherStep) {
+        console.log(
+            '*********Tiến hành roll back lại order ==> Xóa order và các bảng liên quan****************',
+            format(new Date(), 'hh:mm:ss:SSS dd/MM')
+        )
         let {
             payload: {
                 order: { orderIds },
@@ -495,7 +511,6 @@ export class OrderService {
             }
         } = body
         try {
-            console.log('roll back order')
             emit_update_Order_WhenCreatingOrder_fn(this.socketClient, {
                 action: true,
                 id: actionId,
@@ -503,10 +518,8 @@ export class OrderService {
                 result: null
             })
             this.orderBackgroundQueue.add(BackgroundAction.rollBackOrder, orderIds, {
-                priority: 1,
                 attempts: 3,
-                removeOnComplete: true,
-                removeOnFail: true
+                removeOnComplete: true
             })
         } catch (err) {
             console.log('*******Roll back order gặp lỗi (LINE 503) ********', err)
@@ -514,6 +527,10 @@ export class OrderService {
     }
 
     async commitOrder(body: VoucherStep) {
+        console.log(
+            '::::::::::Commit order ==> Product hoặc voucher đã cập nhật thành công ==> Quá trình đặt hàng thành công::::::::::::',
+            format(new Date(), 'hh:mm:ss:SSS dd/MM')
+        )
         let {
             payload: {
                 order: { orderIds },
@@ -553,10 +570,8 @@ export class OrderService {
                     actionId
                 },
                 {
-                    priority: 0,
                     attempts: 3,
-                    removeOnComplete: true,
-                    removeOnFail: true
+                    removeOnComplete: true
                 }
             )
             console.log(

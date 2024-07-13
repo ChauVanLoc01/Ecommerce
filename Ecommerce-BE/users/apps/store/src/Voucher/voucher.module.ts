@@ -1,12 +1,17 @@
 import { PrismaService } from '@app/common/prisma/prisma.service'
-import { CacheModule } from '@nestjs/cache-manager'
+import { BullModule } from '@nestjs/bull'
 import { Module } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
+import { BackgroundName } from 'common/constants/background-job.constant'
 import { VoucherController } from './voucher.controller'
 import { VoucherService } from './voucher.service'
 
 @Module({
-    imports: [],
+    imports: [
+        BullModule.registerQueue({
+            name: BackgroundName.voucher
+        })
+    ],
     controllers: [VoucherController],
     providers: [VoucherService, PrismaService, JwtService]
 })

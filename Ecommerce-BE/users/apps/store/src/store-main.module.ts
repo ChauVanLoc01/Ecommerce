@@ -1,5 +1,6 @@
 import { ConfigModule } from '@app/common'
 import { PrismaService } from '@app/common/prisma/prisma.service'
+import { BullModule } from '@nestjs/bull'
 import { CacheModule } from '@nestjs/cache-manager'
 import { Module } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
@@ -126,6 +127,16 @@ import { VoucherModule } from './Voucher/voucher.module'
             })
         }),
         ScheduleModule.forRoot(),
+        BullModule.forRootAsync({
+            imports: [ConfigModule],
+            inject: [ConfigService],
+            useFactory: async (configService: ConfigService) => ({
+                redis: {
+                    host: configService.get<string>('bullqueue.host'),
+                    port: configService.get<number>('bullqueue.port')
+                }
+            })
+        }),
         ConfigModule,
         StoreModule,
         VoucherModule,

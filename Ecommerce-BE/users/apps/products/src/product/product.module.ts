@@ -1,4 +1,5 @@
 import { ConfigModule, PrismaModule } from '@app/common'
+import { BullModule } from '@nestjs/bull'
 import { CacheModule } from '@nestjs/cache-manager'
 import { Module } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
@@ -6,6 +7,7 @@ import { JwtService } from '@nestjs/jwt'
 import { ClientsModule, Transport } from '@nestjs/microservices'
 import { MulterModule } from '@nestjs/platform-express'
 import * as redisStore from 'cache-manager-redis-store'
+import { BackgroundName } from 'common/constants/background-job.constant'
 import { QueueName } from 'common/constants/queue.constant'
 import { diskStorage } from 'multer'
 import { v4 as uuidv4 } from 'uuid'
@@ -114,6 +116,9 @@ import { ProductService } from './product.service'
                     callback(null, `${new Date().toISOString()}-${uuidv4()}-${file.originalname}`)
                 }
             })
+        }),
+        BullModule.registerQueue({
+            name: BackgroundName.product
         }),
         ConfigModule,
         PrismaModule

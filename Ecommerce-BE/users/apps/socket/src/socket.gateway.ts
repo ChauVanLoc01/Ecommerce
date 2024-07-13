@@ -58,17 +58,32 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
         })
     }
 
-    updateProduct(productId: string, storeId: string, quantity: number, priceAfter: number) {
+    updateProduct(
+        productId: string,
+        storeId: string,
+        quantity: number,
+        priceAfter: number,
+        isSale: boolean,
+        currentSaleId?: string
+    ) {
         const hash = this.hash(room_obj.product, productId)
+        let result = {
+            storeId,
+            productId,
+            quantity,
+            priceAfter
+        }
+        if (isSale) {
+            this.server.to(currentSaleId).emit(room_obj.sale_promotion, {
+                msg: 'Cập nhật số lượng product',
+                action: true,
+                result
+            })
+        }
         this.server.to(hash).emit(room_obj.product, {
             msg: 'Cập nhật số lượng',
             action: true,
-            result: {
-                storeId,
-                productId,
-                quantity,
-                priceAfter
-            }
+            result
         })
     }
 
