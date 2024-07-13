@@ -54,6 +54,7 @@ export class ProductConsummer {
     @Process(BackgroundAction.createCronJobToUpdateProduct)
     async createCronJobToUpdateProductQuantity(job: Job<string[]>) {
         try {
+            console.log('create cron job')
             job.data.forEach((productId) => {
                 let hashValue = hash('product', productId)
                 let isExistCronJob = this.schedulerRegistry.doesExist('cron', hashValue)

@@ -1,8 +1,12 @@
-import { IsArray, IsNotEmpty, IsString } from 'class-validator'
+import { IsArray, IsNotEmpty, IsOptional, IsString } from 'class-validator'
 
 export class RefreshCartDTO {
-  @IsArray()
-  @IsString({ each: true })
-  @IsNotEmpty()
-  productsId: string[]
+    @IsArray()
+    @IsString({ each: true })
+    @IsNotEmpty()
+    productsId: string[]
+
+    @IsString()
+    @IsOptional()
+    saleId?: string
 }

@@ -517,7 +517,7 @@ export class OrderService {
                 msg: 'Tạo đơn hàng thất bại',
                 result: null
             })
-            this.orderBackgroundQueue.add(BackgroundAction.rollBackOrder, orderIds, {
+            await this.orderBackgroundQueue.add(BackgroundAction.rollBackOrder, orderIds, {
                 attempts: 3,
                 removeOnComplete: true
             })

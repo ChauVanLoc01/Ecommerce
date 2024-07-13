@@ -17,7 +17,8 @@ const defaultValueContext: AppContextType = {
     ids: undefined,
     isCanOrder: false,
     actionId: '',
-    socket: undefined
+    socket: undefined,
+    setToastId: () => null
 }
 
 export const AppContext = createContext<AppContextType>(defaultValueContext)
@@ -27,7 +28,13 @@ const ContextWrap = ({ children }: { children: ReactNode }) => {
     const [profile, setProfile] = useState<AppContextType['profile']>(defaultValueContext.profile)
     const [products, setProducts] = useState<AppContextType['products']>(defaultValueContext.products)
     const { current: actionId } = useRef<string>(uuidv7())
+    const toastIdRef = useRef<string | number>()
     const { isCanOrder, socket } = useSocket({ actionId })
+
+    const setToastId = (id: string | number) => {
+        toastIdRef.current = id
+    }
+    console.log('toastId', toastIdRef?.current)
 
     const ids = useMemo(() => {
         if (!products.products || !Object.keys(products.products).length) {
@@ -95,7 +102,9 @@ const ContextWrap = ({ children }: { children: ReactNode }) => {
                 ids,
                 isCanOrder,
                 actionId,
-                socket
+                socket,
+                toastIdRef: toastIdRef.current,
+                setToastId
             }}
         >
             {children}

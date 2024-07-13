@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
+import { useContext, useEffect, useRef, useState } from 'react'
 import { io } from 'socket.io-client'
 import { toast } from 'sonner'
 import { channel, join_room, leave_room } from 'src/constants/event'
+import { AppContext } from 'src/contexts/AppContext'
 import { SocketReturn } from 'src/types/socket.type'
 
 type UseSocketProps = {
@@ -9,6 +10,7 @@ type UseSocketProps = {
 }
 
 const useSocket = ({ actionId }: UseSocketProps) => {
+    const { toastIdRef } = useContext(AppContext)
     const { current: socket } = useRef(
         io(import.meta.env.VITE_SOCKET_ENPOINT, {
             autoConnect: false
@@ -30,6 +32,7 @@ const useSocket = ({ actionId }: UseSocketProps) => {
         })
         socket.on(channel.order, (res: SocketReturn<any>) => {
             if (res.action) {
+                toast.dismiss(toastIdRef)
                 toast.success(res.msg)
             } else {
                 toast.error(res.msg)

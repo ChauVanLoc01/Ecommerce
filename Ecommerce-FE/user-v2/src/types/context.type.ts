@@ -43,4 +43,6 @@ export type AppContext = {
     isCanOrder: boolean
     actionId: string
     socket?: Socket<any, any>
+    toastIdRef?: string | number
+    setToastId: (id: string | number) => void
 }

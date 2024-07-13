@@ -529,7 +529,7 @@ export class VoucherService {
                             this.emitUpdateQuantityVoucherToSocket(voucherId, storeId, quantity)
                         )
                     )
-                    this.voucherBackgroundQueue.add(
+                    await this.voucherBackgroundQueue.add(
                         BackgroundAction.createCronJobVoucherToUpdateQuanttiy,
                         tmp
                     )
@@ -543,7 +543,7 @@ export class VoucherService {
                     err
                 )
                 emit_roll_back_product(this.productClient, payload)
-                this.voucherBackgroundQueue.add(
+                await this.voucherBackgroundQueue.add(
                     BackgroundAction.resetValueVoucherWHenUpdateProductFail,
                     payload.payload.vouchers.map((e) => e.id),
                     {

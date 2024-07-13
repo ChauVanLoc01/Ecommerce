@@ -19,7 +19,8 @@ import { BackgroundAction, BackgroundName } from 'common/constants/background-jo
 import {
     emit_update_product_whenCreatingOrder,
     getProductSaleEvent,
-    getStoreDetail
+    getStoreDetail,
+    refreshProductSale
 } from 'common/constants/event.constant'
 import { Status } from 'common/enums/status.enum'
 import { CurrentStoreType } from 'common/types/current.type'
@@ -681,7 +682,7 @@ export class ProductService {
                         next_update_voucher(this.store_client, payloadTmp)
                     } else {
                         commit_order_creating_order_success(this.order_client, payloadTmp)
-                        this.productBackgroundQueue.add(
+                        await this.productBackgroundQueue.add(
                             BackgroundAction.createCronJobToUpdateProduct,
                             payload.products.map((e) => e.id),
                             {
@@ -694,7 +695,7 @@ export class ProductService {
                     console.log('******Lỗi lỗi ở bước tạo cập nhật thành công product********', err)
                 }
             })
-            .catch((err) => {
+            .catch(async (err) => {
                 try {
                     console.log('********Cập nhật product thất bại********', err)
                     emit_roll_back_order(this.order_client, {
@@ -709,7 +710,7 @@ export class ProductService {
                             vouchers: payload.vouchers
                         }
                     })
-                    this.productBackgroundQueue.add(
+                    await this.productBackgroundQueue.add(
                         BackgroundAction.resetValueCacheWhenUpdateProductFail,
                         tmp
                     )
@@ -726,7 +727,7 @@ export class ProductService {
         )
         try {
             emit_roll_back_order(this.order_client, payload)
-            this.productBackgroundQueue.add(
+            await this.productBackgroundQueue.add(
                 BackgroundAction.resetValueCacheWhenUpdateProductFail,
                 payload.payload.products.map<{
                     productId: string
@@ -754,7 +755,7 @@ export class ProductService {
                 format(new Date(), 'hh:mm:ss:SSS dd/MM')
             )
             commit_order_creating_order_success(this.order_client, payload)
-            this.productBackgroundQueue.add(
+            await this.productBackgroundQueue.add(
                 BackgroundAction.createCronJobToUpdateProduct,
                 payload.payload.products.map((e) => e.id)
             )
@@ -1147,10 +1148,27 @@ export class ProductService {
             body.productsId.map((productId) => this.findProductUnique(productId))
         )
 
+        let productSale = undefined
+
+        if (body.saleId) {
+            productSale = await firstValueFrom<MessageReturn>(
+                this.store_client.send(refreshProductSale, {
+                    saleId: body.saleId,
+                    productIds: body.productsId
+                })
+            )
+        }
+
         return {
             msg: 'ok',
             result: body.productsId.reduce<Record<string, Product>>(
-                (acum, productId, idx) => ({ ...acum, [productId]: products[idx] }),
+                (acum, productId, idx) => ({
+                    ...acum,
+                    [productId]: {
+                        ...products[idx],
+                        sale: productSale?.action ? productSale?.result?.[productId] : undefined
+                    }
+                }),
                 {}
             )
         }

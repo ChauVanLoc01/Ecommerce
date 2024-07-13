@@ -42,7 +42,8 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
                     info: '!bg-cyan-50 !text-cyan-600 !border-cyan-100',
                     title: '!text-[14px]',
                     description: '!text-[11px] !text-gray-500',
-                    actionButton: '!bg-blue-600 !text-white !p-3'
+                    actionButton: '!bg-blue-600 !text-white !p-3',
+                    loading: '!bg-orange-50 !text-orange-500 !border-orange-50'
                 }
             }}
         />

@@ -70,3 +70,5 @@ export const updateQuantityProductSalePromotion = 'update::quantitty::product::s
 export const currentSalePromotion = 'current::sale::promotino'
 
 export const getProductSaleEvent = 'get::product::sale::event'
+
+export const refreshProductSale = 'refresh::product::sale'

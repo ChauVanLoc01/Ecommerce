@@ -407,4 +407,65 @@ export class SaleService {
             }
         }
     }
+
+    async refreshProductSale(payload: {
+        saleId: string
+        productIds: string[]
+    }): Promise<MessageReturn> {
+        try {
+            let { productIds, saleId } = payload
+
+            const productSales = await Promise.all(
+                productIds.map((productId) => {
+                    return this.prisma.productPromotion.findFirst({
+                        where: {
+                            salePromotionId: saleId,
+                            productId,
+                            isDelete: false,
+                            quantity: {
+                                gt: 0
+                            }
+                        },
+                        select: {
+                            quantity: true,
+                            bought: true,
+                            priceAfter: true,
+                            productId: true,
+                            salePromotionId: true,
+                            id: true
+                        }
+                    })
+                })
+            )
+
+            if (!productSales.length) {
+                return {
+                    action: true,
+                    msg: 'ok',
+                    result: null
+                }
+            }
+
+            return {
+                action: true,
+                msg: 'ok',
+                result: productSales.reduce<Record<string, (typeof productSales)[number]>>(
+                    (acum, item) => {
+                        if (!item) return acum
+                        return {
+                            ...acum,
+                            [item.productId]: item
+                        }
+                    },
+                    {}
+                )
+            }
+        } catch (err) {
+            return {
+                msg: err?.message,
+                action: false,
+                result: null
+            }
+        }
+    }
 }

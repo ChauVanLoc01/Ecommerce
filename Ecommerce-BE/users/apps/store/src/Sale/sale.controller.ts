@@ -1,4 +1,6 @@
 import { Body, Controller, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common'
+import { MessagePattern, Payload } from '@nestjs/microservices'
+import { getProductSaleEvent, refreshProductSale } from 'common/constants/event.constant'
 import { CurrentUser } from 'common/decorators/current_user.decorator'
 import { PaginationDTO } from 'common/decorators/pagination.dto'
 import { Public } from 'common/decorators/public.decorator'
@@ -8,8 +10,6 @@ import { CreateProductSalePromotionDTO } from './dtos/create-product-sale.dto'
 import { QuerySalePromotionDTO } from './dtos/query-promotion.dto'
 import { UpdateProductsSalePromotion } from './dtos/update-product-sale.dto'
 import { SaleService } from './sale.service'
-import { MessagePattern, Payload } from '@nestjs/microservices'
-import { getProductSaleEvent } from 'common/constants/event.constant'
 
 @UseGuards(JwtGuard)
 @Controller('sale-promotion')
@@ -67,5 +67,11 @@ export class SaleController {
     @MessagePattern(getProductSaleEvent)
     getProductSaleEvent(@Payload() productId: string) {
         return this.saleService.getProductSaleEvent(productId)
+    }
+
+    @Public()
+    @MessagePattern(refreshProductSale)
+    refreshProductSale(@Payload() payload: { saleId: string; productIds: string[] }) {
+        return this.saleService.refreshProductSale(payload)
     }
 }

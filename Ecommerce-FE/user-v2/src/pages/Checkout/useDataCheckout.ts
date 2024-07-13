@@ -1,6 +1,6 @@
 import { useMutation, useQueries, useQuery } from '@tanstack/react-query'
 import { sumBy } from 'lodash'
-import { useEffect, useMemo, useState } from 'react'
+import { useContext, useEffect, useMemo, useState } from 'react'
 import { Socket } from 'socket.io-client'
 import { toast } from 'sonner'
 import { OrderFetching } from 'src/apis/order'
@@ -8,6 +8,7 @@ import { productFetching } from 'src/apis/product'
 import { StoreFetching } from 'src/apis/store'
 import { VoucherFetching } from 'src/apis/voucher.api'
 import { channel, join_room, leave_room } from 'src/constants/event'
+import { AppContext } from 'src/contexts/AppContext'
 import { ProductContext, ProductConvert } from 'src/types/context.type'
 import { ProductSocket, SocketReturn, VoucherSocket } from 'src/types/socket.type'
 import { VoucherWithCondition } from 'src/types/voucher.type'
@@ -31,6 +32,7 @@ type UseDataCheckoutProps = {
 }
 
 const useDataCheckout = ({ ids, products, voucherIds, setStep, setProducts, socket }: UseDataCheckoutProps) => {
+    const { setToastId } = useContext(AppContext)
     const [productSocket, setProductSocket] = useState<{
         [storeId: string]: {
             [productId: string]: {
@@ -73,7 +75,10 @@ const useDataCheckout = ({ ids, products, voucherIds, setStep, setProducts, sock
     } = useMutation({
         mutationFn: OrderFetching.order,
         onSuccess: () => {
-            toast.info('Đơn hàng của bạn đang được xử lý')
+            let toastId = toast.loading('Đơn hàng của bạn đang được xử lý', {
+                duration: Infinity
+            })
+            setToastId(toastId)
             if (productLatest) {
                 setProducts((pre) => {
                     let tmp = pre.products
