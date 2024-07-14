@@ -29,7 +29,7 @@ import {
 } from 'common/constants/event.constant'
 import { NormalStatus, OrderFlowEnum, RefundStatus } from 'common/enums/orderStatus.enum'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
-import { OrderStep, PayloadUpdate, VoucherStep } from 'common/types/order_payload.type'
+import { NextStepToOrderingPayload } from 'common/types/order_payload.type'
 import { MessageReturn, Return } from 'common/types/result.type'
 import {
     emit_update_Order_WhenCreatingOrder_fn,
@@ -360,41 +360,31 @@ export class OrderService {
             ':::::::::::Tiến hành tạo đơn, shipping::::::::::::',
             format(new Date(), 'hh:mm:ss:SSS dd/MM')
         )
-        let tmp: PayloadUpdate = {
-            order: {
-                orderIds: [],
-                productOrderIds: [],
-                shippingOrderIds: [],
-                orderFlowIds: [],
-                voucherOrderIds: []
-            },
+        let tmp: NextStepToOrderingPayload['payload'] = {
+            orderIds: [],
             products: [],
             vouchers: []
         }
         this.prisma
             .$transaction(
                 orders.map((order) => {
-                    let [orderId, productOrderId, orderShippingId, orderFlowId] =
-                        Array(4).fill(uuidv4())
-                    tmp.order.orderIds.push(orderId)
-                    tmp.order.productOrderIds.push(productOrderId)
-                    tmp.order.shippingOrderIds.push(orderShippingId)
-                    tmp.order.orderFlowIds.push(orderFlowId)
-                    console.log('orderId', orderId)
+                    let orderId = uuidv4()
+                    tmp.orderIds.push(orderId)
 
-                    let createProductOrders: Prisma.OrderCreateInput['ProductOrder'] = {
+                    let produtOrderCreate: Prisma.OrderCreateInput['ProductOrder'] = {
                         createMany: {
                             data: order.productOrders.map(
-                                ({ productId, quantity, priceAfter, priceBefore, isSale }) => {
+                                ({ productId, quantity, isSale, priceAfter, priceBefore }) => {
                                     tmp.products.push({
-                                        id: productId,
                                         buy: quantity,
-                                        isSale,
+                                        id: productId,
+                                        original_quantity: 0,
+                                        price_after: priceAfter,
                                         storeId: order.storeId,
-                                        price_after: priceAfter
+                                        isSale
                                     })
                                     return {
-                                        id: productOrderId,
+                                        id: uuidv4(),
                                         productId,
                                         quantity,
                                         priceBefore,
@@ -412,7 +402,6 @@ export class OrderService {
                             ...voucherIds.map((id) => ({ id, storeId: order.storeId }))
                         )
                         let voucherOrderIds = Array(voucherIds.length).fill(uuidv4())
-                        tmp.order.voucherOrderIds.push(...voucherOrderIds)
                         createVoucherOrders = {
                             createMany: {
                                 data: voucherIds.map((voucherId, idx) => ({
@@ -435,10 +424,10 @@ export class OrderService {
                             note: order.note,
                             userId,
                             createdAt: new Date(),
-                            ProductOrder: createProductOrders,
+                            ProductOrder: produtOrderCreate,
                             OrderShipping: {
                                 create: {
-                                    id: orderShippingId,
+                                    id: uuidv4(),
                                     address: delivery_info.address,
                                     name: delivery_info.name,
                                     type: OrderFlowEnum.WAITING_CONFIRM,
@@ -447,7 +436,7 @@ export class OrderService {
                             },
                             OrderFlow: {
                                 create: {
-                                    id: orderFlowId,
+                                    id: uuidv4(),
                                     status: OrderFlowEnum.WAITING_CONFIRM,
                                     createdBy: userId,
                                     createdAt: new Date()
@@ -486,12 +475,16 @@ export class OrderService {
                     format(new Date(), 'hh:mm:ss:SSS dd/MM')
                 )
                 next_update_product(this.productClient, {
+                    actionId: body.actionId,
                     userId,
-                    payload: { ...tmp, actionId: body.actionId, currentSaleId }
+                    payload: tmp
                 })
             })
             .catch((err) => {
-                console.log('******Gặp lại ở ngay bước đầu tạo order (LINE 485) *********', err)
+                console.log(
+                    '******Tạo đơn thất bại ==> Emit thông tin tạod dơn thất bại tới người dùng*********',
+                    err
+                )
                 emit_update_Order_WhenCreatingOrder_fn(this.socketClient, {
                     action: true,
                     id: body.actionId,
@@ -501,17 +494,15 @@ export class OrderService {
             })
     }
 
-    async rollbackOrder(body: VoucherStep) {
+    async rollbackOrder(body: NextStepToOrderingPayload) {
+        let {
+            actionId,
+            payload: { orderIds }
+        } = body
         console.log(
             '*********Tiến hành roll back lại order ==> Xóa order và các bảng liên quan****************',
             format(new Date(), 'hh:mm:ss:SSS dd/MM')
         )
-        let {
-            payload: {
-                order: { orderIds },
-                actionId
-            }
-        } = body
         try {
             emit_update_Order_WhenCreatingOrder_fn(this.socketClient, {
                 action: true,
@@ -528,43 +519,16 @@ export class OrderService {
         }
     }
 
-    async commitOrder(body: VoucherStep) {
+    async commitOrder(body: NextStepToOrderingPayload) {
         console.log(
             '::::::::::Commit order ==> Product hoặc voucher đã cập nhật thành công ==> Quá trình đặt hàng thành công::::::::::::',
             format(new Date(), 'hh:mm:ss:SSS dd/MM')
         )
         let {
-            payload: {
-                order: { orderIds },
-                actionId
-            }
+            payload: { orderIds },
+            actionId
         } = body
         try {
-            await this.prisma.$transaction(
-                orderIds.map((id) =>
-                    this.prisma.order.update({
-                        where: {
-                            id
-                        },
-                        data: {
-                            isDraf: false
-                        }
-                    })
-                )
-            )
-            emit_update_Order_WhenCreatingOrder_fn(this.socketClient, {
-                action: true,
-                msg: 'Đặt hàng thành công',
-                id: actionId,
-                result: null
-            })
-        } catch (err) {
-            emit_update_Order_WhenCreatingOrder_fn(this.socketClient, {
-                action: false,
-                msg: 'Hệ thống đang quá tải. Vui lòng đợi trong giây lát',
-                id: actionId,
-                result: null
-            })
             await this.orderBackgroundQueue.add(
                 BackgroundAction.reUpdateIsDrafOrder,
                 {
@@ -576,6 +540,7 @@ export class OrderService {
                     removeOnComplete: true
                 }
             )
+        } catch (err) {
             console.log(
                 '********Tạo đơn hàng thành công nhưng cập nhật active cho đơn hàng không thành công*********',
                 err

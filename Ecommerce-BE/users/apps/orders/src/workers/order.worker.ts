@@ -51,15 +51,45 @@ export class OrderConsummer {
     async delete_order(job: Job<string[]>) {
         let { data } = job
         try {
-            await this.prisma.$transaction(
-                data.map((id) =>
-                    this.prisma.order.delete({
+            await this.prisma.$transaction(async (tx) => {
+                await Promise.all([
+                    tx.orderFlow.deleteMany({
                         where: {
-                            id
+                            orderId: {
+                                in: data
+                            }
+                        }
+                    }),
+                    tx.orderShipping.deleteMany({
+                        where: {
+                            orderId: {
+                                in: data
+                            }
+                        }
+                    }),
+                    tx.orderVoucher.deleteMany({
+                        where: {
+                            orderId: {
+                                in: data
+                            }
+                        }
+                    }),
+                    tx.productOrder.deleteMany({
+                        where: {
+                            orderId: {
+                                in: data
+                            }
                         }
                     })
-                )
-            )
+                ])
+                return tx.order.deleteMany({
+                    where: {
+                        id: {
+                            in: data
+                        }
+                    }
+                })
+            })
         } catch (err) {
             console.log('Chạy background job để xóa đơn hàng thât bại', err)
             throw new Error('Cập nhật isDraf = false thát bại trog bull')

@@ -12,11 +12,10 @@ import {
 } from 'common/constants/event.constant'
 import { room_obj } from 'common/constants/socket.constant'
 import {
+    NextStepToOrderingPayload,
     OrderStatusPayload,
-    ProductStep,
     Update_Product_WhenCreatingOrderPayload,
-    Update_Voucher_WhenCreatingOrderPayload,
-    VoucherStep
+    Update_Voucher_WhenCreatingOrderPayload
 } from 'common/types/order_payload.type'
 
 export const hash = (type: keyof typeof room_obj, id: string) => `${type}::${id}`
@@ -44,31 +43,34 @@ export const emit_update_Voucher_WhenCreatingOrderPayload = (
 
 // Next step update product and voucher
 
-export const next_update_product = (client: ClientProxy, payload: ProductStep) => {
+export const next_update_product = (client: ClientProxy, payload: NextStepToOrderingPayload) => {
     client.emit(update_Product_WhenCreatingOrder, payload)
 }
 
-export const next_update_voucher = (client: ClientProxy, payload: VoucherStep) => {
+export const next_update_voucher = (client: ClientProxy, payload: NextStepToOrderingPayload) => {
     client.emit(update_voucher_whenCreatingOrder, payload)
 }
 
 // Commit khi tất cả các step đều thành công
 
-export const commit_order_creating_order_success = (client: ClientProxy, payload: VoucherStep) => {
+export const commit_order_creating_order_success = (
+    client: ClientProxy,
+    payload: NextStepToOrderingPayload
+) => {
     client.emit(commit_order_success, payload)
 }
 
-export const emit_roll_back_order = (client: ClientProxy, payload: VoucherStep) => {
+export const emit_roll_back_order = (client: ClientProxy, payload: NextStepToOrderingPayload) => {
     client.emit(rollbackOrder, payload)
 }
 
 export const commit_product_creating_order_success = (
     client: ClientProxy,
-    payload: VoucherStep
+    payload: NextStepToOrderingPayload
 ) => {
     client.emit(commitUpdateQuantityProducts, payload)
 }
 
-export const emit_roll_back_product = (client: ClientProxy, payload: VoucherStep) => {
+export const emit_roll_back_product = (client: ClientProxy, payload: NextStepToOrderingPayload) => {
     client.emit(rollbackUpdateQuantityProducts, payload)
 }

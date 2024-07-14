@@ -1,45 +1,23 @@
 import { CreateOrder } from 'common/dtos/create_order.dto'
 
-type PayloadUpdateKey =
-    | 'orderIds'
-    | 'productOrderIds'
-    | 'shippingOrderIds'
-    | 'orderFlowIds'
-    | 'voucherOrderIds'
-
-export type PayloadUpdate = {
-    products: {
-        id: string
-        isSale?: boolean
-        buy: number
-        storeId: string
-        price_after: number
-    }[]
-    vouchers: {
-        id: string
-        storeId: string
-    }[]
-    order: {
-        [key in PayloadUpdateKey]: string[]
-    }
-}
-
-export type OrderStep = CreateOrderPayload<CreateOrder>
-
-export type ProductStep = CreateOrderPayload<
-    PayloadUpdate & Pick<CreateOrder, 'actionId'> & { currentSaleId?: string }
->
-
-export type VoucherStep = CreateOrderPayload<{
-    actionId: CreateOrder['actionId']
-    products: (PayloadUpdate['products'][number] & { original_quantity: number })[]
-    vouchers: PayloadUpdate['vouchers']
-    order: PayloadUpdate['order']
-}>
-
-export type CreateOrderPayload<T> = {
+export type NextStepToOrderingPayload = {
+    actionId: string
     userId: string
-    payload: T
+    payload: {
+        products: {
+            id: string
+            isSale?: boolean
+            buy: number
+            storeId: string
+            price_after: number
+            original_quantity: number
+        }[]
+        vouchers: {
+            id: string
+            storeId: string
+        }[]
+        orderIds: string[]
+    }
 }
 
 export type OrderStatusPayload = {
