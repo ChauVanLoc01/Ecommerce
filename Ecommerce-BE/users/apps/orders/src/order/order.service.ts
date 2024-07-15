@@ -29,13 +29,9 @@ import {
 } from 'common/constants/event.constant'
 import { NormalStatus, OrderFlowEnum, RefundStatus } from 'common/enums/orderStatus.enum'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
-import { NextStepToOrderingPayload } from 'common/types/order_payload.type'
+import { CreateOrderPayload } from 'common/types/order_payload.type'
 import { MessageReturn, Return } from 'common/types/result.type'
-import {
-    emit_update_Order_WhenCreatingOrder_fn,
-    hash,
-    next_update_product
-} from 'common/utils/order_helper'
+import { emit_update_status_of_order, hash, product_next_step } from 'common/utils/order_helper'
 import { add, addHours, compareDesc, format, isPast, sub, subDays } from 'date-fns'
 import { Dictionary, isUndefined, max, omitBy, sumBy } from 'lodash'
 import { firstValueFrom } from 'rxjs'
@@ -278,19 +274,19 @@ export class OrderService {
         this.orderClient.emit(processStepOneToCreatOrder, {
             userId: user.id,
             payload: body
-        } as OrderStep)
+        } as CreateOrderPayload<'check_cache'>)
         return {
             msg: 'Đơn hàng đang được xử lý',
             result: null
         }
     }
 
-    async checkCache(userId: string, body: CreateOrder) {
-        let { orders } = body
+    async checkCache(userId: string, payload: CreateOrder) {
+        let { orders, actionId } = payload
         console.log(':::::::::Kiểm tra cache:::::::::', format(new Date(), 'hh:mm:ss:SSS dd/MM'))
-        Promise.all(
-            orders.map(async ({ voucherId, productOrders }) => {
-                try {
+        try {
+            const result = await Promise.all(
+                orders.map(async ({ voucherId, productOrders }) => {
                     if (voucherId) {
                         let hashValue = hash('voucher', voucherId)
                         let quantityVoucherCache = await this.cacheManager.get<string>(hashValue)
@@ -303,11 +299,6 @@ export class OrderService {
                             }
                         }
                     }
-                } catch (err) {
-                    console.log('::::check cache voucher::::', err)
-                    throw new Error('Có lỗi trong quá trình tạo đơn hàng với mã giảm giá')
-                }
-                try {
                     await Promise.all(
                         productOrders.map(async ({ productId, quantity }) => {
                             let hashProductId = hash('product', productId)
@@ -323,35 +314,31 @@ export class OrderService {
                                     throw new Error('Sản phẩm không đủ số lượng')
                                 }
                             }
-                            return Promise.resolve()
+                            return true
                         })
                     )
-                } catch (err) {
-                    console.log(':::check cache product::::', err)
-                    throw new Error('Có lỗi trong quá trình tạo đơn hàng với sản phẩm')
-                }
-                return Promise.resolve()
-            })
-        )
-            .then((_) => {
+                    return true
+                })
+            )
+            if (result) {
                 console.log(
                     '::::::::::Kiểm tra cache thành công ==> Tiến hành tạo đơn với mode là Draft::::::::::',
                     format(new Date(), 'hh:mm:ss:SSS dd/MM')
                 )
                 this.orderClient.emit(processStepTwoToCreateOrder, {
                     userId,
-                    payload: body
-                } as OrderStep)
+                    payload
+                } as CreateOrderPayload<'process_order'>)
+            }
+        } catch (err) {
+            console.log('*****Lỗi tại bước check cache********', err)
+            emit_update_status_of_order(this.socketClient, {
+                action: false,
+                id: actionId,
+                msg: err.message,
+                result: null
             })
-            .catch((err) => {
-                console.log('*****Lỗi tại bước check cache********', err)
-                this.updateStatusOfOrderToClient(
-                    body.actionId,
-                    err?.message || 'Tạo đơn hàng không thành công',
-                    false,
-                    err?.result || null
-                )
-            })
+        }
     }
 
     async processOrder(userId: string, body: CreateOrder) {
@@ -360,13 +347,13 @@ export class OrderService {
             ':::::::::::Tiến hành tạo đơn, shipping::::::::::::',
             format(new Date(), 'hh:mm:ss:SSS dd/MM')
         )
-        let tmp: NextStepToOrderingPayload['payload'] = {
+        let tmp: CreateOrderPayload<'update_product'>['payload'] = {
             orderIds: [],
             products: [],
             vouchers: []
         }
-        this.prisma
-            .$transaction(
+        try {
+            const result = await this.prisma.$transaction(
                 orders.map((order) => {
                     let orderId = uuidv4()
                     tmp.orderIds.push(orderId)
@@ -377,11 +364,12 @@ export class OrderService {
                                 ({ productId, quantity, isSale, priceAfter, priceBefore }) => {
                                     tmp.products.push({
                                         buy: quantity,
+                                        remaining_quantity: 0,
                                         id: productId,
                                         original_quantity: 0,
                                         price_after: priceAfter,
                                         storeId: order.storeId,
-                                        isSale
+                                        currentSaleId
                                     })
                                     return {
                                         id: uuidv4(),
@@ -443,60 +431,38 @@ export class OrderService {
                                 }
                             },
                             OrderVoucher: createVoucherOrders
-                        },
-                        include: {
-                            OrderShipping: {
-                                select: {
-                                    id: true
-                                }
-                            },
-                            OrderFlow: {
-                                select: {
-                                    id: true
-                                }
-                            },
-                            OrderVoucher: {
-                                select: {
-                                    id: true
-                                }
-                            },
-                            ProductOrder: {
-                                select: {
-                                    id: true
-                                }
-                            }
                         }
                     })
                 })
             )
-            .then((_) => {
+
+            if (result) {
                 console.log(
                     ':::::::Tạo đơn thành công ==> chuyển tới bước cập nhật product::::::::',
                     format(new Date(), 'hh:mm:ss:SSS dd/MM')
                 )
-                next_update_product(this.productClient, {
+                product_next_step(this.productClient, {
                     actionId: body.actionId,
                     userId,
                     payload: tmp
                 })
+            }
+        } catch (err) {
+            console.log(
+                '******Tạo đơn thất bại ==> Emit thông tin tạod dơn thất bại tới người dùng*********',
+                err
+            )
+            emit_update_status_of_order(this.socketClient, {
+                action: true,
+                id: body.actionId,
+                msg: err?.message,
+                result: null
             })
-            .catch((err) => {
-                console.log(
-                    '******Tạo đơn thất bại ==> Emit thông tin tạod dơn thất bại tới người dùng*********',
-                    err
-                )
-                emit_update_Order_WhenCreatingOrder_fn(this.socketClient, {
-                    action: true,
-                    id: body.actionId,
-                    msg: err?.message,
-                    result: null
-                })
-            })
+        }
     }
 
-    async rollbackOrder(body: NextStepToOrderingPayload) {
+    async rollbackOrder(body: CreateOrderPayload<'roll_back_order'>) {
         let {
-            actionId,
             payload: { orderIds }
         } = body
         console.log(
@@ -504,12 +470,6 @@ export class OrderService {
             format(new Date(), 'hh:mm:ss:SSS dd/MM')
         )
         try {
-            emit_update_Order_WhenCreatingOrder_fn(this.socketClient, {
-                action: true,
-                id: actionId,
-                msg: 'Tạo đơn hàng thất bại',
-                result: null
-            })
             await this.orderBackgroundQueue.add(BackgroundAction.rollBackOrder, orderIds, {
                 attempts: 3,
                 removeOnComplete: true
@@ -519,7 +479,7 @@ export class OrderService {
         }
     }
 
-    async commitOrder(body: NextStepToOrderingPayload) {
+    async commitOrder(body: CreateOrderPayload<'commit_success'>) {
         console.log(
             '::::::::::Commit order ==> Product hoặc voucher đã cập nhật thành công ==> Quá trình đặt hàng thành công::::::::::::',
             format(new Date(), 'hh:mm:ss:SSS dd/MM')
@@ -541,10 +501,7 @@ export class OrderService {
                 }
             )
         } catch (err) {
-            console.log(
-                '********Tạo đơn hàng thành công nhưng cập nhật active cho đơn hàng không thành công*********',
-                err
-            )
+            console.log('********Lỗi chạy background job để remove isDraf*********', err)
         }
     }
 

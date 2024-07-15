@@ -23,13 +23,13 @@ import {
 import { VoucherType } from 'common/constants/voucher.constant'
 import { Status } from 'common/enums/status.enum'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
-import { VoucherStep } from 'common/types/order_payload.type'
+import { CreateOrderPayload } from 'common/types/order_payload.type'
 import { MessageReturn, Return } from 'common/types/result.type'
 import {
-    commit_product_creating_order_success,
-    emit_roll_back_product,
-    emit_update_Voucher_WhenCreatingOrderPayload,
-    hash
+    commit_create_order_success,
+    emit_update_quantity_of_voucher,
+    hash,
+    roll_back_order
 } from 'common/utils/order_helper'
 import { addHours, addMinutes, format } from 'date-fns'
 import { isUndefined, omitBy } from 'lodash'
@@ -476,100 +476,93 @@ export class VoucherService {
         this.productClient.emit(rollbackUpdateQuantityProducts, { actionId, productActionId })
     }
 
-    async updateVoucherWhenCreatingOrder(payload: VoucherStep) {
+    async updateVoucherWhenCreatingOrder(payload: CreateOrderPayload<'update_voucher'>) {
         let tmp: { voucherId: string; quantity: number; storeId: string }[] = []
-
-        this.prisma
-            .$transaction(async (tx) => {
-                await Promise.all(
-                    payload.payload.vouchers.map(async ({ id: voucherId, storeId }, idx) => {
-                        if (!voucherId) {
-                            return
+        try {
+            const result = await Promise.all(
+                payload.payload.vouchers.map(async ({ id: voucherId, storeId }, idx) => {
+                    if (!voucherId) {
+                        return
+                    }
+                    let hashValue = hash('voucher', voucherId)
+                    let fromCache = await this.cacheManager.get<string>(hashValue)
+                    if (fromCache) {
+                        let { quantity: quantityFromCache } = JSON.parse(fromCache) as {
+                            quantity: number
+                            times: number
                         }
-                        let hashValue = hash('voucher', voucherId)
-                        let fromCache = await this.cacheManager.get<string>(hashValue)
-                        if (fromCache) {
-                            let { quantity: quantityFromCache } = JSON.parse(fromCache) as {
-                                quantity: number
-                                times: number
-                            }
-                            if (quantityFromCache == 0) {
-                                throw new Error('Voucher đã hết lượt sử dụng')
-                            }
-                            tmp.push({
-                                storeId,
-                                quantity: quantityFromCache - 1,
-                                voucherId
-                            })
-                        } else {
-                            const voucherExist = await tx.voucher.findUnique({
-                                where: {
-                                    id: voucherId,
-                                    status: Status.ACTIVE,
-                                    endDate: {
-                                        gte: new Date()
-                                    }
-                                },
-                                select: {
-                                    currentQuantity: true
-                                }
-                            })
-                            if (!voucherExist) {
-                                throw new Error('Voucher không tồn tại')
-                            }
-                            if (voucherExist.currentQuantity == 0) {
-                                throw new Error('Voucher đã hết lượt sử dụng')
-                            }
-                            tmp.push({
-                                storeId,
-                                quantity: voucherExist.currentQuantity - 1,
-                                voucherId
-                            })
+                        if (quantityFromCache == 0) {
+                            throw new Error('Voucher đã hết lượt sử dụng')
                         }
-                        return this.cacheManager.set(
-                            hashValue,
-                            JSON.stringify({ quantity: tmp[idx].quantity, times: 3 })
-                        )
-                    })
-                )
-            })
-            .then(async () => {
-                try {
-                    console.log(
-                        ':::::::::Cập nhật vouher thành công ==> emit sự kiện commit tới product:::::::::::',
-                        format(new Date(), 'hh:mm:ss:SSS dd/MM')
-                    )
-                    commit_product_creating_order_success(this.productClient, payload)
-                    tmp.forEach(({ quantity, storeId, voucherId }) =>
-                        emit_update_Voucher_WhenCreatingOrderPayload(this.socketClient, {
-                            quantity,
+                        tmp.push({
                             storeId,
+                            quantity: quantityFromCache - 1,
                             voucherId
                         })
-                    )
-                    await this.voucherBackgroundQueue.add(
-                        BackgroundAction.createCronJobVoucherToUpdateQuanttiy,
-                        tmp
-                    )
-                } catch (err) {
-                    console.log('*******Cập nhật voucher lỗi (LINE 562)*******', err)
-                }
-            })
-            .catch(async (err) => {
-                console.log(
-                    '*********Cập nhật voucher thất bại ==> Emit rollback tới product************',
-                    err
-                )
-                emit_roll_back_product(this.productClient, payload)
-                await this.voucherBackgroundQueue.add(
-                    BackgroundAction.resetValueVoucherWHenUpdateProductFail,
-                    payload.payload.vouchers.map((e) => e.id),
-                    {
-                        attempts: 3,
-                        removeOnComplete: true
+                    } else {
+                        const voucherExist = await this.prisma.voucher.findUnique({
+                            where: {
+                                id: voucherId,
+                                status: Status.ACTIVE,
+                                endDate: {
+                                    gte: new Date()
+                                }
+                            },
+                            select: {
+                                currentQuantity: true
+                            }
+                        })
+                        if (!voucherExist) {
+                            throw new Error('Voucher không tồn tại')
+                        }
+                        if (voucherExist.currentQuantity == 0) {
+                            throw new Error('Voucher đã hết lượt sử dụng')
+                        }
+                        tmp.push({
+                            storeId,
+                            quantity: voucherExist.currentQuantity - 1,
+                            voucherId
+                        })
                     }
+                    return this.cacheManager.set(
+                        hashValue,
+                        JSON.stringify({ quantity: tmp[idx].quantity, times: 3 })
+                    )
+                })
+            )
+            if (result) {
+                console.log(
+                    ':::::::::Cập nhật vouher thành công ==> emit sự kiện commit tới product:::::::::::',
+                    format(new Date(), 'hh:mm:ss:SSS dd/MM')
                 )
-            })
+                commit_create_order_success([this.orderClient, this.productClient], payload as any)
+                tmp.forEach(({ quantity, storeId, voucherId }) =>
+                    emit_update_quantity_of_voucher(this.socketClient, {
+                        quantity,
+                        storeId,
+                        voucherId
+                    })
+                )
+                await this.voucherBackgroundQueue.add(
+                    BackgroundAction.createCronJobVoucherToUpdateQuanttiy,
+                    tmp
+                )
+            }
+        } catch (err) {
+            console.log(
+                '*********Cập nhật voucher thất bại ==> Emit rollback tới product************',
+                err
+            )
+            roll_back_order([this.orderClient, this.productClient], payload as any)
+            await this.voucherBackgroundQueue.add(
+                BackgroundAction.resetValueVoucherWHenUpdateProductFail,
+                payload.payload.vouchers.map((e) => e.id),
+                {
+                    attempts: 3,
+                    removeOnComplete: true
+                }
+            )
+        }
     }
 
     async updateVoucherWhenCancelOrder(payload: {

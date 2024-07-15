@@ -10,7 +10,7 @@ import { CurrentUser } from 'common/decorators/current_user.decorator'
 import { Public } from 'common/decorators/public.decorator'
 import { JwtGuard } from 'common/guards/jwt.guard'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
-import { VoucherStep } from 'common/types/order_payload.type'
+import { CreateOrderPayload } from 'common/types/order_payload.type'
 import { format } from 'date-fns'
 import { CreateVoucherDTO } from './dtos/CreateVoucher.dto'
 import { VoucherQueryDTO } from './dtos/QueryVoucher.dto'
@@ -70,7 +70,7 @@ export class VoucherController {
 
     @Public()
     @EventPattern(update_voucher_whenCreatingOrder)
-    updateVoucherWhenCreatingOrder(body: VoucherStep) {
+    updateVoucherWhenCreatingOrder(body: CreateOrderPayload<'update_voucher'>) {
         console.log(
             '*********Bước 3: Câp nhật voucher*********',
             format(new Date(), 'hh:mm:ss:SSS dd/MM')

@@ -46,18 +46,10 @@ export class VoucherConsummer {
     }
 
     @Process(BackgroundAction.createCronJobVoucherToUpdateQuanttiy)
-    async createCronJobToUpdateVoucher({
-        data
-    }: Job<
-        {
-            voucherId: string
-            quantity: number
-            storeId: string
-        }[]
-    >) {
+    async createCronJobToUpdateVoucher({ data }: Job<string[]>) {
         try {
             await Promise.all(
-                data.map(({ voucherId }) => {
+                data.map((voucherId) => {
                     let hashValue = hash('voucher', voucherId)
                     let cron_job = new CronJob(CronExpression.EVERY_5_MINUTES, async () => {
                         try {
@@ -66,8 +58,7 @@ export class VoucherConsummer {
                                 let { quantity: quantityFromCache, times } = JSON.parse(
                                     fromCache
                                 ) as { quantity: number; times: number }
-
-                                await Promise.all([
+                                const result = await Promise.all([
                                     this.prisma.voucher.update({
                                         where: {
                                             id: voucherId
@@ -85,13 +76,10 @@ export class VoucherConsummer {
                                         })
                                     )
                                 ])
-
-                                if (times == 1) {
+                                if (result && times == 1) {
                                     let cron_job = this.schedulerRegistry.getCronJob(hashValue)
-                                    if (cron_job) {
-                                        cron_job.stop()
-                                        this.schedulerRegistry.deleteCronJob(hashValue)
-                                    }
+                                    cron_job.stop()
+                                    this.schedulerRegistry.deleteCronJob(hashValue)
                                     await this.cacheManager.del(hashValue)
                                 }
                             }
@@ -99,7 +87,6 @@ export class VoucherConsummer {
                             console.log('Lỗi chạy cron job cập nhật voucher')
                         }
                     })
-
                     this.schedulerRegistry.addCronJob(hashValue, cron_job)
                     cron_job.start()
                 })

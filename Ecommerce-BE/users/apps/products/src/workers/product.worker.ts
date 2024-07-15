@@ -1,14 +1,13 @@
 import { PrismaService } from '@app/common/prisma/prisma.service'
 import { Process, Processor } from '@nestjs/bull'
 import { CACHE_MANAGER } from '@nestjs/cache-manager'
-import { InternalServerErrorException } from '@nestjs/common'
 import { Inject } from '@nestjs/common/decorators'
 import { ConfigService } from '@nestjs/config'
 import { CronExpression, SchedulerRegistry } from '@nestjs/schedule'
-import { Product } from '@prisma/client'
 import { Job } from 'bull'
 import { Cache } from 'cache-manager'
 import { BackgroundAction, BackgroundName } from 'common/constants/background-job.constant'
+import { RollbackOrder } from 'common/types/order_payload.type'
 import { hash } from 'common/utils/order_helper'
 import { CronJob } from 'cron'
 
@@ -24,24 +23,20 @@ export class ProductConsummer {
     @Process(BackgroundAction.resetValueCacheWhenUpdateProductFail)
     async resetValueCacheProduct(
         job: Job<
-            {
-                productId: string
-                original_quantity: number
-                quantity: number
-                priceAfter: number
-                storeId: string
-                isSale: boolean
-                currentSaleId?: string
-            }[]
+            Pick<RollbackOrder['products'][number], 'id' | 'price_after' | 'original_quantity'>[]
         >
     ) {
         try {
             await Promise.all(
-                job.data.map(({ productId, priceAfter, original_quantity }) => {
-                    let hashValue = hash('product', productId)
+                job.data.map(({ id, price_after, original_quantity }) => {
+                    let hashValue = hash('product', id)
                     return this.cacheManager.set(
                         hashValue,
-                        JSON.stringify({ quantity: original_quantity, priceAfter, times: 3 })
+                        JSON.stringify({
+                            quantity: original_quantity,
+                            priceAfter: price_after,
+                            times: 3
+                        })
                     )
                 })
             )
@@ -72,10 +67,7 @@ export class ProductConsummer {
                                 times: number
                             }
                             if (times == 0) {
-                                let isExist = this.schedulerRegistry.doesExist('cron', hashValue)
-                                if (isExist) {
-                                    this.schedulerRegistry.deleteCronJob(hashValue)
-                                }
+                                this.schedulerRegistry.deleteCronJob(hashValue)
                                 this.cacheManager.del(hashValue)
                             }
                             await Promise.all([

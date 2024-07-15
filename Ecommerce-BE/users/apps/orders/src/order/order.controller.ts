@@ -2,11 +2,11 @@ import { Body, Controller, Get, Param, Post, Put, Query, UseGuards } from '@nest
 import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices'
 import { ApiBearerAuth } from '@nestjs/swagger'
 import {
-    commit_order_success,
+    commit_order,
     getOrderByRating,
     processStepOneToCreatOrder,
     processStepTwoToCreateOrder,
-    rollbackOrder
+    roll_back_order
 } from 'common/constants/event.constant'
 import { CurrentUser } from 'common/decorators/current_user.decorator'
 import { Public } from 'common/decorators/public.decorator'
@@ -14,7 +14,7 @@ import { Roles } from 'common/decorators/roles.decorator'
 import { Role } from 'common/enums/role.enum'
 import { JwtGuard } from 'common/guards/jwt.guard'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
-import { OrderStep, VoucherStep } from 'common/types/order_payload.type'
+import { CreateOrderPayload } from 'common/types/order_payload.type'
 import { CreateOrderDTO } from '../../../../common/dtos/create_order.dto'
 import { AnalyticsOrderDTO } from '../dtos/analytics_order.dto'
 import {
@@ -103,25 +103,25 @@ export class OrderController {
 
     @Public()
     @EventPattern(processStepOneToCreatOrder)
-    checkCache(payload: OrderStep) {
+    checkCache(payload: CreateOrderPayload<'check_cache'>) {
         return this.ordersService.checkCache(payload.userId, payload.payload)
     }
 
     @Public()
     @EventPattern(processStepTwoToCreateOrder)
-    processOrder(data: OrderStep) {
+    processOrder(data: CreateOrderPayload<'process_order'>) {
         return this.ordersService.processOrder(data.userId, data.payload)
     }
 
     @Public()
-    @EventPattern(rollbackOrder)
-    rollbackOrder(payload: VoucherStep) {
+    @EventPattern(roll_back_order)
+    rollbackOrder(payload: CreateOrderPayload<'roll_back_order'>) {
         return this.ordersService.rollbackOrder(payload)
     }
 
     @Public()
-    @EventPattern(commit_order_success)
-    commitOrder(payload: VoucherStep) {
+    @EventPattern(commit_order)
+    commitOrder(payload: CreateOrderPayload<'commit_success'>) {
         return this.ordersService.commitOrder(payload)
     }
 

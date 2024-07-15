@@ -63,7 +63,6 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
         storeId: string,
         quantity: number,
         priceAfter: number,
-        isSale: boolean,
         currentSaleId?: string
     ) {
         const hash = this.hash(room_obj.product, productId)
@@ -73,7 +72,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
             quantity,
             priceAfter
         }
-        if (isSale) {
+        if (currentSaleId) {
             this.server.to(currentSaleId).emit(room_obj.sale_promotion, {
                 msg: 'Cập nhật số lượng product',
                 action: true,

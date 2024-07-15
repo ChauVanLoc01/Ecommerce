@@ -37,15 +37,8 @@ export class SocketController {
 
     @EventPattern(emit_update_product_whenCreatingOrder)
     updateProduct(payload: Update_Product_WhenCreatingOrderPayload) {
-        let { quantity, productId, storeId, priceAfter, isSale, currentSaleId } = payload
-        this.socketGateway.updateProduct(
-            productId,
-            storeId,
-            quantity,
-            priceAfter,
-            isSale,
-            currentSaleId
-        )
+        let { quantity, productId, storeId, priceAfter, currentSaleId } = payload
+        this.socketGateway.updateProduct(productId, storeId, quantity, priceAfter, currentSaleId)
     }
 
     @EventPattern(updateQuantityProductSalePromotion)
