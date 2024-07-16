@@ -29,6 +29,7 @@ import { MessageReturn, Return } from 'common/types/result.type'
 import {
     commit_create_order_success,
     emit_update_quantity_of_product,
+    emit_update_status_of_order,
     hash,
     roll_back_order,
     voucher_next_step
@@ -569,7 +570,7 @@ export class ProductService {
             )
             const result = await Promise.all(
                 payload.products.map(async (product, idx) => {
-                    let { buy, id: productId, currentSaleId, storeId } = product
+                    let { buy, id: productId } = product
                     let hashValue = hash('product', productId)
                     let fromCache = await this.cacheManager.get<string>(hashValue)
                     if (fromCache) {
@@ -645,12 +646,22 @@ export class ProductService {
                         }
                     }
                     if (body.payload.vouchers.length) {
+                        console.log(':::::::::Bước kế tiếp: gọi cập nhật VOUCHER:::::::::::')
                         voucher_next_step(this.store_client, {
                             actionId,
                             payload,
                             userId
                         })
                     } else {
+                        console.log(
+                            ':::::::::Đơn hàng không sử dụng voucher ==> Commit order thành công:::::::::'
+                        )
+                        emit_update_status_of_order(this.socket_client, {
+                            action: true,
+                            id: actionId,
+                            msg: 'Đặt hàng thành công',
+                            result: null
+                        })
                         commit_create_order_success([this.order_client], payloadTmp)
                         await this.productBackgroundQueue.add(
                             BackgroundAction.createCronJobToUpdateProduct,
@@ -1133,7 +1144,6 @@ export class ProductService {
         )
 
         let productSale = undefined
-        console.log('saleId', body?.saleId)
         if (body.saleId) {
             productSale = await firstValueFrom<MessageReturn>(
                 this.store_client.send(refreshProductSale, {
@@ -1141,7 +1151,6 @@ export class ProductService {
                     productIds: body.productsId
                 })
             )
-            console.log('productsale', productSale)
         }
 
         return {

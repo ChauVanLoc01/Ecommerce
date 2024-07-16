@@ -25,6 +25,9 @@ export class SocketController {
     @EventPattern(statusOfOrder)
     statusOfOrder(payload: OrderStatusPayload) {
         let { action, id, result, msg } = payload
+        console.log(
+            `:::::::::Socket Controller đã nhận được yêu cầu cập nhật trạng thái đơn hàng [id: ${id}] [msg: ${msg}] [action: ${action}]`
+        )
         this.socketGateway.checkStatusOfOrder(id, msg, action, result)
     }
 

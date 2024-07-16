@@ -438,7 +438,7 @@ export class OrderService {
 
             if (result) {
                 console.log(
-                    ':::::::Tạo đơn thành công ==> chuyển tới bước cập nhật product::::::::',
+                    ':::::::Success: Tạo đơn thành công ==> chuyển tới bước cập nhật product::::::::',
                     format(new Date(), 'hh:mm:ss:SSS dd/MM')
                 )
                 product_next_step(this.productClient, {
@@ -449,7 +449,7 @@ export class OrderService {
             }
         } catch (err) {
             console.log(
-                '******Tạo đơn thất bại ==> Emit thông tin tạod dơn thất bại tới người dùng*********',
+                '******Fail: Tạo đơn thất bại ==> Emit thông tin tạod dơn thất bại tới người dùng*********',
                 err
             )
             emit_update_status_of_order(this.socketClient, {
@@ -458,6 +458,9 @@ export class OrderService {
                 msg: err?.message,
                 result: null
             })
+            console.log(
+                ':::::::::::Emit thông tin đơn hàng thất bại tới người dùng thành công::::::::::::'
+            )
         }
     }
 
@@ -474,8 +477,9 @@ export class OrderService {
                 attempts: 3,
                 removeOnComplete: true
             })
+            console.log(':::::::::Success: Gọi backgound job để xử lý rollback order::::::::::::')
         } catch (err) {
-            console.log('*******Roll back order gặp lỗi (LINE 503) ********', err)
+            console.log('*******Fail: Roll back order gặp lỗi********', err)
         }
     }
 
@@ -489,6 +493,7 @@ export class OrderService {
             actionId
         } = body
         try {
+            console.log('::::::::::Success: Gọi background job để commit order::::::::::::')
             await this.orderBackgroundQueue.add(
                 BackgroundAction.reUpdateIsDrafOrder,
                 {
@@ -501,7 +506,7 @@ export class OrderService {
                 }
             )
         } catch (err) {
-            console.log('********Lỗi chạy background job để remove isDraf*********', err)
+            console.log('********Fail: Lỗi khởi tạo background job để remove isDraf*********', err)
         }
     }
 

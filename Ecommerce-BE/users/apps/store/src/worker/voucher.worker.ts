@@ -39,8 +39,13 @@ export class VoucherConsummer {
                     throw new Error('Lỗi câp nhật voucher')
                 })
             )
+            await new Promise(() => {
+                console.log(
+                    '::::::::::::::Success: Roll back số lượng voucher về lại ban đầu::::::::::'
+                )
+            })
         } catch (err) {
-            console.log('Lỗi cập nhật lại cache khi voucher fail', err)
+            console.log('***********Fail: Lỗi cập nhật lại cache khi voucher fail************', err)
             throw new Error('Lỗi cập nhật voucher')
         }
     }

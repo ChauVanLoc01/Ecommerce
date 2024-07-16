@@ -532,7 +532,7 @@ export class VoucherService {
             )
             if (result) {
                 console.log(
-                    ':::::::::Cập nhật vouher thành công ==> emit sự kiện commit tới product:::::::::::',
+                    ':::::::::Success: Cập nhật vouher thành công ==> emit sự kiện commit tới product:::::::::::',
                     format(new Date(), 'hh:mm:ss:SSS dd/MM')
                 )
                 commit_create_order_success([this.orderClient, this.productClient], payload as any)
@@ -550,7 +550,7 @@ export class VoucherService {
             }
         } catch (err) {
             console.log(
-                '*********Cập nhật voucher thất bại ==> Emit rollback tới product************',
+                '*********Fail: Cập nhật voucher thất bại ==> Emit rollback tới product************',
                 err
             )
             roll_back_order([this.orderClient, this.productClient], payload as any)
