@@ -7,7 +7,6 @@ import { SchedulerRegistry } from '@nestjs/schedule'
 import { Job } from 'bull'
 import { Cache } from 'cache-manager'
 import { BackgroundAction, BackgroundName } from 'common/constants/background-job.constant'
-import { emit_update_Order_WhenCreatingOrder_fn } from 'common/utils/order_helper'
 
 @Processor(BackgroundName.order)
 export class OrderConsummer {
@@ -35,12 +34,6 @@ export class OrderConsummer {
                     })
                 )
             )
-            emit_update_Order_WhenCreatingOrder_fn(this.socketClient, {
-                action: true,
-                msg: 'Đặt hàng thành công',
-                id: data.actionId,
-                result: null
-            })
         } catch (err) {
             console.log('Chạy background job để cập nhật lại isDraf thât bại', err)
             throw new Error('Cập nhật isDraf thành false thất bại')

@@ -1,7 +1,7 @@
 import { PrismaService } from '@app/common/prisma/prisma.service'
 import { CACHE_MANAGER } from '@nestjs/cache-manager'
 import { Inject, Injectable } from '@nestjs/common'
-import { Cron, CronExpression, SchedulerRegistry, Timeout } from '@nestjs/schedule'
+import { Cron, CronExpression, SchedulerRegistry } from '@nestjs/schedule'
 import { Prisma, PrismaClient } from '@prisma/client'
 import { DefaultArgs } from '@prisma/client/runtime/library'
 import { Cache } from 'cache-manager'
@@ -12,14 +12,12 @@ import { CronJob } from 'cron'
 import {
     add,
     eachHourOfInterval,
-    endOfDay,
     endOfHour,
+    endOfWeek,
     format,
-    nextSunday,
-    previousMonday,
     setDefaultOptions,
-    startOfDay,
     startOfHour,
+    startOfWeek,
     sub
 } from 'date-fns'
 import { vi } from 'date-fns/locale'
@@ -37,21 +35,35 @@ export class ScheduleService {
     ) {}
 
     calDate() {
-        let start = add(startOfDay(previousMonday(new Date())), { hours: 7 })
-        let end = add(endOfDay(nextSunday(new Date())), { hours: 7 })
+        let start = add(
+            startOfWeek(new Date(), {
+                weekStartsOn: 1
+            }),
+            {
+                hours: 7
+            }
+        )
+        let end = add(
+            endOfWeek(new Date(), {
+                weekStartsOn: 1
+            }),
+            {
+                hours: 7
+            }
+        )
         return eachHourOfInterval({ start, end })
     }
 
-    @Cron('1 32 * * * *', {
+    @Cron('1 16 * * * *', {
         name: 'auto creating sale promotion'
     })
     async autoCreatingSalePromotion() {
         let tmp = this.calDate()
-        chunk(tmp, 24).map((dates, idx) => this.createSalePromotion(uuidv4(), 5 * idx, dates))
+        chunk(tmp, 24).map((dates, idx) => this.createSalePromotion(uuidv4(), 4 * idx, dates))
     }
 
     async createSalePromotion(name: string, second: number, data: Date[]) {
-        const cron_job = new CronJob(`${second} 33 * * * *`, async () => {
+        const cron_job = new CronJob(`${second} 17 * * * *`, async () => {
             await Promise.all(
                 data.map((date) => {
                     let formatDate = format(sub(date, { hours: 7 }), 'HH:mm dd-MM-yyyy')
