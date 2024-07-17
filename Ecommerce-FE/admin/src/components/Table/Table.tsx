@@ -1,6 +1,7 @@
 import { ColumnDef, flexRender, getCoreRowModel, TableOptions, useReactTable } from '@tanstack/react-table'
 import { v4 as uuid } from 'uuid'
 import { TableBody, TableCell, TableHead, TableHeader, TableRow, Table as TableShadcn } from './TableShadcn'
+import { twMerge } from 'tailwind-merge'
 
 type TableProps<T> = {
     data: T[]
@@ -19,7 +20,11 @@ const Table = function <T>({ columns, data, className, tableMaxHeight, usingSimp
     })
 
     return (
-        <TableShadcn className={className} maxHeight={tableMaxHeight ?? 'auto'} usingSimpleBar={usingSimpleBar}>
+        <TableShadcn
+            className={twMerge('!w-full', className)}
+            maxHeight={tableMaxHeight ?? 'auto'}
+            usingSimpleBar={usingSimpleBar}
+        >
             <TableHeader className='bg-gray-100 sticky top-0 z-50 overflow-hidden'>
                 {table.getHeaderGroups().map((headerGroup) => (
                     <TableRow key={uuid()}>

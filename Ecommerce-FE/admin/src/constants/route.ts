@@ -12,5 +12,6 @@ export const route = {
     employee: 'employee',
     voucher: 'voucher',
     rating: 'rating',
-    flashSale: 'flash-sale'
+    flashSale: 'flash-sale',
+    user: 'user'
 }

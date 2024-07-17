@@ -1,8 +1,18 @@
 import { CubeIcon, FileTextIcon, HomeIcon, IdCardIcon, PersonIcon, StarIcon } from '@radix-ui/react-icons'
-import Select from 'src/components/Select'
 import { CiDiscount1 } from 'react-icons/ci'
+import Select from 'src/components/Select'
 
-import { route } from 'src/constants/route'
+import { side_nav } from 'src/routes/main.route'
+
+const Icon = {
+    HomeIcon: <HomeIcon />,
+    CiDiscount1: <CiDiscount1 />,
+    CubeIcon: <CubeIcon />,
+    FileTextIcon: <FileTextIcon />,
+    PersonIcon: <PersonIcon />,
+    StarIcon: <StarIcon />,
+    IdCardIcon: <IdCardIcon />
+}
 
 const SideNav = () => {
     return (
@@ -20,34 +30,9 @@ const SideNav = () => {
                 </div>
             </section>
             <section className=''>
-                <Select
-                    icon={<HomeIcon className='w-4 h-4' />}
-                    parentData={{ title: 'Tổng Quan', path: `/${route.analytic}` }}
-                />
-                <Select
-                    icon={<CiDiscount1 className='w-4 h-4 stroke-[1.5]' />}
-                    parentData={{ title: 'Flash Sale', path: `/${route.flashSale}` }}
-                />
-                <Select
-                    icon={<CubeIcon className='w-4 h-4' />}
-                    parentData={{ title: 'Sản Phẩm', path: route.product }}
-                />
-                <Select
-                    icon={<FileTextIcon className='w-4 h-4' />}
-                    parentData={{ title: 'Đơn Hàng', path: route.order }}
-                />
-                <Select
-                    icon={<PersonIcon className='w-4 h-4' />}
-                    parentData={{ title: 'Nhân Viên', path: route.employee }}
-                />
-                <Select
-                    icon={<StarIcon className='w-4 h-4' />}
-                    parentData={{ title: 'Đánh giá', path: route.rating }}
-                />
-                <Select
-                    icon={<IdCardIcon className='w-4 h-4' />}
-                    parentData={{ title: 'Mã giảm giá', path: route.voucher }}
-                />
+                {side_nav.map(({ label: title, path, icon }) => {
+                    return <Select icon={Icon[icon as keyof typeof Icon]} parentData={{ title, path }} />
+                })}
             </section>
         </nav>
     )

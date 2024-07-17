@@ -8,12 +8,13 @@ import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { AuthAPI } from 'src/apis/auth.api'
 import InputPassword from 'src/components/InputPassword'
+import { OBJECT, ROLE } from 'src/constants/role'
 import { AppContext } from 'src/contexts/AppContext'
 import { login_schema, LoginSchemaType } from 'src/utils/auth.schema'
 import { ls } from 'src/utils/localStorage'
 
 const Login = () => {
-    const { setProfile, setStore } = useContext(AppContext)
+    const { setProfile, setStore, setRole } = useContext(AppContext)
     const navigate = useNavigate()
     const {
         control,
@@ -30,8 +31,7 @@ const Login = () => {
         onSuccess: (data) => {
             setProfile(data.data.result.user)
             setStore(data.data.result.store)
-            ls.setItem('profile', JSON.stringify(data.data.result.user))
-            ls.setItem('store', JSON.stringify(data.data.result.store))
+            setRole(ROLE[data.data.result.store.role as OBJECT])
             ls.setItem('access_token', data.data.result.access_token)
             ls.setItem('refresh_token', data.data.result.refresh_token)
             navigate('/analytic')

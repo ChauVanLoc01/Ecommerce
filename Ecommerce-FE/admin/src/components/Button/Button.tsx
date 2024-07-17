@@ -26,12 +26,9 @@ const Button = ({
                 'px-16 py-8 rounded-8 transition-all ease-in-out duration-200 flex items-center border-none',
                 {
                     'space-x-5': iconRight,
-                    'bg-blue text-white hover:bg-blue_hover':
-                        type === 'default',
-                    'border border-blue hover:bg-blue hover:text-white text-blue':
-                        type === 'outline',
-                    'border border-dashed border-blue hover:bg-blue text-blue':
-                        type === 'dashed',
+                    'bg-blue text-white hover:bg-blue_hover': type === 'default',
+                    'border border-blue hover:bg-blue hover:text-white text-blue': type === 'outline',
+                    'border border-dashed border-blue hover:bg-blue text-blue': type === 'dashed',
                     'text-blue': type === 'text'
                 },
                 rootClassNames

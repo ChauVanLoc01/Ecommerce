@@ -26,7 +26,7 @@ const Select = ({ icon, parentData, childrenData }: SelectProps) => {
     const navigate = useNavigate()
 
     return (
-        <section className='space-y-2'>
+        <section className='space-y-3'>
             {!childrenData ? (
                 <NavLink to={parentData.path as string}>
                     {({ isActive }) => (
@@ -44,8 +44,8 @@ const Select = ({ icon, parentData, childrenData }: SelectProps) => {
                                     />
                                 )
                             }
-                            rootClassNames={classNames('w-full justify-between pl-[20px] text-text_2', {
-                                'bg-blue/[0.08] !text-blue hover:bg-blue/20': isActive
+                            rootClassNames={cn('w-full justify-between pl-[40px] text-text_2', {
+                                'bg-blue/[0.2] text-blue hover:bg-blue/30': isActive
                             })}
                         />
                     )}
@@ -69,7 +69,7 @@ const Select = ({ icon, parentData, childrenData }: SelectProps) => {
                         setIsOpen(!isOpen)
                         navigate(childrenData[0].path)
                     }}
-                    rootClassNames={classNames('w-full justify-between pl-[20px] text-text_2', {
+                    rootClassNames={classNames('w-full justify-between pl-[40px] text-text_2', {
                         'bg-blue/[0.08] !text-blue hover:bg-blue/20': childrenData.some((data) =>
                             matchPath(
                                 {
@@ -126,7 +126,7 @@ const Select = ({ icon, parentData, childrenData }: SelectProps) => {
                                         iconLeft={<LuDot />}
                                         text={children.title}
                                         type='text'
-                                        rootClassNames={cn('text-text_2 pl-[20px]', {
+                                        rootClassNames={cn('text-text_2 pl-[40px]', {
                                             'text-blue-500': isActive
                                         })}
                                     />

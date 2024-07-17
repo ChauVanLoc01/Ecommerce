@@ -11,6 +11,8 @@ import 'src/reset.css'
 import ContextWrap from './contexts/AppContext'
 import routes, { queryClient } from './routes/main.route'
 
+console.log('main load')
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
     <QueryClientProvider client={queryClient}>
         <AnimatePresence>

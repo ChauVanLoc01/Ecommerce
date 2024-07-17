@@ -1,8 +1,9 @@
 import loadable from '@loadable/component'
 import { QueryClient } from '@tanstack/react-query'
 import { useContext } from 'react'
-import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom'
+import { createBrowserRouter, Navigate, Outlet, RouteObject } from 'react-router-dom'
 import Error from 'src/components/Error/Error'
+import { OBJECT, RoleType, SERVICE, SERVICE_NAME } from 'src/constants/role'
 
 import { route } from 'src/constants/route'
 import { AppContext } from 'src/contexts/AppContext'
@@ -17,10 +18,12 @@ import Login from 'src/pages/Auth'
 import Employee from 'src/pages/Employee'
 import FlashSale from 'src/pages/FlashSale/FlashSale'
 import Order from 'src/pages/Order'
+import PageNotFound from 'src/pages/PageNotFound/PageNotFound'
 import Product from 'src/pages/Product'
 import Rating from 'src/pages/Rating/Rating'
 import Store from 'src/pages/Store'
 import Voucher from 'src/pages/Voucher/Voucher'
+import { ls } from 'src/utils/localStorage'
 
 const MainLayout = loadable(() => import('src/layouts/MainLayout'))
 const Analytic = loadable(() => import('src/pages/Analytic'))
@@ -37,6 +40,61 @@ const RejectRoute = () => {
     const { profile } = useContext(AppContext)
     return profile ? <Navigate to={route.analytic} /> : <Outlet />
 }
+
+let roleLS = ls.getItem('role')
+
+const PrivateRouteDefault: Record<SERVICE, RouteObject> = {
+    Overview: {
+        path: route.analytic,
+        element: <Analytic />,
+        loader: analyticsLoader
+    },
+    FlashSale: {
+        path: route.flashSale,
+        element: <FlashSale />,
+        loader: flashSaleLoader
+    },
+    Product: {
+        path: route.product,
+        element: <Product />,
+        loader: productLoader
+    },
+    Order: {
+        path: route.order,
+        element: <Order />,
+        loader: orderLoader
+    },
+    Employee: {
+        path: route.employee,
+        element: <Employee />,
+        loader: employeeLoader
+    },
+    Rating: {
+        path: route.rating,
+        element: <Rating />,
+        loader: ratingLoader
+    },
+    Voucher: {
+        path: route.voucher,
+        element: <Voucher />,
+        loader: voucherLoader
+    }
+}
+
+export const side_nav: { label: string; path: string; icon: string }[] = []
+
+const RouterOfRole: RouteObject[] = roleLS
+    ? Object.entries(JSON.parse(roleLS) as RoleType[OBJECT]).reduce<RouteObject[]>((acum, [key, value]) => {
+          if (value.length) {
+              side_nav.push(SERVICE_NAME[key as SERVICE])
+              acum.push(PrivateRouteDefault[key as SERVICE])
+              return acum
+          }
+          return acum
+      }, [])
+    : []
+
+console.log('main route load')
 
 export const queryClient = new QueryClient({
     defaultOptions: {
@@ -59,11 +117,6 @@ const routes = createBrowserRouter([
                 errorElement: <Error />,
                 children: [
                     {
-                        path: route.analytic,
-                        element: <Analytic />,
-                        loader: analyticsLoader
-                    },
-                    {
                         path: route.profile,
                         element: <Profile />,
                         children: [
@@ -81,35 +134,10 @@ const routes = createBrowserRouter([
                         path: route.store,
                         element: <Store />
                     },
+                    ...RouterOfRole,
                     {
-                        path: route.order,
-                        element: <Order />,
-                        loader: orderLoader
-                    },
-                    {
-                        path: route.employee,
-                        element: <Employee />,
-                        loader: employeeLoader
-                    },
-                    {
-                        path: route.product,
-                        element: <Product />,
-                        loader: productLoader
-                    },
-                    {
-                        path: route.voucher,
-                        element: <Voucher />,
-                        loader: voucherLoader
-                    },
-                    {
-                        path: route.rating,
-                        element: <Rating />,
-                        loader: ratingLoader
-                    },
-                    {
-                        path: route.flashSale,
-                        element: <FlashSale />,
-                        loader: flashSaleLoader
+                        path: '*',
+                        element: <PageNotFound content='Bạn không có quyền truy cập vào tài nguyên này' />
                     }
                 ]
             }
@@ -123,6 +151,10 @@ const routes = createBrowserRouter([
                 element: <Login />
             }
         ]
+    },
+    {
+        path: '*',
+        element: <PageNotFound />
     }
 ])
 

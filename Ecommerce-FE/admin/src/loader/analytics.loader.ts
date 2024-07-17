@@ -5,8 +5,8 @@ import { queryClient } from 'src/routes/main.route'
 import { timeInterval } from 'src/utils/utils'
 
 export const analyticsLoader: LoaderFunction = async () => {
+    console.log('analytics load')
     window.dispatchEvent(new Event(loadingFetchingEvent.start))
-
     const { dayInterval } = timeInterval()
 
     await Promise.all([
