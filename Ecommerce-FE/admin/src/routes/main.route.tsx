@@ -3,9 +3,10 @@ import { QueryClient } from '@tanstack/react-query'
 import { useContext } from 'react'
 import { createBrowserRouter, Navigate, Outlet, RouteObject } from 'react-router-dom'
 import Error from 'src/components/Error/Error'
-import { OBJECT, RoleType, SERVICE, SERVICE_NAME } from 'src/constants/role'
+import { StoreOwnerAndEmployeeAuth, StoreOwnerAuth } from 'src/components/Role/Role'
+import { OBJECT, SERVICE } from 'src/constants/role'
 
-import { route } from 'src/constants/route'
+import { route, route_default_with_role } from 'src/constants/route'
 import { AppContext } from 'src/contexts/AppContext'
 import { analyticsLoader } from 'src/loader/analytics.loader'
 import { employeeLoader } from 'src/loader/employee.loader'
@@ -23,7 +24,6 @@ import Product from 'src/pages/Product'
 import Rating from 'src/pages/Rating/Rating'
 import Store from 'src/pages/Store'
 import Voucher from 'src/pages/Voucher/Voucher'
-import { ls } from 'src/utils/localStorage'
 
 const MainLayout = loadable(() => import('src/layouts/MainLayout'))
 const Analytic = loadable(() => import('src/pages/Analytic'))
@@ -37,64 +37,77 @@ const PrivateRoute = () => {
 }
 
 const RejectRoute = () => {
-    const { profile } = useContext(AppContext)
-    return profile ? <Navigate to={route.analytic} /> : <Outlet />
+    const { profile, who } = useContext(AppContext)
+    return profile ? <Navigate to={route_default_with_role[who as OBJECT]} /> : <Outlet />
 }
-
-let roleLS = ls.getItem('role')
 
 const PrivateRouteDefault: Record<SERVICE, RouteObject> = {
     Overview: {
         path: route.analytic,
-        element: <Analytic />,
+        element: (
+            <StoreOwnerAuth>
+                <Analytic />
+            </StoreOwnerAuth>
+        ),
         loader: analyticsLoader
     },
     FlashSale: {
         path: route.flashSale,
-        element: <FlashSale />,
+        element: (
+            <StoreOwnerAndEmployeeAuth>
+                <FlashSale />
+            </StoreOwnerAndEmployeeAuth>
+        ),
         loader: flashSaleLoader
     },
     Product: {
         path: route.product,
-        element: <Product />,
+        element: (
+            <StoreOwnerAndEmployeeAuth>
+                <Product />
+            </StoreOwnerAndEmployeeAuth>
+        ),
         loader: productLoader
     },
     Order: {
         path: route.order,
-        element: <Order />,
+        element: (
+            <StoreOwnerAndEmployeeAuth>
+                <Order />
+            </StoreOwnerAndEmployeeAuth>
+        ),
         loader: orderLoader
     },
     Employee: {
         path: route.employee,
-        element: <Employee />,
+        element: (
+            <StoreOwnerAuth>
+                <Employee />
+            </StoreOwnerAuth>
+        ),
         loader: employeeLoader
     },
     Rating: {
         path: route.rating,
-        element: <Rating />,
+        element: (
+            <StoreOwnerAndEmployeeAuth>
+                <Rating />
+            </StoreOwnerAndEmployeeAuth>
+        ),
         loader: ratingLoader
     },
     Voucher: {
         path: route.voucher,
-        element: <Voucher />,
+        element: (
+            <StoreOwnerAndEmployeeAuth>
+                <Voucher />
+            </StoreOwnerAndEmployeeAuth>
+        ),
         loader: voucherLoader
-    }
+    },
+    Store: {},
+    User: {}
 }
-
-export const side_nav: { label: string; path: string; icon: string }[] = []
-
-const RouterOfRole: RouteObject[] = roleLS
-    ? Object.entries(JSON.parse(roleLS) as RoleType[OBJECT]).reduce<RouteObject[]>((acum, [key, value]) => {
-          if (value.length) {
-              side_nav.push(SERVICE_NAME[key as SERVICE])
-              acum.push(PrivateRouteDefault[key as SERVICE])
-              return acum
-          }
-          return acum
-      }, [])
-    : []
-
-console.log('main route load')
 
 export const queryClient = new QueryClient({
     defaultOptions: {
@@ -134,10 +147,14 @@ const routes = createBrowserRouter([
                         path: route.store,
                         element: <Store />
                     },
-                    ...RouterOfRole,
+                    ...Object.values(PrivateRouteDefault),
+                    {
+                        path: route.permission,
+                        element: <PageNotFound content='Bạn không có quyền truy cập' />
+                    },
                     {
                         path: '*',
-                        element: <PageNotFound content='Bạn không có quyền truy cập vào tài nguyên này' />
+                        element: <PageNotFound />
                     }
                 ]
             }
@@ -151,10 +168,6 @@ const routes = createBrowserRouter([
                 element: <Login />
             }
         ]
-    },
-    {
-        path: '*',
-        element: <PageNotFound />
     }
 ])
 

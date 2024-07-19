@@ -1,8 +1,9 @@
 import { CubeIcon, FileTextIcon, HomeIcon, IdCardIcon, PersonIcon, StarIcon } from '@radix-ui/react-icons'
+import { useContext, useMemo } from 'react'
 import { CiDiscount1 } from 'react-icons/ci'
 import Select from 'src/components/Select'
-
-import { side_nav } from 'src/routes/main.route'
+import { OBJECT, ROLE, SERVICE, SERVICE_NAME } from 'src/constants/role'
+import { AppContext } from 'src/contexts/AppContext'
 
 const Icon = {
     HomeIcon: <HomeIcon />,
@@ -15,6 +16,20 @@ const Icon = {
 }
 
 const SideNav = () => {
+    const { who } = useContext(AppContext)
+    const side_navs = useMemo(() => {
+        return Object.entries(ROLE[who as OBJECT]).reduce<{ label: string; path: string; icon: string }[]>(
+            (acum, [key, value]) => {
+                if (value.length) {
+                    acum.push(SERVICE_NAME[key as SERVICE])
+                    return acum
+                }
+                return acum
+            },
+            []
+        )
+    }, [who])
+
     return (
         <nav className='p-8 w-[280px] border-r border-r-text_2/30 border-dashed'>
             <section className='pt-3 pb-5'>
@@ -30,7 +45,7 @@ const SideNav = () => {
                 </div>
             </section>
             <section className=''>
-                {side_nav.map(({ label: title, path, icon }) => {
+                {side_navs.map(({ label: title, path, icon }) => {
                     return <Select icon={Icon[icon as keyof typeof Icon]} parentData={{ title, path }} />
                 })}
             </section>

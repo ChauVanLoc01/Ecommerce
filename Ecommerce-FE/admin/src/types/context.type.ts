@@ -8,4 +8,6 @@ export type AppContext = {
     setProfile: React.Dispatch<React.SetStateAction<User | undefined>>
     role: RoleType[OBJECT] | undefined
     setRole: React.Dispatch<React.SetStateAction<Record<Partial<SERVICE>, ACTION[]> | undefined>>
+    who?: OBJECT
+    setWho: React.Dispatch<React.SetStateAction<OBJECT | undefined>>
 }

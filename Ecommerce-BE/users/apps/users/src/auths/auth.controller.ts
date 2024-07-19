@@ -1,11 +1,13 @@
-import { Body, Controller, Get, Post, Put, UseGuards } from '@nestjs/common'
+import { Body, Controller, Get, Post, Put, Req, UseGuards } from '@nestjs/common'
 import { ApiBearerAuth, ApiResponse, ApiTags } from '@nestjs/swagger'
+import { Store, User } from '@prisma/client'
 import { CurrentUser } from 'common/decorators/current_user.decorator'
 import { Roles } from 'common/decorators/roles.decorator'
 import { Role } from 'common/enums/role.enum'
 import { JwtGuard } from 'common/guards/jwt.guard'
 import { StoreGuard } from 'common/guards/store.guard'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
+import { Request } from 'express'
 import { LocalUserGuard } from '../../../../common/guards/local.guard'
 import { ChangePasswordDTO } from '../dtos/change_password.dto'
 import { LoginDTO } from '../dtos/login.dto'
@@ -36,8 +38,12 @@ export class AuthController {
 
     @UseGuards(StoreGuard)
     @Post('store-login')
-    storeLogin(@CurrentUser() user: CurrentStoreType, @Body() _: LoginDTO) {
-        return this.authService.storeLogin(user)
+    storeLogin(
+        @Req()
+        req: Request & { user: { currentStoreType: CurrentStoreType; user: User; store?: Store } },
+        @Body() _: LoginDTO
+    ) {
+        return this.authService.storeLogin(req.user)
     }
 
     @UseGuards(JwtGuard)

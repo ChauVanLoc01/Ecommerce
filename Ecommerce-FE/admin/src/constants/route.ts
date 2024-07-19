@@ -1,3 +1,5 @@
+import { OBJECT } from './role'
+
 export const route = {
     root: '/',
     login: 'login',
@@ -14,4 +16,10 @@ export const route = {
     rating: 'rating',
     flashSale: 'flash-sale',
     user: 'user'
+}
+
+export const route_default_with_role: Record<OBJECT, string> = {
+    ADMIN: route.analytic,
+    STORE_OWNER: route.analytic,
+    EMPLOYEE: route.order
 }
