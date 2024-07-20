@@ -11,7 +11,7 @@ let whoLS = ls.getItem('who')
 
 let role = roleLS ? (JSON.parse(roleLS) as RoleType[OBJECT]) : undefined
 let profile = profileLS ? (JSON.parse(profileLS) as User) : undefined
-let store = storeLS ? (JSON.parse(storeLS) as Store) : undefined
+let store = storeLS && whoLS !== 'ADMIN' ? (JSON.parse(storeLS) as Store) : undefined
 
 const defaultValueContext: AppContextType = {
     profile,

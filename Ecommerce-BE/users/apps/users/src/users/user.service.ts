@@ -6,6 +6,8 @@ import {
     NotFoundException
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
+import { Prisma } from '@prisma/client'
+import { UserType } from 'common/constants/user.constants'
 import { Role } from 'common/enums/role.enum'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
 import { Return } from 'common/types/result.type'
@@ -19,10 +21,65 @@ export class UserService {
         private readonly configService: ConfigService
     ) {}
 
-    async findAllUserProfile(query: QueryAllUserProfileType) {
-        return await this.prisma.user.findMany({
-            where: {}
-        })
+    async findAllUserProfile(query: QueryAllUserProfileType): Promise<Return> {
+        let { end_date, search_key, limit, page, role, start_date, status } = query
+
+        let pre_page = page
+
+        const take = limit || this.configService.get<number>('app.limit')
+        page = (page || 1) - 1
+        const skip = page * limit
+
+        role = role || [UserType.STORE_OWNER, UserType.USER]
+
+        const general_user_where: Prisma.UserWhereInput = {
+            role: {
+                in: role
+            },
+            status,
+            createdAt: {
+                gte: start_date,
+                lte: end_date
+            }
+        }
+
+        const where: Prisma.UserWhereInput = {
+            OR: [
+                {
+                    full_name: {
+                        contains: search_key
+                    },
+                    ...general_user_where
+                },
+                {
+                    email: {
+                        contains: search_key
+                    },
+                    ...general_user_where
+                }
+            ]
+        }
+
+        const [users, count] = await Promise.all([
+            this.prisma.user.findMany({
+                where,
+                take,
+                skip
+            }),
+            this.prisma.user.count({ where })
+        ])
+
+        return {
+            msg: 'ok',
+            result: {
+                data: users,
+                query: {
+                    ...query,
+                    page: pre_page,
+                    page_size: Math.ceil(count / limit)
+                }
+            }
+        }
     }
 
     async profileDetail(user: CurrentUserType): Promise<Return> {

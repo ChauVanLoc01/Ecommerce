@@ -228,7 +228,7 @@ const SaleAlert = ({
                     open={selectedEvent.open}
                     onOpenChange={(open) => setSelectedEvent((pre) => ({ ...pre, open }))}
                 >
-                    <AlertDialog.Content className='rounded-8' maxWidth='1000px'>
+                    <AlertDialog.Content className='rounded-8' maxWidth='1400px'>
                         <AlertDialog.Title>Tham gia sự kiện</AlertDialog.Title>
                         <DataList.Root>
                             <DataList.Item>

@@ -1,6 +1,9 @@
 import { Avatar, Button, Spinner, Text } from '@radix-ui/themes'
+import { useMutation } from '@tanstack/react-query'
 import SimpleBar from 'simplebar-react'
+import { OrderFetching } from 'src/apis/order'
 import { ProductConvert } from 'src/types/context.type'
+import { Payment } from 'src/types/payment.type'
 import { RefreshStore } from 'src/types/store.type'
 import { VoucherWithCondition } from 'src/types/voucher.type'
 import { convertCurrentcy } from 'src/utils/utils.ts'
@@ -50,6 +53,7 @@ type CheckoutSummaryProps = {
               }
           }
         | undefined
+    payment: Payment
 }
 
 const CheckoutSummary = ({
@@ -63,8 +67,15 @@ const CheckoutSummary = ({
     refreshStores,
     voucherLatest,
     setVoucherIds,
-    voucherIds
+    voucherIds,
+    payment
 }: CheckoutSummaryProps) => {
+    const { mutate: createTransaction } = useMutation({
+        mutationFn: OrderFetching.createTransaction({ bankCode: payment, total: priceLatest?.allOrder.pay as number })
+    })
+
+    const hanldeTransaction = () => createTransaction
+
     return (
         <section className='basis-1/3 space-y-4'>
             <SimpleBar style={{ maxHeight: '600px', paddingBottom: '5px' }}>
@@ -175,9 +186,9 @@ const CheckoutSummary = ({
                     </div>
                 </div>
             </SimpleBar>
-            <Button onClick={step < 3 ? handleNextStep : handleOrder} size={'3'} className='!w-full'>
+            <Button onClick={step < 3 ? handleNextStep : hanldeTransaction} size={'3'} className='!w-full'>
                 {isPending && <Spinner />}
-                {step === 3 ? 'Đặt hàng' : 'Tiếp tục'}
+                {step === 3 ? 'Thanh toán' : 'Tiếp tục'}
             </Button>
         </section>
     )

@@ -21,7 +21,7 @@ const Table = function <T>({ columns, data, className, tableMaxHeight, usingSimp
 
     return (
         <TableShadcn
-            className={twMerge('!w-full', className)}
+            className={twMerge('min-w-full', className)}
             maxHeight={tableMaxHeight ?? 'auto'}
             usingSimpleBar={usingSimpleBar}
         >

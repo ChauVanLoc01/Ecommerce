@@ -15,7 +15,7 @@ import { UserService } from './user.service'
 export class UserController {
     constructor(private readonly userService: UserService) {}
 
-    @Roles(Role.ADMIN, Role.STORE_OWNER)
+    @Roles(Role.ADMIN)
     @Get('all-user')
     getAllUserProfile(@Query() query: QueryAllUserProfileDTO) {
         return this.userService.findAllUserProfile(query)

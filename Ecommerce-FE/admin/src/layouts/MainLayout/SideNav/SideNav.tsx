@@ -1,18 +1,24 @@
-import { CubeIcon, FileTextIcon, HomeIcon, IdCardIcon, PersonIcon, StarIcon } from '@radix-ui/react-icons'
+import { HomeIcon } from '@radix-ui/react-icons'
 import { useContext, useMemo } from 'react'
-import { CiDiscount1 } from 'react-icons/ci'
+import { GoStarFill } from 'react-icons/go'
+import { IoStorefront, IoTicket } from 'react-icons/io5'
+import { MdFlashOn, MdManageAccounts, MdSupervisorAccount } from 'react-icons/md'
+import { RiBillFill, RiBox3Fill } from 'react-icons/ri'
+import { SiGoogleanalytics } from 'react-icons/si'
 import Select from 'src/components/Select'
 import { OBJECT, ROLE, SERVICE, SERVICE_NAME } from 'src/constants/role'
 import { AppContext } from 'src/contexts/AppContext'
 
 const Icon = {
-    HomeIcon: <HomeIcon />,
-    CiDiscount1: <CiDiscount1 />,
-    CubeIcon: <CubeIcon />,
-    FileTextIcon: <FileTextIcon />,
-    PersonIcon: <PersonIcon />,
-    StarIcon: <StarIcon />,
-    IdCardIcon: <IdCardIcon />
+    MdFlashOn: <MdFlashOn />,
+    RiBox3Fill: <RiBox3Fill />,
+    RiBillFill: <RiBillFill />,
+    MdManageAccounts: <MdManageAccounts />,
+    GoStarFill: <GoStarFill />,
+    SiGoogleanalytics: <SiGoogleanalytics />,
+    MdSupervisorAccount: <MdSupervisorAccount />,
+    IoStorefront: <IoStorefront />,
+    IoTicket: <IoTicket />
 }
 
 const SideNav = () => {

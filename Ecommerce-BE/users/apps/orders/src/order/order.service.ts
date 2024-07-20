@@ -12,10 +12,12 @@ import {
 import { ConfigService } from '@nestjs/config'
 import { ClientProxy } from '@nestjs/microservices'
 import { SchedulerRegistry } from '@nestjs/schedule'
-import { Prisma, PrismaClient, Product } from '@prisma/client'
+import { Order, Prisma, PrismaClient, Product } from '@prisma/client'
 import { DefaultArgs } from '@prisma/client/runtime/library'
+import { AnalysisType } from 'aws-sdk/clients/iotevents'
 import { Queue } from 'bull'
 import { Cache } from 'cache-manager'
+import { AnalyticsType } from 'common/constants/analytics.constants'
 import { BackgroundAction, BackgroundName } from 'common/constants/background-job.constant'
 import {
     getAllProductWithProductOrder,
@@ -32,12 +34,30 @@ import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
 import { CreateOrderPayload } from 'common/types/order_payload.type'
 import { MessageReturn, Return } from 'common/types/result.type'
 import { emit_update_status_of_order, hash, product_next_step } from 'common/utils/order_helper'
-import { add, addHours, compareDesc, format, isPast, sub, subDays } from 'date-fns'
+import {
+    add,
+    addHours,
+    compareDesc,
+    eachDayOfInterval,
+    eachMonthOfInterval,
+    eachWeekOfInterval,
+    endOfDay,
+    endOfMonth,
+    endOfWeek,
+    endOfYear,
+    format,
+    isPast,
+    startOfDay,
+    startOfMonth,
+    startOfWeek,
+    startOfYear,
+    sub,
+    subDays
+} from 'date-fns'
 import { Dictionary, isUndefined, max, omitBy, sumBy } from 'lodash'
 import { firstValueFrom } from 'rxjs'
 import { v4 as uuidv4 } from 'uuid'
 import { CreateOrder, CreateOrderDTO } from '../../../../common/dtos/create_order.dto'
-import { AnalyticsOrderDTO } from '../dtos/analytics_order.dto'
 import {
     CreateOrderRefundDTO,
     ReOpenOrderRefundDTO,
@@ -1159,63 +1179,116 @@ export class OrderService {
     //     return ['ok']
     // }
 
-    async receiptAnalyticByDate(user: CurrentStoreType, body: AnalyticsOrderDTO): Promise<Return> {
-        const { dates } = body
-        const { storeId } = user
+    // async receiptAnalyticByDate(user: CurrentStoreType, type: AnalyticsType): Promise<Return> {
+    //     const { storeId } = user
 
-        const orders = await Promise.all(
-            dates.map((day, idx) =>
-                this.prisma.order.findMany({
-                    where: {
-                        storeId,
-                        createdAt: {
-                            gte: day,
-                            lt: dates[idx + 1]
-                        }
-                    }
-                })
-            )
-        )
+    //     var result: Pick<Order, 'id' | 'total' | 'pay' | 'discount'>[][]
+    //     const select: Prisma.OrderSelect = {
+    //         id: true,
+    //         total: true,
+    //         pay: true,
+    //         discount: true
+    //     }
 
-        const receipts = orders.map((e) => sumBy(e, (o) => o.pay))
+    //     switch (type) {
+    //         case 'day':
+    //             let dayType = eachDayOfInterval({
+    //                 start: add(startOfWeek(new Date(), { weekStartsOn: 1 }), { hours: 7 }),
+    //                 end: add(endOfWeek(new Date(), { weekStartsOn: 1 }), { hours: 7 })
+    //             })
+    //             result = await Promise.all(
+    //                 dayType.map((time) => {
+    //                     return this.prisma.order.findMany({
+    //                         where: {
+    //                             status: OrderFlowEnum.FINISH,
+    //                             updatedAt: {
+    //                                 gte: add(startOfDay(time), { hours: 7 }),
+    //                                 lte: add(endOfDay(time), { hours: 7 })
+    //                             }
+    //                         }
+    //                     })
+    //                 })
+    //             )
+    //             break
+    //         case 'weekInMonth':
+    //             let weekType = eachWeekOfInterval({
+    //                 start: add(startOfMonth(new Date()), { hours: 7 }),
+    //                 end: add(endOfMonth(new Date()), { hours: 7 })
+    //             })
+    //             result = await Promise.all(
+    //                 weekType.map((time) => {
+    //                     return this.prisma.order.findMany({
+    //                         where: {
+    //                             status: OrderFlowEnum.FINISH,
+    //                             updatedAt: {
+    //                                 gte: add(startOfWeek(time), { hours: 7 }),
+    //                                 lte: add(endOfWeek(time), { hours: 7 })
+    //                             }
+    //                         }
+    //                     })
+    //                 })
+    //             )
+    //             break
+    //         default:
+    //             let monthType = eachMonthOfInterval({
+    //                 start: add(startOfYear(new Date()), { hours: 7 }),
+    //                 end: add(endOfYear(new Date()), { hours: 7 })
+    //             })
+    //             result = await Promise.all(
+    //                 monthType.map((time) => {
+    //                     return this.prisma.order.findMany({
+    //                         where: {
+    //                             status: OrderFlowEnum.FINISH,
+    //                             updatedAt: {
+    //                                 gte: add(startOfMonth(time), { hours: 7 }),
+    //                                 lte: add(endOfMonth(time), { hours: 7 })
+    //                             }
+    //                         }
+    //                     })
+    //                 })
+    //             )
+    //             break
+    //     }
 
-        return {
-            msg: 'ok',
-            result: {
-                receipts: receipts.map((e, idx) => ({ date: dates[idx], total: e })),
-                current: receipts[receipts.length - 1],
-                percent: Math.floor((receipts[receipts.length - 1] * 100) / max(receipts))
-            }
-        }
-    }
+    //     const receipts = orders.map((e) => sumBy(e, (o) => o.pay))
 
-    async orderAnalyticByDate(user: CurrentStoreType, body: AnalyticsOrderDTO): Promise<Return> {
-        const { dates } = body
-        const { storeId } = user
+    //     return {
+    //         msg: 'ok',
+    //         result: {
+    //             receipts: receipts.map((e, idx) => ({ date: dates[idx], total: e })),
+    //             current: receipts[receipts.length - 1],
+    //             percent: Math.floor((receipts[receipts.length - 1] * 100) / max(receipts))
+    //         }
+    //     }
+    // }
 
-        const orders = await Promise.all(
-            dates.map((day, idx) =>
-                this.prisma.order.count({
-                    where: {
-                        storeId,
-                        createdAt: {
-                            gte: day,
-                            lt: dates[idx + 1]
-                        }
-                    }
-                })
-            )
-        )
+    // async orderAnalyticByDate(user: CurrentStoreType, type: AnalysisType): Promise<Return> {
+    //     const { dates } = body
+    //     const { storeId } = user
 
-        return {
-            msg: 'ok',
-            result: {
-                orders: orders.map((e, idx) => ({ date: dates[idx], order: e })),
-                current: orders[orders.length - 1],
-                percent: Math.floor((orders[orders.length - 1] * 100) / max(orders))
-            }
-        }
-    }
+    //     const orders = await Promise.all(
+    //         dates.map((day, idx) =>
+    //             this.prisma.order.count({
+    //                 where: {
+    //                     storeId,
+    //                     createdAt: {
+    //                         gte: day,
+    //                         lt: dates[idx + 1]
+    //                     }
+    //                 }
+    //             })
+    //         )
+    //     )
+
+    //     return {
+    //         msg: 'ok',
+    //         result: {
+    //             orders: orders.map((e, idx) => ({ date: dates[idx], order: e })),
+    //             current: orders[orders.length - 1],
+    //             percent: Math.floor((orders[orders.length - 1] * 100) / max(orders))
+    //         }
+    //     }
+    // }
 
     async test() {
         return this.productClient.send('test', ['ok'])

@@ -2,6 +2,7 @@ import { route } from './route'
 
 export enum SERVICE {
     'Overview' = 'Overview',
+    'Analytics' = 'Analytics',
     'FlashSale' = 'FlashSale',
     'Product' = 'Product',
     'Order' = 'Order',
@@ -15,48 +16,53 @@ export enum SERVICE {
 export const SERVICE_NAME: Record<SERVICE, { label: string; path: string; icon: string }> = {
     [SERVICE.Overview]: {
         label: 'Tổng quan',
+        path: `/${route.over_view}`,
+        icon: 'SiGoogleanalytics'
+    },
+    [SERVICE.Analytics]: {
+        label: 'Tổng quan',
         path: `/${route.analytic}`,
-        icon: 'HomeIcon'
+        icon: 'SiGoogleanalytics'
     },
     [SERVICE.FlashSale]: {
         label: 'Flash Sale',
         path: `/${route.flashSale}`,
-        icon: 'CiDiscount1'
+        icon: 'MdFlashOn'
     },
     [SERVICE.Product]: {
         label: 'Sản phẩm',
         path: route.product,
-        icon: 'CubeIcon'
+        icon: 'RiBox3Fill'
     },
     [SERVICE.Order]: {
         label: 'Đơn hàng',
         path: route.order,
-        icon: 'FileTextIcon'
+        icon: 'RiBillFill'
     },
     [SERVICE.Employee]: {
         label: 'Nhân viên',
         path: route.employee,
-        icon: 'PersonIcon'
+        icon: 'MdManageAccounts'
     },
     [SERVICE.Rating]: {
         label: 'Đánh giá',
         path: route.rating,
-        icon: 'StarIcon'
+        icon: 'GoStarFill'
     },
     [SERVICE.Voucher]: {
         label: 'Mã giảm giá',
         path: route.voucher,
-        icon: 'IdCardIcon'
+        icon: 'IoTicket'
     },
     [SERVICE.Store]: {
         label: 'Cửa hàng',
         path: route.store,
-        icon: 'IoStorefrontOutline'
+        icon: 'IoStorefront'
     },
     [SERVICE.User]: {
         label: 'Người dùng',
         path: route.user,
-        icon: 'IoStorefrontOutline'
+        icon: 'MdSupervisorAccount'
     }
 }
 
@@ -69,6 +75,7 @@ export type RoleType = Record<OBJECT, Record<Partial<SERVICE>, ACTION[]>>
 export const ROLE: RoleType = {
     ADMIN: {
         Overview: ['ADMIN'],
+        Analytics: [],
         FlashSale: ['ADMIN'],
         Product: [],
         Order: [],
@@ -79,7 +86,8 @@ export const ROLE: RoleType = {
         User: ['ADMIN']
     },
     STORE_OWNER: {
-        Overview: ['Full'],
+        Overview: [],
+        Analytics: ['Full'],
         FlashSale: ['Full'],
         Product: ['Full'],
         Order: ['Full'],
@@ -91,6 +99,7 @@ export const ROLE: RoleType = {
     },
     EMPLOYEE: {
         Overview: [],
+        Analytics: [],
         FlashSale: ['Create', 'Delete', 'Update'],
         Product: ['Create', 'Delete', 'Update'],
         Order: ['Update'],

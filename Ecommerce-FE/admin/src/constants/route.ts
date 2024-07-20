@@ -15,11 +15,12 @@ export const route = {
     voucher: 'voucher',
     rating: 'rating',
     flashSale: 'flash-sale',
-    user: 'user'
+    user: 'user',
+    over_view: 'over_view'
 }
 
 export const route_default_with_role: Record<OBJECT, string> = {
-    ADMIN: route.analytic,
-    STORE_OWNER: route.analytic,
-    EMPLOYEE: route.order
+    ADMIN: route.over_view,
+    STORE_OWNER: route.voucher,
+    EMPLOYEE: route.voucher
 }

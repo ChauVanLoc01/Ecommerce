@@ -77,7 +77,7 @@ export class ProductConsummer {
                             ':::::::::Background job: Tạo cron job để cập nhật product:::::::::::'
                         )
                         const update_product_cron_job = new CronJob(
-                            CronExpression.EVERY_5_MINUTES,
+                            CronExpression.EVERY_30_SECONDS,
                             async () => {
                                 try {
                                     if (fromCache) {

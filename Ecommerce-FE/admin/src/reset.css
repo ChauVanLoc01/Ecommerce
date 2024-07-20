@@ -51,7 +51,11 @@ body {
 }
 
 .simplebar-track.simplebar-vertical .simplebar-scrollbar:before {
-    background-color: #595959;
+    background-color: #bfbfbf;
+}
+
+.simplebar-track.simplebar-horizontal .simplebar-scrollbar:before {
+    background-color: #bfbfbf;
 }
 
 .ant-picker.ant-picker-outlined:focus-within {

@@ -56,7 +56,7 @@ export class VoucherConsummer {
             await Promise.all(
                 data.map((voucherId) => {
                     let hashValue = hash('voucher', voucherId)
-                    let cron_job = new CronJob(CronExpression.EVERY_5_MINUTES, async () => {
+                    let cron_job = new CronJob(CronExpression.EVERY_30_SECONDS, async () => {
                         try {
                             let fromCache = await this.cacheManager.get<string>(hashValue)
                             if (fromCache) {

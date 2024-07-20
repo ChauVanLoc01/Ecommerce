@@ -28,6 +28,7 @@ import { MessageReturn, Return } from 'common/types/result.type'
 import {
     commit_create_order_success,
     emit_update_quantity_of_voucher,
+    emit_update_status_of_order,
     hash,
     roll_back_order
 } from 'common/utils/order_helper'
@@ -535,6 +536,12 @@ export class VoucherService {
                     ':::::::::Success: Cập nhật vouher thành công ==> emit sự kiện commit tới product:::::::::::',
                     format(new Date(), 'hh:mm:ss:SSS dd/MM')
                 )
+                emit_update_status_of_order(this.socketClient, {
+                    action: true,
+                    id: payload.actionId,
+                    msg: 'Tạo đơn hàng thành công',
+                    result: null
+                })
                 commit_create_order_success([this.orderClient, this.productClient], payload as any)
                 tmp.forEach(({ quantity, storeId, voucherId }) =>
                     emit_update_quantity_of_voucher(this.socketClient, {

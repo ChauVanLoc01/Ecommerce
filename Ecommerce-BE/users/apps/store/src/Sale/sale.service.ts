@@ -61,25 +61,21 @@ export class SaleService {
             const { date } = query
             const promotions = await this.prisma.salePromotion.findMany({})
 
-            const storePromotions = (
-                await Promise.all(
-                    promotions.map((promotion) =>
-                        this.prisma.storePromotion.findFirst({
-                            where: {
-                                salePromotionId: promotion.id,
-                                storeId
-                            },
-                            include: {
-                                ProductPromotion: {
-                                    where: {
-                                        isDelete: false
-                                    }
-                                }
-                            }
-                        })
-                    )
-                )
-            ).filter(Boolean)
+            const storePromotions = await this.prisma.storePromotion.findMany({
+                where: {
+                    salePromotionId: {
+                        in: promotions.map(({ id }) => id)
+                    },
+                    storeId
+                },
+                include: {
+                    ProductPromotion: {
+                        where: {
+                            isDelete: false
+                        }
+                    }
+                }
+            })
 
             return {
                 msg: 'ok',
@@ -89,6 +85,7 @@ export class SaleService {
                 }
             }
         } catch (err) {
+            console.log('error', err)
             throw new InternalServerErrorException('Lỗi Server')
         }
     }
@@ -415,28 +412,26 @@ export class SaleService {
         try {
             let { productIds, saleId } = payload
 
-            const productSales = await Promise.all(
-                productIds.map((productId) => {
-                    return this.prisma.productPromotion.findFirst({
-                        where: {
-                            salePromotionId: saleId,
-                            productId,
-                            isDelete: false,
-                            quantity: {
-                                gt: 0
-                            }
-                        },
-                        select: {
-                            quantity: true,
-                            bought: true,
-                            priceAfter: true,
-                            productId: true,
-                            salePromotionId: true,
-                            id: true
-                        }
-                    })
-                })
-            )
+            const productSales = await this.prisma.productPromotion.findMany({
+                where: {
+                    salePromotionId: saleId,
+                    productId: {
+                        in: productIds.map((productId) => productId)
+                    },
+                    isDelete: false,
+                    quantity: {
+                        gt: 0
+                    }
+                },
+                select: {
+                    quantity: true,
+                    bought: true,
+                    priceAfter: true,
+                    productId: true,
+                    salePromotionId: true,
+                    id: true
+                }
+            })
 
             if (!productSales.length) {
                 return {

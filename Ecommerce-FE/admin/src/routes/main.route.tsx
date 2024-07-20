@@ -3,7 +3,7 @@ import { QueryClient } from '@tanstack/react-query'
 import { useContext } from 'react'
 import { createBrowserRouter, Navigate, Outlet, RouteObject } from 'react-router-dom'
 import Error from 'src/components/Error/Error'
-import { StoreOwnerAndEmployeeAuth, StoreOwnerAuth } from 'src/components/Role/Role'
+import { AdminAuth, StoreOwnerAndEmployeeAuth, StoreOwnerAuth } from 'src/components/Role/Role'
 import { OBJECT, SERVICE } from 'src/constants/role'
 
 import { route, route_default_with_role } from 'src/constants/route'
@@ -14,15 +14,18 @@ import { flashSaleLoader } from 'src/loader/flash-sale.loader'
 import { orderLoader } from 'src/loader/order.loader'
 import { productLoader } from 'src/loader/product.loader'
 import { ratingLoader } from 'src/loader/rating.loader'
+import { userLoader } from 'src/loader/user.loader'
 import { voucherLoader } from 'src/loader/voucher.loader'
 import Login from 'src/pages/Auth'
 import Employee from 'src/pages/Employee'
 import FlashSale from 'src/pages/FlashSale/FlashSale'
 import Order from 'src/pages/Order'
+import Overview from 'src/pages/Overview/Overview'
 import PageNotFound from 'src/pages/PageNotFound/PageNotFound'
 import Product from 'src/pages/Product'
 import Rating from 'src/pages/Rating/Rating'
-import Store from 'src/pages/Store'
+import Store from 'src/pages/Store/Store'
+import User from 'src/pages/User/User'
 import Voucher from 'src/pages/Voucher/Voucher'
 
 const MainLayout = loadable(() => import('src/layouts/MainLayout'))
@@ -43,6 +46,14 @@ const RejectRoute = () => {
 
 const PrivateRouteDefault: Record<SERVICE, RouteObject> = {
     Overview: {
+        path: route.over_view,
+        element: (
+            <AdminAuth>
+                <Overview />
+            </AdminAuth>
+        )
+    },
+    Analytics: {
         path: route.analytic,
         element: (
             <StoreOwnerAuth>
@@ -105,8 +116,23 @@ const PrivateRouteDefault: Record<SERVICE, RouteObject> = {
         ),
         loader: voucherLoader
     },
-    Store: {},
-    User: {}
+    Store: {
+        path: route.store,
+        element: (
+            <AdminAuth>
+                <Store />
+            </AdminAuth>
+        )
+    },
+    User: {
+        path: route.user,
+        element: (
+            <AdminAuth>
+                <User />
+            </AdminAuth>
+        ),
+        loader: userLoader
+    }
 }
 
 export const queryClient = new QueryClient({

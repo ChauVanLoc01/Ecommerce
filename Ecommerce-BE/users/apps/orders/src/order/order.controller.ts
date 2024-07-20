@@ -25,6 +25,7 @@ import {
 } from '../dtos/order_refund.dto'
 import { QueryOrderDTO } from '../dtos/query-order.dto'
 import { OrderService } from './order.service'
+import { AnalyticsType } from 'common/constants/analytics.constants'
 
 @ApiBearerAuth()
 @UseGuards(JwtGuard)
@@ -58,17 +59,20 @@ export class OrderController {
         return this.ordersService.getAllOrderByStore(user, query)
     }
 
-    @Roles(Role.STORE_OWNER)
-    @Post('receipt-analytic')
-    receiptAnalyticByDate(@CurrentUser() user: CurrentStoreType, @Body() body: AnalyticsOrderDTO) {
-        return this.ordersService.receiptAnalyticByDate(user, body)
-    }
+    // @Roles(Role.STORE_OWNER)
+    // @Get('receipt-analytic/:type')
+    // receiptAnalyticByDate(
+    //     @CurrentUser() user: CurrentStoreType,
+    //     @Param('type') type: AnalyticsType
+    // ) {
+    //     return this.ordersService.receiptAnalyticByDate(user, body)
+    // }
 
-    @Roles(Role.STORE_OWNER)
-    @Post('order-analytic')
-    orderAnalyticByDate(@CurrentUser() user: CurrentStoreType, @Body() body: AnalyticsOrderDTO) {
-        return this.ordersService.orderAnalyticByDate(user, body)
-    }
+    // @Roles(Role.STORE_OWNER)
+    // @Post('order-analytic')
+    // orderAnalyticByDate(@CurrentUser() user: CurrentStoreType, @Body() body: AnalyticsOrderDTO) {
+    //     return this.ordersService.orderAnalyticByDate(user, body)
+    // }
 
     @Roles(Role.STORE_OWNER, Role.ADMIN, Role.EMPLOYEE)
     @Get('store-order-status/:orderId')

@@ -21,5 +21,11 @@ export default registerAs('app', () => ({
 
     aws_access_key_id: process.env.ACCESS_KEY_ID,
 
-    aws_secret_access_key: process.env.SECRET_ACCESS_KEY
+    aws_secret_access_key: process.env.SECRET_ACCESS_KEY,
+
+    vnp_TmnCode: process.env.vnp_TmnCode,
+    vnp_HashSecret: process.env.vnp_HashSecret,
+    vnp_Url: process.env.vnp_Url,
+    vnp_Api: process.env.vnp_Api,
+    vnp_ReturnUrl: process.env.vnp_ReturnUrll
 }))

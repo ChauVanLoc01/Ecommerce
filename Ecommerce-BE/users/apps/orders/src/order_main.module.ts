@@ -9,8 +9,6 @@ import * as redisStore from 'cache-manager-redis-store'
 import { QueueName } from 'common/constants/queue.constant'
 import { OrderModule } from './order/order.module'
 import { PaymentModule } from './payment/payment.module'
-import { BackgroundName } from 'common/constants/background-job.constant'
-import { OrderConsummer } from './workers/order.worker'
 
 @Module({
     imports: [
@@ -77,7 +75,8 @@ import { OrderConsummer } from './workers/order.worker'
             })
         }),
         OrderModule,
-        PaymentModule
+        PaymentModule,
+        ConfigModule
     ],
     controllers: [],
     providers: []
