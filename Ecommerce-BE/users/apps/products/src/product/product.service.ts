@@ -1278,4 +1278,25 @@ export class ProductService {
         await this.cacheManager.set('testing', tmp)
         return await this.cacheManager.get('testing')
     }
+
+    async countProduct(storeId: string): Promise<MessageReturn> {
+        try {
+            const product_count = await this.prisma.product.count({
+                where: {
+                    storeId
+                }
+            })
+            return {
+                msg: 'ok',
+                action: true,
+                result: product_count
+            }
+        } catch (err) {
+            return {
+                msg: 'ok',
+                action: false,
+                result: null
+            }
+        }
+    }
 }

@@ -1,6 +1,5 @@
-'use client'
-
 import { CalendarIcon, CrossCircledIcon } from '@radix-ui/react-icons'
+import { PopoverClose } from '@radix-ui/react-popover'
 import { Button, Flex, Text, Tooltip } from '@radix-ui/themes'
 import { format } from 'date-fns'
 import { vi } from 'date-fns/locale'
@@ -76,16 +75,15 @@ export function DatePickerWithRange({ date, setDate, className }: DatePickerWith
                     <Flex justify={'end'} className='space-x-3 p-3 text-sm'>
                         <Button
                             onClick={handleClearDate}
-                            className='inline-block border border-red px-3 py-1.5 bg-red/80 text-white rounded-6 cursor-pointer'
+                            className='text-red border border-red rounded-6 cursor-pointer hover:bg-red/90 hover:text-white px-3 py-1.5 transition-all ease-linear'
                         >
-                            Xóa
+                            Bỏ chọn
                         </Button>
-                        <Button
-                            color='blue'
-                            className='rounded-6 bg-blue text-white px-3 py-1.5 cursor-pointer hover:bg-blue/90'
-                        >
-                            Xác nhận
-                        </Button>
+                        <PopoverClose>
+                            <Button className='inline-block border border-blue px-3 py-1.5 bg-blue text-white rounded-6 cursor-pointer hover:bg-blue/80'>
+                                Trở về
+                            </Button>
+                        </PopoverClose>
                     </Flex>
                 </PopoverContent>
             </Popover>

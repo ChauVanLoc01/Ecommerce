@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import { DateRange } from 'react-day-picker'
 import { toast } from 'sonner'
 import { user_api } from 'src/apis/user.api'
-import { queryClient } from 'src/routes/main.route'
 import { User as UserType } from 'src/types/auth.type'
 import { UserQuery } from 'src/types/user.type'
 import LayoutProfile from '../Profile/LayoutProfile'
@@ -22,16 +21,19 @@ const User = () => {
     const [selectedUser, setSelectedUser] = useState<UserType | undefined>(undefined)
 
     const { data: users, refetch: refetchUser } = useQuery({
-        queryKey: ['users', { limit: 10, page: 1 }],
+        queryKey: ['users', query],
         queryFn: user_api.getUsers(query),
-        select: (data) => data.data
+        select: (data) => data.data,
+        placeholderData: (old_data) => old_data,
+        enabled: false
     })
 
-    const { mutate: updateStatus } = useMutation({
+    const { mutate: updateStatus, isPending: isUpdating } = useMutation({
         mutationFn: user_api.updateStatusOfUser(selectedUser?.id || ''),
         onSuccess: () => {
+            setUpdateStatusOpen(false)
             toast.success('Cập nhật trạng thái thành công')
-            queryClient.invalidateQueries({ queryKey: ['users'] })
+            refetchUser()
         },
         onError: (err) => {
             if (isAxiosError(err)) {
@@ -41,14 +43,13 @@ const User = () => {
     })
 
     useEffect(() => {
-        if (Object.keys(query).length > 2) {
-            refetchUser()
-        }
+        refetchUser()
     }, [query])
 
     return (
         <LayoutProfile title='Quản lý người dùng' isFullHeight>
             <StoreHeader
+                query={query}
                 pagination={{ page: users?.result.query.page || 0, page_size: users?.result.query.page_size || 0 }}
                 date={date}
                 setDate={setDate}
@@ -65,6 +66,7 @@ const User = () => {
                 setOpen={setUpdateStatusOpen}
                 selectedUser={selectedUser}
                 updateStatus={updateStatus}
+                isUpdating={isUpdating}
             />
             <Detail open={detailOpen} setOpen={setDetailOpen} />
         </LayoutProfile>

@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import { DateRange } from 'react-day-picker'
 import { toast } from 'sonner'
 import { store_api } from 'src/apis/store.api'
-import { queryClient } from 'src/routes/main.route'
 import { Store as StoreType } from 'src/types/auth.type'
 import { StoreQuery } from 'src/types/store.type'
 import LayoutProfile from '../Profile/LayoutProfile'
@@ -14,7 +13,7 @@ import StoreTable from './StoreTable'
 import UpdateStatus from './UpdateStatus'
 
 const Store = () => {
-    const [query, setQuery] = useState<StoreQuery>({ page: 1, limit: 20 })
+    const [query, setQuery] = useState<StoreQuery>({ page: 1, limit: 10, search_key: '' })
     const [updateStatusOpen, setUpdateStatusOpen] = useState<boolean>(false)
     const [detailOpen, setDetailOpen] = useState<boolean>(false)
     const [date, setDate] = useState<DateRange | undefined>({ from: query?.start_date, to: query?.end_date })
@@ -22,16 +21,19 @@ const Store = () => {
     const [selectedStore, setSelectedStore] = useState<StoreType | undefined>(undefined)
 
     const { data: stores, refetch: refetchStores } = useQuery({
-        queryKey: ['stores'],
+        queryKey: ['stores', query],
         queryFn: store_api.getStores(query),
-        select: (data) => data.data.result
+        select: (data) => data.data.result,
+        enabled: false,
+        placeholderData: (old) => old
     })
 
     const { mutate: updateStatus } = useMutation({
         mutationFn: store_api.updateStatusOfStore(selectedStore?.id || ''),
         onSuccess: () => {
+            setUpdateStatusOpen(false)
             toast.success('Cập nhật trạng thái thành công')
-            queryClient.invalidateQueries({ queryKey: ['stores'] })
+            refetchStores()
         },
         onError: (err) => {
             if (isAxiosError(err)) {
@@ -41,16 +43,21 @@ const Store = () => {
     })
 
     useEffect(() => {
-        if (Object.keys(query).length > 2) {
-            refetchStores()
-        }
+        refetchStores()
     }, [query])
 
     return (
         <LayoutProfile title='Quản lý cửa hàng' isFullHeight>
-            <StoreHeader pagination={{ page: 1, page_size: 10 }} date={date} setDate={setDate} setQuery={setQuery} />
+            <StoreHeader
+                query={query}
+                pagination={{ page: 1, page_size: 10 }}
+                date={date}
+                setDate={setDate}
+                setQuery={setQuery}
+            />
             <StoreTable
                 stores={stores?.data || []}
+                query={query}
                 setDetailOpen={setDetailOpen}
                 setSelectedStore={setSelectedStore}
                 setStatusUpdateOpen={setUpdateStatusOpen}
@@ -61,7 +68,7 @@ const Store = () => {
                 selectedStore={selectedStore}
                 updateStatus={updateStatus}
             />
-            <Detail open={detailOpen} setOpen={setDetailOpen} />
+            <Detail open={detailOpen} setOpen={setDetailOpen} selectedStore={selectedStore} />
         </LayoutProfile>
     )
 }

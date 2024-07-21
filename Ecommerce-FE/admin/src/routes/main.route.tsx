@@ -14,6 +14,7 @@ import { flashSaleLoader } from 'src/loader/flash-sale.loader'
 import { orderLoader } from 'src/loader/order.loader'
 import { productLoader } from 'src/loader/product.loader'
 import { ratingLoader } from 'src/loader/rating.loader'
+import { storeLoader } from 'src/loader/store.loader'
 import { userLoader } from 'src/loader/user.loader'
 import { voucherLoader } from 'src/loader/voucher.loader'
 import Login from 'src/pages/Auth'
@@ -122,7 +123,8 @@ const PrivateRouteDefault: Record<SERVICE, RouteObject> = {
             <AdminAuth>
                 <Store />
             </AdminAuth>
-        )
+        ),
+        loader: storeLoader
     },
     User: {
         path: route.user,
@@ -138,7 +140,8 @@ const PrivateRouteDefault: Record<SERVICE, RouteObject> = {
 export const queryClient = new QueryClient({
     defaultOptions: {
         queries: {
-            networkMode: 'online'
+            networkMode: 'online',
+            staleTime: 1000 * 30
         },
         mutations: {
             networkMode: 'online'
@@ -168,10 +171,6 @@ const routes = createBrowserRouter([
                                 element: <Password />
                             }
                         ]
-                    },
-                    {
-                        path: route.store,
-                        element: <Store />
                     },
                     ...Object.values(PrivateRouteDefault),
                     {

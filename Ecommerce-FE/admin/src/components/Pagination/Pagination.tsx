@@ -60,7 +60,7 @@ const Pagination = function <T>({ pagination, setQuery }: PaginationProps<T>) {
                             {Array(pagination.page_size)
                                 .fill(0)
                                 .map((idx, page) => (
-                                    <Select.Item key={idx} value={(page + 1).toString()}>
+                                    <Select.Item key={`pagination-${idx}`} value={(page + 1).toString()}>
                                         {page + 1}
                                     </Select.Item>
                                 ))}

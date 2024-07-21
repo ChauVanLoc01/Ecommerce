@@ -52,7 +52,7 @@ const SideNav = () => {
             </section>
             <section className=''>
                 {side_navs.map(({ label: title, path, icon }) => {
-                    return <Select icon={Icon[icon as keyof typeof Icon]} parentData={{ title, path }} />
+                    return <Select key={path} icon={Icon[icon as keyof typeof Icon]} parentData={{ title, path }} />
                 })}
             </section>
         </nav>

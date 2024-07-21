@@ -3,6 +3,8 @@ import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices'
 import { ApiBearerAuth, ApiProperty } from '@nestjs/swagger'
 import {
     commit_order,
+    countEmployee,
+    countProduct,
     createProductOrder,
     getAllProductWithProductOrder,
     getProductImageByProductSalePromotion,
@@ -198,5 +200,11 @@ export class ProductController {
     @Get('testing/testing')
     testing() {
         return this.productsService.testing()
+    }
+
+    @Public()
+    @MessagePattern(countProduct)
+    countProduct(@Payload() storeId: string) {
+        return this.productsService.countProduct(storeId)
     }
 }

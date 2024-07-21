@@ -1,5 +1,5 @@
 import { InfoCircledIcon, LockClosedIcon, LockOpen1Icon } from '@radix-ui/react-icons'
-import { Badge, Checkbox, Flex, IconButton, Text, Tooltip } from '@radix-ui/themes'
+import { Badge, Flex, IconButton, Text, Tooltip } from '@radix-ui/themes'
 import { ColumnDef } from '@tanstack/react-table'
 import { format, formatDistanceToNow } from 'date-fns'
 import { BiSolidSortAlt } from 'react-icons/bi'
@@ -27,21 +27,6 @@ const UserTable = ({ users, setStatusUpdateOpen, setDetailOpen, setSelectedUser 
     }
 
     const columns: ColumnDef<User>[] = [
-        {
-            accessorKey: 'checkbox',
-            header: () => {
-                return (
-                    <Flex justify='center' align='center'>
-                        <Checkbox />
-                    </Flex>
-                )
-            },
-            cell: () => (
-                <Flex justify='center' align='center'>
-                    <Checkbox />
-                </Flex>
-            )
-        },
         {
             accessorKey: 'name',
             header: () => {
@@ -112,24 +97,32 @@ const UserTable = ({ users, setStatusUpdateOpen, setDetailOpen, setSelectedUser 
         {
             accessorKey: 'action',
             header: '',
-            cell: ({ row: { original } }) => (
-                <Flex gapX={'3'} align='center' className='space-x-2'>
-                    <Tooltip content='Chi tiết'>
-                        <IconButton size={'2'} variant='soft' color='blue' onClick={handleOpenDetail(original)}>
-                            <InfoCircledIcon />
-                        </IconButton>
-                    </Tooltip>
-                    <Tooltip content='Trạng thái'>
-                        <IconButton size={'2'} variant='soft' color='orange' onClick={hanldeOpenUpdateStatus(original)}>
-                            {[<LockClosedIcon />, <LockOpen1Icon />][+(original.status === Status.active)]}
-                        </IconButton>
-                    </Tooltip>
-                </Flex>
-            )
+            cell: ({ row: { original } }) => {
+                let isActive = original.status === Status.active
+                return (
+                    <Flex align='center' className='space-x-2'>
+                        <Tooltip content='Chi tiết'>
+                            <IconButton size={'2'} variant='soft' color='blue' onClick={handleOpenDetail(original)}>
+                                <InfoCircledIcon />
+                            </IconButton>
+                        </Tooltip>
+                        <Tooltip content={isActive ? 'Khóa người dùng' : 'Mở khóa người dùng'}>
+                            <IconButton
+                                size={'2'}
+                                variant='soft'
+                                color='orange'
+                                onClick={hanldeOpenUpdateStatus(original)}
+                            >
+                                {[<LockClosedIcon />, <LockOpen1Icon />][+isActive]}
+                            </IconButton>
+                        </Tooltip>
+                    </Flex>
+                )
+            }
         }
     ]
 
-    return <Table<User> columns={columns} data={users} className='h-[400px]' />
+    return <Table<User> columns={columns} data={users} tableMaxHeight='500px' />
 }
 
 export default UserTable

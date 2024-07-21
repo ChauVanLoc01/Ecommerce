@@ -1,6 +1,10 @@
 import { Body, Controller, Get, Param, Put, Query, UseGuards } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
-import { getInfoUserInRating, updateStoreRoleId } from 'common/constants/event.constant'
+import {
+    countEmployee,
+    getInfoUserInRating,
+    updateStoreRoleId
+} from 'common/constants/event.constant'
 import { CurrentUser } from 'common/decorators/current_user.decorator'
 import { Public } from 'common/decorators/public.decorator'
 import { Roles } from 'common/decorators/roles.decorator'
@@ -10,6 +14,7 @@ import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
 import { QueryAllUserProfileDTO } from '../dtos/all_user.dto'
 import { UpdateUserProfileDTO } from '../dtos/update_user_profile.dto'
 import { UserService } from './user.service'
+import { UpdateStatusOfUserDTO } from '../dtos/update_status_of_user.dto'
 
 @Controller('profile')
 export class UserController {
@@ -67,5 +72,17 @@ export class UserController {
     @Get('/user-profile/:userId')
     getProfileUser(@Param('userId') userId: string) {
         return this.userService.getProfileUser(userId)
+    }
+
+    @Public()
+    @MessagePattern(countEmployee)
+    countEmployee(@Payload() storeId: string) {
+        return this.userService.countEmployee(storeId)
+    }
+
+    @Roles(Role.ADMIN)
+    @Put('admin/:storeId')
+    updateStatusOfUser(@Param('storeId') storeId: string, @Body() body: UpdateStatusOfUserDTO) {
+        return this.userService.updateStatusOfUser(storeId, body)
     }
 }

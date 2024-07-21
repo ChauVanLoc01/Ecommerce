@@ -44,3 +44,5 @@ class Http {
 }
 
 export const http = new Http().getInstanceAxios()
+
+export const abort_controller = new AbortController()
