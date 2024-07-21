@@ -1,21 +1,23 @@
-import { Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { Outlet, useBeforeUnload, useLocation, useNavigate } from 'react-router-dom'
 
 import { setDefaultOptions } from 'date-fns'
 import { vi } from 'date-fns/locale'
 import { useContext, useEffect } from 'react'
+import 'react-vertical-timeline-component/style.min.css'
 import { exitEvent } from 'src/constants/event.constants'
-import { route } from 'src/constants/route'
+import { OBJECT } from 'src/constants/role'
+import { route, route_default_with_role } from 'src/constants/route'
 import { AppContext } from 'src/contexts/AppContext'
 import useLoadingFetching from 'src/hooks/useLoadingFetching'
+import { queryClient } from 'src/routes/main.route'
 import { ls } from 'src/utils/localStorage'
 import Header from './Header'
 import SideNav from './SideNav'
-import 'react-vertical-timeline-component/style.min.css'
 
 setDefaultOptions({ locale: vi })
 
 const MainLayout = () => {
-    const { setProfile, setStore } = useContext(AppContext)
+    const { setProfile, setStore, who, profile, store, role } = useContext(AppContext)
     const [loadingFetching] = useLoadingFetching()
     const navigate = useNavigate()
     const location = useLocation()
@@ -24,12 +26,21 @@ const MainLayout = () => {
         setProfile(undefined)
         setStore(undefined)
         ls.clearAll()
-        navigate('/login')
+        queryClient.clear()
     })
 
     useEffect(() => {
-        location.pathname === route.root && navigate(route.analytic)
+        location.pathname === route.root && navigate(route_default_with_role[who as OBJECT])
     }, [])
+
+    useBeforeUnload(() => {
+        if (!/login/.test(location.pathname)) {
+            ls.setItem('profile', JSON.stringify(profile))
+            ls.setItem('store', JSON.stringify(store))
+            ls.setItem('role', JSON.stringify(role))
+            ls.setItem('who', who as string)
+        }
+    })
 
     return (
         <>

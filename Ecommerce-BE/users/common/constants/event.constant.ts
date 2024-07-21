@@ -7,9 +7,9 @@ export const updateQuantiyProductsWhenCancelOrder = 'updateQuantiyProductsWhenCa
 export const rollbackUpdateQuantiyProductsWhenCancelOrder =
     'rollback::updateQuantiyProductsWhenCancelOrder'
 
-export const rollbackOrder = 'roll::back::order'
+export const roll_back_order = 'roll::back::order'
 
-export const commit_order_success = 'commit::order::success'
+export const commit_order = 'commit::order'
 
 export const rollbackUpdateQuantityProducts = 'rollback::update::quantity::product'
 
@@ -72,3 +72,7 @@ export const currentSalePromotion = 'current::sale::promotino'
 export const getProductSaleEvent = 'get::product::sale::event'
 
 export const refreshProductSale = 'refresh::product::sale'
+
+export const countEmployee = 'count::employee::by::store::id'
+
+export const countProduct = 'count::product::by::store::id'

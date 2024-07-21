@@ -265,14 +265,7 @@ const ProductInFlashSale = ({
         return [columns, columnsMerged, columnsMerged][tab]
     }, [tab, selectedProduct, joinedProduct])
 
-    return (
-        <Table<ProductSaleMix>
-            columns={columns}
-            data={products}
-            tableMaxHeight='400px'
-            className='w-[1300px] !max-w-[1300px]'
-        />
-    )
+    return <Table<ProductSaleMix> columns={columns} data={products} tableMaxHeight='400px' />
 }
 
 export default ProductInFlashSale

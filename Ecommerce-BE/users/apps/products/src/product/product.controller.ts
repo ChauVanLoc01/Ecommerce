@@ -2,12 +2,14 @@ import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseGuards } fro
 import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices'
 import { ApiBearerAuth, ApiProperty } from '@nestjs/swagger'
 import {
-    commitUpdateQuantityProducts,
+    commit_order,
+    countEmployee,
+    countProduct,
     createProductOrder,
     getAllProductWithProductOrder,
     getProductImageByProductSalePromotion,
     getProductOrderByRating,
-    rollbackUpdateQuantityProducts,
+    roll_back_order,
     rollbackUpdateQuantiyProductsWhenCancelOrder,
     update_Product_WhenCreatingOrder,
     updateQuantiyProductsWhenCancelOrder
@@ -18,7 +20,7 @@ import { Roles } from 'common/decorators/roles.decorator'
 import { Role } from 'common/enums/role.enum'
 import { JwtGuard } from 'common/guards/jwt.guard'
 import { CurrentStoreType } from 'common/types/current.type'
-import { ProductStep, VoucherStep } from 'common/types/order_payload.type'
+import { CreateOrderPayload } from 'common/types/order_payload.type'
 import { AnalyticsProductDTO } from './dtos/analytics-product.dto'
 import { CreateUserAddProductToCartDTO } from './dtos/create-product-add-to-cart.dto'
 import { CreateUserViewProductDto } from './dtos/create-product-view.dto'
@@ -125,21 +127,21 @@ export class ProductController {
 
     @Public()
     @EventPattern(update_Product_WhenCreatingOrder)
-    updateProductWhenCreatingOrder(payload: ProductStep) {
+    updateProductWhenCreatingOrder(payload: CreateOrderPayload<'update_product'>) {
         console.log('::::::Bước 2: Cập nhật lại số lượng product::::::::')
         return this.productsService.updateProductWhenCreatingOrder(payload)
     }
 
     @Public()
-    @EventPattern(rollbackUpdateQuantityProducts)
-    rollbackUpdateQuantityProduct(payload: VoucherStep) {
+    @EventPattern(roll_back_order)
+    rollbackUpdateQuantityProduct(payload: CreateOrderPayload<'roll_back_order'>) {
         console.log('*****Roll Back Bước 2: Cập nhật voucher******')
         return this.productsService.rollbackUpdateQuantityProduct(payload)
     }
 
     @Public()
-    @EventPattern(commitUpdateQuantityProducts)
-    commitUpdateQuantityProduct(payload: VoucherStep) {
+    @EventPattern(commit_order)
+    commitUpdateQuantityProduct(payload: CreateOrderPayload<'commit_success'>) {
         return this.productsService.commitUpdateQuantityProduct(payload)
     }
 
@@ -198,5 +200,11 @@ export class ProductController {
     @Get('testing/testing')
     testing() {
         return this.productsService.testing()
+    }
+
+    @Public()
+    @MessagePattern(countProduct)
+    countProduct(@Payload() storeId: string) {
+        return this.productsService.countProduct(storeId)
     }
 }

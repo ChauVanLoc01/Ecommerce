@@ -12,10 +12,12 @@ import {
 import { ConfigService } from '@nestjs/config'
 import { ClientProxy } from '@nestjs/microservices'
 import { SchedulerRegistry } from '@nestjs/schedule'
-import { Prisma, PrismaClient, Product } from '@prisma/client'
+import { Order, Prisma, PrismaClient, Product } from '@prisma/client'
 import { DefaultArgs } from '@prisma/client/runtime/library'
+import { AnalysisType } from 'aws-sdk/clients/iotevents'
 import { Queue } from 'bull'
 import { Cache } from 'cache-manager'
+import { AnalyticsType } from 'common/constants/analytics.constants'
 import { BackgroundAction, BackgroundName } from 'common/constants/background-job.constant'
 import {
     getAllProductWithProductOrder,
@@ -29,19 +31,33 @@ import {
 } from 'common/constants/event.constant'
 import { NormalStatus, OrderFlowEnum, RefundStatus } from 'common/enums/orderStatus.enum'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
-import { OrderStep, PayloadUpdate, VoucherStep } from 'common/types/order_payload.type'
+import { CreateOrderPayload } from 'common/types/order_payload.type'
 import { MessageReturn, Return } from 'common/types/result.type'
+import { emit_update_status_of_order, hash, product_next_step } from 'common/utils/order_helper'
 import {
-    emit_update_Order_WhenCreatingOrder_fn,
-    hash,
-    next_update_product
-} from 'common/utils/order_helper'
-import { add, addHours, compareDesc, format, isPast, sub, subDays } from 'date-fns'
+    add,
+    addHours,
+    compareDesc,
+    eachDayOfInterval,
+    eachMonthOfInterval,
+    eachWeekOfInterval,
+    endOfDay,
+    endOfMonth,
+    endOfWeek,
+    endOfYear,
+    format,
+    isPast,
+    startOfDay,
+    startOfMonth,
+    startOfWeek,
+    startOfYear,
+    sub,
+    subDays
+} from 'date-fns'
 import { Dictionary, isUndefined, max, omitBy, sumBy } from 'lodash'
 import { firstValueFrom } from 'rxjs'
 import { v4 as uuidv4 } from 'uuid'
 import { CreateOrder, CreateOrderDTO } from '../../../../common/dtos/create_order.dto'
-import { AnalyticsOrderDTO } from '../dtos/analytics_order.dto'
 import {
     CreateOrderRefundDTO,
     ReOpenOrderRefundDTO,
@@ -278,19 +294,19 @@ export class OrderService {
         this.orderClient.emit(processStepOneToCreatOrder, {
             userId: user.id,
             payload: body
-        } as OrderStep)
+        } as CreateOrderPayload<'check_cache'>)
         return {
             msg: 'Đơn hàng đang được xử lý',
             result: null
         }
     }
 
-    async checkCache(userId: string, body: CreateOrder) {
-        let { orders } = body
+    async checkCache(userId: string, payload: CreateOrder) {
+        let { orders, actionId } = payload
         console.log(':::::::::Kiểm tra cache:::::::::', format(new Date(), 'hh:mm:ss:SSS dd/MM'))
-        Promise.all(
-            orders.map(async ({ voucherId, productOrders }) => {
-                try {
+        try {
+            const result = await Promise.all(
+                orders.map(async ({ voucherId, productOrders }) => {
                     if (voucherId) {
                         let hashValue = hash('voucher', voucherId)
                         let quantityVoucherCache = await this.cacheManager.get<string>(hashValue)
@@ -303,11 +319,6 @@ export class OrderService {
                             }
                         }
                     }
-                } catch (err) {
-                    console.log('::::check cache voucher::::', err)
-                    throw new Error('Có lỗi trong quá trình tạo đơn hàng với mã giảm giá')
-                }
-                try {
                     await Promise.all(
                         productOrders.map(async ({ productId, quantity }) => {
                             let hashProductId = hash('product', productId)
@@ -323,35 +334,31 @@ export class OrderService {
                                     throw new Error('Sản phẩm không đủ số lượng')
                                 }
                             }
-                            return Promise.resolve()
+                            return true
                         })
                     )
-                } catch (err) {
-                    console.log(':::check cache product::::', err)
-                    throw new Error('Có lỗi trong quá trình tạo đơn hàng với sản phẩm')
-                }
-                return Promise.resolve()
-            })
-        )
-            .then((_) => {
+                    return true
+                })
+            )
+            if (result) {
                 console.log(
                     '::::::::::Kiểm tra cache thành công ==> Tiến hành tạo đơn với mode là Draft::::::::::',
                     format(new Date(), 'hh:mm:ss:SSS dd/MM')
                 )
                 this.orderClient.emit(processStepTwoToCreateOrder, {
                     userId,
-                    payload: body
-                } as OrderStep)
+                    payload
+                } as CreateOrderPayload<'process_order'>)
+            }
+        } catch (err) {
+            console.log('*****Lỗi tại bước check cache********', err)
+            emit_update_status_of_order(this.socketClient, {
+                action: false,
+                id: actionId,
+                msg: err.message,
+                result: null
             })
-            .catch((err) => {
-                console.log('*****Lỗi tại bước check cache********', err)
-                this.updateStatusOfOrderToClient(
-                    body.actionId,
-                    err?.message || 'Tạo đơn hàng không thành công',
-                    false,
-                    err?.result || null
-                )
-            })
+        }
     }
 
     async processOrder(userId: string, body: CreateOrder) {
@@ -360,41 +367,32 @@ export class OrderService {
             ':::::::::::Tiến hành tạo đơn, shipping::::::::::::',
             format(new Date(), 'hh:mm:ss:SSS dd/MM')
         )
-        let tmp: PayloadUpdate = {
-            order: {
-                orderIds: [],
-                productOrderIds: [],
-                shippingOrderIds: [],
-                orderFlowIds: [],
-                voucherOrderIds: []
-            },
+        let tmp: CreateOrderPayload<'update_product'>['payload'] = {
+            orderIds: [],
             products: [],
             vouchers: []
         }
-        this.prisma
-            .$transaction(
+        try {
+            const result = await this.prisma.$transaction(
                 orders.map((order) => {
-                    let [orderId, productOrderId, orderShippingId, orderFlowId] =
-                        Array(4).fill(uuidv4())
-                    tmp.order.orderIds.push(orderId)
-                    tmp.order.productOrderIds.push(productOrderId)
-                    tmp.order.shippingOrderIds.push(orderShippingId)
-                    tmp.order.orderFlowIds.push(orderFlowId)
-                    console.log('orderId', orderId)
+                    let orderId = uuidv4()
+                    tmp.orderIds.push(orderId)
 
-                    let createProductOrders: Prisma.OrderCreateInput['ProductOrder'] = {
+                    let produtOrderCreate: Prisma.OrderCreateInput['ProductOrder'] = {
                         createMany: {
                             data: order.productOrders.map(
-                                ({ productId, quantity, priceAfter, priceBefore, isSale }) => {
+                                ({ productId, quantity, isSale, priceAfter, priceBefore }) => {
                                     tmp.products.push({
-                                        id: productId,
                                         buy: quantity,
-                                        isSale,
+                                        remaining_quantity: 0,
+                                        id: productId,
+                                        original_quantity: 0,
+                                        price_after: priceAfter,
                                         storeId: order.storeId,
-                                        price_after: priceAfter
+                                        currentSaleId
                                     })
                                     return {
-                                        id: productOrderId,
+                                        id: uuidv4(),
                                         productId,
                                         quantity,
                                         priceBefore,
@@ -412,7 +410,6 @@ export class OrderService {
                             ...voucherIds.map((id) => ({ id, storeId: order.storeId }))
                         )
                         let voucherOrderIds = Array(voucherIds.length).fill(uuidv4())
-                        tmp.order.voucherOrderIds.push(...voucherOrderIds)
                         createVoucherOrders = {
                             createMany: {
                                 data: voucherIds.map((voucherId, idx) => ({
@@ -435,10 +432,10 @@ export class OrderService {
                             note: order.note,
                             userId,
                             createdAt: new Date(),
-                            ProductOrder: createProductOrders,
+                            ProductOrder: produtOrderCreate,
                             OrderShipping: {
                                 create: {
-                                    id: orderShippingId,
+                                    id: uuidv4(),
                                     address: delivery_info.address,
                                     name: delivery_info.name,
                                     type: OrderFlowEnum.WAITING_CONFIRM,
@@ -447,124 +444,76 @@ export class OrderService {
                             },
                             OrderFlow: {
                                 create: {
-                                    id: orderFlowId,
+                                    id: uuidv4(),
                                     status: OrderFlowEnum.WAITING_CONFIRM,
                                     createdBy: userId,
                                     createdAt: new Date()
                                 }
                             },
                             OrderVoucher: createVoucherOrders
-                        },
-                        include: {
-                            OrderShipping: {
-                                select: {
-                                    id: true
-                                }
-                            },
-                            OrderFlow: {
-                                select: {
-                                    id: true
-                                }
-                            },
-                            OrderVoucher: {
-                                select: {
-                                    id: true
-                                }
-                            },
-                            ProductOrder: {
-                                select: {
-                                    id: true
-                                }
-                            }
                         }
                     })
                 })
             )
-            .then((_) => {
+
+            if (result) {
                 console.log(
-                    ':::::::Tạo đơn thành công ==> chuyển tới bước cập nhật product::::::::',
+                    ':::::::Success: Tạo đơn thành công ==> chuyển tới bước cập nhật product::::::::',
                     format(new Date(), 'hh:mm:ss:SSS dd/MM')
                 )
-                next_update_product(this.productClient, {
+                product_next_step(this.productClient, {
+                    actionId: body.actionId,
                     userId,
-                    payload: { ...tmp, actionId: body.actionId, currentSaleId }
+                    payload: tmp
                 })
+            }
+        } catch (err) {
+            console.log(
+                '******Fail: Tạo đơn thất bại ==> Emit thông tin tạod dơn thất bại tới người dùng*********',
+                err
+            )
+            emit_update_status_of_order(this.socketClient, {
+                action: true,
+                id: body.actionId,
+                msg: err?.message,
+                result: null
             })
-            .catch((err) => {
-                console.log('******Gặp lại ở ngay bước đầu tạo order (LINE 485) *********', err)
-                emit_update_Order_WhenCreatingOrder_fn(this.socketClient, {
-                    action: true,
-                    id: body.actionId,
-                    msg: err?.message,
-                    result: null
-                })
-            })
+            console.log(
+                ':::::::::::Emit thông tin đơn hàng thất bại tới người dùng thành công::::::::::::'
+            )
+        }
     }
 
-    async rollbackOrder(body: VoucherStep) {
+    async rollbackOrder(body: CreateOrderPayload<'roll_back_order'>) {
+        let {
+            payload: { orderIds }
+        } = body
         console.log(
             '*********Tiến hành roll back lại order ==> Xóa order và các bảng liên quan****************',
             format(new Date(), 'hh:mm:ss:SSS dd/MM')
         )
-        let {
-            payload: {
-                order: { orderIds },
-                actionId
-            }
-        } = body
         try {
-            emit_update_Order_WhenCreatingOrder_fn(this.socketClient, {
-                action: true,
-                id: actionId,
-                msg: 'Tạo đơn hàng thất bại',
-                result: null
-            })
             await this.orderBackgroundQueue.add(BackgroundAction.rollBackOrder, orderIds, {
                 attempts: 3,
                 removeOnComplete: true
             })
+            console.log(':::::::::Success: Gọi backgound job để xử lý rollback order::::::::::::')
         } catch (err) {
-            console.log('*******Roll back order gặp lỗi (LINE 503) ********', err)
+            console.log('*******Fail: Roll back order gặp lỗi********', err)
         }
     }
 
-    async commitOrder(body: VoucherStep) {
+    async commitOrder(body: CreateOrderPayload<'commit_success'>) {
         console.log(
             '::::::::::Commit order ==> Product hoặc voucher đã cập nhật thành công ==> Quá trình đặt hàng thành công::::::::::::',
             format(new Date(), 'hh:mm:ss:SSS dd/MM')
         )
         let {
-            payload: {
-                order: { orderIds },
-                actionId
-            }
+            payload: { orderIds },
+            actionId
         } = body
         try {
-            await this.prisma.$transaction(
-                orderIds.map((id) =>
-                    this.prisma.order.update({
-                        where: {
-                            id
-                        },
-                        data: {
-                            isDraf: false
-                        }
-                    })
-                )
-            )
-            emit_update_Order_WhenCreatingOrder_fn(this.socketClient, {
-                action: true,
-                msg: 'Đặt hàng thành công',
-                id: actionId,
-                result: null
-            })
-        } catch (err) {
-            emit_update_Order_WhenCreatingOrder_fn(this.socketClient, {
-                action: false,
-                msg: 'Hệ thống đang quá tải. Vui lòng đợi trong giây lát',
-                id: actionId,
-                result: null
-            })
+            console.log('::::::::::Success: Gọi background job để commit order::::::::::::')
             await this.orderBackgroundQueue.add(
                 BackgroundAction.reUpdateIsDrafOrder,
                 {
@@ -576,10 +525,8 @@ export class OrderService {
                     removeOnComplete: true
                 }
             )
-            console.log(
-                '********Tạo đơn hàng thành công nhưng cập nhật active cho đơn hàng không thành công*********',
-                err
-            )
+        } catch (err) {
+            console.log('********Fail: Lỗi khởi tạo background job để remove isDraf*********', err)
         }
     }
 
@@ -1232,63 +1179,116 @@ export class OrderService {
     //     return ['ok']
     // }
 
-    async receiptAnalyticByDate(user: CurrentStoreType, body: AnalyticsOrderDTO): Promise<Return> {
-        const { dates } = body
-        const { storeId } = user
+    // async receiptAnalyticByDate(user: CurrentStoreType, type: AnalyticsType): Promise<Return> {
+    //     const { storeId } = user
 
-        const orders = await Promise.all(
-            dates.map((day, idx) =>
-                this.prisma.order.findMany({
-                    where: {
-                        storeId,
-                        createdAt: {
-                            gte: day,
-                            lt: dates[idx + 1]
-                        }
-                    }
-                })
-            )
-        )
+    //     var result: Pick<Order, 'id' | 'total' | 'pay' | 'discount'>[][]
+    //     const select: Prisma.OrderSelect = {
+    //         id: true,
+    //         total: true,
+    //         pay: true,
+    //         discount: true
+    //     }
 
-        const receipts = orders.map((e) => sumBy(e, (o) => o.pay))
+    //     switch (type) {
+    //         case 'day':
+    //             let dayType = eachDayOfInterval({
+    //                 start: add(startOfWeek(new Date(), { weekStartsOn: 1 }), { hours: 7 }),
+    //                 end: add(endOfWeek(new Date(), { weekStartsOn: 1 }), { hours: 7 })
+    //             })
+    //             result = await Promise.all(
+    //                 dayType.map((time) => {
+    //                     return this.prisma.order.findMany({
+    //                         where: {
+    //                             status: OrderFlowEnum.FINISH,
+    //                             updatedAt: {
+    //                                 gte: add(startOfDay(time), { hours: 7 }),
+    //                                 lte: add(endOfDay(time), { hours: 7 })
+    //                             }
+    //                         }
+    //                     })
+    //                 })
+    //             )
+    //             break
+    //         case 'weekInMonth':
+    //             let weekType = eachWeekOfInterval({
+    //                 start: add(startOfMonth(new Date()), { hours: 7 }),
+    //                 end: add(endOfMonth(new Date()), { hours: 7 })
+    //             })
+    //             result = await Promise.all(
+    //                 weekType.map((time) => {
+    //                     return this.prisma.order.findMany({
+    //                         where: {
+    //                             status: OrderFlowEnum.FINISH,
+    //                             updatedAt: {
+    //                                 gte: add(startOfWeek(time), { hours: 7 }),
+    //                                 lte: add(endOfWeek(time), { hours: 7 })
+    //                             }
+    //                         }
+    //                     })
+    //                 })
+    //             )
+    //             break
+    //         default:
+    //             let monthType = eachMonthOfInterval({
+    //                 start: add(startOfYear(new Date()), { hours: 7 }),
+    //                 end: add(endOfYear(new Date()), { hours: 7 })
+    //             })
+    //             result = await Promise.all(
+    //                 monthType.map((time) => {
+    //                     return this.prisma.order.findMany({
+    //                         where: {
+    //                             status: OrderFlowEnum.FINISH,
+    //                             updatedAt: {
+    //                                 gte: add(startOfMonth(time), { hours: 7 }),
+    //                                 lte: add(endOfMonth(time), { hours: 7 })
+    //                             }
+    //                         }
+    //                     })
+    //                 })
+    //             )
+    //             break
+    //     }
 
-        return {
-            msg: 'ok',
-            result: {
-                receipts: receipts.map((e, idx) => ({ date: dates[idx], total: e })),
-                current: receipts[receipts.length - 1],
-                percent: Math.floor((receipts[receipts.length - 1] * 100) / max(receipts))
-            }
-        }
-    }
+    //     const receipts = orders.map((e) => sumBy(e, (o) => o.pay))
 
-    async orderAnalyticByDate(user: CurrentStoreType, body: AnalyticsOrderDTO): Promise<Return> {
-        const { dates } = body
-        const { storeId } = user
+    //     return {
+    //         msg: 'ok',
+    //         result: {
+    //             receipts: receipts.map((e, idx) => ({ date: dates[idx], total: e })),
+    //             current: receipts[receipts.length - 1],
+    //             percent: Math.floor((receipts[receipts.length - 1] * 100) / max(receipts))
+    //         }
+    //     }
+    // }
 
-        const orders = await Promise.all(
-            dates.map((day, idx) =>
-                this.prisma.order.count({
-                    where: {
-                        storeId,
-                        createdAt: {
-                            gte: day,
-                            lt: dates[idx + 1]
-                        }
-                    }
-                })
-            )
-        )
+    // async orderAnalyticByDate(user: CurrentStoreType, type: AnalysisType): Promise<Return> {
+    //     const { dates } = body
+    //     const { storeId } = user
 
-        return {
-            msg: 'ok',
-            result: {
-                orders: orders.map((e, idx) => ({ date: dates[idx], order: e })),
-                current: orders[orders.length - 1],
-                percent: Math.floor((orders[orders.length - 1] * 100) / max(orders))
-            }
-        }
-    }
+    //     const orders = await Promise.all(
+    //         dates.map((day, idx) =>
+    //             this.prisma.order.count({
+    //                 where: {
+    //                     storeId,
+    //                     createdAt: {
+    //                         gte: day,
+    //                         lt: dates[idx + 1]
+    //                     }
+    //                 }
+    //             })
+    //         )
+    //     )
+
+    //     return {
+    //         msg: 'ok',
+    //         result: {
+    //             orders: orders.map((e, idx) => ({ date: dates[idx], order: e })),
+    //             current: orders[orders.length - 1],
+    //             percent: Math.floor((orders[orders.length - 1] * 100) / max(orders))
+    //         }
+    //     }
+    // }
 
     async test() {
         return this.productClient.send('test', ['ok'])

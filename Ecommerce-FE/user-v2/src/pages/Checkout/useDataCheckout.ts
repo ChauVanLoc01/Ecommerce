@@ -68,8 +68,6 @@ const useDataCheckout = ({ ids, products, voucherIds, setStep, setProducts, sock
         placeholderData: (old) => old
     })
 
-    console.log('refreshProduct', refreshProducts)
-
     const { data: refreshStores } = useQuery({
         queryKey: ['refreshStore', JSON.stringify(ids.storeIds)],
         queryFn: () => StoreFetching.refreshStore(ids.storeIds),

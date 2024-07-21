@@ -9,6 +9,7 @@ import {
     ParseFilePipe,
     Post,
     Put,
+    Query,
     Request,
     UploadedFile,
     UploadedFiles,
@@ -24,9 +25,10 @@ import { Roles } from 'common/decorators/roles.decorator'
 import { Role } from 'common/enums/role.enum'
 import { JwtGuard } from 'common/guards/jwt.guard'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
+import { AllStoreQueryDTO } from './dtos/all-store.dto'
 import { CreateStoreDTO } from './dtos/create-store.dto'
 import { StoreByUserDTO } from './dtos/store-by-user.dto'
-import { UpdateStoreDTO } from './dtos/update-store.dto'
+import { UpdateStatusOfStoreDTO, UpdateStoreDTO } from './dtos/update-store.dto'
 import { StoreService } from './store.service'
 
 @UseGuards(JwtGuard)
@@ -128,9 +130,27 @@ export class StoreController {
         return this.storeService.getStoreByUser(body)
     }
 
+    @Roles(Role.ADMIN)
+    @Get('all-store')
+    getAllStore(@Query() query: AllStoreQueryDTO) {
+        return this.storeService.getAllStore(query)
+    }
+
+    @Roles(Role.ADMIN)
+    @Get('admin/:storeId')
+    getStoreDetailByAdmin(@Param('storeId') storeId: string) {
+        return this.storeService.getStoreDetailByAdmin(storeId)
+    }
+
     @Public()
     @Get(':storeId')
     getStoreDetail(@Param('storeId') storeId: string) {
         return this.storeService.getStoreDetail(storeId)
+    }
+
+    @Roles(Role.ADMIN)
+    @Put('admin/:storeId')
+    updateStatusOfStore(@Param('storeId') storeId: string, @Body() body: UpdateStatusOfStoreDTO) {
+        return this.storeService.updateStatusOfStore(storeId, body)
     }
 }

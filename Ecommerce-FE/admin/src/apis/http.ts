@@ -4,6 +4,7 @@ import { LoginResponse } from 'src/types/auth.type'
 import { Return } from 'src/types/return.type'
 import { ls } from 'src/utils/localStorage'
 
+console.log('http load')
 class Http {
     private instance: AxiosInstance
     private access_token = ls.getItem('access_token')
@@ -43,3 +44,5 @@ class Http {
 }
 
 export const http = new Http().getInstanceAxios()
+
+export const abort_controller = new AbortController()

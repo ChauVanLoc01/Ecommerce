@@ -1,20 +1,20 @@
 import { Flex, IconButton, Select, Text } from '@radix-ui/themes'
 import { useQuery } from '@tanstack/react-query'
 import { format } from 'date-fns'
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { Bar, BarChart, Rectangle, Tooltip } from 'recharts'
 import { AnalyticApi } from 'src/apis/analytics.api'
-import useTimeInterval from 'src/hooks/useTimeInterval'
+import { AnalyticType } from 'src/types/analytics.type'
 import { convertDigitalNumber } from 'src/utils/utils'
 
 const TakingStatistic = () => {
-    const [time, timeFormat, handleSelectTime] = useTimeInterval()
+    const [type, setType] = useState<AnalyticType>('day')
 
     const widthRef = useRef<null | HTMLDivElement>(null)
 
     const { data } = useQuery({
         queryKey: ['receiptAnalytics'],
-        queryFn: () => AnalyticApi.receiptAnalytics(time),
+        queryFn: AnalyticApi.receiptAnalytics(type),
         staleTime: 1000 * 60 * 1,
         select: (data) => data.data.result
     })

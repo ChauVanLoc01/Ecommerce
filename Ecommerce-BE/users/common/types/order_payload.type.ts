@@ -1,45 +1,42 @@
 import { CreateOrder } from 'common/dtos/create_order.dto'
 
-type PayloadUpdateKey =
-    | 'orderIds'
-    | 'productOrderIds'
-    | 'shippingOrderIds'
-    | 'orderFlowIds'
-    | 'voucherOrderIds'
-
-export type PayloadUpdate = {
+export type PayloadCache = CreateOrder
+export type PayloadProcess = CreateOrder
+type UpdateOtherService = {
     products: {
         id: string
-        isSale?: boolean
-        buy: number
         storeId: string
         price_after: number
+        buy: number
+        remaining_quantity: number
+        original_quantity: number
+        currentSaleId?: string
     }[]
     vouchers: {
         id: string
         storeId: string
     }[]
-    order: {
-        [key in PayloadUpdateKey]: string[]
-    }
+    orderIds: string[]
+}
+export type PayloadProduct = UpdateOtherService
+export type PayloadVoucher = UpdateOtherService
+export type RollbackOrder = UpdateOtherService
+export type CommitSuccess = UpdateOtherService
+
+type OrderKey = {
+    check_cache: PayloadCache
+    process_order: PayloadProcess
+    update_product: PayloadProduct
+    update_voucher: PayloadVoucher
+    roll_back_product: RollbackOrder
+    roll_back_order: RollbackOrder
+    commit_success: CommitSuccess
 }
 
-export type OrderStep = CreateOrderPayload<CreateOrder>
-
-export type ProductStep = CreateOrderPayload<
-    PayloadUpdate & Pick<CreateOrder, 'actionId'> & { currentSaleId?: string }
->
-
-export type VoucherStep = CreateOrderPayload<{
-    actionId: CreateOrder['actionId']
-    products: (PayloadUpdate['products'][number] & { original_quantity: number })[]
-    vouchers: PayloadUpdate['vouchers']
-    order: PayloadUpdate['order']
-}>
-
-export type CreateOrderPayload<T> = {
+export type CreateOrderPayload<T extends keyof OrderKey = keyof OrderKey> = {
     userId: string
-    payload: T
+    actionId: string
+    payload: OrderKey[T]
 }
 
 export type OrderStatusPayload = {
@@ -60,6 +57,5 @@ export type Update_Product_WhenCreatingOrderPayload = {
     storeId: string
     quantity: number
     priceAfter: number
-    isSale: boolean
     currentSaleId?: string
 }

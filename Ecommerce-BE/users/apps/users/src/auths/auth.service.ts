@@ -12,7 +12,7 @@ import {
 import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import { ClientProxy } from '@nestjs/microservices'
-import { Account, User } from '@prisma/client'
+import { Account, Store, User } from '@prisma/client'
 import * as bcrypt from 'bcryptjs'
 import { Queue } from 'bull'
 import { Cache } from 'cache-manager'
@@ -108,45 +108,59 @@ export class AuthService {
         }
     }
 
-    async validateStore(username: string, password: string): Promise<CurrentStoreType> {
+    async validateStore(
+        username: string,
+        password: string
+    ): Promise<{ currentStoreType: CurrentStoreType; user: User; store?: Store }> {
         const accountExist = await this.verify(username, password)
 
-        if (!accountExist.storeRoleId) {
-            throw new ForbiddenException('Tài khoản không có quyền truy cập tài nguyên')
+        const userExist = await this.prisma.user.findUnique({
+            where: {
+                id: accountExist.userId
+            }
+        })
+
+        if (userExist.role === Role.ADMIN) {
+            return {
+                currentStoreType: {
+                    role: Role.ADMIN,
+                    storeId: null,
+                    storeRoleId: null,
+                    userId: userExist.id
+                },
+                user: userExist
+            }
         }
 
-        const { storeId, id, role } = await this.prisma.storeRole.findUnique({
+        const storeRoleExist = await this.prisma.storeRole.findUnique({
             where: {
                 id: accountExist.storeRoleId
             }
         })
 
-        if (!storeId) {
-            throw new ForbiddenException('Không có quyền truy cập tài nguyên')
+        if (!accountExist.storeRoleId) {
+            throw new ForbiddenException('Tài khoản không có quyền truy cập tài nguyên')
         }
 
-        const [{ id: userId }, store] = await Promise.all([
-            this.prisma.user.findUnique({
-                where: {
-                    id: accountExist.userId
-                }
-            }),
-            this.prisma.store.findUnique({
-                where: {
-                    id: storeId
-                }
-            })
-        ])
+        const storeExist = await this.prisma.store.findUnique({
+            where: {
+                id: storeRoleExist.storeId
+            }
+        })
 
-        if (!store) {
+        if (!storeExist) {
             throw new UnauthorizedException('Cửa hàng không tồn tại')
         }
 
         return {
-            role,
-            storeId,
-            userId,
-            storeRoleId: id
+            currentStoreType: {
+                role: storeRoleExist.role,
+                storeId: storeExist.id,
+                userId: userExist.id,
+                storeRoleId: storeRoleExist.id
+            },
+            user: userExist,
+            store: storeExist
         }
     }
 
@@ -246,33 +260,22 @@ export class AuthService {
         }
     }
 
-    async storeLogin(user: CurrentStoreType): Promise<Return> {
+    async storeLogin(user: {
+        currentStoreType: CurrentStoreType
+        user: User
+        store?: Store
+    }): Promise<Return> {
         const [access_token, refresh_token] = await Promise.all([
-            this.createAccessToken(user),
-            this.createRefreshToken(user)
-        ])
-
-        const [user_profile, store] = await Promise.all([
-            this.prisma.user.findUnique({
-                where: {
-                    id: user.userId
-                }
-            }),
-            this.prisma.store.findUnique({
-                where: {
-                    id: user.storeId
-                }
-            })
+            this.createAccessToken(user.currentStoreType),
+            this.createRefreshToken(user.currentStoreType)
         ])
 
         return {
             msg: 'Đăng nhập cửa hàng thành công',
             result: {
-                user,
-                store: {
-                    ...store,
-                    role: user.role
-                },
+                role: user.currentStoreType.role,
+                user: user.user,
+                store: user.store,
                 access_token: `Bearer ${access_token}`,
                 refresh_token: `Bearer ${refresh_token}`
             }

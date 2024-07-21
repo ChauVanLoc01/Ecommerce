@@ -39,35 +39,31 @@ export class VoucherConsummer {
                     throw new Error('Lỗi câp nhật voucher')
                 })
             )
+            await new Promise(() => {
+                console.log(
+                    '::::::::::::::Success: Roll back số lượng voucher về lại ban đầu::::::::::'
+                )
+            })
         } catch (err) {
-            console.log('Lỗi cập nhật lại cache khi voucher fail', err)
+            console.log('***********Fail: Lỗi cập nhật lại cache khi voucher fail************', err)
             throw new Error('Lỗi cập nhật voucher')
         }
     }
 
     @Process(BackgroundAction.createCronJobVoucherToUpdateQuanttiy)
-    async createCronJobToUpdateVoucher({
-        data
-    }: Job<
-        {
-            voucherId: string
-            quantity: number
-            storeId: string
-        }[]
-    >) {
+    async createCronJobToUpdateVoucher({ data }: Job<string[]>) {
         try {
             await Promise.all(
-                data.map(({ voucherId }) => {
+                data.map((voucherId) => {
                     let hashValue = hash('voucher', voucherId)
-                    let cron_job = new CronJob(CronExpression.EVERY_5_MINUTES, async () => {
+                    let cron_job = new CronJob(CronExpression.EVERY_30_SECONDS, async () => {
                         try {
                             let fromCache = await this.cacheManager.get<string>(hashValue)
                             if (fromCache) {
                                 let { quantity: quantityFromCache, times } = JSON.parse(
                                     fromCache
                                 ) as { quantity: number; times: number }
-
-                                await Promise.all([
+                                const result = await Promise.all([
                                     this.prisma.voucher.update({
                                         where: {
                                             id: voucherId
@@ -85,13 +81,10 @@ export class VoucherConsummer {
                                         })
                                     )
                                 ])
-
-                                if (times == 1) {
+                                if (result && times == 1) {
                                     let cron_job = this.schedulerRegistry.getCronJob(hashValue)
-                                    if (cron_job) {
-                                        cron_job.stop()
-                                        this.schedulerRegistry.deleteCronJob(hashValue)
-                                    }
+                                    cron_job.stop()
+                                    this.schedulerRegistry.deleteCronJob(hashValue)
                                     await this.cacheManager.del(hashValue)
                                 }
                             }
@@ -99,7 +92,6 @@ export class VoucherConsummer {
                             console.log('Lỗi chạy cron job cập nhật voucher')
                         }
                     })
-
                     this.schedulerRegistry.addCronJob(hashValue, cron_job)
                     cron_job.start()
                 })

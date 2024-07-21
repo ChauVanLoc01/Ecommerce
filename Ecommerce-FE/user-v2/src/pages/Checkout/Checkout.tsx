@@ -9,6 +9,7 @@ import { AppContext } from 'src/contexts/AppContext'
 import useStep from 'src/hooks/useStep'
 import { Delivery } from 'src/types/delivery.type'
 import { OrderBody } from 'src/types/order.type'
+import { Payment } from 'src/types/payment.type'
 import CheckoutHeader from './CheckoutHeader'
 import CheckoutSummary from './CheckoutSummary'
 import CreateOrder from './CreateOrder'
@@ -41,6 +42,7 @@ const Checkout = () => {
     const { step, handleNextStep, handlePreviousStep, setStep } = useStep()
     const [orderSuccess, setOrderSuccess] = useState<boolean>(false)
     const [voucherIds, setVoucherIds] = useState<{ [storeId: string]: string } | undefined>(undefined)
+    const [payment, setPayment] = useState<Payment>('')
 
     const {
         dataFromApi: { refreshStores },
@@ -141,7 +143,7 @@ const Checkout = () => {
                                             />
                                         ),
                                         2: <Step2 address={address} setAddress={setAddress} />,
-                                        3: <Step3 />
+                                        3: <Step3 payment={payment} setPayment={setPayment} />
                                     }[step]
                                 }
                             </section>
@@ -157,6 +159,7 @@ const Checkout = () => {
                                 voucherLatest={voucherLatest}
                                 setVoucherIds={setVoucherIds}
                                 voucherIds={voucherIds}
+                                payment={payment}
                             />
                         </div>
                     ) : (

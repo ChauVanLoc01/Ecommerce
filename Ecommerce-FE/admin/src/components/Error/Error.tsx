@@ -2,6 +2,7 @@ import { Button, Flex, Text } from '@radix-ui/themes'
 import { isRouteErrorResponse, Navigate, useLocation, useRouteError } from 'react-router-dom'
 import SimpleBar from 'simplebar-react'
 import { toast } from 'sonner'
+import { route } from 'src/constants/route'
 import Header from 'src/layouts/MainLayout/Header'
 
 const Error = () => {
@@ -12,14 +13,16 @@ const Error = () => {
         switch (error.status) {
             case 401:
                 return <Navigate to={'/login'} state={{ from: location.pathname }} replace />
+            case 403:
+                return <Navigate to={route.permission} />
             case 400:
-                toast.error('Input data is wrong')
+                toast.error('Lỗi dữ liệu đầu vào')
                 break
             case 404:
-                toast.error('Not Found')
+                toast.error('Tài nguyên cần tìm không tồn tại')
                 break
             default:
-                toast.error('System error')
+                toast.error('Lỗi hệ thống')
                 break
         }
     }

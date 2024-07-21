@@ -6,10 +6,14 @@ import {
     NotFoundException
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
+import { Prisma } from '@prisma/client'
+import { UserType } from 'common/constants/user.constants'
 import { Role } from 'common/enums/role.enum'
+import { Status } from 'common/enums/status.enum'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
-import { Return } from 'common/types/result.type'
+import { MessageReturn, Return } from 'common/types/result.type'
 import { QueryAllUserProfileType } from '../dtos/all_user.dto'
+import { UpdateStatusOfUserDTO } from '../dtos/update_status_of_user.dto'
 import { UpdateUserProfileType } from '../dtos/update_user_profile.dto'
 
 @Injectable()
@@ -19,10 +23,70 @@ export class UserService {
         private readonly configService: ConfigService
     ) {}
 
-    async findAllUserProfile(query: QueryAllUserProfileType) {
-        return await this.prisma.user.findMany({
-            where: {}
-        })
+    async findAllUserProfile(query: QueryAllUserProfileType): Promise<Return> {
+        let { end_date, search_key, limit, page, role, start_date, status } = query
+
+        let pre_page = page
+        status = [Status.ACTIVE, Status.BLOCK].includes(status as any) ? status : undefined
+
+        const take = limit || this.configService.get<number>('app.limit')
+        page = (page || 1) - 1
+        const skip = page * limit
+
+        role = role || [UserType.STORE_OWNER, UserType.USER]
+
+        const general_user_where: Prisma.UserWhereInput = {
+            role: {
+                in: role
+            },
+            status,
+            createdAt: {
+                gte: start_date,
+                lte: end_date
+            }
+        }
+
+        const where: Prisma.UserWhereInput = {
+            OR: [
+                {
+                    full_name: {
+                        contains: search_key
+                    },
+                    ...general_user_where
+                },
+                {
+                    email: {
+                        contains: search_key
+                    },
+                    ...general_user_where
+                }
+            ]
+        }
+
+        const [users, count] = await Promise.all([
+            this.prisma.user.findMany({
+                where,
+                take,
+                skip,
+                omit: {
+                    updatedAt: true,
+                    rankId: true
+                }
+            }),
+            this.prisma.user.count({ where })
+        ])
+
+        return {
+            msg: 'ok',
+            result: {
+                data: users,
+                query: {
+                    ...query,
+                    page: pre_page,
+                    page_size: Math.ceil(count / limit)
+                }
+            }
+        }
     }
 
     async profileDetail(user: CurrentUserType): Promise<Return> {
@@ -189,6 +253,73 @@ export class UserService {
             }
         } catch (err) {
             throw new InternalServerErrorException('Lỗi Server')
+        }
+    }
+
+    async countEmployee(storeId: string): Promise<MessageReturn> {
+        try {
+            const count = await this.prisma.storeRole.count({
+                where: {
+                    role: UserType.EMPLOYEE,
+                    storeId
+                }
+            })
+
+            return {
+                msg: 'ok',
+                action: true,
+                result: count
+            }
+        } catch (err) {
+            return {
+                msg: 'ok',
+                action: false,
+                result: null
+            }
+        }
+    }
+
+    async updateStatusOfUser(userId: string, body: UpdateStatusOfUserDTO): Promise<Return> {
+        let { status } = body
+        console.log('userId', userId)
+        try {
+            await this.prisma.$transaction(async (tx) => {
+                const accountExist = await tx.account.findFirst({
+                    where: {
+                        userId
+                    },
+                    select: {
+                        storeRoleId: true
+                    }
+                })
+
+                await Promise.all([
+                    tx.user.update({
+                        where: {
+                            id: userId
+                        },
+                        data: {
+                            status
+                        }
+                    }),
+                    tx.storeRole.update({
+                        where: {
+                            id: accountExist.storeRoleId
+                        },
+                        data: {
+                            status
+                        }
+                    })
+                ])
+            })
+
+            return {
+                msg: 'ok',
+                result: undefined
+            }
+        } catch (err) {
+            console.log('err', err)
+            throw new InternalServerErrorException('Cập nhật trạng thái người dùng thất bại')
         }
     }
 }

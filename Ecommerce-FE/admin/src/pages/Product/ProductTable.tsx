@@ -161,7 +161,7 @@ const ProductTable = ({ data, categories, onOpen, setSelectedProduct }: ProductT
         }
     ]
 
-    return <Table<Product> columns={columns} data={data} className='!w-[1700px]' tableMaxHeight='500px' />
+    return <Table<Product> columns={columns} data={data} tableMaxHeight='500px' className='w-[1700px]' />
 }
 
 export default ProductTable

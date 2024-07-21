@@ -8,6 +8,7 @@ import {
     OrderResponse,
     UpdateOrderStatus
 } from 'src/types/order.type'
+import { Payment } from 'src/types/payment.type'
 import { Return } from 'src/types/return.type'
 import { http } from './http'
 
@@ -34,5 +35,8 @@ export const OrderFetching = {
     },
     requestRefund: (orderId: string) => (body: CreateOrderRefund) => {
         return http.post(`order/order/${orderId}/refund`, body)
+    },
+    createTransaction: (body: { total: number; bankCode: Payment }) => () => {
+        return http.post('order/payment', body)
     }
 }

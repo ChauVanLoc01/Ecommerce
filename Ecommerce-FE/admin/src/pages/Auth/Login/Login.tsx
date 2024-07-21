@@ -1,20 +1,21 @@
 import { yupResolver } from '@hookform/resolvers/yup'
 import { Button, Checkbox, Flex, Spinner, Text, TextField } from '@radix-ui/themes'
 import { useMutation } from '@tanstack/react-query'
+import { isAxiosError } from 'axios'
 import classNames from 'classnames'
 import { useContext } from 'react'
 import { Controller, SubmitHandler, useForm } from 'react-hook-form'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import { AuthAPI } from 'src/apis/auth.api'
 import InputPassword from 'src/components/InputPassword'
+import { ROLE } from 'src/constants/role'
 import { AppContext } from 'src/contexts/AppContext'
 import { login_schema, LoginSchemaType } from 'src/utils/auth.schema'
-import { ls } from 'src/utils/localStorage'
+import { ls, save_to_ls_when_login } from 'src/utils/localStorage'
 
 const Login = () => {
-    const { setProfile, setStore } = useContext(AppContext)
-    const navigate = useNavigate()
+    const { setProfile, setStore, setRole, setWho } = useContext(AppContext)
     const {
         control,
         formState: {
@@ -28,17 +29,18 @@ const Login = () => {
     const { mutate, isPending } = useMutation({
         mutationFn: (body: LoginSchemaType) => AuthAPI.login(body),
         onSuccess: (data) => {
-            setProfile(data.data.result.user)
-            setStore(data.data.result.store)
-            ls.setItem('profile', JSON.stringify(data.data.result.user))
-            ls.setItem('store', JSON.stringify(data.data.result.store))
-            ls.setItem('access_token', data.data.result.access_token)
-            ls.setItem('refresh_token', data.data.result.refresh_token)
-            navigate('/analytic')
+            let { access_token, refresh_token, role, store, user } = data.data.result
+            setProfile(user)
+            setStore(store)
+            setRole(ROLE[role])
+            setWho(role)
+            save_to_ls_when_login(access_token, refresh_token, user, store, role)
             toast.info('Đăng nhập thành công')
         },
-        onError: () => {
-            toast.error('Đăng nhập không thành công')
+        onError: (err) => {
+            if (isAxiosError(err)) {
+                toast.error(err?.response?.data?.msg || 'Đăng nhập thất bại')
+            }
         }
     })
 

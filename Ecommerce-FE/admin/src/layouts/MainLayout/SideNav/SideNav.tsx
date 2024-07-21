@@ -1,10 +1,41 @@
-import { CubeIcon, FileTextIcon, HomeIcon, IdCardIcon, PersonIcon, StarIcon } from '@radix-ui/react-icons'
+import { HomeIcon } from '@radix-ui/react-icons'
+import { useContext, useMemo } from 'react'
+import { GoStarFill } from 'react-icons/go'
+import { IoStorefront, IoTicket } from 'react-icons/io5'
+import { MdFlashOn, MdManageAccounts, MdSupervisorAccount } from 'react-icons/md'
+import { RiBillFill, RiBox3Fill } from 'react-icons/ri'
+import { SiGoogleanalytics } from 'react-icons/si'
 import Select from 'src/components/Select'
-import { CiDiscount1 } from 'react-icons/ci'
+import { OBJECT, ROLE, SERVICE, SERVICE_NAME } from 'src/constants/role'
+import { AppContext } from 'src/contexts/AppContext'
 
-import { route } from 'src/constants/route'
+const Icon = {
+    MdFlashOn: <MdFlashOn />,
+    RiBox3Fill: <RiBox3Fill />,
+    RiBillFill: <RiBillFill />,
+    MdManageAccounts: <MdManageAccounts />,
+    GoStarFill: <GoStarFill />,
+    SiGoogleanalytics: <SiGoogleanalytics />,
+    MdSupervisorAccount: <MdSupervisorAccount />,
+    IoStorefront: <IoStorefront />,
+    IoTicket: <IoTicket />
+}
 
 const SideNav = () => {
+    const { who } = useContext(AppContext)
+    const side_navs = useMemo(() => {
+        return Object.entries(ROLE[who as OBJECT]).reduce<{ label: string; path: string; icon: string }[]>(
+            (acum, [key, value]) => {
+                if (value.length) {
+                    acum.push(SERVICE_NAME[key as SERVICE])
+                    return acum
+                }
+                return acum
+            },
+            []
+        )
+    }, [who])
+
     return (
         <nav className='p-8 w-[280px] border-r border-r-text_2/30 border-dashed'>
             <section className='pt-3 pb-5'>
@@ -20,34 +51,9 @@ const SideNav = () => {
                 </div>
             </section>
             <section className=''>
-                <Select
-                    icon={<HomeIcon className='w-4 h-4' />}
-                    parentData={{ title: 'Tổng Quan', path: `/${route.analytic}` }}
-                />
-                <Select
-                    icon={<CiDiscount1 className='w-4 h-4 stroke-[1.5]' />}
-                    parentData={{ title: 'Flash Sale', path: `/${route.flashSale}` }}
-                />
-                <Select
-                    icon={<CubeIcon className='w-4 h-4' />}
-                    parentData={{ title: 'Sản Phẩm', path: route.product }}
-                />
-                <Select
-                    icon={<FileTextIcon className='w-4 h-4' />}
-                    parentData={{ title: 'Đơn Hàng', path: route.order }}
-                />
-                <Select
-                    icon={<PersonIcon className='w-4 h-4' />}
-                    parentData={{ title: 'Nhân Viên', path: route.employee }}
-                />
-                <Select
-                    icon={<StarIcon className='w-4 h-4' />}
-                    parentData={{ title: 'Đánh giá', path: route.rating }}
-                />
-                <Select
-                    icon={<IdCardIcon className='w-4 h-4' />}
-                    parentData={{ title: 'Mã giảm giá', path: route.voucher }}
-                />
+                {side_navs.map(({ label: title, path, icon }) => {
+                    return <Select key={path} icon={Icon[icon as keyof typeof Icon]} parentData={{ title, path }} />
+                })}
             </section>
         </nav>
     )

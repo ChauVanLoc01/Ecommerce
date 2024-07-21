@@ -144,7 +144,7 @@ const ProductUpdate = ({
         <AlertDialog.Root open={open} onOpenChange={setOpenCreate}>
             <AlertDialog.Content maxWidth='600px' className='!rounded-8'>
                 <form className='space-y-5' onSubmit={handleSubmit(onSubmit)}>
-                    <AlertDialog.Title>Tạo mới sản phẩm</AlertDialog.Title>
+                    <AlertDialog.Title>Cập nhật sản phẩm</AlertDialog.Title>
                     <Flex direction={'column'} gapY={'2'}>
                         <Carousel className='w-full'>
                             <CarouselContent>

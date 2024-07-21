@@ -22,10 +22,12 @@ export type Store = {
     updatedBy?: string
     createdAt: string
     updatedAt?: string
-    role: 'ADMIN' | 'EMPLOYEE'
 }
 
+export type Role = 'ADMIN' | 'EMPLOYEE'
+
 export type LoginResponse = {
+    role: Role
     user: User
     store: Store
     access_token: string

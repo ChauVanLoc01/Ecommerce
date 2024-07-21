@@ -7,9 +7,9 @@ import {
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { ClientProxy } from '@nestjs/microservices'
-import { Store } from '@prisma/client'
+import { Prisma, Store } from '@prisma/client'
 import { S3 } from 'aws-sdk'
-import { updateStoreRoleId } from 'common/constants/event.constant'
+import { countEmployee, countProduct, updateStoreRoleId } from 'common/constants/event.constant'
 import { Role } from 'common/enums/role.enum'
 import { Status } from 'common/enums/status.enum'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
@@ -17,16 +17,18 @@ import { MessageReturn, Return } from 'common/types/result.type'
 import { keyBy } from 'lodash'
 import { firstValueFrom } from 'rxjs'
 import { v4 as uuidv4 } from 'uuid'
+import { AllStoreQueryDTO } from './dtos/all-store.dto'
 import { CreateStoreDTO } from './dtos/create-store.dto'
 import { StoreByUserDTO } from './dtos/store-by-user.dto'
-import { UpdateStoreDTO } from './dtos/update-store.dto'
+import { UpdateStatusOfStoreDTO, UpdateStoreDTO } from './dtos/update-store.dto'
 
 @Injectable()
 export class StoreService {
     constructor(
         readonly config_service: ConfigService,
         readonly prisma: PrismaService,
-        @Inject('USER_SERVICE') private userClient: ClientProxy
+        @Inject('USER_SERVICE') private userClient: ClientProxy,
+        @Inject('PRODUCT_SERVICE') private productClient: ClientProxy
     ) {}
 
     async upload(file: Express.Multer.File, req: Express.Request): Promise<Return> {
@@ -273,6 +275,102 @@ export class StoreService {
             return store
         } catch (err) {
             throw new BadRequestException('Lỗi Server')
+        }
+    }
+
+    async getAllStore(query: AllStoreQueryDTO) {
+        let { end_date, search_key, limit, page, start_date, status } = query
+
+        let pre_page = page
+        status = [Status.ACTIVE, Status.BLOCK].includes(status as any) ? status : undefined
+
+        const take = limit || this.config_service.get<number>('app.limit')
+        page = (page || 1) - 1
+        const skip = page * limit
+
+        const general_user_where: Prisma.StoreWhereInput = {
+            status,
+            createdAt: {
+                gte: start_date,
+                lte: end_date
+            }
+        }
+
+        const where: Prisma.StoreWhereInput = {
+            OR: [
+                {
+                    name: {
+                        contains: search_key
+                    },
+                    ...general_user_where
+                },
+                {
+                    location: {
+                        contains: search_key
+                    },
+                    ...general_user_where
+                }
+            ]
+        }
+
+        console.log('where', JSON.stringify(where))
+
+        const [stores, count] = await Promise.all([
+            this.prisma.store.findMany({
+                where,
+                take,
+                skip
+            }),
+            this.prisma.store.count({ where })
+        ])
+
+        console.log('stores', stores)
+
+        return {
+            msg: 'ok',
+            result: {
+                data: stores,
+                query: {
+                    ...query,
+                    page: pre_page,
+                    page_size: Math.ceil(count / limit)
+                }
+            }
+        }
+    }
+
+    async getStoreDetailByAdmin(storeId: string): Promise<Return> {
+        const [employee_count, product_count] = await Promise.all([
+            firstValueFrom(this.userClient.send<MessageReturn>(countEmployee, storeId)),
+            firstValueFrom(this.productClient.send<MessageReturn>(countProduct, storeId))
+        ])
+
+        return {
+            msg: 'ok',
+            result: {
+                employee_count: employee_count.result || 0,
+                product_count: product_count.result || 0
+            }
+        }
+    }
+
+    async updateStatusOfStore(storeId: string, body: UpdateStatusOfStoreDTO): Promise<Return> {
+        let { status } = body
+        try {
+            await this.prisma.store.update({
+                where: {
+                    id: storeId
+                },
+                data: {
+                    status
+                }
+            })
+            return {
+                msg: 'ok',
+                result: undefined
+            }
+        } catch (err) {
+            throw new BadRequestException('Cập nhật trạng thái thất bại')
         }
     }
 }
