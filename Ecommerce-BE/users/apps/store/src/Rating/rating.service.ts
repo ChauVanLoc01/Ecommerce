@@ -299,7 +299,7 @@ export class RatingService {
             const { id } = user
             const { comment, orderId, stars, urls } = body
             const ratingId = uuidv4()
-
+            console.log('id', id, ratingId)
             const ratingExist = await this.prisma.rating.findFirst({
                 where: {
                     orderId,
@@ -341,7 +341,7 @@ export class RatingService {
                         5: 'five'
                     }
 
-                    const storeRating = await this.prisma.storeRating.findFirst({
+                    const storeRating = await tx.storeRating.findFirst({
                         where: {
                             storeId: orderExist.storeId
                         },
@@ -351,22 +351,30 @@ export class RatingService {
                         }
                     })
 
-                    await tx.storeRating.upsert({
-                        where: {
-                            id: storeRating.id
-                        },
-                        create: {
-                            id: uuidv4(),
-                            storeId: orderExist.storeId,
-                            createdAt: new Date()
-                        },
-                        update: {
-                            [tmp[stars]]: +storeRating?.[tmp[stars]] + 1,
-                            total: storeRating.total + 1,
-                            average: (storeRating.average + stars) / 2,
-                            updatedAt: new Date()
-                        }
-                    })
+                    if (!storeRating) {
+                        await tx.storeRating.create({
+                            data: {
+                                id: uuidv4(),
+                                storeId: orderExist.storeId,
+                                createdAt: new Date(),
+                                [tmp[stars]]: +storeRating?.[tmp[stars]] + 1,
+                                average: stars,
+                                total: 1
+                            }
+                        })
+                    } else {
+                        await tx.storeRating.update({
+                            where: {
+                                id: storeRating.id
+                            },
+                            data: {
+                                [tmp[stars]]: (storeRating?.[tmp[stars]] || 0) + 1,
+                                total: storeRating?.total + 1,
+                                average: (storeRating.average + stars) / 2,
+                                updatedAt: new Date()
+                            }
+                        })
+                    }
 
                     await Promise.all([
                         tx.rating.create({
@@ -381,16 +389,6 @@ export class RatingService {
                                 isReply: false
                             }
                         }),
-                        !storeRating &&
-                            tx.storeRating.create({
-                                data: {
-                                    id: uuidv4(),
-                                    storeId: orderExist.storeId,
-                                    [tmp[stars]]: 1,
-                                    total: 1,
-                                    average: stars
-                                }
-                            }),
                         tx.order.update({
                             where: {
                                 id: orderId
@@ -411,6 +409,7 @@ export class RatingService {
                         )
                     ])
                 } catch (err) {
+                    console.log('error', err)
                     throw new Error(
                         err?.message
                             ? (err.message as string).length > 100

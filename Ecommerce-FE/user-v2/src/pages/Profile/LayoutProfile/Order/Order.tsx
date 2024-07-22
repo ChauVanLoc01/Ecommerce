@@ -256,6 +256,10 @@ const Order = () => {
             setIsPendingCreateRating(false)
             toast.success('Đánh giá thành công')
             setTimeout(() => setOpenRating(false), 1000)
+        },
+        onError: () => {
+            toast.error('Đánh giá thất bại')
+            setIsPendingCreateRating(false)
         }
     })
 
