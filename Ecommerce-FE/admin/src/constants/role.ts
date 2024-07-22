@@ -76,7 +76,7 @@ export const ROLE: RoleType = {
     ADMIN: {
         Overview: ['ADMIN'],
         Analytics: [],
-        FlashSale: ['ADMIN'],
+        FlashSale: [],
         Product: [],
         Order: [],
         Employee: [],

@@ -12,7 +12,7 @@ import InputPassword from 'src/components/InputPassword'
 import { ROLE } from 'src/constants/role'
 import { AppContext } from 'src/contexts/AppContext'
 import { login_schema, LoginSchemaType } from 'src/utils/auth.schema'
-import { ls, save_to_ls_when_login } from 'src/utils/localStorage'
+import { save_to_ls_when_login } from 'src/utils/localStorage'
 
 const Login = () => {
     const { setProfile, setStore, setRole, setWho } = useContext(AppContext)
@@ -39,7 +39,7 @@ const Login = () => {
         },
         onError: (err) => {
             if (isAxiosError(err)) {
-                toast.error(err?.response?.data?.msg || 'Đăng nhập thất bại')
+                toast.error(err?.response?.data?.message || 'Đăng nhập thất bại')
             }
         }
     })

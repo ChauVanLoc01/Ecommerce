@@ -9,7 +9,12 @@ import { ConfigService } from '@nestjs/config'
 import { ClientProxy } from '@nestjs/microservices'
 import { Prisma, Store } from '@prisma/client'
 import { S3 } from 'aws-sdk'
-import { countEmployee, countProduct, updateStoreRoleId } from 'common/constants/event.constant'
+import {
+    countEmployee,
+    countProduct,
+    updateStatusOfStore,
+    updateStoreRoleId
+} from 'common/constants/event.constant'
 import { Role } from 'common/enums/role.enum'
 import { Status } from 'common/enums/status.enum'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
@@ -289,11 +294,11 @@ export class StoreService {
         const skip = page * limit
 
         const general_user_where: Prisma.StoreWhereInput = {
-            status,
             createdAt: {
                 gte: start_date,
                 lte: end_date
-            }
+            },
+            status
         }
 
         const where: Prisma.StoreWhereInput = {
@@ -357,13 +362,23 @@ export class StoreService {
     async updateStatusOfStore(storeId: string, body: UpdateStatusOfStoreDTO): Promise<Return> {
         let { status } = body
         try {
-            await this.prisma.store.update({
-                where: {
-                    id: storeId
-                },
-                data: {
-                    status
+            await this.prisma.$transaction(async (tx) => {
+                const update_user = await firstValueFrom(
+                    this.userClient.send<MessageReturn>(updateStatusOfStore, { storeId, status })
+                )
+
+                if (!update_user.action) {
+                    throw new Error('Cập nhật phía người dùng thất bại')
                 }
+
+                await tx.store.update({
+                    where: {
+                        id: storeId
+                    },
+                    data: {
+                        status
+                    }
+                })
             })
             return {
                 msg: 'ok',
@@ -371,6 +386,26 @@ export class StoreService {
             }
         } catch (err) {
             throw new BadRequestException('Cập nhật trạng thái thất bại')
+        }
+    }
+
+    async isThereStore(userId: string): Promise<Return> {
+        const store_exist = await this.prisma.store.findFirst({
+            where: {
+                createdBy: userId,
+                status: Status.ACTIVE
+            },
+            select: {
+                name: true,
+                image: true,
+                id: true,
+                location: true
+            }
+        })
+
+        return {
+            msg: 'ok',
+            result: store_exist
         }
     }
 }

@@ -3,6 +3,7 @@ import { MessagePattern, Payload } from '@nestjs/microservices'
 import {
     countEmployee,
     getInfoUserInRating,
+    updateStatusOfStore,
     updateStoreRoleId
 } from 'common/constants/event.constant'
 import { CurrentUser } from 'common/decorators/current_user.decorator'
@@ -12,9 +13,9 @@ import { Role } from 'common/enums/role.enum'
 import { JwtGuard } from 'common/guards/jwt.guard'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
 import { QueryAllUserProfileDTO } from '../dtos/all_user.dto'
+import { UpdateStatusOfUserDTO } from '../dtos/update_status_of_user.dto'
 import { UpdateUserProfileDTO } from '../dtos/update_user_profile.dto'
 import { UserService } from './user.service'
-import { UpdateStatusOfUserDTO } from '../dtos/update_status_of_user.dto'
 
 @Controller('profile')
 export class UserController {
@@ -84,5 +85,11 @@ export class UserController {
     @Put('admin/:storeId')
     updateStatusOfUser(@Param('storeId') storeId: string, @Body() body: UpdateStatusOfUserDTO) {
         return this.userService.updateStatusOfUser(storeId, body)
+    }
+
+    @Public()
+    @MessagePattern(updateStatusOfStore)
+    emitUpdateStatusOfStore(@Payload() payload: { storeId: string; status: string }) {
+        return this.userService.emitUpdateStatusOfStore(payload)
     }
 }

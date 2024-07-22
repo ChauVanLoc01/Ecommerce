@@ -1,4 +1,4 @@
-import { Button, Dialog, Flex } from '@radix-ui/themes'
+import { Button, Dialog, Flex, Spinner } from '@radix-ui/themes'
 import { UseMutateFunction } from '@tanstack/react-query'
 import { AxiosResponse } from 'axios'
 import { Status } from 'src/constants/product.status'
@@ -17,9 +17,10 @@ type Props = {
         unknown
     >
     selectedStore: Store | undefined
+    isUpdating: boolean
 }
 
-const UpdateStatus = ({ open, setOpen, updateStatus, selectedStore }: Props) => {
+const UpdateStatus = ({ open, setOpen, updateStatus, selectedStore, isUpdating }: Props) => {
     let targetStatus: OrderStatus = (selectedStore?.status as OrderStatus) === 'ACTIVE' ? 'BLOCK' : 'ACTIVE'
 
     let label = selectedStore?.status === Status.active ? 'Khóa cửa hàng' : 'Mở khóa cửa hàng'
@@ -46,6 +47,7 @@ const UpdateStatus = ({ open, setOpen, updateStatus, selectedStore }: Props) => 
                         className='bg-blue text-white px-3 py-1.5'
                         onClick={() => updateStatus({ status: targetStatus })}
                     >
+                        {isUpdating && <Spinner />}
                         Cập nhật
                     </Button>
                 </Flex>

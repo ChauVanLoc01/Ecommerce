@@ -1,4 +1,3 @@
-import { HomeIcon } from '@radix-ui/react-icons'
 import { useContext, useMemo } from 'react'
 import { GoStarFill } from 'react-icons/go'
 import { IoStorefront, IoTicket } from 'react-icons/io5'

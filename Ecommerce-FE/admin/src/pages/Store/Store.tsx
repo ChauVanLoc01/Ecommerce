@@ -28,7 +28,7 @@ const Store = () => {
         placeholderData: (old) => old
     })
 
-    const { mutate: updateStatus } = useMutation({
+    const { mutate: updateStatus, isPending: isUpdating } = useMutation({
         mutationFn: store_api.updateStatusOfStore(selectedStore?.id || ''),
         onSuccess: () => {
             setUpdateStatusOpen(false)
@@ -67,6 +67,7 @@ const Store = () => {
                 setOpen={setUpdateStatusOpen}
                 selectedStore={selectedStore}
                 updateStatus={updateStatus}
+                isUpdating={isUpdating}
             />
             <Detail open={detailOpen} setOpen={setDetailOpen} selectedStore={selectedStore} />
         </LayoutProfile>

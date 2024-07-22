@@ -8,7 +8,7 @@ import { CreatePaymentDTO } from '../dtos/payment.dto'
 @Injectable()
 export class PaymentService {
     constructor(
-        private readonly config: ConfigService,
+        private readonly configService: ConfigService,
         private readonly prisma: PrismaService
     ) {}
 
@@ -40,12 +40,10 @@ export class PaymentService {
             req?.['socket']?.remoteAddress ||
             req?.['connection']?.['socket'].remoteAddress
 
-        let config = require('config')
-
-        let tmnCode = this.config.get<string>('app.vnp_TmnCode')
-        let secretKey = this.config.get<string>('app.vnp_HashSecret')
-        let vnpUrl = this.config.get<string>('app.vnp_Url')
-        let returnUrl = this.config.get<string>('app.vnp_ReturnUrl')
+        let tmnCode = this.configService.get<string>('app.vnp_TmnCode')
+        let secretKey = this.configService.get<string>('app.vnp_HashSecret')
+        let vnpUrl = this.configService.get<string>('app.vnp_Url')
+        let returnUrl = this.configService.get<string>('app.vnp_ReturnUrl')
 
         let orderId = format(date, 'ddHHmmss')
         let amount = req.body['amount']

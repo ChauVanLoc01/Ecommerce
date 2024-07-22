@@ -12,12 +12,10 @@ import {
 import { ConfigService } from '@nestjs/config'
 import { ClientProxy } from '@nestjs/microservices'
 import { SchedulerRegistry } from '@nestjs/schedule'
-import { Order, Prisma, PrismaClient, Product } from '@prisma/client'
+import { Prisma, PrismaClient, Product } from '@prisma/client'
 import { DefaultArgs } from '@prisma/client/runtime/library'
-import { AnalysisType } from 'aws-sdk/clients/iotevents'
 import { Queue } from 'bull'
 import { Cache } from 'cache-manager'
-import { AnalyticsType } from 'common/constants/analytics.constants'
 import { BackgroundAction, BackgroundName } from 'common/constants/background-job.constant'
 import {
     getAllProductWithProductOrder,
@@ -34,27 +32,8 @@ import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
 import { CreateOrderPayload } from 'common/types/order_payload.type'
 import { MessageReturn, Return } from 'common/types/result.type'
 import { emit_update_status_of_order, hash, product_next_step } from 'common/utils/order_helper'
-import {
-    add,
-    addHours,
-    compareDesc,
-    eachDayOfInterval,
-    eachMonthOfInterval,
-    eachWeekOfInterval,
-    endOfDay,
-    endOfMonth,
-    endOfWeek,
-    endOfYear,
-    format,
-    isPast,
-    startOfDay,
-    startOfMonth,
-    startOfWeek,
-    startOfYear,
-    sub,
-    subDays
-} from 'date-fns'
-import { Dictionary, isUndefined, max, omitBy, sumBy } from 'lodash'
+import { add, addHours, compareDesc, format, isPast, sub, subDays } from 'date-fns'
+import { Dictionary, isUndefined, omitBy } from 'lodash'
 import { firstValueFrom } from 'rxjs'
 import { v4 as uuidv4 } from 'uuid'
 import { CreateOrder, CreateOrderDTO } from '../../../../common/dtos/create_order.dto'

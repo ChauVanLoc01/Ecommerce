@@ -186,7 +186,7 @@ const CheckoutSummary = ({
                     </div>
                 </div>
             </SimpleBar>
-            <Button onClick={step < 3 ? handleNextStep : hanldeTransaction} size={'3'} className='!w-full'>
+            <Button onClick={step < 3 ? handleNextStep : handleOrder} size={'3'} className='!w-full'>
                 {isPending && <Spinner />}
                 {step === 3 ? 'Thanh toán' : 'Tiếp tục'}
             </Button>

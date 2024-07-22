@@ -1,7 +1,8 @@
 import { ReactNode, useContext } from 'react'
+import { Navigate } from 'react-router-dom'
 import { OBJECT } from 'src/constants/role'
+import { route } from 'src/constants/route'
 import { AppContext } from 'src/contexts/AppContext'
-import PageNotFound from 'src/pages/PageNotFound/PageNotFound'
 
 type RoleProps = {
     type: OBJECT[]
@@ -12,7 +13,7 @@ const Role = ({ children, type }: RoleProps) => {
     const { who } = useContext(AppContext)
     let isCan = type.includes(who as OBJECT)
     if (!isCan) {
-        return <PageNotFound content='Bạn không có quyền truy cập tài nguyên này' />
+        return <Navigate to={route.permission} />
     }
     return children
 }

@@ -8,7 +8,6 @@ export const create_voucher_schema = yup.object().shape({
         .max(100, 'Tối đa 100 kí tự')
         .required('Bắt buộc'),
     title: yup.string().max(255, 'Tối đa 255 kí tự').required('Bắt buộc'),
-    type: yup.string().default('STORE'),
     description: yup.string().optional(),
     initQuantity: yup.number().integer().min(0).required('Bắt buộc'),
     status: yup.string().required('Bắt buộc'),

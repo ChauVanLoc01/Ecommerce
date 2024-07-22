@@ -15,6 +15,7 @@ import { MessageReturn, Return } from 'common/types/result.type'
 import { QueryAllUserProfileType } from '../dtos/all_user.dto'
 import { UpdateStatusOfUserDTO } from '../dtos/update_status_of_user.dto'
 import { UpdateUserProfileType } from '../dtos/update_user_profile.dto'
+import { firstValueFrom } from 'rxjs'
 
 @Injectable()
 export class UserService {
@@ -320,6 +321,59 @@ export class UserService {
         } catch (err) {
             console.log('err', err)
             throw new InternalServerErrorException('Cập nhật trạng thái người dùng thất bại')
+        }
+    }
+
+    async emitUpdateStatusOfStore(body: {
+        storeId: string
+        status: string
+    }): Promise<MessageReturn> {
+        let { status, storeId } = body
+        try {
+            await this.prisma.$transaction(async (tx) => {
+                const accountExist = await tx.account.findFirst({
+                    where: {
+                        StoreRole: {
+                            storeId
+                        }
+                    },
+                    select: {
+                        userId: true,
+                        storeRoleId: true
+                    }
+                })
+
+                await Promise.all([
+                    tx.user.update({
+                        where: {
+                            id: accountExist.userId
+                        },
+                        data: {
+                            status
+                        }
+                    }),
+                    tx.storeRole.update({
+                        where: {
+                            id: accountExist.storeRoleId
+                        },
+                        data: {
+                            status
+                        }
+                    })
+                ])
+            })
+
+            return {
+                msg: 'ok',
+                action: true,
+                result: null
+            }
+        } catch (err) {
+            return {
+                msg: 'Lỗi',
+                action: false,
+                result: null
+            }
         }
     }
 }

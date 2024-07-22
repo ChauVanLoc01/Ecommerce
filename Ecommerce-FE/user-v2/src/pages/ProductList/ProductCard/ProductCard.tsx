@@ -118,7 +118,7 @@ const ProductCard = ({ product, isHiddenStore = false }: ProductCardProps) => {
                             className='flex items-center space-x-3 cursor-pointer group'
                         >
                             <Avatar fallback='A' src={product?.store?.image} radius='full' size={'2'} />
-                            <Text className='group-hover:text-gray-500'>{product.store.name}</Text>
+                            <Text className='group-hover:text-gray-500'>{product?.store?.name}</Text>
                         </Link>
                     )}
                 </div>

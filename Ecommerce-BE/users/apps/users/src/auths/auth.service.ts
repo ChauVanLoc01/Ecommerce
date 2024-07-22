@@ -120,6 +120,10 @@ export class AuthService {
             }
         })
 
+        if (userExist.status === Status.BLOCK) {
+            throw new BadRequestException('Tài khoản đã bị khóa')
+        }
+
         if (userExist.role === Role.ADMIN) {
             return {
                 currentStoreType: {

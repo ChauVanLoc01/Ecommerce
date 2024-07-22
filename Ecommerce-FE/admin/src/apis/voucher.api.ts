@@ -7,7 +7,7 @@ export const VoucherApi = {
     getDetailVoucher: (voucherId: string) => {
         return http.get<VoucherDetailReponse>(`/store/voucher/${voucherId}`)
     },
-    getAllVoucher: (query: VoucherQuery) => {
+    getAllVoucher: (query: VoucherQuery) => () => {
         return http.get<VoucherListReponse>('store/voucher', {
             params: query
         })
@@ -23,5 +23,10 @@ export const VoucherApi = {
     },
     updateStatus: (voucherId: string, status: 'ACTIVE' | 'BLOCK') => () => {
         return http.put(`store/voucher/${voucherId}`, { status })
+    },
+    getGlobalVoucher: (query: VoucherQuery) => () => {
+        return http.get<VoucherListReponse>('store/voucher/global', {
+            params: query
+        })
     }
 }

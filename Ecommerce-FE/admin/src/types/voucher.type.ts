@@ -26,7 +26,7 @@ export type VoucherQuery = {
     startDate?: string
     endDate?: string
     status?: string
-    code?: string
+    search_key?: string
     createdAt?: string
     page?: number
     limit?: number

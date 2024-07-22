@@ -76,3 +76,5 @@ export const refreshProductSale = 'refresh::product::sale'
 export const countEmployee = 'count::employee::by::store::id'
 
 export const countProduct = 'count::product::by::store::id'
+
+export const updateStatusOfStore = 'update::status::of::store'

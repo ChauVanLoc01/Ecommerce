@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { DateRange } from 'react-day-picker'
 import Pagination from 'src/components/Pagination/Pagination'
 import { DatePickerWithRange } from 'src/components/Shadcn/dateRange'
+import { OrderLabel, OrderStatus } from 'src/constants/store.constants'
 import { VoucherQuery } from 'src/types/voucher.type'
 
 type VoucherFilterProps = {
@@ -14,7 +15,7 @@ type VoucherFilterProps = {
     page_size: number
 }
 
-const VoucherFilter = ({ setQuery, page, page_size }: VoucherFilterProps) => {
+const VoucherFilter = ({ setQuery, page, page_size, query }: VoucherFilterProps) => {
     const [date, setDate] = useState<DateRange | undefined>(undefined)
 
     const handleSelectStatus = (status: string) => {
@@ -24,6 +25,10 @@ const VoucherFilter = ({ setQuery, page, page_size }: VoucherFilterProps) => {
                 status
             }
         })
+    }
+
+    const handleChangeStatus = (status: string) => {
+        setQuery((pre) => ({ ...query, status }))
     }
 
     useEffect(() => {
@@ -57,11 +62,15 @@ const VoucherFilter = ({ setQuery, page, page_size }: VoucherFilterProps) => {
                     </TextField.Slot>
                 </TextField.Root>
                 <Flex direction='column' width='120px'>
-                    <Select.Root size='3' defaultValue='ACTIVE' onValueChange={handleSelectStatus}>
+                    <Select.Root value={query?.status || 'DEFAULT'} size={'3'} onValueChange={handleChangeStatus}>
                         <Select.Trigger />
-                        <Select.Content position='popper'>
-                            <Select.Item value='ACTIVE'>Active</Select.Item>
-                            <Select.Item value='BLOCK'>Block</Select.Item>
+                        <Select.Content position='popper' align='end' className='rounded-8'>
+                            <Select.Group>
+                                <Select.Label>Trạng thái</Select.Label>
+                                {Object.keys(OrderLabel).map((key) => (
+                                    <Select.Item value={key}>{OrderLabel[key as OrderStatus]}</Select.Item>
+                                ))}
+                            </Select.Group>
                         </Select.Content>
                     </Select.Root>
                 </Flex>

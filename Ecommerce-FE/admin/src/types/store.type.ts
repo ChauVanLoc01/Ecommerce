@@ -14,3 +14,5 @@ export type StoreDetail = Return<{
     employee_count: number
     product_count: number
 }>
+
+export type IsThereStore = Return<Pick<Store, 'id' | 'name' | 'image' | 'location'> | null>

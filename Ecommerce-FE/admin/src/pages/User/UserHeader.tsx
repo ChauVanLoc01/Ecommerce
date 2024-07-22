@@ -65,14 +65,11 @@ const UserHeader = ({ setQuery, pagination, date, setDate, query }: Props) => {
                         <MagnifyingGlassIcon />
                     </TextField.Slot>
                 </TextField.Root>
-                <Select.Root defaultValue={query?.status || 'default'} size={'3'} onValueChange={handleChangeStatus}>
+                <Select.Root value={query?.status || 'DEFAULT'} size={'3'} onValueChange={handleChangeStatus}>
                     <Select.Trigger />
                     <Select.Content position='popper' align='end' className='rounded-8'>
                         <Select.Group>
                             <Select.Label>Trạng thái</Select.Label>
-                            <Select.Item key='default' value='default'>
-                                Tất cả
-                            </Select.Item>
                             {Object.keys(OrderLabel).map((key) => (
                                 <Select.Item value={key}>{OrderLabel[key as OrderStatus]}</Select.Item>
                             ))}

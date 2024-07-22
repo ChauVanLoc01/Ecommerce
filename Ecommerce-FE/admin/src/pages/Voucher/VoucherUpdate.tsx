@@ -37,8 +37,7 @@ const VoucherUpdate = ({ refetchDataAll, voucher }: VoucherUpdateProps) => {
         control,
         formState: { errors },
         handleSubmit,
-        resetField,
-        setValue
+        resetField
     } = useForm<UpdateVoucher>({
         resolver: yupResolver(update_voucher_schema),
         defaultValues: voucher

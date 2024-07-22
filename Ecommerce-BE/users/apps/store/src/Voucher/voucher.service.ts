@@ -13,6 +13,7 @@ import {
 import { ConfigService } from '@nestjs/config'
 import { ClientProxy } from '@nestjs/microservices'
 import { SchedulerRegistry } from '@nestjs/schedule'
+import { Prisma } from '@prisma/client'
 import { Queue } from 'bull'
 import { Cache } from 'cache-manager'
 import { BackgroundAction, BackgroundName } from 'common/constants/background-job.constant'
@@ -38,6 +39,7 @@ import { v4 as uuidv4 } from 'uuid'
 import { CreateVoucherDTO } from './dtos/CreateVoucher.dto'
 import { VoucherQueryDTO } from './dtos/QueryVoucher.dto'
 import { UpdateVoucherDTO } from './dtos/UpdateVoucher.dto'
+import { QueryGlobalVoucherDTO } from './dtos/query_global_voucher.dto'
 import { SearchCodeDTO } from './dtos/search-code.dto'
 
 @Injectable()
@@ -662,6 +664,71 @@ export class VoucherService {
             await Promise.all(voucherIds.map((voucherId) => rollback(voucherId)))
         } catch (err) {
             console.log('error', err)
+        }
+    }
+
+    async getGlobalVoucher(query: QueryGlobalVoucherDTO) {
+        console.log('global voucher')
+        let { end_date, search_key, limit, page, start_date, status } = query
+
+        let pre_page = page
+        status = [Status.ACTIVE, Status.BLOCK].includes(status as any) ? status : undefined
+
+        const take = limit || this.configService.get<number>('app.limit')
+        page = (page || 1) - 1
+        const skip = page * limit
+
+        const general_user_where: Prisma.VoucherWhereInput = {
+            type: VoucherType.global,
+            createdAt: {
+                gte: start_date,
+                lte: end_date
+            },
+            status
+        }
+
+        const where: Prisma.VoucherWhereInput = {
+            OR: [
+                {
+                    id: {
+                        contains: search_key
+                    },
+                    ...general_user_where
+                },
+                {
+                    title: {
+                        contains: search_key
+                    },
+                    ...general_user_where
+                },
+                {
+                    description: {
+                        contains: search_key
+                    },
+                    ...general_user_where
+                }
+            ]
+        }
+
+        const [vouchers, count] = await Promise.all([
+            this.prisma.voucher.findMany({
+                where,
+                take,
+                skip
+            }),
+            this.prisma.voucher.count({ where })
+        ])
+
+        return {
+            msg: 'ok',
+            result: {
+                data: vouchers,
+                query: {
+                    ...query,
+                    page: pre_page,
+                    page_size: Math.ceil(count / limit)
+                }
+            }
         }
     }
 }

@@ -5,7 +5,6 @@ import { DateRange } from 'react-day-picker'
 import { FaRegTrashAlt } from 'react-icons/fa'
 import Pagination, { PaginationProps } from 'src/components/Pagination/Pagination'
 import { DatePickerWithRange } from 'src/components/Shadcn/dateRange'
-import { Status } from 'src/constants/product.status'
 import { OrderLabel, OrderStatus } from 'src/constants/store.constants'
 import { StoreQuery } from 'src/types/store.type'
 
@@ -31,7 +30,11 @@ const StoreHeader = ({ setQuery, pagination, date, setDate, query }: Props) => {
         setQuery((pre) => ({ ...pre, status }))
     }
 
-    const handleClearFilter = () => setQuery({ page: 1, limit: 10 })
+    const handleClearFilter = () => {
+        setDate(undefined)
+        setSearch_key('')
+        setQuery({ page: 1, limit: 10 })
+    }
 
     useEffect(() => {
         searchRef.current = setTimeout(handleSetSearchKey, 300)
@@ -39,6 +42,19 @@ const StoreHeader = ({ setQuery, pagination, date, setDate, query }: Props) => {
             clearTimeout(searchRef.current)
         }
     }, [search_key])
+
+    useEffect(() => {
+        setQuery((pre) => {
+            let dateTmp = {
+                start_date: date?.from,
+                end_date: date?.to
+            }
+            return {
+                ...pre,
+                ...dateTmp
+            }
+        })
+    }, [date])
 
     return (
         <Flex justify={'between'} align={'center'} id='store-header'>
@@ -53,14 +69,11 @@ const StoreHeader = ({ setQuery, pagination, date, setDate, query }: Props) => {
                         <MagnifyingGlassIcon />
                     </TextField.Slot>
                 </TextField.Root>
-                <Select.Root defaultValue={query?.status || 'default'} size={'3'} onValueChange={handleChangeStatus}>
+                <Select.Root value={query?.status || 'DEFAULT'} size={'3'} onValueChange={handleChangeStatus}>
                     <Select.Trigger />
                     <Select.Content position='popper' align='end' className='rounded-8'>
                         <Select.Group>
                             <Select.Label>Trạng thái</Select.Label>
-                            <Select.Item key='default' value='default'>
-                                Tất cả
-                            </Select.Item>
                             {Object.keys(OrderLabel).map((key) => (
                                 <Select.Item key={key} value={key}>
                                     {OrderLabel[key as OrderStatus]}

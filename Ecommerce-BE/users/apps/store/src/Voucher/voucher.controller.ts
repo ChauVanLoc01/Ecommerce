@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Put, UseGuards } from '@nestjs/common'
+import { Body, Controller, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common'
 import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices'
 import { ApiBearerAuth } from '@nestjs/swagger'
 import {
@@ -17,6 +17,9 @@ import { VoucherQueryDTO } from './dtos/QueryVoucher.dto'
 import { SearchCodeDTO } from './dtos/search-code.dto'
 import { UpdateVoucherDTO } from './dtos/UpdateVoucher.dto'
 import { VoucherService } from './voucher.service'
+import { Roles } from 'common/decorators/roles.decorator'
+import { Role } from 'common/enums/role.enum'
+import { QueryGlobalVoucherDTO } from './dtos/query_global_voucher.dto'
 
 @ApiBearerAuth()
 @UseGuards(JwtGuard)
@@ -51,6 +54,12 @@ export class VoucherController {
     @Get('analytics')
     voucherAnalytics(@CurrentUser() user: CurrentStoreType) {
         return this.voucherService.voucherAnalytics(user)
+    }
+
+    @Roles(Role.ADMIN)
+    @Get('global')
+    getGlobalVoucher(@Query() query: QueryGlobalVoucherDTO) {
+        return this.voucherService.getGlobalVoucher(query)
     }
 
     @Get()

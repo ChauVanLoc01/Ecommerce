@@ -110,11 +110,7 @@ const PrivateRouteDefault: Record<SERVICE, RouteObject> = {
     },
     Voucher: {
         path: route.voucher,
-        element: (
-            <StoreOwnerAndEmployeeAuth>
-                <Voucher />
-            </StoreOwnerAndEmployeeAuth>
-        ),
+        element: <Voucher />,
         loader: voucherLoader
     },
     Store: {

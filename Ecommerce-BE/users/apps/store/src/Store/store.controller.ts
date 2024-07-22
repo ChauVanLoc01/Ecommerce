@@ -153,4 +153,10 @@ export class StoreController {
     updateStatusOfStore(@Param('storeId') storeId: string, @Body() body: UpdateStatusOfStoreDTO) {
         return this.storeService.updateStatusOfStore(storeId, body)
     }
+
+    @Roles(Role.ADMIN)
+    @Get('admin/is-there-store/:userId')
+    isThereStore(@Param('userId') userId: string) {
+        return this.storeService.isThereStore(userId)
+    }
 }

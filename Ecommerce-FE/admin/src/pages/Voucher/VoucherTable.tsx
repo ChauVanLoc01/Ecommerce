@@ -80,18 +80,6 @@ const VoucherTable = ({ data, refetchDataAll }: VoucherTableProps) => {
             )
         },
         {
-            accessorKey: 'type',
-            header: () => {
-                return (
-                    <div className='flex items-center justify-evenly gap-x-2'>
-                        Loại
-                        <BiSolidSortAlt />
-                    </div>
-                )
-            },
-            cell: ({ row }) => <Text className='flex justify-center'>{row.original.type}</Text>
-        },
-        {
             accessorKey: 'percent',
             header: () => (
                 <div className='flex items-center gap-x-2'>

@@ -8,12 +8,13 @@ import { HiOutlineInformationCircle } from 'react-icons/hi2'
 import { IoSettingsOutline } from 'react-icons/io5'
 import { MdPeopleOutline } from 'react-icons/md'
 import { PiDotsThreeOutlineVerticalDuotone } from 'react-icons/pi'
-import { SlLock } from 'react-icons/sl'
 
+import { LockClosedIcon } from '@radix-ui/react-icons'
 import { resolvePath, useLocation, useNavigate } from 'react-router-dom'
 import Button from 'src/components/Button'
 import { route } from 'src/constants/route'
 import { AppContext } from 'src/contexts/AppContext'
+import { cn } from 'src/utils/utils'
 
 type CardProps = {
     rootClassName?: string
@@ -85,17 +86,17 @@ const CardProfile = ({ rootClassName }: CardProps) => {
                     iconLeft={<HiOutlineInformationCircle />}
                     text='Thông Tin Cửa Hàng'
                     type='outline'
-                    rootClassNames={classNames('text-gray-500 hover:bg-blue/20 hover:!text-blue w-full', {
-                        'bg-blue/20 !text-blue': location.pathname === resolvePath(route.profile, route.root).pathname
+                    rootClassNames={cn('text-gray-500 w-full', {
+                        'bg-blue/20 text-blue': location.pathname === resolvePath(route.profile, route.root).pathname
                     })}
                     onClick={() => navigate(`/${route.profile}`)}
                 />
                 <Button
-                    iconLeft={<SlLock />}
                     text='Thay Đổi Mật Khẩu'
                     type='outline'
-                    rootClassNames={classNames('text-gray-500 hover:bg-blue/20 hover:!text-blue w-full', {
-                        'bg-blue/20 !text-blue': location.pathname === `/${route.profile}/${route.changePassword}`
+                    iconLeft={<LockClosedIcon />}
+                    rootClassNames={cn('text-gray-500 w-full', {
+                        'bg-blue/20 text-blue': location.pathname === `/${route.profile}/${route.changePassword}`
                     })}
                     onClick={() => navigate(route.changePassword)}
                 />
@@ -103,8 +104,8 @@ const CardProfile = ({ rootClassName }: CardProps) => {
                     iconLeft={<MdPeopleOutline />}
                     text='Quản Lý Phân Quyền'
                     type='outline'
-                    rootClassNames={classNames('text-gray-500 hover:bg-blue/20 hover:!text-blue w-full', {
-                        'bg-blue/20 !text-blue': location.pathname === `/${route.profile}/${route.permission}`
+                    rootClassNames={cn('text-gray-500 w-full', {
+                        'bg-blue/20 text-blue': location.pathname === `/${route.profile}/${route.permission}`
                     })}
                     onClick={() => navigate(route.permission)}
                 />
@@ -112,8 +113,8 @@ const CardProfile = ({ rootClassName }: CardProps) => {
                     iconLeft={<IoSettingsOutline />}
                     text='Cài Đặt Hệ Thống'
                     type='outline'
-                    rootClassNames={classNames('text-gray-500 hover:bg-blue/20 hover:!text-blue w-full', {
-                        'bg-blue/20 !text-blue': location.pathname === `/${route.profile}/${route.setting}`
+                    rootClassNames={cn('text-gray-500 w-full', {
+                        'bg-blue/20 text-blue': location.pathname === `/${route.profile}/${route.setting}`
                     })}
                     onClick={() => navigate(route.setting)}
                 />

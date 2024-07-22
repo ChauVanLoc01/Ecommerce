@@ -2,14 +2,16 @@ import { yupResolver } from '@hookform/resolvers/yup'
 import { AlertDialog, Button, DataList, Flex, Select, Spinner, Text, TextArea, TextField } from '@radix-ui/themes'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { isAxiosError } from 'axios'
-import { useState } from 'react'
+import { useContext, useEffect, useState } from 'react'
 import { Controller, SubmitHandler, useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { ProductApi } from 'src/apis/product.api'
 import { VoucherApi } from 'src/apis/voucher.api'
 import { DatePicker } from 'src/components/Shadcn/datePicker'
+import { OBJECT } from 'src/constants/role'
+import { voucher_type } from 'src/constants/voucher.constant'
+import { AppContext } from 'src/contexts/AppContext'
 import { Category } from 'src/types/category.type'
-import { convertCurrentcy } from 'src/utils/utils'
 import { create_voucher_schema, CreateVoucher } from 'src/utils/voucher.schema'
 
 type VoucherCreateProps = {
@@ -17,6 +19,7 @@ type VoucherCreateProps = {
 }
 
 const VoucherCreate = ({ refetchDataAll }: VoucherCreateProps) => {
+    const { who } = useContext(AppContext)
     const [openCreate, setOpenCreate] = useState<boolean>(false)
 
     const {
@@ -47,11 +50,17 @@ const VoucherCreate = ({ refetchDataAll }: VoucherCreateProps) => {
                 toast.error(err.response?.data['message'])
                 return
             }
-            toast.error('Lỗi! Tạo mã giảm giá không thành công')
+            toast.error('Tạo mã giảm giá không thành công')
         }
     })
 
-    const onSubmit: SubmitHandler<CreateVoucher> = (data) => createVoucherMutation(data)
+    const onSubmit: SubmitHandler<CreateVoucher> = (data) => {
+        createVoucherMutation(data)
+    }
+
+    useEffect(() => {
+        setValue('type', voucher_type[who as OBJECT])
+    }, [])
 
     return (
         <AlertDialog.Root open={openCreate} onOpenChange={setOpenCreate}>
