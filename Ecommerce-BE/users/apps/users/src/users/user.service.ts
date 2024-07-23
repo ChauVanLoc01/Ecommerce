@@ -90,6 +90,22 @@ export class UserService {
         }
     }
 
+    async getUserByRatingId(userId: string): Promise<Return> {
+        const user = await this.prisma.user.findUnique({
+            where: {
+                id: userId
+            },
+            select: {
+                full_name: true,
+                image: true
+            }
+        })
+        return {
+            msg: 'ok',
+            result: user
+        }
+    }
+
     async profileDetail(user: CurrentUserType): Promise<Return> {
         const userExist = await this.prisma.user.findUnique({
             where: {

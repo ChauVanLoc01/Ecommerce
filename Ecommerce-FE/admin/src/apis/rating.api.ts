@@ -1,6 +1,6 @@
-import { RatingTableResponse, RatingQuery, RatingReplyBody } from 'src/types/rating.type'
-import { http } from './http'
+import { RatingQuery, RatingReplyBody, RatingTableResponse } from 'src/types/rating.type'
 import { Return } from 'src/types/return.type'
+import { http } from './http'
 
 export const RatingAPI = {
     getAllRating: (query: RatingQuery) => {
@@ -21,5 +21,8 @@ export const RatingAPI = {
     },
     replyRating: (body: RatingReplyBody) => {
         return http.post('store/rating/reply', body)
+    },
+    getMaterialOfRating: (ratingId: string) => () => {
+        return http.get<Return<string[]>>(`store/rating/material/${ratingId}`)
     }
 }

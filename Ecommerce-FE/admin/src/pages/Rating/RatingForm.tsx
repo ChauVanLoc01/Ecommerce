@@ -1,6 +1,7 @@
-import { AlertDialog, Avatar, Box, Button, Flex, Spinner, Text, TextArea } from '@radix-ui/themes'
+import { AlertDialog, Avatar, Box, Button, Flex, Grid, Skeleton, Spinner, Text, TextArea } from '@radix-ui/themes'
+import { useQuery } from '@tanstack/react-query'
 import { format } from 'date-fns'
-import MultiUploadFile from 'src/components/MultiUploadFile/MultiUploadFile'
+import { RatingAPI } from 'src/apis/rating.api'
 import RatingReadOnly from 'src/components/Rating/RatingReadOnly'
 import { formatDefault } from 'src/constants/date.constants'
 import { RatingTableType } from 'src/types/rating.type'
@@ -38,6 +39,12 @@ function ReplyRatingCreate({
     user,
     onCreateReplyRating
 }: ReplyRatingCreateProps) {
+    const { data: urls } = useQuery({
+        queryKey: ['rating_detail', rating.id],
+        queryFn: RatingAPI.getMaterialOfRating(rating.id),
+        select: (data) => data.data.result
+    })
+
     return (
         <AlertDialog.Root open={openReplyRating} onOpenChange={setOpenReplyRating}>
             <AlertDialog.Content maxWidth='700px' className='!rounded-8'>
@@ -61,6 +68,22 @@ function ReplyRatingCreate({
                                 <Text>{format(rating.createdAt, formatDefault)}</Text>
                             </Flex>
                             <TextArea disabled>{rating.comment}</TextArea>
+                            <Grid columns={'4'}>
+                                {urls
+                                    ? urls.map((url, idx) => (
+                                          <Avatar
+                                              size={'7'}
+                                              key={`rating_${idx}`}
+                                              fallback={rating.userName}
+                                              src={url}
+                                          />
+                                      ))
+                                    : Array(4)
+                                          .fill(0)
+                                          .map((_) => (
+                                              <Skeleton width={'100px'} height={'100px'} className='rounded-12' />
+                                          ))}
+                            </Grid>
                         </Flex>
                         <Flex direction='column' gap='3'>
                             <Text as='p'>Phản hồi khách hàng (có thể không cần phản hồi)</Text>

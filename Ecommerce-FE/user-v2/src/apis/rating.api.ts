@@ -1,10 +1,11 @@
 import {
     CreateRatingBody,
     CreateRatingResponse,
-    IsCreateRatingResponse,
     RatingListResponse,
-    RatingQuery
+    RatingQuery,
+    UserRating
 } from 'src/types/rating.type'
+import { Return } from 'src/types/return.type'
 import { http } from './http'
 
 export const RatingApi = {
@@ -18,5 +19,11 @@ export const RatingApi = {
                 page: body.page
             }
         })
+    },
+    getRatingUserProfile: (userId: string) => () => {
+        return http.get<Return<UserRating>>(`/user/profile/rating/${userId}`)
+    },
+    getMaterialOfRating: (ratingId: string) => () => {
+        return http.get<Return<string[]>>(`store/rating/material/${ratingId}`)
     }
 }

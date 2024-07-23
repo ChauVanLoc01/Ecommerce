@@ -33,3 +33,7 @@ export const loadingEvent = {
     },
     end: () => window.dispatchEvent(new Event(endLoadingLoader))
 }
+
+export const calcPercentRating = (total: number, value: number) => {
+    return (value * 100) / total
+}

@@ -22,6 +22,11 @@ export class RatingController {
         return this.ratingService.createNewRating(user, body)
     }
 
+    @Get('material/:ratingId')
+    getMaterialOfRating(@Param('ratingId') ratingId: string) {
+        return this.ratingService.getMaterialOfRating(ratingId)
+    }
+
     @Roles(Role.STORE_OWNER, Role.EMPLOYEE)
     @Post('reply')
     updateRating(@CurrentUser() store: CurrentStoreType, @Body() body: CreateReplyRatingDTO) {

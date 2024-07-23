@@ -11,15 +11,11 @@ import {
 import { ConfigService } from '@nestjs/config'
 import { ClientProxy } from '@nestjs/microservices'
 import { Order, Prisma } from '@prisma/client'
-import {
-    getInfoUserInRating,
-    getOrderByRating,
-    getProductOrderByRating
-} from 'common/constants/event.constant'
+import { getOrderByRating, getProductOrderByRating } from 'common/constants/event.constant'
 import { PaginationDTO } from 'common/decorators/pagination.dto'
 import { OrderFlowEnum } from 'common/enums/orderStatus.enum'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
-import { MessageReturn, Return } from 'common/types/result.type'
+import { Return } from 'common/types/result.type'
 import { flatten, isUndefined, omitBy } from 'lodash'
 import { firstValueFrom } from 'rxjs'
 import { v4 as uuidv4 } from 'uuid'
@@ -89,8 +85,7 @@ export class RatingService {
         query: PaginationDTO
     ): Promise<Return> {
         try {
-            const { limit, page } = query
-            const limitExist = limit | this.configService.get('app.limit_default')
+            let { limit, page } = query
 
             const storeRating = await this.prisma.storeRating.findFirst({
                 where: {
@@ -123,81 +118,58 @@ export class RatingService {
 
             const convertedStoreRating = orderIdsRelatived.map((e) => e.orderId)
 
-            const ratings = await this.prisma.rating.findMany({
-                where: {
-                    orderId: {
-                        in: convertedStoreRating
+            const take = limit || this.configService.get<number>('app.limit_default')
+            page = (page || 1) - 1
+            const skip = page * take
+
+            const [ratings, count] = await Promise.all([
+                this.prisma.rating.findMany({
+                    where: {
+                        orderId: {
+                            in: convertedStoreRating
+                        }
+                    },
+                    orderBy: {
+                        createdAt: 'desc'
+                    },
+                    include: {
+                        RatingReply: {
+                            take: 1,
+                            select: {
+                                detail: true,
+                                createdAt: true
+                            }
+                        }
+                    },
+                    take,
+                    skip,
+                    omit: {
+                        updatedAt: true,
+                        updatedBy: true,
+                        storeId: true
                     }
-                },
-                orderBy: {
-                    createdAt: 'desc'
-                },
-                include: {
-                    RatingReply: {
-                        take: 1,
-                        select: {
-                            detail: true,
-                            createdAt: true
+                }),
+                this.prisma.rating.count({
+                    where: {
+                        orderId: {
+                            in: convertedStoreRating
                         }
                     }
-                },
-                take: limitExist,
-                skip: page && page > 1 ? (page - 1) * limitExist : 0,
-                omit: {
-                    updatedAt: true,
-                    updatedBy: true,
-                    storeId: true
-                }
-            })
-
-            const userNames = await firstValueFrom<MessageReturn>(
-                this.userClient.send(
-                    getInfoUserInRating,
-                    ratings.map((e) => e.createdBy)
-                )
-            )
-
-            if (!userNames.action) {
-                throw new InternalServerErrorException('Lỗi Server')
-            }
-
-            const ratingMaterial = await Promise.all(
-                ratings.map(({ id }) =>
-                    this.prisma.ratingMaterial.findMany({
-                        where: {
-                            ratingId: id
-                        }
-                    })
-                )
-            )
+                })
+            ])
 
             return {
                 msg: 'ok',
                 result: {
                     data: {
                         summary: storeRating,
-                        ratings,
-                        userNames: userNames.result,
-                        ratingMaterial: ratingMaterial.length
-                            ? ratingMaterial.reduce(
-                                  (acum, rating) => ({
-                                      ...acum,
-                                      [rating[0].ratingId]: rating
-                                  }),
-                                  {}
-                              )
-                            : {}
+                        ratings
                     },
-                    query: omitBy(
-                        {
-                            ...query,
-                            page: page || 1,
-                            page_size: storeRating?.total
-                                ? Math.ceil(storeRating.total / limitExist)
-                                : 0
-                        },
-                        isUndefined
-                    )
+                    query: {
+                        ...query,
+                        page,
+                        page_size: Math.ceil(count / take)
+                    }
                 }
             }
         } catch (err) {
@@ -299,7 +271,6 @@ export class RatingService {
             const { id } = user
             const { comment, orderId, stars, urls } = body
             const ratingId = uuidv4()
-            console.log('id', id, ratingId)
             const ratingExist = await this.prisma.rating.findFirst({
                 where: {
                     orderId,
@@ -357,23 +328,43 @@ export class RatingService {
                                 id: uuidv4(),
                                 storeId: orderExist.storeId,
                                 createdAt: new Date(),
-                                [tmp[stars]]: +storeRating?.[tmp[stars]] + 1,
+                                [tmp[stars]]: 1,
                                 average: stars,
                                 total: 1
                             }
                         })
                     } else {
-                        await tx.storeRating.update({
+                        console.log('update params', {
                             where: {
                                 id: storeRating.id
                             },
                             data: {
-                                [tmp[stars]]: (storeRating?.[tmp[stars]] || 0) + 1,
+                                [tmp[stars]]: {
+                                    increment: 1
+                                },
                                 total: storeRating?.total + 1,
                                 average: (storeRating.average + stars) / 2,
                                 updatedAt: new Date()
                             }
                         })
+                        try {
+                            await tx.storeRating.update({
+                                where: {
+                                    id: storeRating.id
+                                },
+                                data: {
+                                    [tmp[stars]]: {
+                                        increment: 1
+                                    },
+                                    total: storeRating?.total + 1,
+                                    average: (storeRating.average + stars) / 2,
+                                    updatedAt: new Date()
+                                }
+                            })
+                        } catch (err) {
+                            console.log('error update', err)
+                            throw Error(err?.message)
+                        }
                     }
 
                     await Promise.all([
@@ -396,27 +387,20 @@ export class RatingService {
                             data: {
                                 isRated: true
                             }
-                        }),
-                        ...urls.map(({ url, isPrimary }) =>
-                            tx.ratingMaterial.create({
-                                data: {
-                                    id: uuidv4(),
-                                    isPrimary: isPrimary || false,
-                                    url,
-                                    ratingId
-                                }
-                            })
-                        )
+                        })
                     ])
+
+                    await tx.ratingMaterial.createMany({
+                        data: urls.map(({ url, isPrimary }) => ({
+                            id: uuidv4(),
+                            isPrimary: isPrimary || false,
+                            url,
+                            ratingId
+                        }))
+                    })
                 } catch (err) {
-                    console.log('error', err)
-                    throw new Error(
-                        err?.message
-                            ? (err.message as string).length > 100
-                                ? 'Đánh giá không thành công'
-                                : err.message
-                            : 'Đánh giá không thành công'
-                    )
+                    console.log('error transaction', err)
+                    throw new Error(err?.message)
                 }
             })
 
@@ -425,10 +409,26 @@ export class RatingService {
                 result: undefined
             }
         } catch (err) {
+            console.log('error', err)
             throw new HttpException(
                 err?.message || 'Đánh giá không thành công. Vui lòng thử lại sau',
                 err.statusCode || HttpStatus.INTERNAL_SERVER_ERROR
             )
+        }
+    }
+
+    async getMaterialOfRating(ratingId: string): Promise<Return> {
+        const materials = await this.prisma.ratingMaterial.findMany({
+            where: {
+                ratingId
+            },
+            select: {
+                url: true
+            }
+        })
+        return {
+            msg: 'ok',
+            result: materials.map((e) => e.url)
         }
     }
 

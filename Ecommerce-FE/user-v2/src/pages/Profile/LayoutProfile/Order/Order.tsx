@@ -183,7 +183,7 @@ const Order = () => {
             accessorKey: ' ',
             cell: ({ row }) => {
                 let isFetching = row.original.id === orderId && isOrderDetailFetching
-                let isCanRate = OrderFlowEnum.FINISH !== row.original.status
+                let isCanRate = !row.original.isRated && OrderFlowEnum.FINISH === row.original.status
                 return (
                     <Flex gapX={'2'} align={'center'}>
                         <Tooltip content='Xem chi tiết'>
@@ -219,7 +219,7 @@ const Order = () => {
                                 color='green'
                                 onClick={onOpenRatingClick(row.original.id, row.original.storeId)}
                                 onMouseEnter={handleFetchOrderDetailWhenHovering(row.original.id)}
-                                disabled={isCanRate}
+                                disabled={!isCanRate}
                             >
                                 <StarIcon />
                             </IconButton>

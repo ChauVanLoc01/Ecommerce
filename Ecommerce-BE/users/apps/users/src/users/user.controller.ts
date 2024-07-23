@@ -27,6 +27,12 @@ export class UserController {
         return this.userService.findAllUserProfile(query)
     }
 
+    @Roles(Role.ADMIN)
+    @Get('rating/:userId')
+    getUserByRatingId(@Param('userId') userId: string) {
+        return this.userService.getUserByRatingId(userId)
+    }
+
     @Roles(Role.USER)
     @UseGuards(JwtGuard)
     @Get('user-profile')

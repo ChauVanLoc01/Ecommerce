@@ -62,9 +62,7 @@ export type SummaryRating = {
 export type DataRatingListResponse = {
     data: {
         summary: SummaryRating
-        ratings: Rating[]
-        userNames: Record<string, { full_name: string; image: string }>
-        ratingMaterial: Record<string, { url: string; isPrimary?: boolean }[]>
+        ratings: (Rating & { RatingReply: RatingReply[] })[]
     }
     query: { page: number; page_size: number }
 }
@@ -87,4 +85,9 @@ export type CreateRatingBody = {
         url: string
         isPrimary?: boolean
     }[]
+}
+
+export type UserRating = {
+    full_name: string
+    image: string
 }

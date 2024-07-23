@@ -18,7 +18,7 @@ import { ls } from 'src/utils/localStorage'
 import { convertCurrentcy } from 'src/utils/utils.ts'
 import Countdown from '../ProductList/FlashSale/Countdown'
 import ProductRecomend from './ProductRecomend'
-import Rating from './Rating'
+import RatingList from './Rating/RatingList'
 
 const Product = () => {
     const { setProducts, products, profile } = useContext(AppContext)
@@ -211,7 +211,7 @@ const Product = () => {
                 </div>
             </section>
             <div className='flex gap-4'>
-                <Rating storeId={storeDetail.id} />
+                <RatingList storeId={storeDetail.id} />
                 <ProductRecomend />
             </div>
         </motion.div>

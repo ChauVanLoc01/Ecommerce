@@ -8,7 +8,7 @@ type ProductRecomendProps = {}
 const ProductRecomend = ({}: ProductRecomendProps) => {
     const [, relativedProducts, _] = useLoaderData() as [any, ProductListResponse, any]
     return (
-        <section className='bg-[#FFFFFF] rounded-12 border border-border/30 basis-1/3 sticky top-0'>
+        <section className='bg-[#FFFFFF] rounded-12 border border-border/30 basis-1/2 sticky top-0'>
             <div className='border-b border-border/30 p-[24px]'>
                 <h3 className='text-base font-semibold tracking-wide'>Có thể bạn sẽ thích</h3>
             </div>
