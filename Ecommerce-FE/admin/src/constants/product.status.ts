@@ -16,3 +16,8 @@ export const order_status = {
     'Hết hạn': 'red',
     'Có thể sử dụng': 'blue'
 }
+
+export const product_label = {
+    [Status.active]: 'Mở bán',
+    [Status.block]: 'Khóa'
+}

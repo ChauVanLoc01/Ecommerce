@@ -19,8 +19,8 @@ export const ProductApi = {
             params: data.query
         })
     },
-    updateProduct: (data: { productId: string; body: UpdateProductBody }) => {
-        return http.put<Partial<Product>>(`product/product/${data.productId}`, data.body)
+    updateProduct: (productId: string) => (body: UpdateProductBody) => {
+        return http.put<Partial<Product>>(`product/product/${productId}`, body)
     },
     productAnalytic: () => {
         return http.get<ProductAnalyticResponse>('product/product/analytic')

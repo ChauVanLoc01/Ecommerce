@@ -8,7 +8,7 @@ export const voucherLoader: LoaderFunction = async () => {
 
     await Promise.all([
         queryClient.fetchQuery({
-            queryKey: ['VoucherList', JSON.stringify({ limit: import.meta.env.VITE_LIMIT, createdAt: 'desc' })],
+            queryKey: ['VoucherList', { limit: import.meta.env.VITE_LIMIT, createdAt: 'desc' }],
             queryFn: () => VoucherApi.getAllVoucher({ limit: import.meta.env.VITE_LIMIT, createdAt: 'desc' }),
             staleTime: Infinity
         }),

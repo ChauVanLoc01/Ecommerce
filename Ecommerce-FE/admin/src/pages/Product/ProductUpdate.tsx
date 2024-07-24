@@ -3,6 +3,7 @@ import { CheckIcon } from '@radix-ui/react-icons'
 import {
     AlertDialog,
     Button,
+    Code,
     DataList,
     Dialog,
     Flex,
@@ -20,10 +21,11 @@ import { toast } from 'sonner'
 import { ProductApi } from 'src/apis/product.api'
 import { UploadApi } from 'src/apis/upload_file.api'
 import { Carousel, CarouselContent, CarouselNext, CarouselPrevious } from 'src/components/Shadcn/carousel'
+import { product_label } from 'src/constants/product.status'
 import { Category, Product, ProductAnalyticResponse, ProductQueryAndPagination } from 'src/types/product.type'
 import { update_product_schema, UpdateProductSchema } from 'src/utils/product.schema'
+import { convertCurrentcy, formatCurrencyInput } from 'src/utils/utils'
 import ProductUploadFile from './ProductUploadFile'
-import { formatCurrencyInput, formatQuantityInput } from 'src/utils/utils'
 
 type ProductUpdateProps = {
     categories: { [key: string]: Category }
@@ -63,6 +65,7 @@ const ProductUpdate = ({
         createProduct: true,
         uploadFile: true
     })
+    const [newQuantity, setNewQuantity] = useState<{ value: number; prefix: '+' | '-' }>({ value: 0, prefix: '+' })
 
     const {
         handleSubmit,
@@ -78,16 +81,13 @@ const ProductUpdate = ({
         mutationFn: UploadApi.updateMultipleFile,
         onSuccess: () => {
             updateProductMutate({
-                productId: selectedProduct.id,
-                body: {
-                    category: data?.category,
-                    description: data?.description,
-                    initQuantity: data?.initQuantity,
-                    name: data?.name,
-                    priceAfter: data?.priceAfter,
-                    priceBefore: data?.priceBefore || 0,
-                    status: data?.status
-                }
+                category: data?.category,
+                description: data?.description,
+                initQuantity: data?.initQuantity,
+                name: data?.name,
+                priceAfter: data?.priceAfter,
+                priceBefore: data?.priceBefore || 0,
+                status: data?.status
             })
             setstate({ uploadFile: false, createProduct: true })
         },
@@ -96,8 +96,8 @@ const ProductUpdate = ({
         }
     })
 
-    const { mutate: updateProductMutate } = useMutation({
-        mutationFn: ProductApi.updateProduct,
+    const { mutate: updateProductMutate, isPending: isUpdating } = useMutation({
+        mutationFn: ProductApi.updateProduct(selectedProduct.id),
         onSuccess: async () => {
             await Promise.all([
                 setstate({ uploadFile: false, createProduct: false }),
@@ -121,13 +121,17 @@ const ProductUpdate = ({
         }
     })
 
-    const onSubmit: SubmitHandler<UpdateProductSchema> = (data) => {
+    const onSubmitImage: SubmitHandler<UpdateProductSchema> = (data) => {
         if (!files || Object.keys(files).length < 1) {
             toast.error('Cần ít nhất 1 hình ảnh của sản phẩm')
             return
         }
         setOpenSubmit(true)
         setData(data as any)
+    }
+
+    const onSubmit: SubmitHandler<UpdateProductSchema> = (data) => {
+        updateProductMutate(data)
     }
 
     useEffect(() => {
@@ -219,6 +223,9 @@ const ProductUpdate = ({
                                         <TextField.Root
                                             {...field}
                                             value={formatCurrencyInput(field?.value || 0)}
+                                            onChange={(e) => {
+                                                field.onChange(e.target.value.replace(/\D/gim, ''))
+                                            }}
                                             color={errors.priceBefore ? 'red' : 'blue'}
                                             className='!flex-grow'
                                         />
@@ -244,8 +251,10 @@ const ProductUpdate = ({
                                     render={({ field }) => (
                                         <TextField.Root
                                             color={errors.priceAfter ? 'red' : 'blue'}
-                                            {...field}
                                             value={formatCurrencyInput(field?.value || 0)}
+                                            onChange={(e) => {
+                                                field.onChange(e.target.value.replace(/\D/gim, ''))
+                                            }}
                                             className='!flex-grow'
                                         />
                                     )}
@@ -255,7 +264,7 @@ const ProductUpdate = ({
                         <DataList.Item align='start'>
                             <DataList.Label minWidth='180px'>
                                 <Flex direction={'column'}>
-                                    <Text>Số lượng</Text>
+                                    <Text>Tổng số lượng</Text>
                                     {errors.initQuantity && (
                                         <Text color={errors.initQuantity ? 'red' : 'blue'} size={'2'} align={'left'}>
                                             {errors.initQuantity.message}
@@ -264,19 +273,55 @@ const ProductUpdate = ({
                                 </Flex>
                             </DataList.Label>
                             <DataList.Value>
-                                <Controller
-                                    control={control}
-                                    name='initQuantity'
-                                    render={({ field }) => (
-                                        <TextField.Root
-                                            {...field}
-                                            color={errors.initQuantity ? 'red' : 'blue'}
-                                            value={formatQuantityInput(field?.value || 0)}
-                                            type='number'
-                                            className='!flex-grow'
-                                        />
-                                    )}
-                                />
+                                <Flex align={'center'} gapX={'4'}>
+                                    <Controller
+                                        control={control}
+                                        name='initQuantity'
+                                        render={({ field }) => (
+                                            <TextField.Root
+                                                {...field}
+                                                color={errors.initQuantity ? 'red' : 'blue'}
+                                                value={convertCurrentcy(field?.value || 0, false)}
+                                                onChange={(e) => {
+                                                    let value = e.target.value.replace(/\D/gim, '')
+                                                    field.onChange(value)
+                                                    let new_value = +value - selectedProduct.initQuantity
+                                                    let prefix: (typeof newQuantity)['prefix'] =
+                                                        new_value > 0 ? '+' : '-'
+                                                    setNewQuantity({
+                                                        value: +new_value.toString().replace(/\D/gim, ''),
+                                                        prefix
+                                                    })
+                                                }}
+                                                type='number'
+                                                className='!flex-grow'
+                                            />
+                                        )}
+                                    />
+                                    <Flex gapX={'2'} align={'center'}>
+                                        <Code size={'4'}>{selectedProduct.initQuantity}</Code>
+                                        <Code size={'4'} color={newQuantity.prefix === '+' ? 'green' : 'red'}>
+                                            {newQuantity.prefix}
+                                            {newQuantity.value}
+                                        </Code>
+                                    </Flex>
+                                </Flex>
+                            </DataList.Value>
+                        </DataList.Item>
+                        <DataList.Item align='start'>
+                            <DataList.Label minWidth='180px'>
+                                <Flex direction={'column'}>
+                                    <Text>Số lượng hiện có</Text>
+                                </Flex>
+                            </DataList.Label>
+                            <DataList.Value>
+                                <Flex align={'center'} gapX={'2'}>
+                                    <Code size={'4'}>{selectedProduct.currentQuantity}</Code>
+                                    <Code size={'4'} color={newQuantity.prefix === '+' ? 'green' : 'red'}>
+                                        {newQuantity.prefix}
+                                        {newQuantity.value}
+                                    </Code>
+                                </Flex>
                             </DataList.Value>
                         </DataList.Item>
                         <DataList.Item align='start'>
@@ -296,10 +341,13 @@ const ProductUpdate = ({
                                     name='status'
                                     render={({ field }) => (
                                         <Select.Root onValueChange={field.onChange} {...field}>
-                                            <Select.Trigger placeholder='Chọn trạng thái...' />
+                                            <Select.Trigger placeholder='Chọn trạng thái' />
                                             <Select.Content position='popper' className='!rounded-8'>
-                                                <Select.Item value='ACTIVE'>ACTIVE</Select.Item>
-                                                <Select.Item value='BLOCK'>BLOCK</Select.Item>
+                                                {Object.keys(product_label).map((e) => (
+                                                    <Select.Item value={e}>
+                                                        {product_label[e as keyof typeof product_label]}
+                                                    </Select.Item>
+                                                ))}
                                             </Select.Content>
                                         </Select.Root>
                                     )}
@@ -344,6 +392,7 @@ const ProductUpdate = ({
                         <Dialog.Root open={openSubmit}>
                             <Dialog.Trigger>
                                 <Button type='submit' className='bg-blue text-white'>
+                                    {isUpdating && <Spinner />}
                                     Cập nhật
                                 </Button>
                             </Dialog.Trigger>

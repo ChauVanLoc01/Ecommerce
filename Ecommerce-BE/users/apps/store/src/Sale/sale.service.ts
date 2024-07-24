@@ -22,6 +22,8 @@ import { v4 as uuidv4 } from 'uuid'
 import { CreateProductSalePromotionDTO } from './dtos/create-product-sale.dto'
 import { QuerySalePromotionDTO } from './dtos/query-promotion.dto'
 import { UpdateProductsSalePromotion } from './dtos/update-product-sale.dto'
+import { CreateSpecialSaleDTO } from './dtos/special-sale.dto'
+import { SalePromotion } from 'common/constants/sale-promotion.constant'
 
 @Injectable()
 export class SaleService {
@@ -462,5 +464,26 @@ export class SaleService {
                 result: null
             }
         }
+    }
+
+    async createSpecialSale(user: CurrentStoreType, body: CreateSpecialSaleDTO) {
+        try {
+            let { end_date, start_date, title, description } = body
+            await this.prisma.$transaction([
+                this.prisma.salePromotion.create({
+                    data: {
+                        id: uuidv4(),
+                        title,
+                        description,
+                        startDate: start_date,
+                        endDate: end_date,
+                        createdAt: new Date(),
+                        createdBy: user.userId,
+                        status: Status.ACTIVE,
+                        type: SalePromotion.SPEACIAL
+                    }
+                })
+            ])
+        } catch (err) {}
     }
 }

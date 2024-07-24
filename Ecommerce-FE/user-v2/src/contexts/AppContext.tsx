@@ -34,7 +34,6 @@ const ContextWrap = ({ children }: { children: ReactNode }) => {
     const setToastId = (id: string | number) => {
         toastIdRef.current = id
     }
-    console.log('toastId', toastIdRef?.current)
 
     const ids = useMemo(() => {
         if (!products.products || !Object.keys(products.products).length) {

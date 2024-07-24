@@ -1,13 +1,14 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { add, startOfDay } from 'date-fns'
 import { Dictionary, keyBy } from 'lodash'
-import { useContext, useMemo, useRef, useState } from 'react'
+import { useContext, useEffect, useMemo, useRef, useState } from 'react'
 import 'react-big-calendar/lib/css/react-big-calendar.css'
 import { toast } from 'sonner'
 import { ProductApi } from 'src/apis/product.api'
 import { sale_api } from 'src/apis/sale.api'
 import { AppContext } from 'src/contexts/AppContext'
 import { Store } from 'src/types/auth.type'
+import { ProductQueryAndPagination } from 'src/types/product.type'
 import { ProductSaleMix, SalePromotion, UpdateProductSaleBody } from 'src/types/sale.type'
 import Calendar from './CalendarEvent'
 import SaleAlert from './SaleAlert'
@@ -25,21 +26,16 @@ export type JoinedProduct = {
 
 const FlashSale = () => {
     const { store } = useContext(AppContext)
-
     const [tab, setTab] = useState<number>(0)
-
     const [selectedEvent, setSelectedEvent] = useState<{ open: boolean; event?: SalePromotion }>({
         open: false,
         event: undefined
     })
-
     const [selectedProduct, setSelectedProduct] = useState<ProductSelected>({
         products: {},
         size: 0
     })
-
     const [joinedProduct, setJoinedProduct] = useState<JoinedProduct>({ products: {}, size: 0 })
-
     const valueRef = useRef<
         | {
               productId: string
@@ -49,13 +45,17 @@ const FlashSale = () => {
           }
         | undefined
     >(undefined)
-
     const [isJoin, setIsJoin] = useState<boolean>(false)
 
-    const { data: productList } = useQuery({
-        queryKey: ['productList', JSON.stringify({ limit: import.meta.env.VITE_LIMIT })],
-        queryFn: () =>
-            ProductApi.getAllProduct({ query: { limit: import.meta.env.VITE_LIMIT }, storeId: (store as Store).id }),
+    const [query, setQuery] = useState<ProductQueryAndPagination>({ limit: import.meta.env.VITE_LIMIT })
+    const [page, setPage] = useState<number>(0)
+    const [category, setCategory] = useState<string>()
+    const [search_key, setSearch_key] = useState<string>('')
+    const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+
+    const { data: productList, refetch: productListRefetch } = useQuery({
+        queryKey: ['productList', query],
+        queryFn: () => ProductApi.getAllProduct({ query, storeId: (store as Store).id }),
         placeholderData: (previousData) => previousData,
         select: (data) => ({
             query: data.data.result.query,
@@ -63,6 +63,52 @@ const FlashSale = () => {
             dataObj: keyBy(data.data.result.data, 'id')
         })
     })
+
+    const handleClear = () => {
+        setQuery({ limit: import.meta.env.VITE_LIMIT })
+        setCategory('')
+        setSearch_key('')
+    }
+
+    const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setSearch_key(e.target.value)
+    }
+
+    const handleCategory = (category: string) => {
+        setCategory(category)
+        setQuery((pre) => ({
+            ...pre,
+            category
+        }))
+    }
+
+    const handlePreviousPage = () => {
+        setPage((pre) => Math.max(pre - 1, 1))
+        setQuery((pre) => ({
+            ...pre,
+            page: Math.max(page - 1, 1)
+        }))
+    }
+
+    const handleNextPage = () => {
+        setPage((pre) => Math.min(pre + 1, productList?.query.page_size as number))
+        setQuery((pre) => ({
+            ...pre,
+            page: Math.min(page + 1, productList?.query.page_size as number)
+        }))
+    }
+
+    useEffect(() => {
+        productListRefetch()
+    }, [query])
+
+    useEffect(() => {
+        if (productList?.dataArr.length) {
+            setPage(productList.query.page || 0)
+        } else {
+            setPage(0)
+        }
+    }, [productList])
 
     const { data, refetch: refetchSalePromotion } = useQuery({
         queryKey: ['salePromotion'],
@@ -142,6 +188,15 @@ const FlashSale = () => {
         setTab(0)
     }
 
+    useEffect(() => {
+        timeoutRef.current = setTimeout(() => {
+            setQuery((pre) => ({ ...pre, search_key }))
+        }, 800)
+        return () => {
+            window.clearTimeout(timeoutRef.current)
+        }
+    }, [search_key])
+
     return (
         <>
             <Calendar
@@ -165,6 +220,15 @@ const FlashSale = () => {
                 setTab={setTab}
                 tab={tab}
                 storePromotionObj={data?.storePromotionObj || {}}
+                category={category}
+                page={page}
+                handleCategory={handleCategory}
+                handleClear={handleClear}
+                handleNextPage={handleNextPage}
+                handlePreviousPage={handlePreviousPage}
+                page_size={productList?.query.page_size || 0}
+                search_key={search_key}
+                handleSearch={handleSearch}
             />
         </>
     )

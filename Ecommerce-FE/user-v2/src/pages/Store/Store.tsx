@@ -4,13 +4,10 @@ import { useLoaderData } from 'react-router-dom'
 import { Product } from 'src/types/product.type'
 import { Store as StoreType } from 'src/types/store.type'
 import Home from './Home'
-import New from './New'
-import Sold from './Sold'
+import ProductAll from './ProductAll'
 
 const Store = () => {
     const [storeDetail, solds, news] = useLoaderData() as [StoreType, Product[], Product[]]
-
-    console.log('sold', solds)
 
     return (
         <div className='space-y-5'>
@@ -85,14 +82,9 @@ const Store = () => {
                             Trang chủ
                         </Text>
                     </Tabs.Trigger>
-                    <Tabs.Trigger value='sold'>
+                    <Tabs.Trigger value='product'>
                         <Text weight={'medium'} size={'3'}>
-                            Sản phẩm bán chạy
-                        </Text>
-                    </Tabs.Trigger>
-                    <Tabs.Trigger value='new'>
-                        <Text weight={'medium'} size={'3'}>
-                            Sản phẩm mới
+                            Sản phẩm
                         </Text>
                     </Tabs.Trigger>
                 </Tabs.List>
@@ -100,13 +92,8 @@ const Store = () => {
                     <Tabs.Content value='home'>
                         <Home programs={news} />
                     </Tabs.Content>
-
-                    <Tabs.Content value='sold'>
-                        <Sold products={solds} />
-                    </Tabs.Content>
-
-                    <Tabs.Content value='new'>
-                        <New products={news} />
+                    <Tabs.Content value='product'>
+                        <ProductAll products={solds} />
                     </Tabs.Content>
                 </Box>
             </Tabs.Root>

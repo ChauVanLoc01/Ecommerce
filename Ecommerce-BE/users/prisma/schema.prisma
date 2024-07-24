@@ -419,6 +419,7 @@ model SalePromotion {
   title                                                String           @db.TinyText
   description                                          String?          @db.Text
   type                                                 String           @db.VarChar(50)
+  categoryId                                           String?          @db.VarChar(50)
   status                                               String           @db.VarChar(50)
   startDate                                            DateTime         @db.Timestamp(0)
   endDate                                              DateTime?        @db.Timestamp(0)

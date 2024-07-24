@@ -34,7 +34,6 @@ import {
     roll_back_order
 } from 'common/utils/order_helper'
 import { addHours, addMinutes, format } from 'date-fns'
-import { isUndefined, omitBy } from 'lodash'
 import { v4 as uuidv4 } from 'uuid'
 import { CreateVoucherDTO } from './dtos/CreateVoucher.dto'
 import { VoucherQueryDTO } from './dtos/QueryVoucher.dto'
@@ -168,6 +167,14 @@ export class VoucherService {
             const voucherExist = await this.prisma.voucher.findUnique({
                 where: {
                     id: voucherId
+                },
+                include: {
+                    CategoryConditionVoucher: {
+                        select: {
+                            categoryShortName: true
+                        }
+                    },
+                    PriceConditionVoucher: true
                 }
             })
 
@@ -178,13 +185,8 @@ export class VoucherService {
             if (voucherExist.currentQuantity !== voucherExist.initQuantity) {
                 throw new BadRequestException('Không thể cập nhật mã giảm giá đã sử dụng')
             }
-
-            await this.prisma.voucher.update({
-                where: {
-                    id: voucherId,
-                    storeId: user.storeId
-                },
-                data: {
+            await this.prisma.$transaction(async (tx) => {
+                let voucher_update = {
                     code,
                     title,
                     maximum,
@@ -194,28 +196,90 @@ export class VoucherService {
                     description,
                     endDate,
                     startDate,
-                    updatedAt: new Date().toISOString(),
-                    updatedBy: user.userId,
-                    CategoryConditionVoucher: voucherExist?.categoryConditionId
-                        ? {
-                              update: {
-                                  categoryShortName: category,
-                                  updatedBy: user.userId,
-                                  updatedAt: new Date().toISOString()
-                              }
-                          }
-                        : undefined,
-                    PriceConditionVoucher: voucherExist?.priceConditionId
-                        ? {
-                              update: {
-                                  priceMin,
-                                  totalMin,
-                                  updatedBy: user.userId,
-                                  updatedAt: new Date().toISOString()
-                              }
-                          }
-                        : undefined
+                    updatedAt: new Date(),
+                    updatedBy: user.userId
                 }
+
+                if (category) {
+                    if (
+                        voucherExist.categoryConditionId &&
+                        voucherExist.CategoryConditionVoucher?.categoryShortName !== category
+                    ) {
+                        await tx.categoryConditionVoucher.update({
+                            where: {
+                                id: voucherExist.categoryConditionId
+                            },
+                            data: {
+                                categoryShortName: category,
+                                updatedAt: new Date(),
+                                updatedBy: user.userId
+                            }
+                        })
+                    } else {
+                        let conditionalCategoryId = uuidv4()
+                        await tx.categoryConditionVoucher.create({
+                            data: {
+                                id: conditionalCategoryId,
+                                categoryShortName: category,
+                                createdAt: new Date(),
+                                updatedAt: new Date(),
+                                createdBy: user.userId
+                            }
+                        })
+                        voucher_update['categoryConditionId'] = conditionalCategoryId
+                    }
+                } else {
+                    if (voucherExist.categoryConditionId) {
+                        await tx.categoryConditionVoucher.delete({
+                            where: { id: voucherExist.categoryConditionId }
+                        })
+                        voucher_update['categoryConditionId'] = null
+                    }
+                }
+
+                if (priceMin || totalMin) {
+                    if (voucherExist.priceConditionId) {
+                        await tx.priceConditionVoucher.update({
+                            where: {
+                                id: voucherExist.priceConditionId
+                            },
+                            data: {
+                                priceMin,
+                                totalMin,
+                                updatedAt: new Date(),
+                                updatedBy: user.userId
+                            }
+                        })
+                    } else {
+                        let priceConditionId = uuidv4()
+                        await tx.priceConditionVoucher.create({
+                            data: {
+                                id: priceConditionId,
+                                createdAt: new Date(),
+                                updatedAt: new Date(),
+                                createdBy: user.userId,
+                                updatedBy: user.userId,
+                                priceMin,
+                                totalMin
+                            }
+                        })
+                        voucher_update['priceConditionId'] = priceConditionId
+                    }
+                } else {
+                    if (voucherExist.priceConditionId) {
+                        await tx.priceConditionVoucher.delete({
+                            where: { id: voucherExist.priceConditionId }
+                        })
+                        voucher_update['priceConditionId'] = null
+                    }
+                }
+                await tx.voucher.update({
+                    where: {
+                        id: voucherExist.id,
+                        storeId: user.storeId
+                    },
+                    data: voucher_update
+                })
             })
 
             return {
@@ -255,53 +319,53 @@ export class VoucherService {
 
     async getAllVoucher(user: CurrentStoreType, query: VoucherQueryDTO): Promise<Return> {
         const { storeId } = user
-        const { endDate, limit, page, startDate, status, code, createdAt } = query
+        let { endDate, limit, page, startDate, status, search_key, createdAt } = query
 
-        const take = limit | this.configService.get('app.limit_default')
+        const take = limit || this.configService.get('app.limit_default')
+        const page_tmp = page || 1
+        const skip = (page_tmp - 1) * take
 
-        const [length, vouchers] = await Promise.all([
+        status = [Status.ACTIVE, Status.BLOCK].includes(status as Status) ? status : undefined
+
+        let where: Prisma.VoucherWhereInput = {
+            storeId,
+            status,
+            startDate: {
+                gte: startDate,
+                lte: endDate
+            },
+            endDate: {
+                lte: endDate,
+                gte: startDate
+            }
+        }
+
+        let search_param: Prisma.StringNullableFilter = {
+            contains: search_key
+        }
+
+        let search: Prisma.VoucherWhereInput = {
+            OR: [
+                {
+                    ...where,
+                    code: search_param
+                },
+                { ...where, title: search_param },
+                { ...where, description: search_param }
+            ]
+        }
+
+        const [count, vouchers] = await Promise.all([
             this.prisma.voucher.count({
-                where: {
-                    storeId,
-                    code: {
-                        contains: code
-                    },
-                    status,
-                    startDate: {
-                        gte: startDate,
-                        lte: endDate
-                    },
-                    endDate: {
-                        lte: endDate,
-                        gte: startDate
-                    }
-                }
+                where: search
             }),
             this.prisma.voucher.findMany({
-                where: {
-                    storeId,
-                    code: {
-                        contains: code
-                    },
-                    status,
-                    startDate: {
-                        gte: startDate,
-                        lte: endDate
-                    },
-                    endDate: {
-                        lte: endDate,
-                        gte: startDate
-                    }
-                },
-                include: {
-                    CategoryConditionVoucher: true,
-                    PriceConditionVoucher: true
-                },
+                where: search,
                 orderBy: {
                     createdAt
                 },
                 take,
-                skip: page && page > 1 ? (page - 1) * take : 0
+                skip
             })
         ])
 
@@ -309,14 +373,11 @@ export class VoucherService {
             msg: 'ok',
             result: {
                 data: vouchers,
-                query: omitBy(
-                    {
-                        ...query,
-                        page: page || 1,
-                        page_size: Math.ceil(length / take)
-                    },
-                    isUndefined
-                )
+                query: {
+                    ...query,
+                    page: page_tmp,
+                    page_size: Math.ceil(count / take)
+                }
             }
         }
     }
@@ -729,6 +790,42 @@ export class VoucherService {
                     page_size: Math.ceil(count / limit)
                 }
             }
+        }
+    }
+
+    async conditionalCategoryOfVoucher(conditionalCategoryId: string): Promise<Return> {
+        const category = await this.prisma.categoryConditionVoucher.findUnique({
+            where: {
+                id: conditionalCategoryId
+            },
+            select: {
+                categoryShortName: true
+            }
+        })
+
+        return {
+            msg: 'ok',
+            result: category.categoryShortName
+        }
+    }
+
+    async conditionalPriceOfVoucher(conditionalPriceId: string): Promise<Return> {
+        const price = await this.prisma.priceConditionVoucher.findUnique({
+            where: {
+                id: conditionalPriceId
+            },
+            omit: {
+                createdAt: true,
+                createdBy: true,
+                updatedAt: true,
+                updatedBy: true,
+                id: true
+            }
+        })
+
+        return {
+            msg: 'ok',
+            result: price
         }
     }
 }

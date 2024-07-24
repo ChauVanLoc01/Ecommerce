@@ -4,6 +4,7 @@ import {
     emit_update_product_whenCreatingOrder,
     emit_update_voucher_whenCreatingOrder,
     statusOfOrder,
+    statusOfTransaction,
     updateQuantityProductSalePromotion
 } from 'common/constants/event.constant'
 import {
@@ -29,6 +30,15 @@ export class SocketController {
             `:::::::::Socket Controller đã nhận được yêu cầu cập nhật trạng thái đơn hàng [id: ${id}] [msg: ${msg}] [action: ${action}]`
         )
         this.socketGateway.checkStatusOfOrder(id, msg, action, result)
+    }
+
+    @EventPattern(statusOfTransaction)
+    statusTransaction(payload: { action: boolean; id: string; msg: string }) {
+        let { action, id, msg } = payload
+        console.log(
+            `:::::::::Socket Controller đã nhận được yêu cầu cập nhật trạng thái THANH TOAN [id: ${id}] [msg: ${msg}] [action: ${action}]`
+        )
+        this.socketGateway.statusTransaction(action, id, msg)
     }
 
     @EventPattern(emit_update_voucher_whenCreatingOrder)

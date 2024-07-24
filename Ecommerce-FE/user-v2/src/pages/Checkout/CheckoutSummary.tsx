@@ -1,7 +1,10 @@
 import { Avatar, Button, Spinner, Text } from '@radix-ui/themes'
 import { useMutation } from '@tanstack/react-query'
+import { useContext } from 'react'
+import { useNavigate } from 'react-router-dom'
 import SimpleBar from 'simplebar-react'
 import { OrderFetching } from 'src/apis/order'
+import { AppContext } from 'src/contexts/AppContext'
 import { ProductConvert } from 'src/types/context.type'
 import { Payment } from 'src/types/payment.type'
 import { RefreshStore } from 'src/types/store.type'
@@ -70,11 +73,26 @@ const CheckoutSummary = ({
     voucherIds,
     payment
 }: CheckoutSummaryProps) => {
+    const { actionId } = useContext(AppContext)
+    const navigate = useNavigate()
     const { mutate: createTransaction } = useMutation({
-        mutationFn: OrderFetching.createTransaction({ bankCode: payment, total: priceLatest?.allOrder.pay as number })
+        mutationFn: OrderFetching.createTransaction({
+            bankCode: payment,
+            amount: priceLatest?.allOrder.pay as number,
+            actionId
+        }),
+        onSuccess: (result) => {
+            window.location.href = result.data
+        }
     })
 
-    const hanldeTransaction = () => createTransaction
+    console.log('transaction', {
+        bankCode: payment,
+        amount: priceLatest?.allOrder.pay as number,
+        actionId
+    })
+
+    const hanldeTransaction = () => createTransaction()
 
     return (
         <section className='basis-1/3 space-y-4'>
@@ -95,7 +113,7 @@ const CheckoutSummary = ({
                                 <div className='space-y-2' key={storeId}>
                                     <details>
                                         <summary className='relative'>
-                                            <Text>{storeLatest[storeId].name}</Text>
+                                            <Text>{storeLatest?.[storeId]?.name}</Text>
                                         </summary>
                                         <div className='w-2/3 text-right ml-auto'>
                                             <div className='flex justify-between'>
@@ -186,7 +204,7 @@ const CheckoutSummary = ({
                     </div>
                 </div>
             </SimpleBar>
-            <Button onClick={step < 3 ? handleNextStep : handleOrder} size={'3'} className='!w-full'>
+            <Button onClick={step < 3 ? handleNextStep : hanldeTransaction} size={'3'} className='!w-full'>
                 {isPending && <Spinner />}
                 {step === 3 ? 'Thanh toán' : 'Tiếp tục'}
             </Button>

@@ -13,6 +13,7 @@ import { Payment } from 'src/types/payment.type'
 import CheckoutHeader from './CheckoutHeader'
 import CheckoutSummary from './CheckoutSummary'
 import CreateOrder from './CreateOrder'
+import OrderStatus from './OrderStatus'
 import Step1 from './Step1'
 import Step2 from './Step2'
 import Step3 from './Step3'
@@ -42,7 +43,7 @@ const Checkout = () => {
     const { step, handleNextStep, handlePreviousStep, setStep } = useStep()
     const [orderSuccess, setOrderSuccess] = useState<boolean>(false)
     const [voucherIds, setVoucherIds] = useState<{ [storeId: string]: string } | undefined>(undefined)
-    const [payment, setPayment] = useState<Payment>('')
+    const [payment, setPayment] = useState<Payment>('VNBANK')
 
     const {
         dataFromApi: { refreshStores },
@@ -173,6 +174,7 @@ const Checkout = () => {
                 open={orderSuccess}
                 setOpen={setOrderSuccess}
             />
+            <OrderStatus />
         </>
     )
 }

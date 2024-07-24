@@ -31,5 +31,5 @@ export default registerAs('app', () => ({
 
     vnp_Api: process.env.VNP_API,
 
-    vnp_ReturnUrl: process.env.VNP_RETURNURLL
+    vnp_ReturnUrl: process.env.VNP_RETURNURL
 }))

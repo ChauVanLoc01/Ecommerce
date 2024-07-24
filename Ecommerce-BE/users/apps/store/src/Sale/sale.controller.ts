@@ -10,6 +10,9 @@ import { CreateProductSalePromotionDTO } from './dtos/create-product-sale.dto'
 import { QuerySalePromotionDTO } from './dtos/query-promotion.dto'
 import { UpdateProductsSalePromotion } from './dtos/update-product-sale.dto'
 import { SaleService } from './sale.service'
+import { CreateSpecialSaleDTO } from './dtos/special-sale.dto'
+import { Roles } from 'common/decorators/roles.decorator'
+import { Role } from 'common/enums/role.enum'
 
 @UseGuards(JwtGuard)
 @Controller('sale-promotion')
@@ -73,5 +76,11 @@ export class SaleController {
     @MessagePattern(refreshProductSale)
     refreshProductSale(@Payload() payload: { saleId: string; productIds: string[] }) {
         return this.saleService.refreshProductSale(payload)
+    }
+
+    @Roles(Role.ADMIN)
+    @Post('special-sale')
+    createSpecialSale(@CurrentUser() user: CurrentStoreType, @Body() body: CreateSpecialSaleDTO) {
+        return this.saleService.createSpecialSale(user, body)
     }
 }

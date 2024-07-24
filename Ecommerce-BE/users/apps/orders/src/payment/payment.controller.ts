@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Req, Res } from '@nestjs/common'
+import { Body, Controller, Get, Post, Req, Res } from '@nestjs/common'
 import { Request, Response } from 'express'
 import { CreatePaymentDTO } from '../dtos/payment.dto'
 import { PaymentService } from './payment.service'
@@ -7,8 +7,13 @@ import { PaymentService } from './payment.service'
 export class PaymentController {
     constructor(private readonly paymentService: PaymentService) {}
 
-    @Post('payment')
+    @Post()
     createTransaction(@Req() req: Request, @Res() res: Response, @Body() body: CreatePaymentDTO) {
         return this.paymentService.createTransaction(req, res, body)
     }
+
+    // @Get('status_transaction')
+    // statusTransaction(@Req() req: Request) {
+    //     return this.paymentService.statusTransaction(req)
+    // }
 }

@@ -1,11 +1,11 @@
 import { InfoCircledIcon, Pencil1Icon } from '@radix-ui/react-icons'
-import { Badge, Flex, IconButton, Inset, Text, Tooltip } from '@radix-ui/themes'
+import { Badge, Code, Flex, IconButton, Inset, Text, Tooltip } from '@radix-ui/themes'
 import { ColumnDef } from '@tanstack/react-table'
 import { format, formatDistance } from 'date-fns'
 import { vi } from 'date-fns/locale'
 import { BiSolidSortAlt } from 'react-icons/bi'
 import Table from 'src/components/Table'
-import { ProductStatus } from 'src/constants/product.status'
+import { product_label, ProductStatus } from 'src/constants/product.status'
 import { Category, Product } from 'src/types/product.type'
 import { convertCurrentcy } from 'src/utils/utils'
 
@@ -22,27 +22,31 @@ const ProductTable = ({ data, categories, onOpen, setSelectedProduct }: ProductT
             accessorKey: 'image',
             header: () => {
                 return (
-                    <div className='flex items-center gap-x-2'>
-                        Hình ảnh
-                        <BiSolidSortAlt />
-                    </div>
+                    <Flex justify={'center'} align={'center'}>
+                        <div className='flex items-center gap-x-2'>
+                            Hình ảnh
+                            <BiSolidSortAlt />
+                        </div>
+                    </Flex>
                 )
             },
             cell: ({ row }) => (
-                <Inset clip='padding-box' side='top' pb='current' className='rounded-8 w-16 h-16 object-cover'>
-                    <img
-                        src={row.getValue('image')}
-                        alt='Bold typography'
-                        style={{
-                            display: 'block',
-                            objectFit: 'cover',
-                            width: '100%',
-                            height: 140,
-                            backgroundColor: 'var(--gray-5)'
-                        }}
-                        loading='lazy'
-                    />
-                </Inset>
+                <Flex justify={'center'} align={'center'}>
+                    <Inset clip='padding-box' side='top' pb='current' className='rounded-8 w-16 h-16 object-cover'>
+                        <img
+                            src={row.getValue('image')}
+                            alt='Bold typography'
+                            style={{
+                                display: 'block',
+                                objectFit: 'cover',
+                                width: '100%',
+                                height: 140,
+                                backgroundColor: 'var(--gray-5)'
+                            }}
+                            loading='lazy'
+                        />
+                    </Inset>
+                </Flex>
             )
         },
         {
@@ -64,77 +68,111 @@ const ProductTable = ({ data, categories, onOpen, setSelectedProduct }: ProductT
         {
             accessorKey: 'priceBefore',
             header: () => (
-                <div className='flex items-center gap-x-2'>
-                    Giá chưa giảm
-                    <BiSolidSortAlt />
-                </div>
+                <Flex justify={'center'} align={'center'}>
+                    <div className='flex items-center gap-x-2'>
+                        Giá chưa giảm
+                        <BiSolidSortAlt />
+                    </div>
+                </Flex>
             ),
             cell: ({ row }) => (
-                <Text color='blue'>
-                    {row.getValue('priceBefore') ? `${convertCurrentcy(row.getValue('priceBefore'))}` : ''}
-                </Text>
+                <Flex justify={'center'} align={'center'}>
+                    <Text color='blue'>
+                        {row.getValue('priceBefore') ? `${convertCurrentcy(row.getValue('priceBefore'))}` : ''}
+                    </Text>
+                </Flex>
             )
         },
         {
             accessorKey: 'priceAfter',
             header: () => (
-                <div className='flex items-center gap-x-2'>
-                    Giá sau giảm
-                    <BiSolidSortAlt />
-                </div>
+                <Flex justify={'center'} align={'center'}>
+                    <div className='flex items-center gap-x-2'>
+                        Giá sau giảm
+                        <BiSolidSortAlt />
+                    </div>
+                </Flex>
             ),
-            cell: ({ row }) => <Text color='red'>{convertCurrentcy(row.getValue('priceAfter'))}</Text>
+            cell: ({ row }) => (
+                <Flex justify={'center'} align={'center'}>
+                    <Text color='red'>{convertCurrentcy(row.getValue('priceAfter'))}</Text>
+                </Flex>
+            )
         },
         {
             accessorKey: 'currentQuantity',
             header: () => (
-                <div className='flex items-center gap-x-2'>
-                    Số lượng
-                    <BiSolidSortAlt />
-                </div>
+                <Flex justify={'center'} align={'center'}>
+                    <div className='flex items-center gap-x-2'>
+                        Số lượng
+                        <BiSolidSortAlt />
+                    </div>
+                </Flex>
             ),
-            cell: ({ row }) => <Text>{convertCurrentcy(row.getValue('currentQuantity'), false)}</Text>
+            cell: ({ row }) => (
+                <Flex justify={'center'} align={'center'} className='tabular-nums space-x-1'>
+                    <Code>{convertCurrentcy(row.original.currentQuantity, false)}</Code>
+                    <Text>/</Text>
+                    <Code color='red'>{convertCurrentcy(row.original.initQuantity, false)}</Code>
+                </Flex>
+            )
         },
         {
             accessorKey: 'status',
             header: () => (
-                <div className='flex items-center gap-x-2'>
-                    Trạng thái
-                    <BiSolidSortAlt />
-                </div>
+                <Flex justify={'center'} align={'center'}>
+                    <div className='flex items-center gap-x-2'>
+                        Trạng thái
+                        <BiSolidSortAlt />
+                    </div>
+                </Flex>
             ),
             cell: ({ row }) => (
-                <Badge color={ProductStatus[row.getValue('status') as string] as any}>{row.getValue('status')}</Badge>
+                <Flex justify={'center'} align={'center'}>
+                    <Badge color={ProductStatus[row.getValue('status') as string] as any} size={'3'}>
+                        {product_label[row.getValue('status') as keyof typeof product_label]}
+                    </Badge>
+                </Flex>
             )
         },
         {
             accessorKey: 'category',
             header: () => (
-                <div className='flex items-center gap-x-2 max-w-15'>
-                    Danh muc
-                    <BiSolidSortAlt />
-                </div>
+                <Flex justify={'center'} align={'center'}>
+                    <div className='flex items-center gap-x-2 max-w-15'>
+                        Danh muc
+                        <BiSolidSortAlt />
+                    </div>
+                </Flex>
             ),
-            cell: ({ row }) => <div className='lowercase max-w-15'>{categories[row.original.category].name}</div>
+            cell: ({ row }) => (
+                <Flex justify={'center'} align={'center'}>
+                    <div className='max-w-15 capitalize'>{categories[row.original.category].name}</div>
+                </Flex>
+            )
         },
         {
             accessorKey: 'createdAt',
             header: () => (
-                <div className='flex items-center gap-x-2'>
-                    Thời gian tạo
-                    <BiSolidSortAlt />
-                </div>
+                <Flex justify={'center'} align={'center'}>
+                    <div className='flex items-center gap-x-2'>
+                        Thời gian tạo
+                        <BiSolidSortAlt />
+                    </div>
+                </Flex>
             ),
             cell: ({ row }) => (
-                <div className='lowercase flex flex-col items-center'>
-                    <span className='italic text-gray-400 text-[14px]'>
-                        {formatDistance(row.original.createdAt, new Date().toISOString(), {
-                            addSuffix: true,
-                            locale: vi
-                        })}
-                    </span>
-                    <span>{format(row.original.createdAt, 'hh:mm dd-MM-yyyy')}</span>
-                </div>
+                <Flex justify={'center'} align={'center'}>
+                    <div className='lowercase flex flex-col items-center'>
+                        <span className='italic text-gray-400 text-[14px]'>
+                            {formatDistance(row.original.createdAt, new Date().toISOString(), {
+                                addSuffix: true,
+                                locale: vi
+                            })}
+                        </span>
+                        <span>{format(row.original.createdAt, 'hh:mm dd-MM-yyyy')}</span>
+                    </div>
+                </Flex>
             )
         },
         {

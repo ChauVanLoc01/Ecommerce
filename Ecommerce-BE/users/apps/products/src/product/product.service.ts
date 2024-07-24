@@ -24,7 +24,11 @@ import {
 } from 'common/constants/event.constant'
 import { Status } from 'common/enums/status.enum'
 import { CurrentStoreType } from 'common/types/current.type'
-import { CreateOrderPayload, RollbackOrder } from 'common/types/order_payload.type'
+import {
+    CreateOrderPayload,
+    RollbackOrder,
+    Update_Product_WhenCreatingOrderPayload
+} from 'common/types/order_payload.type'
 import { MessageReturn, Return } from 'common/types/result.type'
 import {
     commit_create_order_success,
@@ -216,7 +220,8 @@ export class ProductService {
             page,
             max_date,
             min_date,
-            status
+            status,
+            search_key
         } = query
 
         if (
@@ -234,65 +239,75 @@ export class ProductService {
             throw new BadRequestException('Tối đa 1 field order')
         }
 
-        const [productAllLength, products] = await Promise.all([
+        let page_tmp = page || 1
+        let take = limit || this.configService.get<number>('app.limit')
+        let skip = (page_tmp - 1) * take
+
+        let search_params: Prisma.StringNullableFilter = {
+            contains: search_key
+        }
+
+        let search: Prisma.ProductWhereInput = {
+            OR: [
+                {
+                    name: search_params
+                },
+                {
+                    description: search_params
+                },
+                {
+                    Category: {
+                        name: search_params
+                    }
+                }
+            ]
+        }
+
+        let where: Prisma.ProductWhereInput = {
+            storeId,
+            category,
+            status,
+            priceAfter: {
+                lte: price_max,
+                gte: price_min
+            },
+            createdAt: {
+                gte: min_date,
+                lte: max_date
+            }
+        }
+
+        const [count, products] = await Promise.all([
             this.prisma.product.count({
                 where: {
-                    storeId,
-                    category,
-                    status,
-                    priceAfter: {
-                        lte: price_max,
-                        gte: price_min
-                    },
-                    createdAt: {
-                        gte: min_date,
-                        lte: max_date
-                    }
+                    ...where,
+                    ...search
                 }
             }),
             this.prisma.product.findMany({
                 where: {
-                    storeId,
-                    category,
-                    status,
-                    priceAfter: {
-                        lte: price_max,
-                        gte: price_min
-                    },
-                    createdAt: {
-                        gte: min_date,
-                        lte: max_date
-                    }
+                    ...where,
+                    ...search
                 },
                 orderBy: {
                     createdAt,
                     sold,
                     priceAfter: price
                 },
-                take: limit || this.configService.get<number>('app.limit_default'),
-                skip:
-                    page && page > 0
-                        ? (page - 1) *
-                          (limit || this.configService.get<number>('app.limit_default'))
-                        : 0
+                take,
+                skip
             })
         ])
 
         return {
-            msg: 'Lấy danh sách sản phẩm thành công',
+            msg: 'ok',
             result: {
                 data: products,
-                query: omitBy(
-                    {
-                        ...query,
-                        page: page || 1,
-                        page_size: Math.ceil(
-                            productAllLength /
-                                (limit || this.configService.get<number>('app.limit_default'))
-                        )
-                    },
-                    isUndefined
-                )
+                query: {
+                    ...query,
+                    page: page_tmp,
+                    page_size: Math.ceil(count / take)
+                }
             }
         }
     }
@@ -486,6 +501,12 @@ export class ProductService {
             where: {
                 id: productId,
                 storeId
+            },
+            select: {
+                id: true,
+                initQuantity: true,
+                currentQuantity: true,
+                storeId: true
             }
         })
 
@@ -493,23 +514,41 @@ export class ProductService {
 
         const { category, description, initQuantity, name, priceAfter, priceBefore, status } = body
 
+        let new_quantity = initQuantity - productExist.initQuantity
+
+        this.socket_client.emit(emit_update_product_whenCreatingOrder, {
+            priceAfter,
+            productId,
+            quantity: productExist.currentQuantity + new_quantity,
+            storeId: productExist.storeId
+        } as Update_Product_WhenCreatingOrderPayload)
+
+        await this.prisma.product.update({
+            where: {
+                id: productId,
+                storeId
+            },
+            data: {
+                category,
+                initQuantity,
+                currentQuantity: new_quantity
+                    ? {
+                          increment: new_quantity
+                      }
+                    : {
+                          decrement: new_quantity
+                      },
+                name,
+                description,
+                priceAfter,
+                priceBefore,
+                status
+            }
+        })
+
         return {
             msg: 'Cập nhật sản phẩm thành công',
-            result: await this.prisma.product.update({
-                where: {
-                    id: productId,
-                    storeId
-                },
-                data: {
-                    category,
-                    initQuantity,
-                    name,
-                    description,
-                    priceAfter,
-                    priceBefore,
-                    status
-                }
-            })
+            result: undefined
         }
     }
 

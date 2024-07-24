@@ -1,8 +1,22 @@
-import { AlertDialog, Button, DataList, Flex, Portal, SegmentedControl, Spinner, Text } from '@radix-ui/themes'
-import { QueryObserverResult, RefetchOptions, useMutation } from '@tanstack/react-query'
+import { ChevronLeftIcon, ChevronRightIcon, MagnifyingGlassIcon } from '@radix-ui/react-icons'
+import {
+    AlertDialog,
+    Button,
+    DataList,
+    Flex,
+    IconButton,
+    Portal,
+    SegmentedControl,
+    Select,
+    Spinner,
+    Text,
+    TextField
+} from '@radix-ui/themes'
+import { QueryObserverResult, RefetchOptions, useMutation, useQuery } from '@tanstack/react-query'
 import { format, formatDistance, sub } from 'date-fns'
 import { Dictionary } from 'lodash'
 import { toast } from 'sonner'
+import { ProductApi } from 'src/apis/product.api'
 import { sale_api } from 'src/apis/sale.api'
 import { formatDefault } from 'src/constants/date.constants'
 import { Product } from 'src/types/product.type'
@@ -50,6 +64,15 @@ type SaleAlertProps = {
           }
         | undefined
     >
+    category: string | undefined
+    page: number
+    handleClear: () => void
+    handleCategory: (category: string) => void
+    handlePreviousPage: () => void
+    handleNextPage: () => void
+    page_size: number
+    search_key: string
+    handleSearch: (e: React.ChangeEvent<HTMLInputElement>) => void
 }
 
 const SaleAlert = ({
@@ -67,8 +90,24 @@ const SaleAlert = ({
     setTab,
     tab,
     storePromotionObj,
-    valueRef
+    valueRef,
+    category,
+    page,
+    handleCategory,
+    handleClear,
+    handleNextPage,
+    handlePreviousPage,
+    page_size,
+    handleSearch,
+    search_key
 }: SaleAlertProps) => {
+    const { data: categories } = useQuery({
+        queryKey: ['categories'],
+        queryFn: ProductApi.getAllCategories,
+        staleTime: Infinity,
+        select: (data) => data.data.result
+    })
+
     const { mutate: joinSalePromotion, isPending } = useMutation({
         mutationFn: sale_api.joinSalePromotion,
         onSuccess: () => {
@@ -293,19 +332,113 @@ const SaleAlert = ({
                                     </SegmentedControl.Root>
                                 </DataList.Label>
                                 <DataList.Value className='items-center w-full'>
-                                    <ProductInFlashSale
-                                        handleFocusOut={handleFocusOut}
-                                        valueRef={valueRef}
-                                        products={productTab}
-                                        onSelectChange={onChecked}
-                                        selectedProduct={selectedProduct}
-                                        tab={tab}
-                                        setSelectedProduct={setSelectedProduct}
-                                        joinedProduct={joinedProduct}
-                                        handleCheckedAndUncheckedAll={handleCheckedAndUncheckedAll}
-                                        onCheckedJoinProduct={onCheckedJoinProduct}
-                                        setJoinedProduct={setJoinedProduct}
-                                    />
+                                    <Flex gapY={'3'} direction={'column'} className='flex-grow'>
+                                        {tab == 0 && (
+                                            <Flex justify={'between'} align={'center'}>
+                                                <Flex align={'center'} gapX={'4'}>
+                                                    <TextField.Root
+                                                        placeholder='Tìm kiếm sản phẩm'
+                                                        size='3'
+                                                        value={search_key}
+                                                        onChange={handleSearch}
+                                                    >
+                                                        <TextField.Slot>
+                                                            <MagnifyingGlassIcon />
+                                                        </TextField.Slot>
+                                                    </TextField.Root>
+                                                    <Select.Root
+                                                        size={'3'}
+                                                        value={category}
+                                                        onValueChange={handleCategory}
+                                                    >
+                                                        <Select.Trigger placeholder='Chọn danh mục' />
+                                                        <Select.Content
+                                                            position='popper'
+                                                            align='end'
+                                                            className='rounded-6'
+                                                        >
+                                                            <Select.Group>
+                                                                <Select.Label>Danh mục</Select.Label>
+                                                                {categories?.map((category) => (
+                                                                    <Select.Item value={category.shortname}>
+                                                                        {category.name}
+                                                                    </Select.Item>
+                                                                ))}
+                                                            </Select.Group>
+                                                        </Select.Content>
+                                                    </Select.Root>
+                                                    <Select.Root size='3' defaultValue='sold_desc'>
+                                                        <Select.Trigger placeholder='Sắp xếp' />
+                                                        <Select.Content position='popper' className='!rounded-8'>
+                                                            <Select.Group>
+                                                                <Select.Label>Thời gian</Select.Label>
+                                                                <Select.Item value='createdAt_asc'>Cũ nhất</Select.Item>
+                                                                <Select.Item value='createdAt_desc'>
+                                                                    Mới nhất
+                                                                </Select.Item>
+                                                            </Select.Group>
+                                                            <Select.Separator />
+                                                            <Select.Group>
+                                                                <Select.Label>Đã bán</Select.Label>
+                                                                <Select.Item value='sold_desc'>
+                                                                    Bán chạy nhất
+                                                                </Select.Item>
+                                                            </Select.Group>
+                                                            <Select.Separator />
+                                                            <Select.Group>
+                                                                <Select.Label>Giá bán</Select.Label>
+                                                                <Select.Item value='price_asc'>
+                                                                    Giá tăng dần
+                                                                </Select.Item>
+                                                                <Select.Item value='price_desc'>
+                                                                    Giá giảm dần
+                                                                </Select.Item>
+                                                            </Select.Group>
+                                                        </Select.Content>
+                                                    </Select.Root>
+                                                    <Button size={'3'} color='red' onClick={handleClear}>
+                                                        Xóa tất cả
+                                                    </Button>
+                                                </Flex>
+                                                <Flex align={'baseline'} gapX={'3'}>
+                                                    <Text size={'4'}>
+                                                        {page}/{page_size}
+                                                    </Text>
+                                                    <Flex gapX={'1'}>
+                                                        <IconButton
+                                                            size={'3'}
+                                                            variant='soft'
+                                                            color='gray'
+                                                            onClick={handlePreviousPage}
+                                                        >
+                                                            <ChevronLeftIcon />
+                                                        </IconButton>
+                                                        <IconButton
+                                                            size={'3'}
+                                                            variant='soft'
+                                                            color='gray'
+                                                            onClick={handleNextPage}
+                                                        >
+                                                            <ChevronRightIcon />
+                                                        </IconButton>
+                                                    </Flex>
+                                                </Flex>
+                                            </Flex>
+                                        )}
+                                        <ProductInFlashSale
+                                            handleFocusOut={handleFocusOut}
+                                            valueRef={valueRef}
+                                            products={productTab}
+                                            onSelectChange={onChecked}
+                                            selectedProduct={selectedProduct}
+                                            tab={tab}
+                                            setSelectedProduct={setSelectedProduct}
+                                            joinedProduct={joinedProduct}
+                                            handleCheckedAndUncheckedAll={handleCheckedAndUncheckedAll}
+                                            onCheckedJoinProduct={onCheckedJoinProduct}
+                                            setJoinedProduct={setJoinedProduct}
+                                        />
+                                    </Flex>
                                 </DataList.Value>
                             </DataList.Item>
                         </DataList.Root>

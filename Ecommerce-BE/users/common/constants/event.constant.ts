@@ -53,6 +53,8 @@ export const productDetailPromotion = 'product::detail::promotion'
 
 export const statusOfOrder = 'status::of::order'
 
+export const statusOfTransaction = 'status::of::transaction'
+
 export const processStepOneToCreatOrder = 'process::step::one::to::create::order'
 
 export const processStepTwoToCreateOrder = 'process::step::two::to::create::order'

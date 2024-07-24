@@ -260,7 +260,7 @@ const OrderTable = ({ data, orderListRefetch, analyticOrderStoreRefetching }: Or
 
     return (
         <>
-            <Table<Order> columns={columns} data={data} tableMaxHeight='500px' />
+            <Table<Order> columns={columns} data={data} tableMaxHeight='500px' className='w-[1500px]' />
             {/* <OrderDetail open={openDetail} setOpen={setOpenDetail} data={orderDetailData ?? []} /> */}
             {orderDetailData && openChangeStatus && (
                 <OrderChangeStatus

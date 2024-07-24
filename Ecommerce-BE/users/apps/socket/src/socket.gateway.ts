@@ -53,6 +53,15 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
         this.server.to(hash).emit(room_obj.order, { msg, action, result })
     }
 
+    statusTransaction(action: boolean, id: string, msg: string) {
+        let hash = this.hash(room_obj.transaction, id)
+        this.server.to(hash).emit(room_obj.transaction, {
+            msg,
+            action,
+            result: null
+        })
+    }
+
     updateProductSalePromotion(saleId: string, productId: string, quantity: number) {
         let hash = this.hash(room_obj.sale_promotion, saleId)
         console.log(

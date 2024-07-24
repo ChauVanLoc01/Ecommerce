@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
-import { useContext, useEffect, useState } from 'react'
+import { useContext, useEffect, useRef, useState } from 'react'
+import { DateRange } from 'react-day-picker'
 import { VoucherApi } from 'src/apis/voucher.api'
 import { AppContext } from 'src/contexts/AppContext'
 import { VoucherQuery } from 'src/types/voucher.type'
@@ -11,11 +12,15 @@ import VoucherTable from './VoucherTable'
 const Voucher = () => {
     const { who } = useContext(AppContext)
     const [query, setQuery] = useState<VoucherQuery>({ limit: import.meta.env.VITE_LIMIT })
+    const [date, setDate] = useState<DateRange | undefined>(undefined)
+    const [search_key, setSearch_key] = useState<string>('')
+    const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
     const { data: voucherListData, refetch: voucherRefetch } = useQuery({
-        queryKey: ['VoucherList', JSON.stringify(query)],
+        queryKey: ['VoucherList', query],
         queryFn: who === 'ADMIN' ? VoucherApi.getGlobalVoucher(query) : VoucherApi.getAllVoucher(query),
-        select: (data) => data.data.result
+        select: (data) => data.data.result,
+        placeholderData: (old) => old
     })
 
     const { data: voucherAnalytics, refetch: voucherAnalyticsRefetch } = useQuery({
@@ -35,6 +40,18 @@ const Voucher = () => {
         }
     }, [query])
 
+    useEffect(() => {
+        timeoutRef.current = setTimeout(() => {
+            setQuery((pre) => ({
+                ...pre,
+                search_key
+            }))
+        }, 800)
+        return () => {
+            window.clearTimeout(timeoutRef.current)
+        }
+    }, [search_key])
+
     return (
         <LayoutProfile
             title='Quản lý mã giảm giá'
@@ -52,6 +69,10 @@ const Voucher = () => {
                 setQuery={setQuery}
                 page={voucherListData?.query.page ?? 0}
                 page_size={voucherListData?.query.page_size ?? 0}
+                date={date}
+                setDate={setDate}
+                search_key={search_key}
+                setSearch_key={setSearch_key}
             />
             <VoucherTable data={voucherListData?.data ?? []} refetchDataAll={refetchDataAll} />
         </LayoutProfile>

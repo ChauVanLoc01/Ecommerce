@@ -9,9 +9,10 @@ import { ProductApi } from 'src/apis/product.api'
 import { VoucherApi } from 'src/apis/voucher.api'
 import { DatePicker } from 'src/components/Shadcn/datePicker'
 import { OBJECT } from 'src/constants/role'
-import { voucher_type } from 'src/constants/voucher.constant'
+import { voucher_label, voucher_type } from 'src/constants/voucher.constant'
 import { AppContext } from 'src/contexts/AppContext'
 import { Category } from 'src/types/category.type'
+import { convertCurrentcy } from 'src/utils/utils'
 import { create_voucher_schema, CreateVoucher } from 'src/utils/voucher.schema'
 
 type VoucherCreateProps = {
@@ -50,7 +51,7 @@ const VoucherCreate = ({ refetchDataAll }: VoucherCreateProps) => {
                 toast.error(err.response?.data['message'])
                 return
             }
-            toast.error('Tạo mã giảm giá không thành công')
+            toast.error('Tạo mã giảm giá thất bại')
         }
     })
 
@@ -164,8 +165,11 @@ const VoucherCreate = ({ refetchDataAll }: VoucherCreateProps) => {
                                     render={({ field }) => (
                                         <TextField.Root
                                             {...field}
+                                            value={field?.value ? `${field?.value}%` : ''}
+                                            onChange={(e) => {
+                                                field.onChange(e.target.value.replace(/\D/gim, ''))
+                                            }}
                                             color={errors.percent ? 'red' : 'blue'}
-                                            type='number'
                                             className='!flex-grow'
                                         />
                                     )}
@@ -190,8 +194,11 @@ const VoucherCreate = ({ refetchDataAll }: VoucherCreateProps) => {
                                     render={({ field }) => (
                                         <TextField.Root
                                             {...field}
+                                            value={convertCurrentcy(field.value || 0)}
+                                            onChange={(e) => {
+                                                field.onChange(e.target.value.replace(/\D/gim, ''))
+                                            }}
                                             color={errors.maximum ? 'red' : 'blue'}
-                                            type='number'
                                             className='!flex-grow'
                                         />
                                     )}
@@ -216,8 +223,11 @@ const VoucherCreate = ({ refetchDataAll }: VoucherCreateProps) => {
                                     render={({ field }) => (
                                         <TextField.Root
                                             {...field}
+                                            value={convertCurrentcy(field.value || 0, false)}
+                                            onChange={(e) => {
+                                                field.onChange(e.target.value.replace(/\D/gim, ''))
+                                            }}
                                             color={errors.initQuantity ? 'red' : 'blue'}
-                                            type='number'
                                             className='!flex-grow'
                                         />
                                     )}
@@ -243,9 +253,11 @@ const VoucherCreate = ({ refetchDataAll }: VoucherCreateProps) => {
                                         <Select.Root onValueChange={field.onChange} {...field}>
                                             <Select.Trigger placeholder='Chọn trạng thái...' />
                                             <Select.Content position='popper' className='!rounded-8'>
-                                                <Select.Item value='ACTIVE'>ACTIVE</Select.Item>
-                                                <Select.Item value='HIDDEN'>HIDDEN</Select.Item>
-                                                <Select.Item value='BLOCK'>BLOCK</Select.Item>
+                                                {Object.keys(voucher_label).map((key) => (
+                                                    <Select.Item value={key}>
+                                                        {voucher_label[key as keyof typeof voucher_label]}
+                                                    </Select.Item>
+                                                ))}
                                             </Select.Content>
                                         </Select.Root>
                                     )}

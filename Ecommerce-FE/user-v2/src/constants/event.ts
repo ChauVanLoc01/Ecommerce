@@ -17,5 +17,6 @@ export const leave_room = 'leave-room'
 export const channel = {
     order: 'order',
     product: 'product',
-    voucher: 'voucher'
+    voucher: 'voucher',
+    transaction: 'transaction'
 }

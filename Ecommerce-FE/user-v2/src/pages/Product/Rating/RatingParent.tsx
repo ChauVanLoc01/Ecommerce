@@ -62,7 +62,7 @@ const RatingParent = ({ data }: RatingParentProps) => {
                               .fill(0)
                               .map((_) => <Skeleton width={'50px'} height={'50px'} className='rounded-8' />)}
                 </Grid>
-                {RatingReply.length && (
+                {RatingReply?.[0] && (
                     <div className='rounded-6 bg-gray-100 px-5 py-2 flex flex-col absolute bottom-2 right-2 max-w-80 max-h-20'>
                         <Text size={'2'} className='font-bold'>
                             Phản hồi từ người bán:

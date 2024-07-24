@@ -1,7 +1,8 @@
+import { MagnifyingGlassIcon } from '@radix-ui/react-icons'
 import { Flex, Select, TextField } from '@radix-ui/themes'
 import { addHours } from 'date-fns'
 import { isUndefined, omitBy } from 'lodash'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { DateRange } from 'react-day-picker'
 import Pagination from 'src/components/Pagination/Pagination'
 import { DatePickerWithRange } from 'src/components/Shadcn/dateRange'
@@ -13,22 +14,28 @@ type VoucherFilterProps = {
     setQuery: React.Dispatch<React.SetStateAction<VoucherQuery>>
     page: number
     page_size: number
+    search_key: string
+    setSearch_key: React.Dispatch<React.SetStateAction<string>>
+    date: DateRange | undefined
+    setDate: React.Dispatch<React.SetStateAction<DateRange | undefined>>
 }
 
-const VoucherFilter = ({ setQuery, page, page_size, query }: VoucherFilterProps) => {
-    const [date, setDate] = useState<DateRange | undefined>(undefined)
-
-    const handleSelectStatus = (status: string) => {
-        setQuery((pre) => {
-            return {
-                ...pre,
-                status
-            }
-        })
+const VoucherFilter = ({
+    setQuery,
+    page,
+    page_size,
+    query,
+    date,
+    search_key,
+    setDate,
+    setSearch_key
+}: VoucherFilterProps) => {
+    const handleChangeStatus = (status: string) => {
+        setQuery((pre) => ({ ...pre, status }))
     }
 
-    const handleChangeStatus = (status: string) => {
-        setQuery((pre) => ({ ...query, status }))
+    const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setSearch_key(e.target.value)
     }
 
     useEffect(() => {
@@ -49,16 +56,9 @@ const VoucherFilter = ({ setQuery, page, page_size, query }: VoucherFilterProps)
     return (
         <Flex justify={'between'}>
             <Flex gap={'3'}>
-                <TextField.Root placeholder='Tìm kiếm mã giảm giá' size='3'>
+                <TextField.Root placeholder='Tìm kiếm mã giảm giá' size='3' value={search_key} onChange={handleSearch}>
                     <TextField.Slot>
-                        <svg width='17' height='17' viewBox='0 0 15 15' fill='none' xmlns='http://www.w3.org/2000/svg'>
-                            <path
-                                d='M10 6.5C10 8.433 8.433 10 6.5 10C4.567 10 3 8.433 3 6.5C3 4.567 4.567 3 6.5 3C8.433 3 10 4.567 10 6.5ZM9.30884 10.0159C8.53901 10.6318 7.56251 11 6.5 11C4.01472 11 2 8.98528 2 6.5C2 4.01472 4.01472 2 6.5 2C8.98528 2 11 4.01472 11 6.5C11 7.56251 10.6318 8.53901 10.0159 9.30884L12.8536 12.1464C13.0488 12.3417 13.0488 12.6583 12.8536 12.8536C12.6583 13.0488 12.3417 13.0488 12.1464 12.8536L9.30884 10.0159Z'
-                                fill='currentColor'
-                                fill-rule='evenodd'
-                                clip-rule='evenodd'
-                            ></path>
-                        </svg>
+                        <MagnifyingGlassIcon />
                     </TextField.Slot>
                 </TextField.Root>
                 <Flex direction='column' width='120px'>
@@ -68,7 +68,9 @@ const VoucherFilter = ({ setQuery, page, page_size, query }: VoucherFilterProps)
                             <Select.Group>
                                 <Select.Label>Trạng thái</Select.Label>
                                 {Object.keys(OrderLabel).map((key) => (
-                                    <Select.Item value={key}>{OrderLabel[key as OrderStatus]}</Select.Item>
+                                    <Select.Item key={`voucher_${key}`} value={key}>
+                                        {OrderLabel[key as OrderStatus]}
+                                    </Select.Item>
                                 ))}
                             </Select.Group>
                         </Select.Content>

@@ -8,24 +8,36 @@ import {
 } from 'common/constants/event.constant'
 import { CurrentUser } from 'common/decorators/current_user.decorator'
 import { Public } from 'common/decorators/public.decorator'
+import { Roles } from 'common/decorators/roles.decorator'
+import { Role } from 'common/enums/role.enum'
 import { JwtGuard } from 'common/guards/jwt.guard'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
 import { CreateOrderPayload } from 'common/types/order_payload.type'
 import { format } from 'date-fns'
 import { CreateVoucherDTO } from './dtos/CreateVoucher.dto'
+import { QueryGlobalVoucherDTO } from './dtos/query_global_voucher.dto'
 import { VoucherQueryDTO } from './dtos/QueryVoucher.dto'
 import { SearchCodeDTO } from './dtos/search-code.dto'
 import { UpdateVoucherDTO } from './dtos/UpdateVoucher.dto'
 import { VoucherService } from './voucher.service'
-import { Roles } from 'common/decorators/roles.decorator'
-import { Role } from 'common/enums/role.enum'
-import { QueryGlobalVoucherDTO } from './dtos/query_global_voucher.dto'
 
 @ApiBearerAuth()
 @UseGuards(JwtGuard)
 @Controller('voucher')
 export class VoucherController {
     constructor(private readonly voucherService: VoucherService) {}
+
+    @Roles(Role.EMPLOYEE, Role.STORE_OWNER)
+    @Get('category/:conditionalCategoryId')
+    conditionalCategoryOfVoucher(@Param('conditionalCategoryId') conditionalCategoryId: string) {
+        return this.voucherService.conditionalCategoryOfVoucher(conditionalCategoryId)
+    }
+
+    @Roles(Role.EMPLOYEE, Role.STORE_OWNER)
+    @Get('price/:conditionalPriceId')
+    conditionalPriceOfVoucher(@Param('conditionalPriceId') conditionalPriceId: string) {
+        return this.voucherService.conditionalPriceOfVoucher(conditionalPriceId)
+    }
 
     @Post()
     createVoucher(@CurrentUser() user: CurrentStoreType, @Body() body: CreateVoucherDTO) {
@@ -62,8 +74,9 @@ export class VoucherController {
         return this.voucherService.getGlobalVoucher(query)
     }
 
+    @Roles(Role.EMPLOYEE, Role.STORE_OWNER)
     @Get()
-    getAllVoucher(@CurrentUser() user: CurrentStoreType, @Body() query: VoucherQueryDTO) {
+    getAllVoucher(@CurrentUser() user: CurrentStoreType, @Query() query: VoucherQueryDTO) {
         return this.voucherService.getAllVoucher(user, query)
     }
 

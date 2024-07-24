@@ -24,17 +24,14 @@ const FlashSale = () => {
     const { data: product_of_sale_promotion } = useQuery({
         queryKey: ['product-of-sale-promotion', saleId],
         queryFn: sale_api.getProductOfSalePromotion(saleId),
-        staleTime: 1000 * 60 * 2,
-        enabled: false,
+        staleTime: 1000 * 60 * 5,
         select: (data) => data.data.result
     })
-
-    console.log('productOfPromotion', product_of_sale_promotion)
 
     return (
         <Flex direction={'column'} gap={'5'} className='pb-10'>
             <FlashsaleHeader salePromotions={sale_promotion_ids} />
-            <FlashSaleProducts products={product_of_sale_promotion?.productPromotions} />
+            <FlashSaleProducts products={product_of_sale_promotion?.productSales} />
             <Flex justify={'end'} gapX={'3'}>
                 <PaginationPrevious />
                 <PaginationNext />

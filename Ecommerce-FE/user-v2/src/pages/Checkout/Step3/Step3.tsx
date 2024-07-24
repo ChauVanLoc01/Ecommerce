@@ -9,7 +9,7 @@ type Step3Props = {
 
 const Step3 = ({ payment, setPayment }: Step3Props) => {
     const onPaymentChange = (value: Payment) => {
-        setPayment(payment)
+        setPayment(value)
     }
 
     return (

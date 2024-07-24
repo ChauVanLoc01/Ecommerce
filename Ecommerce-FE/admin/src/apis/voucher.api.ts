@@ -15,8 +15,8 @@ export const VoucherApi = {
     createVoucher: (body: CreateVoucher) => {
         return http.post<Return<VoucherDetailReponse>>('store/voucher', body)
     },
-    updateVoucher: (body: UpdateVoucher) => {
-        return http.put<Return<Voucher>>('store/voucher', body)
+    updateVoucher: (voucherId: string) => (body: UpdateVoucher) => {
+        return http.put<Return<Voucher>>(`store/voucher/${voucherId}`, body)
     },
     getAnalytics: () => {
         return http.get<Return<{ all: number; active: number; block: number }>>('store/voucher/analytics')
@@ -28,5 +28,11 @@ export const VoucherApi = {
         return http.get<VoucherListReponse>('store/voucher/global', {
             params: query
         })
+    },
+    getConditionalCategory: (id: string) => () => {
+        return http.get<Return<string>>(`store/voucher/category/${id}`)
+    },
+    getConditionalPrice: (id: string) => () => {
+        return http.get(`store/voucher/price/${id}`)
     }
 }

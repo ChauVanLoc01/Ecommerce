@@ -4,6 +4,7 @@ import { Return } from './return.type'
 type Order = 'asc' | 'desc'
 
 export type ProductQuery = Partial<{
+    search_key: string
     category: string
     createdAt: Order
     sold: Order

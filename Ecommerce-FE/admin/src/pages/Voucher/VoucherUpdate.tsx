@@ -21,8 +21,10 @@ import { toast } from 'sonner'
 import { ProductApi } from 'src/apis/product.api'
 import { VoucherApi } from 'src/apis/voucher.api'
 import { DatePicker } from 'src/components/Shadcn/datePicker'
+import { voucher_label } from 'src/constants/voucher.constant'
 import { Category } from 'src/types/category.type'
 import { Voucher } from 'src/types/voucher.type'
+import { convertCurrentcy } from 'src/utils/utils'
 import { update_voucher_schema, UpdateVoucher } from 'src/utils/voucher.schema'
 
 type VoucherUpdateProps = {
@@ -50,7 +52,7 @@ const VoucherUpdate = ({ refetchDataAll, voucher }: VoucherUpdateProps) => {
     })
 
     const { mutate: updateVoucherMutate, isPending: isCreateVoucherPending } = useMutation({
-        mutationFn: VoucherApi.updateVoucher,
+        mutationFn: VoucherApi.updateVoucher(voucher.id),
         onSuccess: () => {
             refetchDataAll()
             setOpen(false)
@@ -65,7 +67,10 @@ const VoucherUpdate = ({ refetchDataAll, voucher }: VoucherUpdateProps) => {
         }
     })
 
-    const onSubmit: SubmitHandler<UpdateVoucher> = (data) => updateVoucherMutate(data)
+    const onSubmit: SubmitHandler<UpdateVoucher> = (data) => {
+        console.log('data', data)
+        // updateVoucherMutate(data)
+    }
 
     return (
         <>
@@ -260,9 +265,11 @@ const VoucherUpdate = ({ refetchDataAll, voucher }: VoucherUpdateProps) => {
                                             <Select.Root onValueChange={field.onChange} {...field}>
                                                 <Select.Trigger placeholder='Chọn trạng thái...' />
                                                 <Select.Content position='popper' className='!rounded-8'>
-                                                    <Select.Item value='ACTIVE'>ACTIVE</Select.Item>
-                                                    <Select.Item value='HIDDEN'>HIDDEN</Select.Item>
-                                                    <Select.Item value='BLOCK'>BLOCK</Select.Item>
+                                                    {Object.keys(voucher_label).map((key) => (
+                                                        <Select.Item value={key}>
+                                                            {voucher_label[key as keyof typeof voucher_label]}
+                                                        </Select.Item>
+                                                    ))}
                                                 </Select.Content>
                                             </Select.Root>
                                         )}
@@ -372,8 +379,11 @@ const VoucherUpdate = ({ refetchDataAll, voucher }: VoucherUpdateProps) => {
                                         render={({ field }) => (
                                             <TextField.Root
                                                 {...field}
+                                                value={field.value ? convertCurrentcy(field.value) : ''}
+                                                onChange={(e) => {
+                                                    field.onChange(e.target.value.replace(/\D/gim, ''))
+                                                }}
                                                 color={errors.totalMin ? 'red' : 'blue'}
-                                                type='number'
                                                 className='!flex-grow'
                                             />
                                         )}
@@ -398,8 +408,11 @@ const VoucherUpdate = ({ refetchDataAll, voucher }: VoucherUpdateProps) => {
                                         render={({ field }) => (
                                             <TextField.Root
                                                 {...field}
+                                                value={field.value ? convertCurrentcy(field.value) : ''}
+                                                onChange={(e) => {
+                                                    field.onChange(e.target.value.replace(/\D/gim, ''))
+                                                }}
                                                 color={errors.priceMin ? 'red' : 'blue'}
-                                                type='number'
                                                 className='!flex-grow'
                                             />
                                         )}
@@ -415,7 +428,7 @@ const VoucherUpdate = ({ refetchDataAll, voucher }: VoucherUpdateProps) => {
                             </AlertDialog.Cancel>
                             <Button type='submit' className='bg-blue text-white'>
                                 {isCreateVoucherPending && <Spinner />}
-                                Tạo mới
+                                Cập nhật
                             </Button>
                         </Flex>
                     </form>

@@ -64,3 +64,5 @@ export type VoucherDetailReponse = Return<
         PriceConditionVoucher: PriceConditionVoucher
     }
 >
+
+export type PriceConditional = {}

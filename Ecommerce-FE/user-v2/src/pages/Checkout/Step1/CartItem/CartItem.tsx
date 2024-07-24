@@ -58,7 +58,7 @@ const CartItem = ({ products, productIds, store, isCheckedAll, handleRemoveVouch
             ...pre,
             products: {
                 ...pre.products,
-                [store.id]: Object.values({
+                [store?.id]: Object.values({
                     ...products,
                     [productId]: {
                         ...products[productId],
@@ -93,12 +93,12 @@ const CartItem = ({ products, productIds, store, isCheckedAll, handleRemoveVouch
 
     return (
         <motion.div className={cn('bg-[#FFFFFF] rounded-8 hover:shadow-md border border-border/30')}>
-            <motion.div key={store.id} className='border-b border-border/30 flex-shrink'>
+            <motion.div key={store?.id} className='border-b border-border/30 flex-shrink'>
                 <Flex justify={'between'} align={'center'}>
                     <div className='p-24 space-x-5 flex items-center'>
-                        <Checkbox id={store.id} checked={isCheckedAll} onCheckedChange={handleCheckedAll} />
-                        <Text as='label' htmlFor={store.id}>
-                            {store.name}
+                        <Checkbox id={store?.id} checked={isCheckedAll} onCheckedChange={handleCheckedAll} />
+                        <Text as='label' htmlFor={store?.id}>
+                            {store?.name}
                         </Text>
                     </div>
                 </Flex>

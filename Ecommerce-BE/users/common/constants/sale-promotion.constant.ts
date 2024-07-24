@@ -1,8 +1,9 @@
 export enum SalePromotion {
-  NORMAL = 'NORMAL',
-  SPEACIAL = 'SPEACIAL'
+    NORMAL = 'NORMAL',
+    SPEACIAL = 'SPEACIAL',
+    CATEGORY = 'CATEGORY'
 }
 
 export type SalePromotionTime = {
-  everyMonday: '* 30 3 * * 1'
+    everyMonday: '* 30 3 * * 1'
 }

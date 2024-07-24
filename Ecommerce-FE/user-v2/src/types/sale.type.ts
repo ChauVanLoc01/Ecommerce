@@ -51,6 +51,6 @@ export type SalePromotionIds = Return<
 >
 
 export type GetProductOfSalePromotion = Return<{
-    salePromotion: SalePromotion
-    productPromotions: ProductPromotion[]
+    sale: SalePromotion
+    productSales: ProductPromotion[]
 }>

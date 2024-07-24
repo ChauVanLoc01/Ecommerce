@@ -4,31 +4,31 @@ import { GreaterThanDate } from 'common/decorators/greater_than_date.decorator'
 import { PaginationDTO } from 'common/decorators/pagination.dto'
 
 export class VoucherQueryDTO extends PaginationDTO {
-  @ApiPropertyOptional()
-  @IsDateString()
-  @IsOptional()
-  startDate?: string
+    @ApiPropertyOptional()
+    @IsString()
+    @IsOptional()
+    search_key?: string
 
-  @ApiPropertyOptional()
-  @IsDateString()
-  @IsOptional()
-  @GreaterThanDate('startDate')
-  endDate?: string
+    @ApiPropertyOptional()
+    @IsDateString()
+    @IsOptional()
+    startDate?: string
 
-  @ApiPropertyOptional()
-  @IsEnum(['ACTIVE', 'BLOCK'])
-  @IsOptional()
-  status?: 'ACTIVE' | 'BLOCK'
+    @ApiPropertyOptional()
+    @IsDateString()
+    @IsOptional()
+    @GreaterThanDate('startDate')
+    endDate?: string
 
-  @ApiPropertyOptional()
-  @IsString()
-  @IsOptional()
-  code?: string
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    status?: string
 
-  @ApiPropertyOptional({
-    enum: ['asc', 'desc']
-  })
-  @IsEnum(['asc', 'desc'])
-  @IsOptional()
-  createdAt?: 'asc' | 'desc'
+    @ApiPropertyOptional({
+        enum: ['asc', 'desc']
+    })
+    @IsEnum(['asc', 'desc'])
+    @IsOptional()
+    createdAt?: 'asc' | 'desc'
 }

@@ -1,5 +1,4 @@
-import { MixerHorizontalIcon } from '@radix-ui/react-icons'
-import { Box, Button, Checkbox, Flex, IconButton, Popover, Text, TextField, Tooltip } from '@radix-ui/themes'
+import { Box, Checkbox, Code, Flex, Text, TextField, Tooltip } from '@radix-ui/themes'
 import { ColumnDef } from '@tanstack/react-table'
 import { useMemo } from 'react'
 import Table from 'src/components/Table'
@@ -107,7 +106,11 @@ const ProductInFlashSale = ({
             {
                 accessorKey: 'image',
                 header: () => {
-                    return <div className='flex items-center gap-x-2'>Hình ảnh</div>
+                    return (
+                        <Flex justify={'center'} align={'center'}>
+                            Hình ảnh
+                        </Flex>
+                    )
                 },
                 cell: ({ row }) => (
                     <Flex justify={'center'} align={'center'} p={'2'}>
@@ -123,24 +126,7 @@ const ProductInFlashSale = ({
             {
                 accessorKey: 'name',
                 header: () => {
-                    return (
-                        <div className='flex items-center gap-x-2 max-w-48'>
-                            Tên sản phẩm
-                            <Popover.Root>
-                                <Popover.Trigger>
-                                    <IconButton size={'3'} className='text-gray-500'>
-                                        <MixerHorizontalIcon />
-                                    </IconButton>
-                                </Popover.Trigger>
-                                <Popover.Content className='rounded-8' align='center'>
-                                    <Flex gapX={'2'}>
-                                        <TextField.Root placeholder='Tìm kiếm sản phẩm...' />
-                                        <Button>Tìm kiếm</Button>
-                                    </Flex>
-                                </Popover.Content>
-                            </Popover.Root>
-                        </div>
-                    )
+                    return <div>Tên sản phẩm</div>
                 },
                 cell: ({ row }) => (
                     <Tooltip content={row.getValue('name')}>
@@ -151,49 +137,29 @@ const ProductInFlashSale = ({
             {
                 accessorKey: 'priceAfter',
                 header: () => (
-                    <div className='flex items-center gap-x-2'>
-                        Giá hiện tại
-                        <Popover.Root>
-                            <Popover.Trigger>
-                                <IconButton size={'3'} className='text-gray-500'>
-                                    <MixerHorizontalIcon />
-                                </IconButton>
-                            </Popover.Trigger>
-                            <Popover.Content className='rounded-8' align='center'>
-                                <Flex gapX={'2'}>
-                                    <TextField.Root placeholder='Tìm kiếm sản phẩm...' />
-                                    <Button>Tìm kiếm</Button>
-                                </Flex>
-                            </Popover.Content>
-                        </Popover.Root>
-                    </div>
+                    <Flex justify={'center'} align={'center'}>
+                        <Text>Giá hiện tại</Text>
+                    </Flex>
                 ),
-                cell: ({ row }) => <Text color='red'>{convertCurrentcy(row.original.priceAfter)}</Text>
+                cell: ({ row }) => (
+                    <Flex justify={'center'} align={'center'}>
+                        <Text color='red'>{convertCurrentcy(row.original.priceAfter)}</Text>
+                    </Flex>
+                )
             },
             {
                 accessorKey: 'currentQuantity',
                 header: () => (
-                    <div className='flex items-center gap-x-2'>
-                        Số lượng hiện tại
-                        <Popover.Root>
-                            <Popover.Trigger>
-                                <IconButton size={'3'} className='text-gray-500'>
-                                    <MixerHorizontalIcon />
-                                </IconButton>
-                            </Popover.Trigger>
-                            <Popover.Content className='rounded-8' align='center'>
-                                <Flex gapX={'2'}>
-                                    <TextField.Root placeholder='Tìm kiếm sản phẩm...' />
-                                    <Button>Tìm kiếm</Button>
-                                </Flex>
-                            </Popover.Content>
-                        </Popover.Root>
-                    </div>
+                    <Flex justify={'center'} align={'center'}>
+                        <Text>Số lượng hiện tại</Text>
+                    </Flex>
                 ),
                 cell: ({ row }) => (
-                    <Text className='diagonal-fractions text-xl flex justify-center items-center'>
-                        {row.original.currentQuantity}/{row.original.initQuantity}
-                    </Text>
+                    <Flex justify={'center'} align={'center'} className='tabular-nums space-x-1'>
+                        <Code>{convertCurrentcy(row.original.currentQuantity, false)}</Code>
+                        <Text>/</Text>
+                        <Code color='red'>{convertCurrentcy(row.original.initQuantity, false)}</Code>
+                    </Flex>
                 )
             }
         ]
@@ -203,58 +169,70 @@ const ProductInFlashSale = ({
             columnInSelectedMode = [
                 {
                     accessorKey: 'priceAfter',
-                    header: () => <div className='flex items-center gap-x-2'>Số lượng tham gia</div>,
+                    header: () => (
+                        <Flex justify={'center'} align={'center'}>
+                            Số lượng tham gia
+                        </Flex>
+                    ),
                     cell: ({ row }) => (
-                        <Box maxWidth={'80px'}>
-                            <TextField.Root
-                                defaultValue={
-                                    tab === 2
-                                        ? convertCurrentcy(
-                                              joinedProduct?.products?.[row.original.id]?.quantityInSale || 0,
-                                              false
-                                          )
-                                        : convertCurrentcy(
-                                              selectedProduct.products?.[row.original.id]?.quantityInSale || 0,
-                                              false
-                                          )
-                                }
-                                onChange={(e) =>
-                                    handleFormatCurrency(
-                                        e,
-                                        row.original.id,
-                                        mode as any,
-                                        'quantityInSale',
+                        <Flex justify={'center'} align={'center'}>
+                            <Box maxWidth={'120px'}>
+                                <TextField.Root
+                                    defaultValue={
                                         tab === 2
-                                            ? joinedProduct.products[row.original.id].currentQuantity
-                                            : selectedProduct.products?.[row.original.id]?.currentQuantity
-                                    )
-                                }
-                                onBlur={handleFocusOut}
-                            />
-                        </Box>
+                                            ? convertCurrentcy(
+                                                  joinedProduct?.products?.[row.original.id]?.quantityInSale || 0,
+                                                  false
+                                              )
+                                            : convertCurrentcy(
+                                                  selectedProduct.products?.[row.original.id]?.quantityInSale || 0,
+                                                  false
+                                              )
+                                    }
+                                    onChange={(e) =>
+                                        handleFormatCurrency(
+                                            e,
+                                            row.original.id,
+                                            mode as any,
+                                            'quantityInSale',
+                                            tab === 2
+                                                ? joinedProduct.products[row.original.id].currentQuantity
+                                                : selectedProduct.products?.[row.original.id]?.currentQuantity
+                                        )
+                                    }
+                                    onBlur={handleFocusOut}
+                                />
+                            </Box>
+                        </Flex>
                     )
                 },
                 {
                     accessorKey: 'priceAfter',
-                    header: () => <div className='flex items-center gap-x-2'>Giá sẽ giảm</div>,
+                    header: () => (
+                        <Flex justify={'center'} align={'center'}>
+                            Giá sẽ giảm
+                        </Flex>
+                    ),
                     cell: ({ row }) => (
-                        <Box maxWidth={'150px'}>
-                            <TextField.Root
-                                defaultValue={
-                                    tab === 2
-                                        ? convertCurrentcy(
-                                              joinedProduct?.products?.[row.original.id]?.priceAfterInSale || 0
-                                          )
-                                        : convertCurrentcy(
-                                              selectedProduct.products?.[row.original.id]?.priceAfterInSale || 0
-                                          )
-                                }
-                                onChange={(e) =>
-                                    handleFormatCurrency(e, row.original.id, mode as any, 'priceAfterInSale')
-                                }
-                                onBlur={handleFocusOut}
-                            />
-                        </Box>
+                        <Flex justify={'center'} align={'center'}>
+                            <Box maxWidth={'150px'}>
+                                <TextField.Root
+                                    defaultValue={
+                                        tab === 2
+                                            ? convertCurrentcy(
+                                                  joinedProduct?.products?.[row.original.id]?.priceAfterInSale || 0
+                                              )
+                                            : convertCurrentcy(
+                                                  selectedProduct.products?.[row.original.id]?.priceAfterInSale || 0
+                                              )
+                                    }
+                                    onChange={(e) =>
+                                        handleFormatCurrency(e, row.original.id, mode as any, 'priceAfterInSale')
+                                    }
+                                    onBlur={handleFocusOut}
+                                />
+                            </Box>
+                        </Flex>
                     )
                 }
             ]
