@@ -61,7 +61,7 @@ const useDataCheckout = ({ ids, products, voucherIds, setStep, setProducts, sock
         queryKey: ['refreshProduct', JSON.stringify(ids.all)],
         queryFn: productFetching.refreshProduct({
             productsId: ids.all,
-            saleId: current_sale_promotino?.sale?.id
+            saleId: current_sale_promotino?.salePromotion?.id
         }),
         refetchInterval: 1000 * 30,
         select: (data) => data.data.result,

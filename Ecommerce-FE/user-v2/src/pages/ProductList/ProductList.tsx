@@ -1,47 +1,94 @@
 import loadable from '@loadable/component'
 import { motion } from 'framer-motion'
 
-import Dropdown from 'src/components/Dropdown'
-import Pagination from 'src/components/Pagination'
-
+import { ChevronLeftIcon, ChevronRightIcon } from '@radix-ui/react-icons'
+import { Box, Flex, IconButton, Select, Text } from '@radix-ui/themes'
 import { useQuery } from '@tanstack/react-query'
-import { isUndefined, omitBy } from 'lodash'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useLoaderData } from 'react-router-dom'
 import { productFetching } from 'src/apis/product'
-import useQueryParams from 'src/hooks/useQueryParams'
+import { getSort, product_list_sort, sort_key } from 'src/constants/product.constants'
 import { CategoryListResponse } from 'src/types/category.type'
 import { ProductListQuery, ProductListResponse } from 'src/types/product.type'
 import FlashSale from './FlashSale'
 import ProductCard from './ProductCard'
 import ProductSearch from './ProductSearch'
 
+const default_query = { limit: import.meta.env.VITE_APP_LIMIT }
+
 const Filter = loadable(() => import('./Filter'))
 
 const ProductList = () => {
-    const [queryParams] = useQueryParams<Partial<Record<keyof ProductListQuery, string>>>()
-    const [query, setQuery] = useState<>()
+    const [query, setQuery] = useState<ProductListQuery>(default_query)
     const [_, categoryResponse] = useLoaderData() as [ProductListResponse, CategoryListResponse]
-    const { data, refetch } = useQuery({
+    const [page, setPage] = useState<number>(0)
+    const [category, setCategory] = useState<string>()
+    const [sort, setSort] = useState<string>('')
+
+    const { data: productList, refetch } = useQuery({
         queryKey: ['productList', query],
-        queryFn: () =>
-            productFetching.productList(
-                omitBy(
-                    {
-                        ...queryParams,
-                        page: Number(queryParams?.page) || undefined
-                    },
-                    isUndefined
-                ) as ProductListQuery
-            ),
+        queryFn: () => productFetching.productList(query),
         enabled: false,
         staleTime: 1000 * 60 * 2,
-        placeholderData: (previousData) => previousData
+        placeholderData: (old) => old,
+        select: (result) => result.data.result
     })
+
+    const handleSort = (sort: string) => {
+        const { key, value } = getSort(sort)
+        setSort(sort)
+        setQuery((pre) => {
+            Object.keys(pre).forEach((key) => {
+                if (sort_key.includes(key)) {
+                    delete pre[key as keyof typeof pre]
+                }
+            })
+            return {
+                ...pre,
+                [key]: value
+            }
+        })
+    }
+
+    const handleClear = () => {
+        setQuery(default_query)
+        setCategory('')
+        setSort('')
+    }
+
+    const handleCategory = (category: string) => {
+        setCategory(category)
+        setQuery((pre) => ({
+            ...pre,
+            category
+        }))
+    }
+
+    const handlePreviousPage = () => {
+        setPage((pre) => Math.max(pre - 1, 1))
+        setQuery((pre) => ({
+            ...pre,
+            page: Math.max(page - 1, 1)
+        }))
+    }
+
+    const handleNextPage = () => {
+        setPage((pre) => Math.min(pre + 1, productList?.query.page_size as number))
+        setQuery((pre) => ({
+            ...pre,
+            page: Math.min(page + 1, productList?.query.page_size as number)
+        }))
+    }
 
     useEffect(() => {
         refetch()
-    }, [JSON.stringify(queryParams)])
+    }, [query])
+
+    useEffect(() => {
+        if (productList) {
+            setPage(productList.query.page || 0)
+        }
+    }, [productList])
 
     return (
         <motion.main
@@ -64,33 +111,56 @@ const ProductList = () => {
             <FlashSale />
             <div className='flex gap-x-5'>
                 <section className='basis-1/5 flex-shrink-0'>
-                    <Filter data={categoryResponse} />
+                    <Filter
+                        category={category}
+                        handleClear={handleClear}
+                        data={categoryResponse}
+                        handleCategory={handleCategory}
+                    />
                 </section>
                 <section className='grow pb-10'>
                     <div className='sticky top-0 z-50 bg-[#F8F9FA]'>
-                        <div className='p-[16px] z-50 bg-[#FFFFFF] rounded-12 border border-border/30 flex justify-between overflow-hidden'>
-                            <ProductSearch />
-                            <Dropdown
-                                data={{
-                                    createdAt_desc: 'Mới nhất',
-                                    sold_desc: 'Bán chạy nhất',
-                                    price_asc: 'Giá từ thấp đến cao',
-                                    price_desc: 'Giá từ cao đến thấp'
-                                }}
-                                title='Sắp xếp theo ...'
-                                rootClassNames='basis-1/4'
-                            />
-                        </div>
+                        <Flex
+                            justify={'between'}
+                            align={'center'}
+                            className='p-[16px] z-50 bg-[#FFFFFF] rounded-12 border border-border/30 overflow-hidden'
+                        >
+                            <Flex gapX={'4'}>
+                                <ProductSearch />
+                                <Box width={'210px'}>
+                                    <Select.Root size={'2'} value={sort} onValueChange={handleSort}>
+                                        <Select.Trigger className='w-full' placeholder='Sắp xếp theo' />
+                                        <Select.Content position='popper' className='rounded-6' align='end'>
+                                            <Select.Group>
+                                                <Select.Label>Sắp xếp theo</Select.Label>
+                                                {product_list_sort.map((item) => (
+                                                    <Select.Item value={item[0]}>{item[1]}</Select.Item>
+                                                ))}
+                                            </Select.Group>
+                                        </Select.Content>
+                                    </Select.Root>
+                                </Box>
+                            </Flex>
+                            <Flex align={'baseline'} gapX={'3'}>
+                                <Text size={'4'}>
+                                    {page}/{productList?.query.page_size}
+                                </Text>
+                                <Flex gapX={'1'}>
+                                    <IconButton variant='soft' color='gray' onClick={handlePreviousPage}>
+                                        <ChevronLeftIcon />
+                                    </IconButton>
+                                    <IconButton variant='soft' color='gray' onClick={handleNextPage}>
+                                        <ChevronRightIcon />
+                                    </IconButton>
+                                </Flex>
+                            </Flex>
+                        </Flex>
                         <div className='h-4 w-full z-50 bg-[#F8F9FA]' />
                     </div>
-
                     <div className='space-y-8'>
                         <div className='grid grid-cols-3 gap-3'>
-                            {data?.data.result.data.map((product) => (
-                                <ProductCard key={product.id} product={product} />
-                            ))}
+                            {productList?.data.map((product) => <ProductCard key={product.id} product={product} />)}
                         </div>
-                        <Pagination pageSize={data?.data.result.query.page_size || 10} />
                     </div>
                 </section>
             </div>

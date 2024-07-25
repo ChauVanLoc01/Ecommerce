@@ -1,23 +1,20 @@
 import { yupResolver } from '@hookform/resolvers/yup'
+import { Button, RadioGroup } from '@radix-ui/themes'
 import { motion } from 'framer-motion'
 import { useForm } from 'react-hook-form'
 
-import Button from 'src/components/Button'
 import Input from 'src/components/Input'
-import { Label } from 'src/components/Shadcn/label'
-import { RadioGroup, RadioGroupItem } from 'src/components/Shadcn/radio-group'
-import useQueryParams from 'src/hooks/useQueryParams'
 import { CategoryListResponse } from 'src/types/category.type'
-import { ProductListQuery } from 'src/types/product.type'
 import { price_schema } from 'src/utils/price.schema'
 
 type FilterProps = {
     data: CategoryListResponse
+    category: string | undefined
+    handleCategory: (category: string) => void
+    handleClear: () => void
 }
 
-const Filter = ({ data }: FilterProps) => {
-    const [queryParams, setQueryParams] = useQueryParams<Partial<Record<keyof ProductListQuery, string>>>()
-
+const Filter = ({ data, handleCategory, handleClear, category }: FilterProps) => {
     const { register } = useForm({
         resolver: yupResolver(price_schema)
     })
@@ -27,7 +24,7 @@ const Filter = ({ data }: FilterProps) => {
             <div className='space-y-3'>
                 <h2 className='text-base font-semibold tracking-wide'>Danh mục</h2>
                 <div>
-                    <RadioGroup defaultValue={queryParams?.category || ''}>
+                    <RadioGroup.Root value={category} onValueChange={handleCategory}>
                         <motion.div
                             className='space-y-2'
                             initial='hidden'
@@ -40,24 +37,16 @@ const Filter = ({ data }: FilterProps) => {
                             }}
                         >
                             {data.map((category) => (
-                                <div key={category.shortname} className='flex items-center space-x-2'>
-                                    <RadioGroupItem
-                                        value={category.shortname}
-                                        id={category.shortname}
-                                        onClick={() =>
-                                            setQueryParams({
-                                                ...queryParams,
-                                                category: category.shortname
-                                            })
-                                        }
-                                    />
-                                    <Label htmlFor={category.shortname} className='text-[15px] line-clamp-1'>
-                                        {category.name}
-                                    </Label>
-                                </div>
+                                <RadioGroup.Item
+                                    value={category.shortname}
+                                    id={category.shortname}
+                                    className='space-x-2 line-clamp-1'
+                                >
+                                    {category.name}
+                                </RadioGroup.Item>
                             ))}
                         </motion.div>
-                    </RadioGroup>
+                    </RadioGroup.Root>
                 </div>
             </div>
             <div className='space-y-1'>
@@ -78,11 +67,9 @@ const Filter = ({ data }: FilterProps) => {
                 </div>
             </div>
             <div className='space-y-3'>
-                <Button
-                    text='Reset'
-                    className='w-full py-[10px] text-xs bg-orange-600 hover:bg-orange-700'
-                    onClick={() => setQueryParams()}
-                />
+                <Button color='red' className='w-full' onClick={handleClear}>
+                    Đặt lại
+                </Button>
             </div>
         </section>
     )

@@ -1,4 +1,3 @@
-import { isUndefined, omitBy } from 'lodash'
 import { LoaderFunction } from 'react-router-dom'
 import { productFetching } from 'src/apis/product'
 import { sale_api } from 'src/apis/sale_promotion.api'
@@ -44,28 +43,8 @@ export const productListLoader: LoaderFunction = async ({ request }) => {
 
     const [productList, categories] = await Promise.all([
         queryClient.fetchQuery({
-            queryKey: [
-                'productList',
-                JSON.stringify(
-                    omitBy(
-                        {
-                            ...queryParams,
-                            page: Number(queryParams?.page) || undefined
-                        },
-                        isUndefined
-                    ) as ProductListQuery
-                )
-            ],
-            queryFn: () =>
-                productFetching.productList(
-                    omitBy(
-                        {
-                            ...queryParams,
-                            page: Number(queryParams?.page) || undefined
-                        },
-                        isUndefined
-                    ) as ProductListQuery
-                ),
+            queryKey: ['productList', { limit: 12 }],
+            queryFn: () => productFetching.productList({ limit: 12 }),
             staleTime: 1000 * 60 * 2
         }),
         queryClient.fetchQuery({
