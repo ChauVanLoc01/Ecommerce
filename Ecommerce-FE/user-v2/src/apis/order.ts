@@ -36,7 +36,7 @@ export const OrderFetching = {
     requestRefund: (orderId: string) => (body: CreateOrderRefund) => {
         return http.post(`order/order/${orderId}/refund`, body)
     },
-    createTransaction: (body: { amount: number; bankCode: Payment; actionId: string }) => () => {
+    createTransaction: (body: { amount: number; bankCode: Payment }) => () => {
         return http.post<string>('order/payment', body)
     }
 }

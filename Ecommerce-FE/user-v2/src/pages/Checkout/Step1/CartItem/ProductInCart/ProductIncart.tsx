@@ -26,8 +26,6 @@ const ProductIncart = ({ product, handleChecked, handleChangeQuantity, handleDel
         queryFn: sale_api.current_sale_promotin,
         select: (data) => data.data.result.salePromotion.id
     })
-    console.log('saleId', saleId)
-    console.log('product', product?.sale?.salePromotionId)
 
     const isSale = (
         product: ProductContextExtends

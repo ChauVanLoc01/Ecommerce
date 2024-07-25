@@ -33,7 +33,9 @@ const useSocket = ({ actionId }: UseSocketProps) => {
         socket.on(channel.order, (res: SocketReturn<any>) => {
             if (res.action) {
                 toast.dismiss(toastIdRef)
-                toast.success(res.msg)
+                setTimeout(() => {
+                    toast.success(res.msg)
+                }, 500)
             } else {
                 toast.error(res.msg)
             }

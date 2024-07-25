@@ -1,10 +1,7 @@
 import { Avatar, Button, Spinner, Text } from '@radix-ui/themes'
 import { useMutation } from '@tanstack/react-query'
-import { useContext } from 'react'
-import { useNavigate } from 'react-router-dom'
 import SimpleBar from 'simplebar-react'
 import { OrderFetching } from 'src/apis/order'
-import { AppContext } from 'src/contexts/AppContext'
 import { ProductConvert } from 'src/types/context.type'
 import { Payment } from 'src/types/payment.type'
 import { RefreshStore } from 'src/types/store.type'
@@ -61,7 +58,6 @@ type CheckoutSummaryProps = {
 
 const CheckoutSummary = ({
     handleNextStep,
-    handleOrder,
     isPending,
     step,
     storeLatest,
@@ -73,23 +69,14 @@ const CheckoutSummary = ({
     voucherIds,
     payment
 }: CheckoutSummaryProps) => {
-    const { actionId } = useContext(AppContext)
-    const navigate = useNavigate()
     const { mutate: createTransaction } = useMutation({
         mutationFn: OrderFetching.createTransaction({
             bankCode: payment,
-            amount: priceLatest?.allOrder.pay as number,
-            actionId
+            amount: priceLatest?.allOrder.pay as number
         }),
         onSuccess: (result) => {
             window.location.href = result.data
         }
-    })
-
-    console.log('transaction', {
-        bankCode: payment,
-        amount: priceLatest?.allOrder.pay as number,
-        actionId
     })
 
     const hanldeTransaction = () => createTransaction()

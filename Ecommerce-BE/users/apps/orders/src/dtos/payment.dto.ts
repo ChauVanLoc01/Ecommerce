@@ -8,11 +8,6 @@ export class CreatePaymentDTO {
     amount: number
 
     @ApiProperty()
-    @IsString()
-    @IsNotEmpty()
-    actionId: string
-
-    @ApiProperty()
     @IsNotEmpty()
     @IsString()
     bankCode: string

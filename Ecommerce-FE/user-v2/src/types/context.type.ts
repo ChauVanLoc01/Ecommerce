@@ -34,6 +34,11 @@ export type ProductConvert = {
     }
 }
 
+export type StatusOfOrder = {
+    in_progressing: boolean
+    action: boolean
+}
+
 export type AppContext = {
     profile?: LoginResponse
     setProfile: React.Dispatch<React.SetStateAction<LoginResponse | undefined>>
@@ -54,4 +59,6 @@ export type AppContext = {
     socket?: Socket<any, any>
     toastIdRef?: string | number
     setToastId: (id: string | number) => void
+    statusOfOrder?: StatusOfOrder
+    setStatusOfOrder: React.Dispatch<React.SetStateAction<StatusOfOrder | undefined>>
 }

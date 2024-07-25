@@ -31,7 +31,7 @@ const FlashSale = () => {
     return (
         <Flex direction={'column'} gap={'5'} className='pb-10'>
             <FlashsaleHeader salePromotions={sale_promotion_ids} />
-            <FlashSaleProducts products={product_of_sale_promotion?.productSales} />
+            <FlashSaleProducts products={product_of_sale_promotion?.productPromotions} />
             <Flex justify={'end'} gapX={'3'}>
                 <PaginationPrevious />
                 <PaginationNext />

@@ -224,8 +224,8 @@ export class SaleService {
             return {
                 msg: 'ok',
                 result: {
-                    sale: promotionExist,
-                    productSales: products
+                    salePromotion: promotionExist,
+                    productPromotions: products
                 }
             }
         } catch (err) {

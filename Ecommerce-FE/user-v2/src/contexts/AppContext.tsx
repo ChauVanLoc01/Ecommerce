@@ -1,7 +1,7 @@
 import { ReactNode, createContext, useMemo, useRef, useState } from 'react'
 import useSocket from 'src/hooks/useSocket'
 import { LoginResponse } from 'src/types/auth.type'
-import { AppContext as AppContextType, ProductContext } from 'src/types/context.type'
+import { AppContext as AppContextType, ProductContext, StatusOfOrder } from 'src/types/context.type'
 import { ls } from 'src/utils/localStorage'
 import { v7 as uuidv7 } from 'uuid'
 
@@ -18,7 +18,8 @@ const defaultValueContext: AppContextType = {
     isCanOrder: false,
     actionId: '',
     socket: undefined,
-    setToastId: () => null
+    setToastId: () => null,
+    setStatusOfOrder: () => null
 }
 
 export const AppContext = createContext<AppContextType>(defaultValueContext)
@@ -30,6 +31,7 @@ const ContextWrap = ({ children }: { children: ReactNode }) => {
     const { current: actionId } = useRef<string>(uuidv7())
     const toastIdRef = useRef<string | number>()
     const { isCanOrder, socket } = useSocket({ actionId })
+    const [statusOfOrder, setStatusOfOrder] = useState<StatusOfOrder | undefined>(undefined)
 
     const setToastId = (id: string | number) => {
         toastIdRef.current = id
@@ -103,7 +105,9 @@ const ContextWrap = ({ children }: { children: ReactNode }) => {
                 actionId,
                 socket,
                 toastIdRef: toastIdRef.current,
-                setToastId
+                setToastId,
+                setStatusOfOrder,
+                statusOfOrder
             }}
         >
             {children}

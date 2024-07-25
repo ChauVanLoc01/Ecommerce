@@ -1,9 +1,9 @@
-import { useContext, useState } from 'react'
+import { useContext, useEffect, useState } from 'react'
 
 import { motion } from 'framer-motion'
 
 import { Button, Spinner } from '@radix-ui/themes'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { AppContext } from 'src/contexts/AppContext'
 import useStep from 'src/hooks/useStep'
@@ -13,7 +13,6 @@ import { Payment } from 'src/types/payment.type'
 import CheckoutHeader from './CheckoutHeader'
 import CheckoutSummary from './CheckoutSummary'
 import CreateOrder from './CreateOrder'
-import OrderStatus from './OrderStatus'
 import Step1 from './Step1'
 import Step2 from './Step2'
 import Step3 from './Step3'
@@ -34,7 +33,8 @@ const CheckOutEmpty = () => {
 }
 
 const Checkout = () => {
-    const { products, ids, isCanOrder, actionId, setProducts, socket } = useContext(AppContext)
+    const { products, ids, isCanOrder, actionId, setProducts, socket, statusOfOrder, setStatusOfOrder } =
+        useContext(AppContext)
 
     if (!ids) {
         return <CheckOutEmpty />
@@ -44,6 +44,9 @@ const Checkout = () => {
     const [orderSuccess, setOrderSuccess] = useState<boolean>(false)
     const [voucherIds, setVoucherIds] = useState<{ [storeId: string]: string } | undefined>(undefined)
     const [payment, setPayment] = useState<Payment>('VNBANK')
+    const [searchParams, _] = useSearchParams()
+    let vnp_Params = Object.fromEntries(searchParams)
+    const isOpen = vnp_Params?.['status']
 
     const {
         dataFromApi: { refreshStores },
@@ -114,6 +117,15 @@ const Checkout = () => {
         }
     }
 
+    useEffect(() => {
+        if (isOpen) {
+            toast.success('Thanh toán thành công')
+            setTimeout(() => {
+                handleOrder()
+            }, 800)
+        }
+    }, [])
+
     return (
         <>
             <motion.section
@@ -174,7 +186,7 @@ const Checkout = () => {
                 open={orderSuccess}
                 setOpen={setOrderSuccess}
             />
-            <OrderStatus />
+            {/* {isOpen && <OrderStatus handleOrder={handleOrder} />} */}
         </>
     )
 }

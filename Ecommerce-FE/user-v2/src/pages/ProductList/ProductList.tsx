@@ -20,21 +20,10 @@ const Filter = loadable(() => import('./Filter'))
 
 const ProductList = () => {
     const [queryParams] = useQueryParams<Partial<Record<keyof ProductListQuery, string>>>()
-
+    const [query, setQuery] = useState<>()
     const [_, categoryResponse] = useLoaderData() as [ProductListResponse, CategoryListResponse]
     const { data, refetch } = useQuery({
-        queryKey: [
-            'productList',
-            JSON.stringify(
-                omitBy(
-                    {
-                        ...queryParams,
-                        page: Number(queryParams?.page) || undefined
-                    },
-                    isUndefined
-                ) as ProductListQuery
-            )
-        ],
+        queryKey: ['productList', query],
         queryFn: () =>
             productFetching.productList(
                 omitBy(

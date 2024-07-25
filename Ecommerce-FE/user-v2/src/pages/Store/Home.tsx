@@ -8,7 +8,7 @@ type HomeProps = {
 const Home = ({ programs }: HomeProps) => {
     return (
         <div>
-            <FlashSale products={programs} isHiddenMore />
+            <FlashSale isHiddenMore />
         </div>
     )
 }

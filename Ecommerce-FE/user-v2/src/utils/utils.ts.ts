@@ -37,3 +37,18 @@ export const loadingEvent = {
 export const calcPercentRating = (total: number, value: number) => {
     return (value * 100) / total
 }
+
+export const sortObject = (obj: any) => {
+    let sorted: { [key: string]: any } = {}
+    let str: string[] = []
+    for (let key in obj) {
+        if (obj.hasOwnProperty(key)) {
+            str.push(encodeURIComponent(key))
+        }
+    }
+    str.sort()
+    for (let key = 0; key < str.length; key++) {
+        sorted[str[key]] = encodeURIComponent(obj[str[key]]).replace(/%20/g, '+')
+    }
+    return sorted
+}
