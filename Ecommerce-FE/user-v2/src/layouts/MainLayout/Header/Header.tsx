@@ -12,6 +12,7 @@ import { exitEvent } from 'src/constants/event'
 import { route } from 'src/constants/route'
 import { AppContext } from 'src/contexts/AppContext'
 import RegisterStore from 'src/pages/RegisterStore'
+import { ProductOrder, ProductOrderSale } from 'src/types/context.type'
 import { convertCurrentcy, removeSpecialCharacter } from 'src/utils/utils.ts'
 
 const Header = () => {
@@ -26,7 +27,7 @@ const Header = () => {
     const handleExit = (setIsOpen: React.Dispatch<React.SetStateAction<boolean>>) => () => {
         setIsOpen(false)
         setProfile(undefined)
-        setProducts({ length: 0, products: {} })
+        setProducts({ total: 0, stores: {} })
         window.dispatchEvent(new CustomEvent(exitEvent))
         setTimeout(() => navigate('/'), 500)
     }
@@ -60,24 +61,24 @@ const Header = () => {
                                 className={classNames(
                                     'absolute -top-2 -right-3 text-center inline-block p-1 rounded-full bg-red-500 text-[11px] text-white w-6',
                                     {
-                                        'px-1.5': products.length < 9
+                                        'px-1.5': products.total < 9
                                     }
                                 )}
                             >
-                                {ids?.all && ids.all.length > 9 ? '9+' : ids?.all.length || 0}
+                                {products.total > 9 ? '9+' : products.total}
                             </span>
                         </div>
                     }
                     referenceClassName='p-8 hover:bg-gray-200 rounded-8'
-                    data-length={products.length}
+                    data-length={products.total}
                     floatingClassName='p-[24px] bg-[#FFFFFF] rounded-12 border border-border/30 shadow-md w-96 space-y-4'
                     floatingChildren={({ setIsOpen }) => (
                         <>
                             <div className='flex justify-between items-baseline'>
                                 <h3 className='font-semibold text-lg'>Giỏ hàng</h3>
-                                <h4>{ids?.all.length} sản phẩm</h4>
+                                <h4>{products.total} sản phẩm</h4>
                             </div>
-                            {!ids?.all.length ? (
+                            {!products.total ? (
                                 <>
                                     <div className='w-1/2 mx-auto'>
                                         <img
@@ -97,9 +98,9 @@ const Header = () => {
                                 <>
                                     <SimpleBar style={{ maxHeight: 210, paddingRight: 20 }}>
                                         <ul className='space-y-3'>
-                                            {Object.values(products.products)
-                                                .reduce((acu, item) => {
-                                                    return [...acu, ...item]
+                                            {Object.values(products.stores)
+                                                .reduce<(ProductOrder | ProductOrderSale)[]>((acu, item) => {
+                                                    return [...acu, ...item.products.values()]
                                                 }, [])
                                                 .map((e) => (
                                                     <li key={e.productId} className='flex gap-x-3'>

@@ -1,16 +1,21 @@
+import { useMutation } from '@tanstack/react-query'
+import { cloneDeep } from 'lodash'
 import { ReactNode, createContext, useMemo, useRef, useState } from 'react'
+import { toast } from 'sonner'
+import { productFetching } from 'src/apis/product'
 import useSocket from 'src/hooks/useSocket'
 import { LoginResponse } from 'src/types/auth.type'
-import { AppContext as AppContextType, ProductContext, StatusOfOrder } from 'src/types/context.type'
-import { ls } from 'src/utils/localStorage'
+import { AppContext as AppContextType, Ids, ProductOrder, ProductOrderSale } from 'src/types/context.type'
+import { getProducts, ls } from 'src/utils/localStorage'
 import { v7 as uuidv7 } from 'uuid'
 
+let profileLS = ls.getItem('profile')
+let productLS = getProducts()
+
 const defaultValueContext: AppContextType = {
-    profile: ls.getItem('profile') ? (JSON.parse(ls.getItem('profile') as string) as LoginResponse) : undefined,
+    profile: (profileLS as LoginResponse) || undefined,
     setProfile: () => {},
-    products: ls.getItem('products')
-        ? (JSON.parse(ls.getItem('products') as string) as ProductContext)
-        : { length: 0, products: {} },
+    products: productLS,
     setProducts: () => {},
     previousPage: '/',
     setPreviousPage: () => {},
@@ -19,7 +24,7 @@ const defaultValueContext: AppContextType = {
     actionId: '',
     socket: undefined,
     setToastId: () => null,
-    setStatusOfOrder: () => null
+    addToCart: () => null
 }
 
 export const AppContext = createContext<AppContextType>(defaultValueContext)
@@ -31,65 +36,79 @@ const ContextWrap = ({ children }: { children: ReactNode }) => {
     const { current: actionId } = useRef<string>(uuidv7())
     const toastIdRef = useRef<string | number>()
     const { isCanOrder, socket } = useSocket({ actionId })
-    const [statusOfOrder, setStatusOfOrder] = useState<StatusOfOrder | undefined>(undefined)
+
+    const { mutate: createViewAddToCart } = useMutation({
+        mutationFn: productFetching.createViewAddToCart
+    })
 
     const setToastId = (id: string | number) => {
         toastIdRef.current = id
     }
 
     const ids = useMemo(() => {
-        if (!products.products || !Object.keys(products.products).length) {
+        if (!products.total) {
             return undefined
         }
-
-        const ids: {
-            storeIds: string[]
-            storeCheckedIds: string[]
-            all: string[]
-            checked: string[]
-        } = Object.keys(products.products).reduce(
-            (
-                acum: {
-                    storeIds: string[]
-                    storeCheckedIds: string[]
-                    all: string[]
-                    checked: string[]
-                },
-                storeId
-            ) => {
-                const tmp: {
-                    checked: string[]
-                    storeChecked: string[]
-                    all: string[]
-                } = {
-                    checked: [],
-                    storeChecked: [],
-                    all: []
-                }
-
-                products.products[storeId].forEach((product) => {
-                    if (product.checked) {
-                        tmp.checked.push(product.productId)
+        const ids = Object.keys(products.stores).reduce<Ids>(
+            (acum, storeId) => {
+                let store = products.stores[storeId]
+                let product_in_store = store.products
+                acum.all_storeIds.push(storeId)
+                product_in_store.forEach((product) => {
+                    if (product.isChecked) {
+                        acum.checked_productIds.push(product.productId)
                     }
-                    tmp.all.push(product.productId)
+                    acum.all_productIds.push(product.productId)
                 })
-
-                if (tmp.checked.length) {
-                    tmp.storeChecked.push(storeId)
-                }
-
-                return {
-                    storeIds: [...acum.storeIds, storeId],
-                    storeCheckedIds: [...acum.storeCheckedIds, ...tmp.storeChecked],
-                    all: [...acum.all, ...tmp.all],
-                    checked: [...acum.checked, ...tmp.checked]
-                }
+                return { ...acum }
             },
-            { storeIds: [], storeCheckedIds: [], all: [], checked: [] }
+            {
+                all_productIds: [],
+                all_storeIds: [],
+                checked_productIds: [],
+                checked_storeIds: []
+            }
         )
-
+        ids.checked_storeIds = Object.keys(products.stores).filter((storeId) => products.stores[storeId].checked)
         return ids
     }, [products])
+
+    const addToCart = (storeId: string, store_name: string, payload: ProductOrder | ProductOrderSale) => {
+        setProducts((pre) => {
+            let { productId, isChecked, buy } = payload
+            let stores = pre.stores
+            let storeExist = stores?.[storeId]
+            if (!storeExist) {
+                let map = new Map<string, ProductOrder>()
+                map.set(productId, payload)
+                pre.total += 1
+                stores = {
+                    ...stores,
+                    [storeId]: {
+                        store_name,
+                        checked: isChecked ? 1 : 0,
+                        products: map
+                    }
+                }
+                return cloneDeep({ ...pre, stores })
+            } else {
+                if (isChecked) {
+                    storeExist.checked += 1
+                }
+                let productMap = storeExist.products.get(productId)
+                if (!productMap) {
+                    pre.total += 1
+                    storeExist.products.set(productId, payload)
+                } else {
+                    storeExist.products.set(productId, { ...productMap, ...payload, buy: productMap.buy + buy })
+                }
+                storeExist.store_name = store_name
+                return cloneDeep({ ...pre, stores: { ...stores, [storeId]: storeExist } })
+            }
+        })
+        toast.info('Thêm sản phẩm thành công')
+        createViewAddToCart({ productId: payload.productId, quantity: payload.buy })
+    }
 
     return (
         <AppContext.Provider
@@ -100,14 +119,13 @@ const ContextWrap = ({ children }: { children: ReactNode }) => {
                 setProducts,
                 previousPage,
                 setPreviousPage,
-                ids,
                 isCanOrder,
                 actionId,
                 socket,
                 toastIdRef: toastIdRef.current,
                 setToastId,
-                setStatusOfOrder,
-                statusOfOrder
+                addToCart,
+                ids
             }}
         >
             {children}

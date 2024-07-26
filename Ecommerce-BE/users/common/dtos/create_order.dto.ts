@@ -29,9 +29,13 @@ class ProductOrder {
     @IsNotEmpty()
     quantity: number
 
-    @IsBoolean()
+    @IsString()
     @IsOptional()
-    isSale?: boolean
+    salePromotionId?: string
+
+    @IsString()
+    @IsOptional()
+    productPromotionId?: string
 }
 
 export class OrderDetail {
@@ -39,9 +43,10 @@ export class OrderDetail {
     @IsNotEmpty()
     storeId: string
 
-    @IsString()
+    @IsArray()
+    @IsString({ each: true })
     @IsOptional()
-    voucherId: string
+    voucherIds: string[]
 
     @IsString()
     @IsOptional()

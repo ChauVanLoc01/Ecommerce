@@ -88,7 +88,7 @@ const RegisterStore = () => {
 
     return (
         <>
-            {!profile?.user.storeRoleId ? (
+            {!profile?.user?.storeRoleId ? (
                 <Dialog.Root open={open} onOpenChange={setOpen}>
                     <Dialog.Trigger>
                         <Button variant='outline' color='red'>

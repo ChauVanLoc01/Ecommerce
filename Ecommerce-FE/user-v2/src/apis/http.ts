@@ -7,9 +7,7 @@ import { ls } from 'src/utils/localStorage'
 
 class Http {
     private instance: AxiosInstance
-    private access_token = ls.getItem('profile')
-        ? (JSON.parse(ls.getItem('profile') as string) as LoginResponse).access_token
-        : undefined
+    private access_token = ls.getItem('profile') ? (ls.getItem('profile') as LoginResponse).access_token : undefined
     constructor() {
         this.instance = axios.create({
             baseURL: import.meta.env.VITE_ENDPOINT,

@@ -9,7 +9,7 @@ export type OrderDelivery = {
 export type OrderBody = {
     orders: {
         storeId: string
-        voucherId?: string
+        voucherId?: string[]
         total: number
         discount: number
         pay: number
@@ -17,6 +17,8 @@ export type OrderBody = {
             productId: string
             priceAfter: number
             quantity: number
+            salePromotionId?: string
+            productPromotionId?: string
         }[]
     }[]
     globalVoucherId?: string

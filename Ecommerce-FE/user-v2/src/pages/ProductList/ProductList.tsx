@@ -2,7 +2,7 @@ import loadable from '@loadable/component'
 import { motion } from 'framer-motion'
 
 import { ChevronLeftIcon, ChevronRightIcon } from '@radix-ui/react-icons'
-import { Box, Flex, IconButton, Select, Text } from '@radix-ui/themes'
+import { Box, Flex, Grid, IconButton, Select, Skeleton, Text } from '@radix-ui/themes'
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { useLoaderData } from 'react-router-dom'
@@ -158,9 +158,25 @@ const ProductList = () => {
                         <div className='h-4 w-full z-50 bg-[#F8F9FA]' />
                     </div>
                     <div className='space-y-8'>
-                        <div className='grid grid-cols-3 gap-3'>
-                            {productList?.data.map((product) => <ProductCard key={product.id} product={product} />)}
-                        </div>
+                        {productList ? (
+                            <div className='grid grid-cols-3 gap-3'>
+                                {productList?.data.map((product) => (
+                                    <ProductCard key={`skeleton_product_list_${product.id}`} product={product} />
+                                ))}
+                            </div>
+                        ) : (
+                            <Grid columns={'3'} gap={'5'}>
+                                {Array(15)
+                                    .fill(0)
+                                    .map((_, idx) => (
+                                        <Skeleton
+                                            key={`skeleton_product_list_${idx}`}
+                                            height={'350px'}
+                                            className='rounded-12'
+                                        />
+                                    ))}
+                            </Grid>
+                        )}
                     </div>
                 </section>
             </div>

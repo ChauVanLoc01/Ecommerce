@@ -6,17 +6,19 @@ import 'react-vertical-timeline-component/style.min.css'
 import SimpleBar from 'simplebar-react'
 import { endLoadingLoader, exitEvent, startLoadingLoader } from 'src/constants/event'
 import { AppContext } from 'src/contexts/AppContext'
-import { ls } from 'src/utils/localStorage'
+import { ls, setProduct } from 'src/utils/localStorage'
 
 const Header = loadable(() => import('./Header'))
 
 const MainLayout = () => {
-    const { setProfile, profile, products } = useContext(AppContext)
+    const { setProfile, setProducts, profile, products } = useContext(AppContext)
     const [loadingLoader, setLoadingLoader] = useState<boolean>(false)
 
     window.addEventListener(exitEvent, () => {
         setProfile(undefined)
+        setProducts({ total: 0, stores: {} })
         ls.deleteItem('profile')
+        ls.deleteItem('products')
     })
 
     window.addEventListener(startLoadingLoader, () => setLoadingLoader(true))
@@ -24,10 +26,10 @@ const MainLayout = () => {
 
     useBeforeUnload(() => {
         if (profile) {
-            ls.setItem('profile', JSON.stringify(profile))
+            ls.setItem('profile', profile)
         }
         if (products) {
-            ls.setItem('products', JSON.stringify(products))
+            setProduct(products)
         }
     })
 

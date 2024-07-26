@@ -38,6 +38,7 @@ const Filter = ({ data, handleCategory, handleClear, category }: FilterProps) =>
                         >
                             {data.map((category) => (
                                 <RadioGroup.Item
+                                    key={`filter_${category.name}`}
                                     value={category.shortname}
                                     id={category.shortname}
                                     className='space-x-2 line-clamp-1'

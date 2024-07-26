@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { authFetching } from 'src/apis/authentication'
 
 import { SubmitHandler, useForm } from 'react-hook-form'
@@ -20,9 +20,7 @@ import { Reject } from 'src/types/return.type'
 import { login_schema } from 'src/utils/auth.schema'
 
 const Login = () => {
-    const { setProfile, profile } = useContext(AppContext)
-    const navigate = useNavigate()
-    const location = useLocation()
+    const { setProfile } = useContext(AppContext)
     const redirectRef = useRef<any>(undefined)
     const {
         register,
@@ -46,8 +44,8 @@ const Login = () => {
                 action: {
                     label: 'Trang chủ',
                     onClick: () => {
-                        setProfile(result.data.result)
                         clearTimeout(redirectRef.current)
+                        setProfile(result.data.result)
                     }
                 },
                 icon: (

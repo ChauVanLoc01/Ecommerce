@@ -8,11 +8,15 @@ import { Link } from 'react-router-dom'
 import { sale_api } from 'src/apis/sale_promotion.api'
 import InputNumber from 'src/components/InputNumber'
 import Countdown from 'src/pages/ProductList/FlashSale/Countdown'
-import { ProductContextExtends, SaleInProduct } from 'src/types/context.type'
+import { ProductOrder, ProductOrderSale } from 'src/types/context.type'
 import { convertCurrentcy, removeSpecialCharacter } from 'src/utils/utils.ts'
 
+const isSale = (product: ProductOrder | ProductOrderSale): product is ProductOrderSale => {
+    return 'salePromotionId' in product
+}
+
 type ProductInCartType = {
-    product: ProductContextExtends
+    product: ProductOrder | ProductOrderSale
     handleChecked: (productId: string, checked: boolean) => () => void
     handleChangeQuantity: (productId: string, buy: number) => void
     handleDelete: (productId: string) => () => void
@@ -27,16 +31,9 @@ const ProductIncart = ({ product, handleChecked, handleChangeQuantity, handleDel
         select: (data) => data.data.result.salePromotion.id
     })
 
-    const isSale = (
-        product: ProductContextExtends
-    ): product is Omit<ProductContextExtends, 'sale'> & { sale: SaleInProduct } => {
-        return !!product?.sale && product?.sale?.salePromotionId === saleId
-    }
-
     useEffect(() => {
         let changeQuantityDebounce = debounce(() => handleChangeQuantity(product.productId, quantity), 2000)
         changeQuantityDebounce()
-
         return () => {
             changeQuantityDebounce.cancel()
         }
@@ -48,8 +45,8 @@ const ProductIncart = ({ product, handleChecked, handleChangeQuantity, handleDel
             className='data-[exist=false]:bg-gray-100 px-24 pt-24 [&:last-child]:pb-24 space-x-5 flex items-center max-h-[130px]'
         >
             <Checkbox
-                checked={product.checked}
-                onCheckedChange={handleChecked(product.productId, !product.checked)}
+                checked={product.isChecked}
+                onCheckedChange={handleChecked(product.productId, !product.isChecked)}
                 id={product.productId}
                 disabled={!product.isExist}
             />
@@ -86,11 +83,11 @@ const ProductIncart = ({ product, handleChecked, handleChangeQuantity, handleDel
                     <h3 className='font-semibold'>{convertCurrentcy(product.priceAfter)}</h3>
                 )}
                 <InputNumber
-                    quantity={isSale(product) ? product.sale.quantity - product.sale.bought : quantity}
+                    quantity={isSale(product) ? product.product_sale_quantity - product.buy : quantity}
                     setQuantity={setQuantity}
                     currentQuantity={
                         isSale(product)
-                            ? Math.min(product.sale.quantity - product.sale.bought, product.currentQuantity)
+                            ? Math.min(product.product_sale_quantity, product.currentQuantity)
                             : product.currentQuantity || 0
                     }
                 />

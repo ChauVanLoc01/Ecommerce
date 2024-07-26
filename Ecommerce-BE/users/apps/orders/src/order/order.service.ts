@@ -285,22 +285,29 @@ export class OrderService {
         console.log(':::::::::Kiểm tra cache:::::::::', format(new Date(), 'hh:mm:ss:SSS dd/MM'))
         try {
             const result = await Promise.all(
-                orders.map(async ({ voucherId, productOrders }) => {
-                    if (voucherId) {
-                        let hashValue = hash('voucher', voucherId)
-                        let quantityVoucherCache = await this.cacheManager.get<string>(hashValue)
-                        if (quantityVoucherCache) {
-                            let { quantity } = JSON.parse(quantityVoucherCache) as {
-                                quantity: number
-                            }
-                            if (quantity == 0) {
-                                throw new Error('Mã giảm giá đã hết lượt sử dụng')
-                            }
-                        }
+                orders.map(async ({ voucherIds, productOrders }) => {
+                    if (voucherIds || (voucherIds || []).length) {
+                        await Promise.all(
+                            voucherIds.map(async (voucherId) => {
+                                let hashValue = hash('voucher', voucherId)
+                                let quantityVoucherCache =
+                                    await this.cacheManager.get<string>(hashValue)
+                                if (quantityVoucherCache) {
+                                    let { quantity } = JSON.parse(quantityVoucherCache) as {
+                                        quantity: number
+                                    }
+                                    if (quantity == 0) {
+                                        throw new Error('Mã giảm giá đã hết lượt sử dụng')
+                                    }
+                                }
+                                return true
+                            })
+                        )
                     }
                     await Promise.all(
-                        productOrders.map(async ({ productId, quantity }) => {
-                            let hashProductId = hash('product', productId)
+                        productOrders.map(async ({ productId, quantity, productPromotionId }) => {
+                            let id_tmp = productPromotionId || productId
+                            let hashProductId = hash('product', id_tmp)
                             let fromCache = await this.cacheManager.get<string>(hashProductId)
                             if (fromCache) {
                                 let { quantity: quantityFromCache } = JSON.parse(fromCache) as {
@@ -360,7 +367,7 @@ export class OrderService {
                     let produtOrderCreate: Prisma.OrderCreateInput['ProductOrder'] = {
                         createMany: {
                             data: order.productOrders.map(
-                                ({ productId, quantity, isSale, priceAfter, priceBefore }) => {
+                                ({ productId, quantity, priceAfter, priceBefore }) => {
                                     tmp.products.push({
                                         buy: quantity,
                                         remaining_quantity: 0,
@@ -382,7 +389,7 @@ export class OrderService {
                         }
                     }
 
-                    let voucherIds = [order.voucherId, globalVoucherId].filter(Boolean)
+                    let voucherIds = [...(order.voucherIds || []), globalVoucherId].filter(Boolean)
                     let createVoucherOrders: Prisma.OrderCreateInput['OrderVoucher'] = undefined
                     if (voucherIds.length) {
                         tmp.vouchers.push(

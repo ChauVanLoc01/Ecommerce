@@ -6654,6 +6654,11 @@ little-state-machine@^4.1.0:
   resolved "https://registry.yarnpkg.com/little-state-machine/-/little-state-machine-4.8.0.tgz#4853d01f71dc7e15fec00193692f845020a57686"
   integrity sha512-xfi5+iDxTLhu0hbnNubUs+qoQQqxhtEZeObP5ELjUlHnl74bbasY7mOonsGQrAouyrbag3ebNLSse5xX1T7buQ==
 
+localstorage-slim@^2.7.1:
+  version "2.7.1"
+  resolved "https://registry.yarnpkg.com/localstorage-slim/-/localstorage-slim-2.7.1.tgz#bfafb7dfb031f5352299947a13eef926f79c9482"
+  integrity sha512-ExqYZl+pRpxPIcx0n0541T5CmSdRulHJCPDLrxIe23d4ehbqERDNJHcwsAVrVP09CZ/0j3PU92sI8a3KaGqXPQ==
+
 locate-path@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/locate-path/-/locate-path-2.0.0.tgz#2b568b265eec944c6d9c0de9c3dbbbca0354cd8e"

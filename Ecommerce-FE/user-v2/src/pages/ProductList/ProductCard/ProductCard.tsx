@@ -1,17 +1,13 @@
 import { Avatar, Text } from '@radix-ui/themes'
-import { useMutation } from '@tanstack/react-query'
 import classNames from 'classnames'
 import { motion } from 'framer-motion'
 import { useContext } from 'react'
 import { Link } from 'react-router-dom'
-import { toast } from 'sonner'
-import { productFetching } from 'src/apis/product'
 
 import Button from 'src/components/Button'
 import Image from 'src/components/Image'
 import { AppContext } from 'src/contexts/AppContext'
 import { Product } from 'src/types/product.type'
-import { ls } from 'src/utils/localStorage'
 import { cn, convertCurrentcy, removeSpecialCharacter } from 'src/utils/utils.ts'
 
 type ProductCardProps = {
@@ -20,69 +16,22 @@ type ProductCardProps = {
 }
 
 const ProductCard = ({ product, isHiddenStore = false }: ProductCardProps) => {
-    const { name, image, priceAfter, priceBefore, id } = product
-
-    const { setProducts, products } = useContext(AppContext)
-
-    const { mutate: createViewAddToCart } = useMutation({
-        mutationFn: productFetching.createViewAddToCart
-    })
+    const { name, image, priceAfter, priceBefore, id, storeId, category, currentQuantity } = product
+    const { addToCart } = useContext(AppContext)
 
     const handleAddToCart = () => {
-        var isNewProductInStoreExist = true
-        var productsTmp = products
-        var storeExist = productsTmp.products[product.storeId]
-        if (!storeExist) {
-            productsTmp = {
-                length: productsTmp.length + 1,
-                products: {
-                    ...productsTmp.products,
-                    [product.storeId]: [
-                        {
-                            productId: product.id,
-                            buy: 1,
-                            name: product.name,
-                            image: product.image,
-                            priceAfter: product.priceAfter,
-                            checked: false
-                        }
-                    ]
-                }
-            }
-        } else {
-            storeExist = storeExist.map((productInLS) => {
-                if (product.id === productInLS.productId) {
-                    isNewProductInStoreExist = false
-                    return {
-                        ...productInLS,
-                        buy: productInLS.buy + 1
-                    }
-                }
-                return productInLS
-            })
-            if (isNewProductInStoreExist)
-                storeExist.push({
-                    buy: 1,
-                    productId: product.id,
-                    image: product.image,
-                    name: product.name,
-                    priceAfter: product.priceAfter,
-                    checked: false
-                })
-            productsTmp = {
-                ...productsTmp,
-                length: isNewProductInStoreExist ? productsTmp.length + 1 : productsTmp.length,
-                products: {
-                    ...productsTmp.products,
-                    [product.storeId]: storeExist
-                }
-            }
-        }
-        ls.deleteItem('products')
-        ls.setItem('products', JSON.stringify(productsTmp))
-        setProducts(productsTmp)
-        toast.info('Thêm sản phẩm thành công')
-        createViewAddToCart({ productId: id, quantity: 1 })
+        addToCart(storeId, product?.store?.name, {
+            productId: id,
+            name,
+            image,
+            currentQuantity,
+            priceAfter,
+            buy: 1,
+            isChecked: false,
+            isExist: true,
+            storeId,
+            category
+        })
     }
 
     return (

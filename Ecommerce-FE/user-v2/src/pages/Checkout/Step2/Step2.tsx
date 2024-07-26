@@ -18,8 +18,7 @@ const Step2 = ({ address, setAddress }: Step2Props) => {
         queryKey: ['delivery'],
         queryFn: profileFetching.getDeliveries,
         staleTime: Infinity,
-        gcTime: Infinity,
-        enabled: false
+        gcTime: Infinity
     })
 
     const handleAddressChange = (id: string) => {

@@ -2,98 +2,75 @@ import Button from 'src/components/Button'
 import InputNumber from 'src/components/InputNumber'
 
 import { Avatar, Flex, Text } from '@radix-ui/themes'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import classNames from 'classnames'
 import { motion } from 'framer-motion'
 import { useContext, useEffect, useState } from 'react'
 import { Link, useLoaderData, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { productFetching } from 'src/apis/product'
+import { sale_api } from 'src/apis/sale_promotion.api'
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from 'src/components/Shadcn/carousel'
 import { route } from 'src/constants/route'
 import { AppContext } from 'src/contexts/AppContext'
+import { ProductOrderSale } from 'src/types/context.type'
 import { ProductDetailResponse, ProductListResponse } from 'src/types/product.type'
 import { Store } from 'src/types/store.type'
-import { ls } from 'src/utils/localStorage'
 import { convertCurrentcy } from 'src/utils/utils.ts'
 import Countdown from '../ProductList/FlashSale/Countdown'
 import ProductRecomend from './ProductRecomend'
 import RatingList from './Rating/RatingList'
 
 const Product = () => {
-    const { setProducts, products, profile } = useContext(AppContext)
+    const { addToCart, profile } = useContext(AppContext)
     const [quantity, setQuantity] = useState<number>(1)
     const [productDetail, _, storeDetail] = useLoaderData() as [ProductDetailResponse, ProductListResponse, Store]
     const navigate = useNavigate()
+
+    const { data: sale } = useQuery({
+        queryKey: ['current-sale-promotion'],
+        queryFn: sale_api.current_sale_promotin,
+        staleTime: 1000 * 60 * 5,
+        select: (result) => {
+            let data = result.data.result
+            return {
+                salePromotionId: data.salePromotion.id,
+                product_sale_quantity: data.productPromotions.find(({ productId }) => productDetail.id === productId)
+                    ?.quantity
+            }
+        }
+    })
 
     const { mutate: createViewProduct } = useMutation({
         mutationFn: productFetching.createViewProduct
     })
 
-    const { mutate: createViewAddToCart } = useMutation({
-        mutationFn: productFetching.createViewAddToCart
-    })
-
-    const handleAddToCart = (checked: boolean) => () => {
+    const handleAddToCart = (isChecked: boolean) => () => {
         if (!profile) {
             toast.error('Cần đăng nhập trước khi thực hiện mua hàng')
         } else {
-            var isNewProductInStoreExist = true
-            var productsTmp = products
-            var storeExist = productsTmp.products[productDetail.storeId]
-            if (!storeExist) {
-                productsTmp = {
-                    length: productsTmp.length + 1,
-                    products: {
-                        ...productsTmp.products,
-                        [productDetail.storeId]: [
-                            {
-                                productId: productDetail.id,
-                                buy: quantity,
-                                name: productDetail.name,
-                                image: productDetail.image,
-                                priceAfter: productDetail.priceAfter,
-                                checked,
-                                isExist: false
-                            }
-                        ]
-                    }
-                }
-            } else {
-                storeExist = storeExist.map((productInLS) => {
-                    if (productDetail.id === productInLS.productId) {
-                        isNewProductInStoreExist = false
-                        return {
-                            ...productInLS,
-                            buy: productInLS.buy + quantity
-                        }
-                    }
-                    return productInLS
-                })
-                if (isNewProductInStoreExist)
-                    storeExist.push({
-                        buy: quantity,
-                        productId: productDetail.id,
-                        image: productDetail.image,
-                        name: productDetail.name,
-                        priceAfter: productDetail.priceAfter,
-                        checked,
-                        isExist: false
-                    })
-                productsTmp = {
-                    ...productsTmp,
-                    length: isNewProductInStoreExist ? productsTmp.length + 1 : productsTmp.length,
-                    products: {
-                        ...productsTmp.products,
-                        [productDetail.storeId]: storeExist
-                    }
-                }
+            const { name, image, category, priceAfter, id, storeId, currentQuantity } = productDetail
+            let payload = {
+                productId: id,
+                name,
+                image,
+                priceAfter,
+                buy: quantity,
+                currentQuantity,
+                isChecked,
+                isExist: true,
+                storeId,
+                category
             }
-            ls.deleteItem('products')
-            ls.setItem('products', JSON.stringify(productsTmp))
-            setProducts(productsTmp)
-            toast.info('Thêm sản phẩm thành công')
-            createViewAddToCart({ productId: productDetail.id, quantity })
+            if (sale?.salePromotionId && sale?.product_sale_quantity) {
+                payload = {
+                    ...payload,
+                    salePromotionId: sale?.salePromotionId,
+                    product_sale_quantity: sale?.product_sale_quantity
+                } as ProductOrderSale
+            }
+            addToCart(storeId, storeDetail.name, payload)
+            setQuantity(1)
         }
     }
 

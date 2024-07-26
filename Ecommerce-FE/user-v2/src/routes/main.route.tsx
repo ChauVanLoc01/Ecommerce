@@ -5,7 +5,6 @@ import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom'
 
 import { route } from 'src/constants/route'
 import { AppContext } from 'src/contexts/AppContext'
-import { checkoutLoader } from 'src/loaders/checkout.loader'
 import { deliveryLoader } from 'src/loaders/delivery.loader'
 import { flashSaleLoader } from 'src/loaders/flash_sale.loader'
 import { ordersLoader } from 'src/loaders/order.loader'
@@ -35,7 +34,7 @@ const MainLayout = loadable(() => import('src/layouts/MainLayout'))
 
 const RejectRoute = () => {
     const { profile } = useContext(AppContext)
-    return profile ? <Navigate to={document.referrer} /> : <Outlet />
+    return profile ? <Navigate to={route.root} /> : <Outlet />
 }
 
 export const queryClient = new QueryClient()
@@ -113,8 +112,7 @@ const routes = createBrowserRouter([
                     },
                     {
                         path: route.checkout,
-                        element: <Checkout />,
-                        loader: checkoutLoader
+                        element: <Checkout />
                     }
                 ]
             }

@@ -1,64 +1,67 @@
 import { Socket } from 'socket.io-client'
 import { LoginResponse } from './auth.type'
-import { Product } from './product.type'
 
-export type ProductContext = {
-    length: number
-    products: {
-        [storeId: string]: {
-            buy: number
-            productId: string
-            name: string
-            image: string
-            priceAfter: number
-            checked: boolean
-            isExist: boolean
-        }[]
-    }
-}
-
-export type SaleInProduct = {
-    quantity: number
-    bought: number
-    priceAfter: number
-    productId: string
+export type ProductOrderSale = ProductOrder & {
     salePromotionId: string
-    id: string
+    product_sale_quantity: number
 }
 
-export type ProductContextExtends = ProductContext['products'][string][0] & Product & { sale?: SaleInProduct }
-
-export type ProductConvert = {
-    [storeId: string]: {
-        [productId: string]: ProductContextExtends
-    }
+export type ProductOrder = {
+    productId: string
+    storeId: string
+    name: string
+    image: string
+    priceAfter: number
+    buy: number
+    currentQuantity: number
+    isChecked: boolean
+    isExist: boolean
+    category: string
 }
 
-export type StatusOfOrder = {
-    in_progressing: boolean
-    action: boolean
+export type ProductCartSavingToLS = {
+    total: number
+    stores: Record<
+        string,
+        {
+            store_name: string
+            checked: number
+            products: [string, ProductOrder | ProductOrderSale][]
+        }
+    >
+}
+
+export type ProductCart = {
+    total: number
+    stores: Record<
+        string,
+        {
+            store_name: string
+            checked: number
+            products: Map<string, ProductOrder | ProductOrderSale>
+        }
+    >
+}
+
+export type Ids = {
+    all_productIds: string[]
+    checked_productIds: string[]
+    all_storeIds: string[]
+    checked_storeIds: string[]
 }
 
 export type AppContext = {
     profile?: LoginResponse
     setProfile: React.Dispatch<React.SetStateAction<LoginResponse | undefined>>
-    products: ProductContext
-    setProducts: React.Dispatch<React.SetStateAction<ProductContext>>
+    products: ProductCart
+    setProducts: React.Dispatch<React.SetStateAction<ProductCart>>
     previousPage: string
     setPreviousPage: React.Dispatch<React.SetStateAction<string>>
-    ids:
-        | {
-              all: string[]
-              checked: string[]
-              storeIds: string[]
-              storeCheckedIds: string[]
-          }
-        | undefined
+    ids?: Ids
     isCanOrder: boolean
     actionId: string
     socket?: Socket<any, any>
     toastIdRef?: string | number
     setToastId: (id: string | number) => void
-    statusOfOrder?: StatusOfOrder
-    setStatusOfOrder: React.Dispatch<React.SetStateAction<StatusOfOrder | undefined>>
+    addToCart: (storeId: string, store_name: string, payload: ProductOrder) => void
 }

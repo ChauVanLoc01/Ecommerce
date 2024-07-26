@@ -1,48 +1,24 @@
-import { useMutation, useQueries, useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { add, endOfHour } from 'date-fns'
-import { sumBy } from 'lodash'
+import { cloneDeep, sumBy } from 'lodash'
 import { useContext, useEffect, useMemo, useState } from 'react'
-import { Socket } from 'socket.io-client'
 import { toast } from 'sonner'
 import { OrderFetching } from 'src/apis/order'
-import { productFetching } from 'src/apis/product'
 import { sale_api } from 'src/apis/sale_promotion.api'
-import { StoreFetching } from 'src/apis/store'
-import { VoucherFetching } from 'src/apis/voucher.api'
 import { channel, join_room, leave_room } from 'src/constants/event'
 import { AppContext } from 'src/contexts/AppContext'
-import { ProductContext, ProductConvert } from 'src/types/context.type'
 import { ProductSocket, SocketReturn, VoucherSocket } from 'src/types/socket.type'
-import { VoucherWithCondition } from 'src/types/voucher.type'
+import { Voucher, VoucherWithCondition } from 'src/types/voucher.type'
 
 type UseDataCheckoutProps = {
-    ids: {
-        all: string[]
-        checked: string[]
-        storeIds: string[]
-        storeCheckedIds: string[]
-    }
-    products: ProductContext
-    voucherIds:
-        | {
-              [storeId: string]: string
-          }
-        | undefined
     setStep: React.Dispatch<React.SetStateAction<number>>
-    setProducts: React.Dispatch<React.SetStateAction<ProductContext>>
-    socket: Socket<any, any> | undefined
 }
 
-const useDataCheckout = ({ ids, products, voucherIds, setStep, setProducts, socket }: UseDataCheckoutProps) => {
-    const { setToastId } = useContext(AppContext)
-    const [productSocket, setProductSocket] = useState<{
-        [storeId: string]: {
-            [productId: string]: {
-                quantity: number
-                priceAfter: number
-            }
-        }
-    }>({})
+const useDataCheckout = ({ setStep }: UseDataCheckoutProps) => {
+    const { setToastId, products, setProducts, ids, socket } = useContext(AppContext)
+    const [selectedVoucher, setSelectedVoucher] = useState<Record<string, VoucherWithCondition[]> | undefined>(
+        undefined
+    )
     const [voucherSocket, setVoucherSocket] = useState<{
         [voucherId: string]: number
     }>({})
@@ -53,35 +29,6 @@ const useDataCheckout = ({ ids, products, voucherIds, setStep, setProducts, sock
         select: (data) => data.data.result,
         staleTime:
             add(endOfHour(new Date()), { hours: 7 }).getMilliseconds() - add(new Date(), { hours: 7 }).getMilliseconds()
-    })
-
-    console.log('current_sale', current_sale_promotino)
-
-    const { data: refreshProducts, refetch: refetchProduct } = useQuery({
-        queryKey: ['refreshProduct', JSON.stringify(ids.all)],
-        queryFn: productFetching.refreshProduct({
-            productsId: ids.all,
-            saleId: current_sale_promotino?.salePromotion?.id
-        }),
-        refetchInterval: 1000 * 30,
-        select: (data) => data.data.result,
-        placeholderData: (old) => old
-    })
-
-    const { data: refreshStores } = useQuery({
-        queryKey: ['refreshStore', JSON.stringify(ids.storeIds)],
-        queryFn: () => StoreFetching.refreshStore(ids.storeIds),
-        refetchInterval: 1000 * 60,
-        select: (data) => data.data.result,
-        placeholderData: (old) => old
-    })
-
-    const storeVouchers = useQueries({
-        queries: ids.storeCheckedIds.map((storeId) => ({
-            queryKey: ['storeVoucher', storeId],
-            queryFn: () => VoucherFetching.getVoucherByStoreId(storeId),
-            refetchInterval: 1000 * 30
-        }))
     })
 
     const {
@@ -95,127 +42,12 @@ const useDataCheckout = ({ ids, products, voucherIds, setStep, setProducts, sock
                 duration: Infinity
             })
             setToastId(toastId)
-            if (productLatest) {
-                setProducts((pre) => {
-                    let tmp = pre.products
-                    let length = 0
-                    Object.keys(productLatest.checked).forEach((storeId) => {
-                        let productCheckedArr = tmp[storeId].filter(({ productId }) => {
-                            return !productLatest.checked?.[storeId]?.[productId]
-                        })
-                        if (productCheckedArr.length) {
-                            tmp = {
-                                ...tmp,
-                                [storeId]: productCheckedArr
-                            }
-                            length += productCheckedArr.length
-                        } else {
-                            delete tmp[storeId]
-                        }
-                    })
-                    return {
-                        length: pre.length - length,
-                        products: tmp
-                    }
-                })
-            }
+            // setProducts((pre) => clearCheckedProduct(pre))
             setTimeout(() => setStep(1), 1000)
         }
     })
 
-    const productLatest = useMemo(() => {
-        if (!refreshProducts || !ids) return undefined
-        return ids.storeIds.reduce(
-            (
-                acum: {
-                    checked: ProductConvert
-                    all: ProductConvert
-                },
-                storeId
-            ) => {
-                let tmp = products.products[storeId].reduce<{
-                    checked: ProductConvert[string]
-                    all: ProductConvert[string]
-                }>(
-                    (subAcum, product) => {
-                        return {
-                            ...subAcum,
-                            [product.checked ? 'checked' : 'all']: {
-                                ...subAcum[product.checked ? 'checked' : 'all'],
-                                [product.productId]: {
-                                    ...product,
-                                    ...refreshProducts?.[product.productId],
-                                    currentQuantity:
-                                        productSocket?.[storeId]?.[product.productId]?.quantity ||
-                                        refreshProducts?.[product.productId]?.currentQuantity ||
-                                        0,
-                                    priceAfter:
-                                        productSocket?.[storeId]?.[product.productId]?.priceAfter ||
-                                        refreshProducts?.[product.productId]?.priceAfter ||
-                                        0,
-                                    buy: refreshProducts?.[product.productId]
-                                        ? product.buy > refreshProducts[product.productId].currentQuantity
-                                            ? refreshProducts[product.productId].currentQuantity
-                                            : product.buy
-                                        : 0,
-                                    isExist: !!refreshProducts?.[product.productId]
-                                }
-                            }
-                        }
-                    },
-                    { checked: {}, all: {} }
-                )
-
-                if (!Object.keys(tmp.checked).length) {
-                    return {
-                        ...acum,
-                        all: { ...acum.all, [storeId]: { ...tmp.all } }
-                    }
-                }
-
-                return {
-                    checked: { ...acum.checked, [storeId]: { ...tmp.checked } },
-                    all: { ...acum.all, [storeId]: { ...tmp.all, ...tmp.checked } }
-                }
-            },
-            { checked: {}, all: {} }
-        )
-    }, [refreshProducts, products, productSocket])
-
-    const voucherLatest = useMemo(() => {
-        if (!storeVouchers.length) return undefined
-
-        const voucher = storeVouchers.reduce(
-            (acum: { [storeId: string]: { [voucherId: string]: VoucherWithCondition } }, voucher, idx) => {
-                let tmp = voucher?.data?.data?.result
-                if (!voucher?.data?.data?.result.length || !tmp?.length) {
-                    return { ...acum }
-                }
-
-                return {
-                    ...acum,
-                    [tmp[0].storeId]: tmp.reduce<{ [voucherId: string]: VoucherWithCondition }>((subAcum, e) => {
-                        return {
-                            ...subAcum,
-                            [e.id]: {
-                                ...e,
-                                currentQuantity: voucherSocket?.[e.id] || e.currentQuantity
-                            }
-                        }
-                    }, {})
-                }
-            },
-            {}
-        )
-
-        if (!Object.keys(voucher).length) return undefined
-
-        return voucher
-    }, [storeVouchers, voucherSocket])
-
-    const priceLatest = useMemo(() => {
-        if (!productLatest) return undefined
-
+    const summary = useMemo(() => {
         var tmp = {
             total: 0,
             discount: 0,
@@ -230,108 +62,112 @@ const useDataCheckout = ({ ids, products, voucherIds, setStep, setProducts, sock
             }
         } = {}
 
-        if (!voucherLatest || !voucherIds) {
-            Object.keys(productLatest?.checked).forEach((storeId) => {
-                let total = sumBy(Object.values(productLatest.checked[storeId]), (o) => o.priceAfter * o.buy)
-                summary = {
-                    ...summary,
-                    [storeId]: {
-                        total,
-                        discount: 0,
-                        pay: total
-                    }
+        Object.keys(products.stores).forEach((storeId) => {
+            let cart = products.stores[storeId]
+            if (!cart.checked) return
+            let productsInCart = cart.products
+            let total = sumBy([...productsInCart], (item) => {
+                let { isChecked, priceAfter, buy } = item[1]
+                if (isChecked) {
+                    return priceAfter * buy
                 }
-                tmp.pay += summary[storeId].pay
-                tmp.total += summary[storeId].total
+                return 0
             })
-
-            return {
-                summary,
-                allOrder: tmp
+            summary = {
+                ...summary,
+                [storeId]: {
+                    total,
+                    discount: 0,
+                    pay: total
+                }
             }
-        }
-
-        Object.keys(voucherIds).forEach((storeId) => {
-            let voucher = voucherLatest[storeId][voucherIds[storeId]]
-            if (!voucher) return
-            let categoryCondition = voucher.CategoryConditionVoucher
-            let priceCondition = voucher.PriceConditionVoucher
-            let remainingMaximum = voucher.maximum
-            let total = 0
-
-            Object.values(productLatest.checked[storeId]).forEach((product) => {
-                let isOk = true
-                total += product.priceAfter * product.buy
-                if (categoryCondition && product.category !== categoryCondition.categoryShortName) {
-                    isOk = false
-                }
-                if (priceCondition && priceCondition.priceMin && product.priceAfter < priceCondition.priceMin) {
-                    isOk = false
-                }
-                if (isOk && remainingMaximum > 0) {
-                    let productDiscount = (product.priceAfter * product.buy * voucher.percent) / 100
-                    if (productDiscount <= remainingMaximum) {
-                        remainingMaximum -= productDiscount
-                    } else {
-                        remainingMaximum = 0
-                    }
-                }
-            })
-            summary[storeId] = {
-                discount: voucher.maximum - remainingMaximum,
-                pay: total - voucher.maximum,
-                total
-            }
-            tmp.discount += summary[storeId].discount
+            tmp.pay += summary[storeId].pay
             tmp.total += summary[storeId].total
-            tmp.pay += tmp.total - tmp.discount
+        })
+
+        ids?.checked_storeIds.forEach((storeId) => {
+            let vouchers = selectedVoucher?.[storeId] || []
+            vouchers?.forEach((voucher) => {
+                let categoryCondition = voucher.CategoryConditionVoucher
+                let priceCondition = voucher.PriceConditionVoucher
+                let remainingMaximum = voucher.maximum
+                let total = 0
+
+                products.stores[storeId].products.forEach((product) => {
+                    let isOk = true
+                    total += product.priceAfter * product.buy
+                    if (categoryCondition && product.category !== categoryCondition.categoryShortName) {
+                        isOk = false
+                    }
+                    if (priceCondition && priceCondition.priceMin && product.priceAfter < priceCondition.priceMin) {
+                        isOk = false
+                    }
+                    if (isOk && remainingMaximum > 0) {
+                        let productDiscount = (product.priceAfter * product.buy * voucher.percent) / 100
+                        if (productDiscount <= remainingMaximum) {
+                            remainingMaximum -= productDiscount
+                        } else {
+                            remainingMaximum = 0
+                        }
+                    }
+                })
+                let discount = voucher.maximum - remainingMaximum
+                summary[storeId] = {
+                    discount,
+                    pay: total - discount,
+                    total
+                }
+                tmp.discount += discount
+                tmp.pay += summary[storeId].total - tmp.discount
+            })
         }, {})
 
         return {
-            summary,
-            allOrder: tmp
+            overview: tmp,
+            detail: summary
         }
-    }, [productLatest, voucherIds, voucherLatest])
+    }, [products, selectedVoucher])
+
+    console.log('summary', summary)
 
     useEffect(() => {
-        if (ids.checked && socket) {
+        if (ids?.checked_productIds.length && socket) {
             socket.on(channel.product, (res: SocketReturn<ProductSocket>) => {
                 if (res.action) {
-                    let { productId, storeId, ...rest } = res.result
-                    setProductSocket((pre) => ({
-                        ...pre,
-                        [storeId]: {
-                            ...pre[storeId],
-                            [productId]: { ...rest }
+                    let { productId, storeId, priceAfter, quantity } = res.result
+                    setProducts((pre) => {
+                        let products = pre.stores[storeId].products
+                        let productInMap = products.get(productId)
+                        if (productInMap) {
+                            products.set(productId, {
+                                ...productInMap,
+                                currentQuantity: quantity,
+                                priceAfter
+                            })
                         }
-                    }))
+                        return cloneDeep(pre)
+                    })
                 }
             })
-            Object.keys(products.products).forEach((storeId) => {
-                Object.values(products.products[storeId]).forEach(({ productId, checked }) => {
-                    if (checked) {
-                        socket.emit(join_room, { type: channel.product, id: productId })
-                    }
-                })
+            ids.checked_productIds.forEach((id) => {
+                socket.emit(join_room, { type: channel.product, id })
             })
         }
 
         return () => {
             if (socket) {
                 socket.off(channel.product)
-                Object.keys(products.products).forEach((storeId) => {
-                    Object.values(products.products[storeId]).forEach(({ productId, checked }) => {
-                        if (checked) {
-                            socket.emit(leave_room, { type: channel.product, id: productId })
-                        }
+                if (ids?.checked_productIds.length) {
+                    ids.checked_productIds.forEach((id) => {
+                        socket.emit(leave_room, { type: channel.product, id })
                     })
-                })
+                }
             }
         }
-    }, [ids.checked])
+    }, [ids])
 
     useEffect(() => {
-        if (socket && voucherIds && Object.values(voucherIds).length) {
+        if (socket && selectedVoucher && Object.values(selectedVoucher).length) {
             socket.on(channel.voucher, (res: SocketReturn<VoucherSocket>) => {
                 if (res.action) {
                     let { voucherId, quantity } = res.result
@@ -341,26 +177,20 @@ const useDataCheckout = ({ ids, products, voucherIds, setStep, setProducts, sock
                     }))
                 }
             })
-            Object.values(voucherIds).forEach((id) => {
+            Object.values(selectedVoucher).forEach((id) => {
                 socket.emit(join_room, { type: channel.voucher, id })
             })
         }
 
         return () => {
-            if (socket && voucherIds) {
+            if (socket && selectedVoucher) {
                 socket.off(channel.voucher)
-                Object.values(voucherIds).forEach((id) => {
+                Object.values(selectedVoucher).forEach((id) => {
                     socket.emit(leave_room, { type: channel.voucher, id })
                 })
             }
         }
-    }, [voucherIds])
-
-    useEffect(() => {
-        if (current_sale_promotino) {
-            refetchProduct()
-        }
-    }, [current_sale_promotino])
+    }, [selectedVoucher])
 
     return {
         orderFn: {
@@ -368,14 +198,9 @@ const useDataCheckout = ({ ids, products, voucherIds, setStep, setProducts, sock
             orderDataMutate,
             isPending
         },
-        dataFromApi: {
-            refreshStores
-        },
-        transform: {
-            productLatest,
-            voucherLatest,
-            priceLatest
-        }
+        summary,
+        selectedVoucher,
+        setSelectedVoucher
     }
 }
 
