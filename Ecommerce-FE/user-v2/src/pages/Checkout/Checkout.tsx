@@ -43,6 +43,7 @@ const Checkout = () => {
     const [orderSuccess, setOrderSuccess] = useState<boolean>(false)
     const [payment, setPayment] = useState<Payment>('VNBANK')
     const [searchParams, _] = useSearchParams()
+    const navigate = useNavigate()
     let vnp_Params = Object.fromEntries(searchParams)
     const isOpen = vnp_Params?.['status']
 
@@ -102,6 +103,10 @@ const Checkout = () => {
     useEffect(() => {
         if (isOpen) {
             toast.success('Thanh toán thành công')
+            navigate({
+                pathname: window.location.pathname,
+                search: ''
+            })
             setTimeout(() => {
                 handleOrder()
             }, 800)
