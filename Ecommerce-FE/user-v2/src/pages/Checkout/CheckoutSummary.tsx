@@ -8,6 +8,7 @@ import { Payment } from 'src/types/payment.type'
 import { Voucher as VoucherType } from 'src/types/voucher.type'
 import { convertCurrentcy } from 'src/utils/utils.ts'
 import Voucher from './Voucher'
+import { ls } from 'src/utils/localStorage'
 
 type CheckoutSummaryProps = {
     isPending: boolean
@@ -55,7 +56,20 @@ const CheckoutSummary = ({
         }
     })
 
-    const hanldeTransaction = () => createTransaction()
+    const hanldeTransaction = () => {
+        let tmp: { [storeId: string]: string[] } = {}
+        Object.keys(selectedVoucher || {}).map((storeId) => {
+            tmp = {
+                ...tmp,
+                [storeId]: []
+            }
+            selectedVoucher?.[storeId]?.forEach((voucher) => {
+                tmp[storeId].push(voucher.id)
+            })
+        })
+        ls.setItem('vouchers', tmp)
+        createTransaction()
+    }
 
     return (
         <section className='basis-1/3 space-y-4'>

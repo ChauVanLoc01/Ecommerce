@@ -64,7 +64,7 @@ export type SalePromotionDetail = {
 export type SalePromotionDetailList = Return<Record<string, SalePromotionDetail[]> | null>
 
 export type ProductSaleDetail = {
-    currentQuantiy: number
+    currentQuantity: number
     priceAfter: number
     id: string
 }

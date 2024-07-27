@@ -9,7 +9,7 @@ export type OrderDelivery = {
 export type OrderBody = {
     orders: {
         storeId: string
-        voucherId?: string[]
+        voucherIds?: string[]
         total: number
         discount: number
         pay: number

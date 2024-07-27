@@ -58,4 +58,6 @@ export type Update_Product_WhenCreatingOrderPayload = {
     quantity: number
     priceAfter: number
     currentSaleId?: string
+    status?: string
+    name?: string
 }

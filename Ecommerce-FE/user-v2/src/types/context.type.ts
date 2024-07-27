@@ -18,6 +18,7 @@ export type ProductOrder = {
     isChecked: boolean
     isExist: boolean
     category: string
+    isBlock?: boolean
 }
 
 export type ProductCartSavingToLS = {

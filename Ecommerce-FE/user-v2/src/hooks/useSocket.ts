@@ -10,7 +10,7 @@ type UseSocketProps = {
 }
 
 const useSocket = ({ actionId }: UseSocketProps) => {
-    const { toastIdRef } = useContext(AppContext)
+    const { toastIdRef, ids, products, setProducts } = useContext(AppContext)
     const { current: socket } = useRef(
         io(import.meta.env.VITE_SOCKET_ENPOINT, {
             autoConnect: false

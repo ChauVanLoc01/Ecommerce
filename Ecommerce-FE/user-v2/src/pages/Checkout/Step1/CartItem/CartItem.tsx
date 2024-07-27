@@ -38,7 +38,9 @@ const CartItem = ({ storeId, handleRemoveVoucher }: CartItemProps) => {
         setProducts((pre) => {
             let store = pre.stores[storeId]
             store.products.forEach((item) => {
-                store.products.set(item.productId, { ...item, isChecked })
+                if (!item?.isBlock) {
+                    store.products.set(item.productId, { ...item, isChecked })
+                }
             })
             if (isChecked) {
                 store.checked = store.products.size
@@ -88,16 +90,24 @@ const CartItem = ({ storeId, handleRemoveVoucher }: CartItemProps) => {
         })
     }
 
+    let isCheckedAll = () => {
+        let store = products.stores[storeId]
+        let productTmp = [...store.products.values()]
+        if (productTmp.every((product) => !product.isBlock)) {
+            return store.checked === store.products.size
+        }
+        if (!store.checked) {
+            return false
+        }
+        return store.checked === productTmp.filter((item) => item.isChecked && !item.isBlock).length
+    }
+
     return (
         <motion.div className={cn('bg-[#FFFFFF] rounded-8 hover:shadow-md border border-border/30')}>
             <motion.div key={storeId} className='border-b border-border/30 flex-shrink'>
                 <Flex justify={'between'} align={'center'}>
                     <div className='p-24 space-x-5 flex items-center'>
-                        <Checkbox
-                            id={storeId}
-                            checked={products.stores[storeId].checked === products.stores[storeId].products.size}
-                            onCheckedChange={selectedAllProduct}
-                        />
+                        <Checkbox id={storeId} checked={isCheckedAll()} onCheckedChange={selectedAllProduct} />
                         <Text as='label' htmlFor={storeId}>
                             {products.stores[storeId].store_name}
                         </Text>

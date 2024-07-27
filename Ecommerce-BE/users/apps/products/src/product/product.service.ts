@@ -9,7 +9,7 @@ import {
     NotFoundException
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { ClientProxy, RmqContext } from '@nestjs/microservices'
+import { ClientProxy } from '@nestjs/microservices'
 import { SchedulerRegistry } from '@nestjs/schedule'
 import { Prisma, PrismaClient, Product } from '@prisma/client'
 import { DefaultArgs } from '@prisma/client/runtime/library'
@@ -518,7 +518,10 @@ export class ProductService {
             priceAfter,
             productId,
             quantity: productExist.currentQuantity + new_quantity,
-            storeId: productExist.storeId
+            storeId: productExist.storeId,
+            currentSaleId: undefined,
+            status,
+            name
         } as Update_Product_WhenCreatingOrderPayload)
 
         await this.prisma.product.update({
@@ -594,12 +597,7 @@ export class ProductService {
         }
     }
 
-    async updateProductWhenCreatingOrder(
-        body: CreateOrderPayload<'update_product'>,
-        context: RmqContext
-    ) {
-        const channel = context.getChannelRef()
-        const originalMsg = context.getMessage()
+    async updateProductWhenCreatingOrder(body: CreateOrderPayload<'update_product'>) {
         let { userId, payload, actionId } = body
         let map = new Map<
             number,
@@ -754,10 +752,8 @@ export class ProductService {
                             })
                         }
                     )
-                    channel.ack(originalMsg)
                 } catch (err) {
                     console.log('******Lỗi lỗi ở bước tạo cập nhật thành công product********', err)
-                    channel.ack(originalMsg)
                 }
             }
         } catch (err) {
@@ -794,25 +790,17 @@ export class ProductService {
                         )
                     )
                 }
-                channel.ack(originalMsg)
             } catch (err) {
                 console.log('*****Lỗi trong try catch*******', err)
-                channel.ack(originalMsg)
             }
         }
     }
 
-    async rollbackUpdateQuantityProduct(
-        payload: CreateOrderPayload<'roll_back_order'>,
-        context: RmqContext
-    ) {
+    async rollbackUpdateQuantityProduct(payload: CreateOrderPayload<'roll_back_order'>) {
         console.log(
             '*******Roll back product khi cập nhật voucher thất bại***********',
             format(new Date(), 'hh:mm:ss:SSS dd/MM')
         )
-        const channel = context.getChannelRef()
-        const originalMsg = context.getMessage()
-        channel.ack(originalMsg)
         try {
             await this.productBackgroundQueue.add(
                 BackgroundAction.resetValueCacheWhenUpdateProductFail,

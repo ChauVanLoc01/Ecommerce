@@ -582,11 +582,27 @@ export class VoucherService {
                         if (voucherExist.currentQuantity == 0) {
                             throw new Error('Voucher đã hết lượt sử dụng')
                         }
-                        tmp.push({
-                            storeId,
-                            quantity: voucherExist.currentQuantity - 1,
-                            voucherId
-                        })
+                        let fromCache = await this.cacheManager.get<string>(hashValue)
+                        if (fromCache) {
+                            let { quantity: quantityFromCache } = JSON.parse(fromCache) as {
+                                quantity: number
+                                times: number
+                            }
+                            if (quantityFromCache == 0) {
+                                throw new Error('Voucher đã hết lượt sử dụng')
+                            }
+                            tmp.push({
+                                storeId,
+                                quantity: quantityFromCache - 1,
+                                voucherId
+                            })
+                        } else {
+                            tmp.push({
+                                storeId,
+                                quantity: voucherExist.currentQuantity - 1,
+                                voucherId
+                            })
+                        }
                     }
                     return this.cacheManager.set(
                         hashValue,

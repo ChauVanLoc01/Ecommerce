@@ -1,4 +1,4 @@
-import { Box, Flex, RadioCards, Text } from '@radix-ui/themes'
+import { Flex, RadioCards, Text } from '@radix-ui/themes'
 import { payment_data } from 'src/constants/payment.constants'
 import { Payment } from 'src/types/payment.type'
 

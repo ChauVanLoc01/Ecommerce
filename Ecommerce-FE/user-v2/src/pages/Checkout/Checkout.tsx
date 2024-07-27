@@ -10,6 +10,7 @@ import useStep from 'src/hooks/useStep'
 import { Delivery } from 'src/types/delivery.type'
 import { OrderBody } from 'src/types/order.type'
 import { Payment } from 'src/types/payment.type'
+import { ls } from 'src/utils/localStorage'
 import CheckoutHeader from './CheckoutHeader'
 import CheckoutSummary from './CheckoutSummary'
 import CreateOrder from './CreateOrder'
@@ -54,11 +55,14 @@ const Checkout = () => {
         setSelectedVoucher
     } = useDataCheckout({ setStep })
 
+    console.log('selectedVoucher', selectedVoucher)
+
     const handleOrder = () => {
         if (!isCanOrder) {
             toast.warning('Hệ thống đang gặp lỗi!')
             return
         }
+        let vouchers = ls.getItem('vouchers') as Record<string, string[]>
         const orders: OrderBody['orders'] = ids.checked_storeIds.map((storeId) => {
             let { discount, pay, total } = summary.detail[storeId]
             let productOrders = [...products.stores[storeId].products].map<
@@ -70,12 +74,16 @@ const Checkout = () => {
                     quantity: buy
                 }
             })
+            console.log(
+                'selectedVoucher?.[storeId]?.map((voucher) => voucher.id)',
+                selectedVoucher?.[storeId]?.map((voucher) => voucher.id)
+            )
             return {
                 storeId,
                 total,
                 discount,
                 pay,
-                voucherId: selectedVoucher?.[storeId]?.map((voucher) => voucher.id),
+                voucherIds: vouchers?.[storeId] || [],
                 productOrders
             }
         })

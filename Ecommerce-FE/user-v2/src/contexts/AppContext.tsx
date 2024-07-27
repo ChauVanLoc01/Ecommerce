@@ -1,11 +1,13 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { cloneDeep } from 'lodash'
-import { ReactNode, createContext, useMemo, useRef, useState } from 'react'
+import { ReactNode, createContext, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { productFetching } from 'src/apis/product'
+import { channel, join_room, leave_room } from 'src/constants/event'
 import useSocket from 'src/hooks/useSocket'
 import { LoginResponse } from 'src/types/auth.type'
 import { AppContext as AppContextType, Ids, ProductOrder, ProductOrderSale } from 'src/types/context.type'
+import { ProductSocket, SocketReturn } from 'src/types/socket.type'
 import { getProducts, ls } from 'src/utils/localStorage'
 import { v7 as uuidv7 } from 'uuid'
 
@@ -118,6 +120,58 @@ const ContextWrap = ({ children }: { children: ReactNode }) => {
         toast.info('Thêm sản phẩm thành công')
         createViewAddToCart({ productId: payload.productId, quantity: payload.buy })
     }
+
+    useEffect(() => {
+        if (ids?.all_productIds.length && socket) {
+            socket.on(channel.product, (res: SocketReturn<ProductSocket>) => {
+                if (res.action) {
+                    let { productId, storeId, priceAfter, quantity, name, status } = res.result
+                    let isExist = products.stores?.[storeId]?.products.get(productId)
+                    if (isExist) {
+                        setProducts((pre) => {
+                            let products = pre.stores?.[storeId]?.products
+                            let productInMap = products.get(productId)
+                            if (productInMap) {
+                                let tmp = {
+                                    ...productInMap,
+                                    currentQuantity: quantity,
+                                    priceAfter,
+                                    name
+                                }
+                                if (status && status == 'BLOCK') {
+                                    tmp.isBlock = true
+                                    if (productInMap.isChecked) {
+                                        pre.stores[storeId].checked -= 1
+                                    }
+                                    tmp.isChecked = false
+                                }
+                                if (status && status == 'ACTIVE' && productInMap.isBlock) {
+                                    tmp.isBlock = false
+                                    tmp.buy = 1
+                                }
+                                products.set(productId, tmp)
+                            }
+                            return cloneDeep(pre)
+                        })
+                    }
+                }
+            })
+            ids.all_productIds.forEach((id) => {
+                socket.emit(join_room, { type: channel.product, id })
+            })
+        }
+
+        return () => {
+            if (socket) {
+                socket.off(channel.product)
+                if (ids?.all_productIds.length) {
+                    ids.all_productIds.forEach((id) => {
+                        socket.emit(leave_room, { type: channel.product, id })
+                    })
+                }
+            }
+        }
+    }, [ids])
 
     return (
         <AppContext.Provider

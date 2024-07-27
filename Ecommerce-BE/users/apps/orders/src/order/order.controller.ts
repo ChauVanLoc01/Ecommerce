@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common'
-import { Ctx, EventPattern, MessagePattern, Payload, RmqContext } from '@nestjs/microservices'
+import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices'
 import { ApiBearerAuth } from '@nestjs/swagger'
 import {
     commit_order,
@@ -105,33 +105,27 @@ export class OrderController {
 
     @Public()
     @EventPattern(processStepOneToCreatOrder)
-    checkCache(@Ctx() context: RmqContext, @Payload() payload: CreateOrderPayload<'check_cache'>) {
-        return this.ordersService.checkCache(payload.userId, payload.payload, context)
+    checkCache(@Payload() payload: CreateOrderPayload<'check_cache'>) {
+        return this.ordersService.checkCache(payload.userId, payload.payload)
     }
 
     @Public()
     @EventPattern(processStepTwoToCreateOrder)
-    processOrder(@Payload() data: CreateOrderPayload<'process_order'>, @Ctx() context: RmqContext) {
-        return this.ordersService.processOrder(data.userId, data.payload, context)
+    processOrder(@Payload() data: CreateOrderPayload<'process_order'>) {
+        return this.ordersService.processOrder(data.userId, data.payload)
     }
 
     @Public()
     @EventPattern(roll_back_order)
-    rollbackOrder(
-        @Payload() payload: CreateOrderPayload<'roll_back_order'>,
-        @Ctx() context: RmqContext
-    ) {
+    rollbackOrder(@Payload() payload: CreateOrderPayload<'roll_back_order'>) {
         console.log('roll back order nhận được thông tin')
-        return this.ordersService.rollbackOrder(payload, context)
+        return this.ordersService.rollbackOrder(payload)
     }
 
     @Public()
     @EventPattern(commit_order)
-    commitOrder(
-        @Payload() payload: CreateOrderPayload<'commit_success'>,
-        @Ctx() context: RmqContext
-    ) {
-        return this.ordersService.commitOrder(payload, context)
+    commitOrder(@Payload() payload: CreateOrderPayload<'commit_success'>) {
+        return this.ordersService.commitOrder(payload)
     }
 
     @Roles(Role.USER, Role.EMPLOYEE, Role.STORE_OWNER)

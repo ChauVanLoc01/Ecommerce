@@ -1,9 +1,7 @@
 import { LoaderFunction } from 'react-router-dom'
 import { productFetching } from 'src/apis/product'
-import { sale_api } from 'src/apis/sale_promotion.api'
 import { StoreFetching } from 'src/apis/store'
 import { queryClient } from 'src/routes/main.route'
-import { ProductListQuery } from 'src/types/product.type'
 import { loadingEvent } from 'src/utils/utils.ts'
 
 export const productDetailLoader: LoaderFunction = async ({ params }) => {
@@ -34,32 +32,4 @@ export const productDetailLoader: LoaderFunction = async ({ params }) => {
     loadingEvent.end()
 
     return [productDetail.data.result, relativedProducts.data.result, storeDetail.data.result]
-}
-
-export const productListLoader: LoaderFunction = async ({ request }) => {
-    loadingEvent.start(false)
-
-    const queryParams = new URL(request.url).searchParams as Partial<Record<keyof ProductListQuery, string>>
-
-    const [productList, categories] = await Promise.all([
-        queryClient.fetchQuery({
-            queryKey: ['productList', { limit: 12 }],
-            queryFn: () => productFetching.productList({ limit: 12 }),
-            staleTime: 1000 * 60 * 2
-        }),
-        queryClient.fetchQuery({
-            queryKey: ['categories'],
-            queryFn: () => productFetching.categoryList(),
-            staleTime: Infinity
-        })
-        // queryClient.fetchQuery({
-        //     queryKey: ['current-sale-promotion'],
-        //     queryFn: sale_api.current_sale_promotin,
-        //     staleTime: 1000 * 60 * 5
-        // })
-    ])
-
-    loadingEvent.end()
-
-    return [productList.data.result, categories.data.result]
 }

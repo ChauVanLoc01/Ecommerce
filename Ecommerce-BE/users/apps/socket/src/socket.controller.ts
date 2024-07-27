@@ -71,8 +71,16 @@ export class SocketController {
         const channel = context.getChannelRef()
         const originalMsg = context.getMessage()
         channel.ack(originalMsg)
-        let { quantity, productId, storeId, priceAfter, currentSaleId } = payload
-        this.socketGateway.updateProduct(productId, storeId, quantity, priceAfter, currentSaleId)
+        let { quantity, productId, storeId, priceAfter, currentSaleId, name, status } = payload
+        this.socketGateway.updateProduct(
+            productId,
+            storeId,
+            quantity,
+            priceAfter,
+            currentSaleId,
+            status,
+            name
+        )
     }
 
     @EventPattern(updateQuantityProductSalePromotion)

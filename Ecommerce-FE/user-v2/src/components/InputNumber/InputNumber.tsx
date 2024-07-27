@@ -9,10 +9,7 @@ type InputNumberProps = {
 }
 
 const InputNumber = ({ quantity, setQuantity, currentQuantity }: InputNumberProps) => {
-    const handleOnChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        console.log('target', e.target)
-        console.log('currentTarget', e.currentTarget)
-    }
+    const handleOnChange = (e: React.ChangeEvent<HTMLInputElement>) => {}
 
     const handleMinus = () => {
         currentQuantity && quantity > 1 && setQuantity(quantity - 1)
@@ -21,6 +18,8 @@ const InputNumber = ({ quantity, setQuantity, currentQuantity }: InputNumberProp
     const handlePlus = () => {
         currentQuantity && quantity < currentQuantity && setQuantity(quantity + 1)
     }
+
+    console.log('currentQuantity', currentQuantity)
 
     return (
         <div
@@ -32,6 +31,7 @@ const InputNumber = ({ quantity, setQuantity, currentQuantity }: InputNumberProp
                 type='button'
                 className='size-8 flex justify-center items-center leading-10 text-gray-600 transition hover:opacity-75'
                 onClick={handleMinus}
+                disabled={!!currentQuantity}
             >
                 <LuMinus />
             </button>
@@ -46,6 +46,7 @@ const InputNumber = ({ quantity, setQuantity, currentQuantity }: InputNumberProp
                 type='button'
                 className='size-8 flex justify-center items-center leading-10 text-gray-600 transition hover:opacity-75'
                 onClick={handlePlus}
+                disabled={!!currentQuantity}
             >
                 <LuPlus />
             </button>

@@ -35,8 +35,6 @@ const Product = () => {
         enabled: !!currentSaleId
     })
 
-    console.log('productSale', productSale)
-
     const { mutate: createViewProduct } = useMutation({
         mutationFn: productFetching.createViewProduct
     })
@@ -62,7 +60,7 @@ const Product = () => {
                 payload = {
                     ...payload,
                     salePromotionId: currentSaleId,
-                    product_sale_quantity: productSale.quantity,
+                    product_sale_quantity: productSale.currentQuantity,
                     priceAfter: productSale.priceAfter
                 } as ProductOrderSale
             }
@@ -121,7 +119,7 @@ const Product = () => {
                     </Carousel>
                 </div>
                 <div className='space-y-3'>
-                    {productDetail?.sale && (
+                    {productSale && (
                         <Flex className='space-x-3'>
                             <h3 className='font-semibold font-mono text-xl bg-gradient-to-tr to-[#fcb045] via-[#fd1d1d] from-[#833ab4] bg-clip-text text-transparent'>
                                 Sản phẩm đang giảm giá
@@ -140,7 +138,7 @@ const Product = () => {
                         <InputNumber
                             quantity={quantity}
                             setQuantity={setQuantity}
-                            currentQuantity={productSale.quantity}
+                            currentQuantity={productSale.currentQuantity}
                         />
                     ) : (
                         <InputNumber

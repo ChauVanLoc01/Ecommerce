@@ -1,12 +1,12 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { cloneDeep, sumBy } from 'lodash'
+import { sumBy } from 'lodash'
 import { useContext, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { OrderFetching } from 'src/apis/order'
 import { sale_api } from 'src/apis/sale_promotion.api'
 import { channel, join_room, leave_room } from 'src/constants/event'
 import { AppContext } from 'src/contexts/AppContext'
-import { ProductSocket, SocketReturn, VoucherSocket } from 'src/types/socket.type'
+import { SocketReturn, VoucherSocket } from 'src/types/socket.type'
 import { VoucherWithCondition } from 'src/types/voucher.type'
 import { clearProductAfterCreatingOrder } from 'src/utils/utils.ts'
 
@@ -24,11 +24,11 @@ const useDataCheckout = ({ setStep }: UseDataCheckoutProps) => {
     }>({})
 
     const { data: productSaleList, refetch: productSaleRefetch } = useQuery({
-        queryKey: ['product_sale_detail', ids?.checked_productIds],
+        queryKey: ['product_sale_list', ids?.checked_productIds],
         queryFn: ({ signal }) => sale_api.getProductListSale(currentSaleId, ids?.checked_productIds || [], signal),
-        enabled: !!currentSaleId && !!ids?.checked_productIds,
+        enabled: !!currentSaleId && !!ids?.checked_productIds.length,
         select: (result) => result.data.result,
-        staleTime: 1000 * 60
+        staleTime: 1000 * 60 * 2
     })
 
     const {
@@ -131,45 +131,6 @@ const useDataCheckout = ({ setStep }: UseDataCheckoutProps) => {
     }, [products, selectedVoucher])
 
     useEffect(() => {
-        if (ids?.checked_productIds.length && socket) {
-            socket.on(channel.product, (res: SocketReturn<ProductSocket>) => {
-                if (res.action) {
-                    let { productId, storeId, priceAfter, quantity } = res.result
-                    let isExist = products.stores?.[storeId]?.products.get(productId)
-                    if (isExist) {
-                        setProducts((pre) => {
-                            let products = pre.stores?.[storeId]?.products
-                            let productInMap = products.get(productId)
-                            if (productInMap) {
-                                products.set(productId, {
-                                    ...productInMap,
-                                    currentQuantity: quantity,
-                                    priceAfter
-                                })
-                            }
-                            return cloneDeep(pre)
-                        })
-                    }
-                }
-            })
-            ids.checked_productIds.forEach((id) => {
-                socket.emit(join_room, { type: channel.product, id })
-            })
-        }
-
-        return () => {
-            if (socket) {
-                socket.off(channel.product)
-                if (ids?.checked_productIds.length) {
-                    ids.checked_productIds.forEach((id) => {
-                        socket.emit(leave_room, { type: channel.product, id })
-                    })
-                }
-            }
-        }
-    }, [ids])
-
-    useEffect(() => {
         if (socket && selectedVoucher && Object.values(selectedVoucher).length) {
             socket.on(channel.voucher, (res: SocketReturn<VoucherSocket>) => {
                 if (res.action) {
@@ -196,10 +157,10 @@ const useDataCheckout = ({ setStep }: UseDataCheckoutProps) => {
     }, [selectedVoucher])
 
     useEffect(() => {
-        if (currentSaleId) {
+        if (currentSaleId && ids?.checked_productIds.length) {
             productSaleRefetch()
         }
-    }, [ids?.checked_productIds])
+    }, [currentSaleId])
 
     // useEffect(() => {
     //     if (productSaleList) {

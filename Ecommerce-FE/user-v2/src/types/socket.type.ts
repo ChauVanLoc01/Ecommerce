@@ -9,6 +9,8 @@ export type ProductSocket = {
     productId: string
     quantity: number
     priceAfter: number
+    name: string
+    status?: string
 }
 
 export type VoucherSocket = {

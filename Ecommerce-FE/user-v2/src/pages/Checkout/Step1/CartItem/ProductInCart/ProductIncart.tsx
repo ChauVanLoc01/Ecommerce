@@ -37,16 +37,24 @@ const ProductIncart = ({ product, handleChecked, handleChangeQuantity, handleDel
         }
     }, [quantity])
 
+    useEffect(() => {
+        if (product?.isBlock) {
+            setQuantity(0)
+        } else {
+            setQuantity(Math.min(product.buy, product.currentQuantity))
+        }
+    }, [product])
+
     return (
         <motion.div
-            data-exist={product.isExist}
-            className='data-[exist=false]:bg-gray-100 px-24 pt-24 [&:last-child]:pb-24 space-x-5 flex items-center max-h-[130px]'
+            data-exist={!product?.isBlock}
+            className='data-[exist=false]:bg-gray-50 px-24 pt-24 [&:last-child]:pb-24 space-x-5 flex items-center max-h-[130px]'
         >
             <Checkbox
                 checked={product.isChecked}
                 onCheckedChange={handleChecked(product.productId, !product.isChecked)}
                 id={product.productId}
-                disabled={!product.isExist}
+                disabled={product?.isBlock}
             />
             <Link
                 to={`/${removeSpecialCharacter(product.name)}-0-${product.productId}`}
@@ -81,13 +89,9 @@ const ProductIncart = ({ product, handleChecked, handleChangeQuantity, handleDel
                     <h3 className='font-semibold'>{convertCurrentcy(product.priceAfter)}</h3>
                 )}
                 <InputNumber
-                    quantity={isSale(product) ? product.product_sale_quantity - product.buy : quantity}
+                    quantity={Math.min(product.buy, product.currentQuantity)}
                     setQuantity={setQuantity}
-                    currentQuantity={
-                        isSale(product)
-                            ? Math.min(product.product_sale_quantity, product.currentQuantity)
-                            : product.currentQuantity || 0
-                    }
+                    currentQuantity={product?.isBlock ? 0 : product.currentQuantity}
                 />
                 <AlertDialog.Root>
                     <AlertDialog.Trigger>
