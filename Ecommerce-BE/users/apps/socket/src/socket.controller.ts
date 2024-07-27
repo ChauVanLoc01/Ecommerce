@@ -1,10 +1,13 @@
-import { Controller, Get } from '@nestjs/common'
+import { CACHE_MANAGER } from '@nestjs/cache-manager'
+import { Controller, Get, Inject } from '@nestjs/common'
 import { Ctx, EventPattern, Payload, RmqContext } from '@nestjs/microservices'
+import { Cache } from 'cache-manager'
 import {
     emit_update_product_whenCreatingOrder,
     emit_update_voucher_whenCreatingOrder,
     statusOfOrder,
     statusOfTransaction,
+    updateCurrentSalePromotionId,
     updateQuantityProductSalePromotion
 } from 'common/constants/event.constant'
 import {
@@ -16,7 +19,10 @@ import { SocketGateway } from './socket.gateway'
 
 @Controller()
 export class SocketController {
-    constructor(private readonly socketGateway: SocketGateway) {}
+    constructor(
+        private readonly socketGateway: SocketGateway,
+        @Inject(CACHE_MANAGER) private cacheManager: Cache
+    ) {}
 
     @Get()
     healthyCheck() {
@@ -84,5 +90,13 @@ export class SocketController {
         channel.ack(originalMsg)
         let { productId, quantity, saleId } = payload
         this.socketGateway.updateProductSalePromotion(saleId, productId, quantity)
+    }
+
+    @EventPattern(updateCurrentSalePromotionId)
+    updateCurrentSale(@Payload() payload: string, @Ctx() context: RmqContext) {
+        const channel = context.getChannelRef()
+        const originalMsg = context.getMessage()
+        this.socketGateway.updateCurrentSalePromotion(payload)
+        channel.ack(originalMsg)
     }
 }

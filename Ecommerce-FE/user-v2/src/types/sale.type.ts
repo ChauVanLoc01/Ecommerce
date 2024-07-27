@@ -54,3 +54,11 @@ export type GetProductOfSalePromotion = Return<{
     salePromotion: SalePromotion
     productPromotions: ProductPromotion[]
 }>
+
+export type SalePromotionDetail = {
+    productId: string
+    currentQuantity: number
+    priceAfter: number
+}
+
+export type SalePromotionDetailList = Return<Record<string, SalePromotionDetail[]> | null>

@@ -13,17 +13,19 @@ import { ConfigService } from '@nestjs/config'
 import { ClientProxy } from '@nestjs/microservices'
 import { Cache } from 'cache-manager'
 import { currentSalePromotion } from 'common/constants/event.constant'
+import { SalePromotion } from 'common/constants/sale-promotion.constant'
 import { PaginationDTO } from 'common/decorators/pagination.dto'
 import { Status } from 'common/enums/status.enum'
 import { CurrentStoreType } from 'common/types/current.type'
 import { MessageReturn, Return } from 'common/types/result.type'
 import { add, endOfHour, startOfHour } from 'date-fns'
+import { cloneDeep } from 'lodash'
 import { v4 as uuidv4 } from 'uuid'
 import { CreateProductSalePromotionDTO } from './dtos/create-product-sale.dto'
+import { ProductSaleIds } from './dtos/product-sale-ids.dto'
 import { QuerySalePromotionDTO } from './dtos/query-promotion.dto'
-import { UpdateProductsSalePromotion } from './dtos/update-product-sale.dto'
 import { CreateSpecialSaleDTO } from './dtos/special-sale.dto'
-import { SalePromotion } from 'common/constants/sale-promotion.constant'
+import { UpdateProductsSalePromotion } from './dtos/update-product-sale.dto'
 
 @Injectable()
 export class SaleService {
@@ -99,26 +101,24 @@ export class SaleService {
         try {
             const { userId, storeId } = user
             const { salePromotionId, products, storePromotionId } = body
-
             let id = uuidv4()
-
-            if (!storePromotionId) {
-                await this.prisma.storePromotion.create({
-                    data: {
-                        id,
-                        salePromotionId,
-                        storeId,
-                        createdAt: new Date(),
-                        status: Status.ACTIVE,
-                        createdBy: userId
-                    }
-                })
-            }
-
-            const result = await Promise.all(
-                products.map(({ priceAfter, productId, quantity, image, name }) =>
-                    this.prisma.productPromotion.create({
+            await this.prisma.$transaction(async (tx) => {
+                if (!storePromotionId) {
+                    await tx.storePromotion.create({
                         data: {
+                            id,
+                            salePromotionId,
+                            storeId,
+                            createdAt: new Date(),
+                            status: Status.ACTIVE,
+                            createdBy: userId
+                        }
+                    })
+                }
+                await tx.productPromotion.createMany({
+                    data: products.map((product) => {
+                        let { image, name, priceAfter, productId, quantity } = product
+                        return {
                             id: uuidv4(),
                             storePromotionId: storePromotionId || id,
                             productId,
@@ -129,17 +129,18 @@ export class SaleService {
                             createdBy: userId,
                             salePromotionId,
                             image,
-                            name
+                            name,
+                            currentQuantity: quantity
                         }
                     })
-                )
-            )
-
+                })
+            })
             return {
                 msg: 'ok',
-                result
+                result: undefined
             }
         } catch (err) {
+            console.log('errror', err)
             throw new InternalServerErrorException(err.message)
         }
     }
@@ -150,7 +151,7 @@ export class SaleService {
     ): Promise<Return> {
         const { productPromotions } = body
 
-        const result = await Promise.all(
+        await this.prisma.$transaction(
             productPromotions.map(({ productPromotionId, isDelete, priceAfter, quantity }) =>
                 this.prisma.productPromotion.update({
                     where: {
@@ -169,7 +170,7 @@ export class SaleService {
 
         return {
             msg: 'ok',
-            result
+            result: undefined
         }
     }
 
@@ -233,6 +234,53 @@ export class SaleService {
                 (err?.message as string).length > 70 ? 'Lỗi Server' : err.message,
                 err.status || HttpStatus.INTERNAL_SERVER_ERROR
             )
+        }
+    }
+
+    async getProductSaleDetail(salePromotionId: string, query: ProductSaleIds): Promise<Return> {
+        const productSale = await this.prisma.productPromotion.findMany({
+            where: {
+                productId: {
+                    in: query.productIds
+                },
+                salePromotionId,
+                currentQuantity: {
+                    gt: 0
+                },
+                StorePromotion: {
+                    status: Status.ACTIVE
+                }
+            },
+            select: {
+                productId: true,
+                currentQuantity: true,
+                priceAfter: true,
+                StorePromotion: {
+                    select: {
+                        storeId: true
+                    }
+                }
+            }
+        })
+
+        let convert = productSale.reduce<
+            Record<string, Omit<(typeof productSale)[number], 'StorePromotion'>[]>
+        >((acum, product) => {
+            let { StorePromotion, ...rest } = product
+            if (acum?.[StorePromotion.storeId]) {
+                acum[StorePromotion.storeId].push(rest)
+            } else {
+                acum = {
+                    ...acum,
+                    [StorePromotion.storeId]: [rest]
+                }
+            }
+            return acum
+        }, {})
+
+        return {
+            msg: 'ok',
+            result: convert || null
         }
     }
 

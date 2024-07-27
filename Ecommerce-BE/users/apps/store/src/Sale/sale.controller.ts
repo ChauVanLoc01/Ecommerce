@@ -13,6 +13,7 @@ import { SaleService } from './sale.service'
 import { CreateSpecialSaleDTO } from './dtos/special-sale.dto'
 import { Roles } from 'common/decorators/roles.decorator'
 import { Role } from 'common/enums/role.enum'
+import { ProductSaleIds } from './dtos/product-sale-ids.dto'
 
 @UseGuards(JwtGuard)
 @Controller('sale-promotion')
@@ -29,6 +30,15 @@ export class SaleController {
     @Get('current-sale')
     getCurrentSale() {
         return this.saleService.getCurrentSale()
+    }
+
+    @Public()
+    @Get('products/:salePromotionId')
+    getCurrentSaleId(
+        @Param('salePromotionId') salePromotionId: string,
+        @Query() query: ProductSaleIds
+    ) {
+        return this.saleService.getProductSaleDetail(salePromotionId, query)
     }
 
     @Public()

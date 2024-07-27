@@ -80,3 +80,5 @@ export const countEmployee = 'count::employee::by::store::id'
 export const countProduct = 'count::product::by::store::id'
 
 export const updateStatusOfStore = 'update::status::of::store'
+
+export const updateCurrentSalePromotionId = 'update::current::sale::promotion::id'

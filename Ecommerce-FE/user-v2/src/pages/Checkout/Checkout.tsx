@@ -61,7 +61,9 @@ const Checkout = () => {
         }
         const orders: OrderBody['orders'] = ids.checked_storeIds.map((storeId) => {
             let { discount, pay, total } = summary.detail[storeId]
-            let productOrders = [...products.stores[storeId].products].map(([_, { priceAfter, buy, productId }]) => {
+            let productOrders = [...products.stores[storeId].products].map<
+                OrderBody['orders'][number]['productOrders'][number]
+            >(([_, { priceAfter, buy, productId }]) => {
                 return {
                     priceAfter,
                     productId,

@@ -1,11 +1,12 @@
 import { PrismaService } from '@app/common/prisma/prisma.service'
 import { CACHE_MANAGER } from '@nestjs/cache-manager'
 import { Inject, Injectable } from '@nestjs/common'
+import { ClientProxy } from '@nestjs/microservices'
 import { Cron, CronExpression, SchedulerRegistry } from '@nestjs/schedule'
 import { Prisma, PrismaClient } from '@prisma/client'
 import { DefaultArgs } from '@prisma/client/runtime/library'
 import { Cache } from 'cache-manager'
-import { currentSalePromotion } from 'common/constants/event.constant'
+import { currentSalePromotion, updateCurrentSalePromotionId } from 'common/constants/event.constant'
 import { SalePromotion } from 'common/constants/sale-promotion.constant'
 import { Status } from 'common/enums/status.enum'
 import { CronJob } from 'cron'
@@ -31,7 +32,8 @@ export class ScheduleService {
     constructor(
         private readonly prisma: PrismaService,
         private readonly scheduleRegister: SchedulerRegistry,
-        @Inject(CACHE_MANAGER) private cacheManager: Cache
+        @Inject(CACHE_MANAGER) private cacheManager: Cache,
+        @Inject('SOCKET_SERVICE') private readonly socket_client: ClientProxy
     ) {}
 
     calDate() {
@@ -113,7 +115,7 @@ export class ScheduleService {
                 throw new Error('Event hiện tại không tồn tại')
             }
 
-            await Promise.all([
+            const result = await Promise.all([
                 this.cacheManager.set(currentSalePromotion, current.id),
                 tx.salePromotion.update({
                     where: {
@@ -126,6 +128,9 @@ export class ScheduleService {
                     }
                 })
             ])
+            if (result) {
+                this.socket_client.emit(updateCurrentSalePromotionId, current.id)
+            }
         }
 
         let currentSaleId = await this.cacheManager.get<string>(currentSalePromotion)

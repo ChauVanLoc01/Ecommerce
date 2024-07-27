@@ -1,3 +1,5 @@
+import { CACHE_MANAGER } from '@nestjs/cache-manager'
+import { Inject } from '@nestjs/common'
 import {
     ConnectedSocket,
     MessageBody,
@@ -7,7 +9,14 @@ import {
     WebSocketGateway,
     WebSocketServer
 } from '@nestjs/websockets'
-import { join_room, leave_room, room_obj } from 'common/constants/socket.constant'
+import { Cache } from 'cache-manager'
+import { currentSalePromotion } from 'common/constants/event.constant'
+import {
+    current_sale_promotion,
+    join_room,
+    leave_room,
+    room_obj
+} from 'common/constants/socket.constant'
 import { Server, Socket } from 'socket.io'
 
 @WebSocketGateway({
@@ -19,7 +28,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @WebSocketServer()
     server: Server
 
-    constructor() {}
+    constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache) {}
 
     hash(type: string, id: string) {
         return `${type}::${id}`
@@ -32,6 +41,14 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
         console.log(`client đã join vào room [${type}] có id là :::::::::::${hash}:::::::::`)
         socket.join(hash)
         socket.emit(join_room, true)
+    }
+
+    @SubscribeMessage(current_sale_promotion)
+    async join_sale(@ConnectedSocket() socket: Socket) {
+        console.log(`client đã join vào room CURRENT SALE`)
+        let cache = await this.cacheManager.get<string>(currentSalePromotion)
+        socket.join(current_sale_promotion)
+        socket.emit(current_sale_promotion, cache || '')
     }
 
     @SubscribeMessage(leave_room)
@@ -119,6 +136,10 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
                 quantity
             }
         })
+    }
+
+    updateCurrentSalePromotion(current_sale_promotion_id: string) {
+        this.server.emit(current_sale_promotion, current_sale_promotion_id)
     }
 
     handleConnection(@ConnectedSocket() socket: Socket) {

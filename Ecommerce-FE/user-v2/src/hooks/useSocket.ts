@@ -1,7 +1,7 @@
 import { useContext, useEffect, useRef, useState } from 'react'
 import { io } from 'socket.io-client'
 import { toast } from 'sonner'
-import { channel, join_room, leave_room } from 'src/constants/event'
+import { channel, current_sale_promotion, join_room, leave_room } from 'src/constants/event'
 import { AppContext } from 'src/contexts/AppContext'
 import { SocketReturn } from 'src/types/socket.type'
 
@@ -10,7 +10,7 @@ type UseSocketProps = {
 }
 
 const useSocket = ({ actionId }: UseSocketProps) => {
-    const { toastIdRef } = useContext(AppContext)
+    const { toastIdRef, setCurrentSaleId } = useContext(AppContext)
     const { current: socket } = useRef(
         io(import.meta.env.VITE_SOCKET_ENPOINT, {
             autoConnect: false
@@ -40,9 +40,15 @@ const useSocket = ({ actionId }: UseSocketProps) => {
                 toast.error(res.msg)
             }
         })
+        socket.on(channel.current_sale_promotion, (currentId: string) => {
+            setCurrentSaleId(currentId)
+        })
         socket.emit(join_room, { type: channel.order, id: actionId })
+        socket.emit(current_sale_promotion, {})
         return () => {
             socket.off(join_room)
+            socket.off(channel.order)
+            socket.off(current_sale_promotion)
             socket.emit(leave_room, { type: channel.order, id: actionId })
         }
     }, [])

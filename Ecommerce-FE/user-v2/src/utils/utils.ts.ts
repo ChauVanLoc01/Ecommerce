@@ -1,5 +1,7 @@
 import { type ClassValue, clsx } from 'clsx'
+import { cloneDeep } from 'lodash'
 import { endLoadingLoader, startLoadingLoader } from 'src/constants/event'
+import { ProductCart } from 'src/types/context.type'
 import { twMerge } from 'tailwind-merge'
 import { ls } from './localStorage'
 
@@ -51,4 +53,26 @@ export const sortObject = (obj: any) => {
         sorted[str[key]] = encodeURIComponent(obj[str[key]]).replace(/%20/g, '+')
     }
     return sorted
+}
+
+export const clearProductAfterCreatingOrder = (checkedStoreIds: string[], payload: ProductCart): ProductCart => {
+    const { stores } = payload
+    checkedStoreIds.forEach((storeId) => {
+        let productInStore = stores[storeId].products
+        let numberOfChecked = stores[storeId].checked
+        productInStore.forEach((product) => {
+            let { productId, isChecked } = product
+            if (isChecked) {
+                payload.total -= 1
+                if (numberOfChecked == 1) {
+                    delete stores[storeId]
+                } else {
+                    productInStore.delete(productId)
+                    stores[storeId].checked -= 1
+                }
+            }
+        })
+    })
+
+    return cloneDeep(payload)
 }

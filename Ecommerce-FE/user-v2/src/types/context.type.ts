@@ -62,6 +62,8 @@ export type AppContext = {
     actionId: string
     socket?: Socket<any, any>
     toastIdRef?: string | number
+    currentSaleId: string
+    setCurrentSaleId: React.Dispatch<React.SetStateAction<string>>
     setToastId: (id: string | number) => void
     addToCart: (storeId: string, store_name: string, payload: ProductOrder) => void
 }

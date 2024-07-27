@@ -23,6 +23,8 @@ const defaultValueContext: AppContextType = {
     isCanOrder: false,
     actionId: '',
     socket: undefined,
+    currentSaleId: '',
+    setCurrentSaleId: () => null,
     setToastId: () => null,
     addToCart: () => null
 }
@@ -36,6 +38,7 @@ const ContextWrap = ({ children }: { children: ReactNode }) => {
     const { current: actionId } = useRef<string>(uuidv7())
     const toastIdRef = useRef<string | number>()
     const { isCanOrder, socket } = useSocket({ actionId })
+    const [currentSaleId, setCurrentSaleId] = useState<string>('')
 
     const { mutate: createViewAddToCart } = useMutation({
         mutationFn: productFetching.createViewAddToCart
@@ -125,7 +128,9 @@ const ContextWrap = ({ children }: { children: ReactNode }) => {
                 toastIdRef: toastIdRef.current,
                 setToastId,
                 addToCart,
-                ids
+                ids,
+                currentSaleId,
+                setCurrentSaleId
             }}
         >
             {children}

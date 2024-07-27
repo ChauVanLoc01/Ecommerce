@@ -8,14 +8,15 @@ import { sale_api } from 'src/apis/sale_promotion.api'
 import { channel, join_room, leave_room } from 'src/constants/event'
 import { AppContext } from 'src/contexts/AppContext'
 import { ProductSocket, SocketReturn, VoucherSocket } from 'src/types/socket.type'
-import { Voucher, VoucherWithCondition } from 'src/types/voucher.type'
+import { VoucherWithCondition } from 'src/types/voucher.type'
+import { clearProductAfterCreatingOrder } from 'src/utils/utils.ts'
 
 type UseDataCheckoutProps = {
     setStep: React.Dispatch<React.SetStateAction<number>>
 }
 
 const useDataCheckout = ({ setStep }: UseDataCheckoutProps) => {
-    const { setToastId, products, setProducts, ids, socket } = useContext(AppContext)
+    const { setToastId, products, setProducts, ids, socket, currentSaleId, setCurrentSaleId } = useContext(AppContext)
     const [selectedVoucher, setSelectedVoucher] = useState<Record<string, VoucherWithCondition[]> | undefined>(
         undefined
     )
@@ -31,6 +32,14 @@ const useDataCheckout = ({ setStep }: UseDataCheckoutProps) => {
             add(endOfHour(new Date()), { hours: 7 }).getMilliseconds() - add(new Date(), { hours: 7 }).getMilliseconds()
     })
 
+    const { data: productSaleList, refetch: productSaleRefetch } = useQuery({
+        queryKey: ['product_sale_detail', ids?.checked_productIds],
+        queryFn: ({ signal }) => sale_api.getProductsSaleDetail(currentSaleId, ids?.checked_productIds || [], signal),
+        enabled: !!currentSaleId && !!ids?.checked_productIds,
+        select: (result) => result.data.result,
+        staleTime: 1000 * 60
+    })
+
     const {
         mutate: orderMutate,
         isPending,
@@ -42,8 +51,10 @@ const useDataCheckout = ({ setStep }: UseDataCheckoutProps) => {
                 duration: Infinity
             })
             setToastId(toastId)
-            // setProducts((pre) => clearCheckedProduct(pre))
-            setTimeout(() => setStep(1), 1000)
+            setTimeout(() => {
+                setProducts((pre) => clearProductAfterCreatingOrder(ids?.checked_storeIds as string[], pre))
+                setStep(1)
+            }, 1000)
         }
     })
 
@@ -128,25 +139,26 @@ const useDataCheckout = ({ setStep }: UseDataCheckoutProps) => {
         }
     }, [products, selectedVoucher])
 
-    console.log('summary', summary)
-
     useEffect(() => {
         if (ids?.checked_productIds.length && socket) {
             socket.on(channel.product, (res: SocketReturn<ProductSocket>) => {
                 if (res.action) {
                     let { productId, storeId, priceAfter, quantity } = res.result
-                    setProducts((pre) => {
-                        let products = pre.stores[storeId].products
-                        let productInMap = products.get(productId)
-                        if (productInMap) {
-                            products.set(productId, {
-                                ...productInMap,
-                                currentQuantity: quantity,
-                                priceAfter
-                            })
-                        }
-                        return cloneDeep(pre)
-                    })
+                    let isExist = products.stores?.[storeId]?.products.get(productId)
+                    if (isExist) {
+                        setProducts((pre) => {
+                            let products = pre.stores?.[storeId]?.products
+                            let productInMap = products.get(productId)
+                            if (productInMap) {
+                                products.set(productId, {
+                                    ...productInMap,
+                                    currentQuantity: quantity,
+                                    priceAfter
+                                })
+                            }
+                            return cloneDeep(pre)
+                        })
+                    }
                 }
             })
             ids.checked_productIds.forEach((id) => {
@@ -191,6 +203,42 @@ const useDataCheckout = ({ setStep }: UseDataCheckoutProps) => {
             }
         }
     }, [selectedVoucher])
+
+    useEffect(() => {
+        if (currentSaleId) {
+            productSaleRefetch()
+        }
+    }, [ids?.checked_productIds])
+
+    useEffect(() => {
+        if (current_sale_promotino) {
+            setCurrentSaleId(current_sale_promotino?.salePromotion?.id || '')
+        }
+    }, [current_sale_promotino])
+
+    // useEffect(() => {
+    //     if (productSaleList) {
+    //         setProducts((pre) => {
+    //             Object.keys(productSaleList).forEach((storeId) => {
+    //                 let store = pre.stores?.[storeId]
+    //                 if (store) {
+    //                     productSaleList[storeId].forEach((product) => {
+    //                         let { productId, ...rest } = product
+    //                         let productInMap = store.products.get(productId)
+    //                         if (productInMap) {
+    //                             store.products.set(productId, {
+    //                                 ...productInMap,
+    //                                 ...rest,
+    //                                 buy: Math.min(rest.currentQuantity, productInMap.buy)
+    //                             })
+    //                         }
+    //                     })
+    //                 }
+    //             })
+    //             return cloneDeep(pre)
+    //         })
+    //     }
+    // }, [productSaleList])
 
     return {
         orderFn: {

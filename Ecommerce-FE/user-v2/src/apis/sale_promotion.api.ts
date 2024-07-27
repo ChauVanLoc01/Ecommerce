@@ -1,4 +1,4 @@
-import { GetProductOfSalePromotion, SalePromotionIds } from 'src/types/sale.type'
+import { GetProductOfSalePromotion, SalePromotionDetailList, SalePromotionIds } from 'src/types/sale.type'
 import { http } from './http'
 
 export const sale_api = {
@@ -10,5 +10,11 @@ export const sale_api = {
     },
     getProductOfSalePromotion: (salePromotionId: string) => () => {
         return http.get<GetProductOfSalePromotion>(`/store/sale-promotion/${salePromotionId}/product`)
+    },
+    getProductsSaleDetail: (salePromotionId: string, productIds: string[], signal?: AbortSignal) => {
+        return http.get<SalePromotionDetailList>(`/store/sale-promotion/products/${salePromotionId}`, {
+            params: { productIds },
+            signal
+        })
     }
 }

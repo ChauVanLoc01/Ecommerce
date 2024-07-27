@@ -1,11 +1,9 @@
 import { TrashIcon } from '@radix-ui/react-icons'
 import { AlertDialog, Button, Checkbox, Flex, IconButton, Text, Tooltip } from '@radix-ui/themes'
-import { useQuery } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import { debounce } from 'lodash'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { sale_api } from 'src/apis/sale_promotion.api'
 import InputNumber from 'src/components/InputNumber'
 import Countdown from 'src/pages/ProductList/FlashSale/Countdown'
 import { ProductOrder, ProductOrderSale } from 'src/types/context.type'
@@ -25,11 +23,11 @@ type ProductInCartType = {
 const ProductIncart = ({ product, handleChecked, handleChangeQuantity, handleDelete }: ProductInCartType) => {
     const [quantity, setQuantity] = useState<number>(product.buy)
 
-    const { data: saleId } = useQuery({
-        queryKey: ['current-sale-promotion'],
-        queryFn: sale_api.current_sale_promotin,
-        select: (data) => data.data.result.salePromotion.id
-    })
+    // const { data: saleId } = useQuery({
+    //     queryKey: ['current-sale-promotion'],
+    //     queryFn: sale_api.current_sale_promotin,
+    //     select: (data) => data.data.result.salePromotion.id
+    // })
 
     useEffect(() => {
         let changeQuantityDebounce = debounce(() => handleChangeQuantity(product.productId, quantity), 2000)

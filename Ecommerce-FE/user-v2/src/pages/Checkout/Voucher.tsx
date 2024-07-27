@@ -43,7 +43,7 @@ const Voucher = ({ selectedVoucher, setSelectedVoucher }: VoucherProps) => {
         combine: (result) => {
             if (!result.filter(Boolean).length) return undefined
             return result.reduce<Record<string, VoucherWithCondition[]>>((acum, data, idx) => {
-                if (!data.data?.data.result.length) {
+                if (!data.data?.data?.result?.length) {
                     return acum
                 }
                 let storeId = ids?.checked_storeIds[idx] as string

@@ -6,8 +6,10 @@ import { ArrowRightIcon } from '@radix-ui/react-icons'
 import { Flex } from '@radix-ui/themes'
 import { useQuery } from '@tanstack/react-query'
 import { add, endOfHour } from 'date-fns'
+import { useContext, useEffect } from 'react'
 import { sale_api } from 'src/apis/sale_promotion.api'
 import { route } from 'src/constants/route'
+import { AppContext } from 'src/contexts/AppContext'
 import Countdown from './Countdown'
 import ProductFlashSale from './ProductFlashSale'
 
@@ -16,6 +18,7 @@ type FlashSaleProps = {
 }
 
 const FlashSale = ({ isHiddenMore = false }: FlashSaleProps) => {
+    const { setCurrentSaleId } = useContext(AppContext)
     const { data: current_sale_promotino } = useQuery({
         queryKey: ['current-sale-promotion'],
         queryFn: sale_api.current_sale_promotin,
@@ -27,6 +30,11 @@ const FlashSale = ({ isHiddenMore = false }: FlashSaleProps) => {
     if (!current_sale_promotino?.productPromotions.length) {
         return <></>
     }
+    useEffect(() => {
+        if (current_sale_promotino?.productPromotions?.length) {
+            setCurrentSaleId(current_sale_promotino.salePromotion.id)
+        }
+    }, [])
 
     return (
         <div className='space-y-3'>
