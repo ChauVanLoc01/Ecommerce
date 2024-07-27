@@ -19,7 +19,6 @@ import { Status } from 'common/enums/status.enum'
 import { CurrentStoreType } from 'common/types/current.type'
 import { MessageReturn, Return } from 'common/types/result.type'
 import { add, endOfHour, startOfHour } from 'date-fns'
-import { cloneDeep } from 'lodash'
 import { v4 as uuidv4 } from 'uuid'
 import { CreateProductSalePromotionDTO } from './dtos/create-product-sale.dto'
 import { ProductSaleIds } from './dtos/product-sale-ids.dto'
@@ -237,7 +236,10 @@ export class SaleService {
         }
     }
 
-    async getProductSaleDetail(salePromotionId: string, query: ProductSaleIds): Promise<Return> {
+    async getProductListSaleDetail(
+        salePromotionId: string,
+        query: ProductSaleIds
+    ): Promise<Return> {
         const productSale = await this.prisma.productPromotion.findMany({
             where: {
                 productId: {
@@ -284,6 +286,31 @@ export class SaleService {
         }
     }
 
+    async getProductSaleDetail(salePromotionId: string, productId: string): Promise<Return> {
+        const productSale = await this.prisma.productPromotion.findFirst({
+            where: {
+                productId,
+                salePromotionId,
+                currentQuantity: {
+                    gt: 0
+                },
+                StorePromotion: {
+                    status: Status.ACTIVE
+                }
+            },
+            select: {
+                currentQuantity: true,
+                priceAfter: true,
+                id: true
+            }
+        })
+
+        return {
+            msg: 'ok',
+            result: productSale || null
+        }
+    }
+
     async getSalePromotionsInDay(): Promise<Return> {
         try {
             let current = add(startOfHour(new Date()), { hours: 7 })
@@ -318,18 +345,13 @@ export class SaleService {
         }
     }
 
-    async getCurrentSale() {
+    async getCurrentSale(salePromotionId: string) {
         try {
             const current = add(startOfHour(new Date()), { hours: 7 })
 
             const salePromotion = await this.prisma.salePromotion.findFirst({
                 where: {
-                    startDate: {
-                        gte: current
-                    },
-                    endDate: {
-                        equals: add(current, { hours: 1 })
-                    }
+                    id: salePromotionId
                 },
                 omit: {
                     createdAt: true,

@@ -1,5 +1,6 @@
 import { Socket } from 'socket.io-client'
 import { LoginResponse } from './auth.type'
+import { CategoryListResponse } from './category.type'
 
 export type ProductOrderSale = ProductOrder & {
     salePromotionId: string
@@ -64,6 +65,7 @@ export type AppContext = {
     toastIdRef?: string | number
     currentSaleId: string
     setCurrentSaleId: React.Dispatch<React.SetStateAction<string>>
+    categories?: CategoryListResponse | undefined
     setToastId: (id: string | number) => void
     addToCart: (storeId: string, store_name: string, payload: ProductOrder) => void
 }

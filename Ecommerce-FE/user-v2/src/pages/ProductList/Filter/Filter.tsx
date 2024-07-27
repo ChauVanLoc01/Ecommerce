@@ -1,20 +1,21 @@
 import { yupResolver } from '@hookform/resolvers/yup'
-import { Button, RadioGroup } from '@radix-ui/themes'
+import { Box, Button, RadioGroup, Skeleton } from '@radix-ui/themes'
 import { motion } from 'framer-motion'
+import { useContext } from 'react'
 import { useForm } from 'react-hook-form'
 
 import Input from 'src/components/Input'
-import { CategoryListResponse } from 'src/types/category.type'
+import { AppContext } from 'src/contexts/AppContext'
 import { price_schema } from 'src/utils/price.schema'
 
 type FilterProps = {
-    data: CategoryListResponse
     category: string | undefined
     handleCategory: (category: string) => void
     handleClear: () => void
 }
 
-const Filter = ({ data, handleCategory, handleClear, category }: FilterProps) => {
+const Filter = ({ handleCategory, handleClear, category }: FilterProps) => {
+    const { categories } = useContext(AppContext)
     const { register } = useForm({
         resolver: yupResolver(price_schema)
     })
@@ -36,16 +37,24 @@ const Filter = ({ data, handleCategory, handleClear, category }: FilterProps) =>
                                 hidden: { opacity: 0 }
                             }}
                         >
-                            {data.map((category) => (
-                                <RadioGroup.Item
-                                    key={`filter_${category.name}`}
-                                    value={category.shortname}
-                                    id={category.shortname}
-                                    className='space-x-2 line-clamp-1'
-                                >
-                                    {category.name}
-                                </RadioGroup.Item>
-                            ))}
+                            {categories
+                                ? categories.map((category) => (
+                                      <RadioGroup.Item
+                                          key={`filter_${category.name}`}
+                                          value={category.shortname}
+                                          id={category.shortname}
+                                          className='space-x-2 line-clamp-1'
+                                      >
+                                          {category.name}
+                                      </RadioGroup.Item>
+                                  ))
+                                : Array(20)
+                                      .fill(0)
+                                      .map((_, idx) => (
+                                          <Skeleton key={`category_skeleton_${idx}`}>
+                                              <Box className='w-full h-8' />
+                                          </Skeleton>
+                                      ))}
                         </motion.div>
                     </RadioGroup.Root>
                 </div>

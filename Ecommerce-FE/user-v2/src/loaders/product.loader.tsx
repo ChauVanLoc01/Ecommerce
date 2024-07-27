@@ -51,12 +51,12 @@ export const productListLoader: LoaderFunction = async ({ request }) => {
             queryKey: ['categories'],
             queryFn: () => productFetching.categoryList(),
             staleTime: Infinity
-        }),
-        queryClient.fetchQuery({
-            queryKey: ['current-sale-promotion'],
-            queryFn: sale_api.current_sale_promotin,
-            staleTime: 1000 * 60 * 5
         })
+        // queryClient.fetchQuery({
+        //     queryKey: ['current-sale-promotion'],
+        //     queryFn: sale_api.current_sale_promotin,
+        //     staleTime: 1000 * 60 * 5
+        // })
     ])
 
     loadingEvent.end()

@@ -1,19 +1,19 @@
 import { Body, Controller, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common'
 import { MessagePattern, Payload } from '@nestjs/microservices'
-import { getProductSaleEvent, refreshProductSale } from 'common/constants/event.constant'
+import { refreshProductSale } from 'common/constants/event.constant'
 import { CurrentUser } from 'common/decorators/current_user.decorator'
 import { PaginationDTO } from 'common/decorators/pagination.dto'
 import { Public } from 'common/decorators/public.decorator'
+import { Roles } from 'common/decorators/roles.decorator'
+import { Role } from 'common/enums/role.enum'
 import { JwtGuard } from 'common/guards/jwt.guard'
 import { CurrentStoreType } from 'common/types/current.type'
 import { CreateProductSalePromotionDTO } from './dtos/create-product-sale.dto'
+import { ProductSaleIds } from './dtos/product-sale-ids.dto'
 import { QuerySalePromotionDTO } from './dtos/query-promotion.dto'
+import { CreateSpecialSaleDTO } from './dtos/special-sale.dto'
 import { UpdateProductsSalePromotion } from './dtos/update-product-sale.dto'
 import { SaleService } from './sale.service'
-import { CreateSpecialSaleDTO } from './dtos/special-sale.dto'
-import { Roles } from 'common/decorators/roles.decorator'
-import { Role } from 'common/enums/role.enum'
-import { ProductSaleIds } from './dtos/product-sale-ids.dto'
 
 @UseGuards(JwtGuard)
 @Controller('sale-promotion')
@@ -27,18 +27,27 @@ export class SaleController {
     }
 
     @Public()
-    @Get('current-sale')
-    getCurrentSale() {
-        return this.saleService.getCurrentSale()
+    @Get('product-sale/:salePromotionId/product/:productId')
+    getProductSaleDetail(
+        @Param('salePromotionId') salePromotionId: string,
+        @Param('productId') productId: string
+    ) {
+        return this.saleService.getProductSaleDetail(salePromotionId, productId)
+    }
+
+    @Public()
+    @Get('current-sale/:salePromotionId')
+    getCurrentSale(@Param('salePromotionId') salePromotionId: string) {
+        return this.saleService.getCurrentSale(salePromotionId)
     }
 
     @Public()
     @Get('products/:salePromotionId')
-    getCurrentSaleId(
+    getProductListSaleDetail(
         @Param('salePromotionId') salePromotionId: string,
         @Query() query: ProductSaleIds
     ) {
-        return this.saleService.getProductSaleDetail(salePromotionId, query)
+        return this.saleService.getProductListSaleDetail(salePromotionId, query)
     }
 
     @Public()
@@ -76,11 +85,11 @@ export class SaleController {
         return this.saleService.updateProduct(user, body)
     }
 
-    @Public()
-    @MessagePattern(getProductSaleEvent)
-    getProductSaleEvent(@Payload() productId: string) {
-        return this.saleService.getProductSaleEvent(productId)
-    }
+    // @Public()
+    // @MessagePattern(getProductSaleEvent)
+    // getProductSaleEvent(@Payload() productId: string) {
+    //     return this.saleService.getProductSaleEvent(productId)
+    // }
 
     @Public()
     @MessagePattern(refreshProductSale)

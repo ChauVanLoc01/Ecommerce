@@ -22,24 +22,20 @@ import ProductRecomend from './ProductRecomend'
 import RatingList from './Rating/RatingList'
 
 const Product = () => {
-    const { addToCart, profile } = useContext(AppContext)
+    const { addToCart, profile, currentSaleId } = useContext(AppContext)
     const [quantity, setQuantity] = useState<number>(1)
     const [productDetail, _, storeDetail] = useLoaderData() as [ProductDetailResponse, ProductListResponse, Store]
     const navigate = useNavigate()
 
-    const { data: sale } = useQuery({
-        queryKey: ['current-sale-promotion'],
-        queryFn: sale_api.current_sale_promotin,
+    const { data: productSale } = useQuery({
+        queryKey: ['product-sale', productDetail?.id],
+        queryFn: ({ signal }) => sale_api.getProducSale(currentSaleId, productDetail.id, signal),
         staleTime: 1000 * 60 * 5,
-        select: (result) => {
-            let data = result.data.result
-            return {
-                salePromotionId: data.salePromotion.id,
-                product_sale_quantity: data.productPromotions.find(({ productId }) => productDetail.id === productId)
-                    ?.quantity
-            }
-        }
+        select: (result) => result.data.result,
+        enabled: !!currentSaleId
     })
+
+    console.log('productSale', productSale)
 
     const { mutate: createViewProduct } = useMutation({
         mutationFn: productFetching.createViewProduct
@@ -62,11 +58,12 @@ const Product = () => {
                 storeId,
                 category
             }
-            if (sale?.salePromotionId && sale?.product_sale_quantity) {
+            if (currentSaleId && productSale) {
                 payload = {
                     ...payload,
-                    salePromotionId: sale?.salePromotionId,
-                    product_sale_quantity: sale?.product_sale_quantity
+                    salePromotionId: currentSaleId,
+                    product_sale_quantity: productSale.quantity,
+                    priceAfter: productSale.priceAfter
                 } as ProductOrderSale
             }
             addToCart(storeId, storeDetail.name, payload)
@@ -139,11 +136,11 @@ const Product = () => {
                             <Text color='gray'>{storeDetail.name}</Text>
                         </Flex>
                     </Link>
-                    {productDetail?.sale ? (
+                    {productSale ? (
                         <InputNumber
                             quantity={quantity}
                             setQuantity={setQuantity}
-                            currentQuantity={productDetail?.sale.quantity}
+                            currentQuantity={productSale.quantity}
                         />
                     ) : (
                         <InputNumber
@@ -152,29 +149,36 @@ const Product = () => {
                             currentQuantity={productDetail.currentQuantity}
                         />
                     )}
-                    {productDetail?.sale ? (
+                    {productSale ? (
                         <div className='space-x-3 text-2xl flex items-center'>
-                            <span className='bg-gradient-to-tr to-[#fcb045] via-[#fd1d1d] from-[#833ab4] bg-clip-text text-transparent'>
-                                {convertCurrentcy(productDetail.sale.priceAfter || 0)}
-                            </span>
-                            <span
+                            <Text
+                                size={'7'}
+                                className='bg-gradient-to-tr to-[#fcb045] via-[#fd1d1d] from-[#833ab4] bg-clip-text text-transparent'
+                            >
+                                {convertCurrentcy(productSale.priceAfter || 0)}
+                            </Text>
+                            <Text
+                                size={'7'}
                                 className={classNames('line-through text-gray-400', {
                                     hidden: !productDetail.priceBefore
                                 })}
                             >
                                 {convertCurrentcy(productDetail.priceAfter || 0)}
-                            </span>
+                            </Text>
                         </div>
                     ) : (
                         <div className='space-x-3 text-2xl'>
-                            <span className='text-red-600'>{convertCurrentcy(productDetail.priceAfter || 0, 0)}</span>
-                            <span
+                            <Text size={'7'} className='text-red-600'>
+                                {convertCurrentcy(productDetail.priceAfter || 0, 0)}
+                            </Text>
+                            <Text
+                                size={'7'}
                                 className={classNames('line-through text-gray-400', {
                                     hidden: !productDetail.priceBefore
                                 })}
                             >
                                 {convertCurrentcy(productDetail.priceBefore || 0, 0)}
-                            </span>
+                            </Text>
                         </div>
                     )}
                     <div className='flex justify-start gap-3'>

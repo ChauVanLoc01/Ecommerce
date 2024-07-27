@@ -5,11 +5,9 @@ import { ChevronLeftIcon, ChevronRightIcon } from '@radix-ui/react-icons'
 import { Box, Flex, Grid, IconButton, Select, Skeleton, Text } from '@radix-ui/themes'
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
-import { useLoaderData } from 'react-router-dom'
 import { productFetching } from 'src/apis/product'
 import { getSort, product_list_sort, sort_key } from 'src/constants/product.constants'
-import { CategoryListResponse } from 'src/types/category.type'
-import { ProductListQuery, ProductListResponse } from 'src/types/product.type'
+import { ProductListQuery } from 'src/types/product.type'
 import FlashSale from './FlashSale'
 import ProductCard from './ProductCard'
 import ProductSearch from './ProductSearch'
@@ -20,7 +18,6 @@ const Filter = loadable(() => import('./Filter'))
 
 const ProductList = () => {
     const [query, setQuery] = useState<ProductListQuery>(default_query)
-    const [_, categoryResponse] = useLoaderData() as [ProductListResponse, CategoryListResponse]
     const [page, setPage] = useState<number>(0)
     const [category, setCategory] = useState<string>()
     const [sort, setSort] = useState<string>('')
@@ -111,12 +108,7 @@ const ProductList = () => {
             <FlashSale />
             <div className='flex gap-x-5'>
                 <section className='basis-1/5 flex-shrink-0'>
-                    <Filter
-                        category={category}
-                        handleClear={handleClear}
-                        data={categoryResponse}
-                        handleCategory={handleCategory}
-                    />
+                    <Filter category={category} handleClear={handleClear} handleCategory={handleCategory} />
                 </section>
                 <section className='grow pb-10'>
                     <div className='sticky top-0 z-50 bg-[#F8F9FA]'>

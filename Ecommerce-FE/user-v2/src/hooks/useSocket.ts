@@ -10,13 +10,14 @@ type UseSocketProps = {
 }
 
 const useSocket = ({ actionId }: UseSocketProps) => {
-    const { toastIdRef, setCurrentSaleId } = useContext(AppContext)
+    const { toastIdRef } = useContext(AppContext)
     const { current: socket } = useRef(
         io(import.meta.env.VITE_SOCKET_ENPOINT, {
             autoConnect: false
         })
     )
     const [isCanOrder, setIsCanOrder] = useState<boolean>(false)
+    const [currentSaleId, setCurrentSaleId] = useState<string>('')
 
     useEffect(() => {
         socket.connect()
@@ -41,6 +42,7 @@ const useSocket = ({ actionId }: UseSocketProps) => {
             }
         })
         socket.on(channel.current_sale_promotion, (currentId: string) => {
+            console.log('currentSaleID', currentId)
             setCurrentSaleId(currentId)
         })
         socket.emit(join_room, { type: channel.order, id: actionId })
@@ -61,7 +63,9 @@ const useSocket = ({ actionId }: UseSocketProps) => {
 
     return {
         socket,
-        isCanOrder
+        isCanOrder,
+        setCurrentSaleId,
+        currentSaleId
     }
 }
 

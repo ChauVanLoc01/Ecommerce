@@ -5,9 +5,7 @@ import {
     ProductListQuery,
     ProductListResponse,
     ProductSearch,
-    RefreshProduct,
-    SalesPromotion,
-    SalesPromotionAndProduct
+    RefreshProduct
 } from 'src/types/product.type'
 import { Return } from 'src/types/return.type'
 import { http } from './http'

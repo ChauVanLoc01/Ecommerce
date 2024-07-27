@@ -1,5 +1,4 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { add, endOfHour } from 'date-fns'
 import { cloneDeep, sumBy } from 'lodash'
 import { useContext, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
@@ -16,7 +15,7 @@ type UseDataCheckoutProps = {
 }
 
 const useDataCheckout = ({ setStep }: UseDataCheckoutProps) => {
-    const { setToastId, products, setProducts, ids, socket, currentSaleId, setCurrentSaleId } = useContext(AppContext)
+    const { setToastId, products, setProducts, ids, socket, currentSaleId } = useContext(AppContext)
     const [selectedVoucher, setSelectedVoucher] = useState<Record<string, VoucherWithCondition[]> | undefined>(
         undefined
     )
@@ -24,17 +23,9 @@ const useDataCheckout = ({ setStep }: UseDataCheckoutProps) => {
         [voucherId: string]: number
     }>({})
 
-    const { data: current_sale_promotino } = useQuery({
-        queryKey: ['current-sale-promotion'],
-        queryFn: sale_api.current_sale_promotin,
-        select: (data) => data.data.result,
-        staleTime:
-            add(endOfHour(new Date()), { hours: 7 }).getMilliseconds() - add(new Date(), { hours: 7 }).getMilliseconds()
-    })
-
     const { data: productSaleList, refetch: productSaleRefetch } = useQuery({
         queryKey: ['product_sale_detail', ids?.checked_productIds],
-        queryFn: ({ signal }) => sale_api.getProductsSaleDetail(currentSaleId, ids?.checked_productIds || [], signal),
+        queryFn: ({ signal }) => sale_api.getProductListSale(currentSaleId, ids?.checked_productIds || [], signal),
         enabled: !!currentSaleId && !!ids?.checked_productIds,
         select: (result) => result.data.result,
         staleTime: 1000 * 60
@@ -209,12 +200,6 @@ const useDataCheckout = ({ setStep }: UseDataCheckoutProps) => {
             productSaleRefetch()
         }
     }, [ids?.checked_productIds])
-
-    useEffect(() => {
-        if (current_sale_promotino) {
-            setCurrentSaleId(current_sale_promotino?.salePromotion?.id || '')
-        }
-    }, [current_sale_promotino])
 
     // useEffect(() => {
     //     if (productSaleList) {

@@ -18,7 +18,6 @@ import { Cache } from 'cache-manager'
 import { BackgroundAction, BackgroundName } from 'common/constants/background-job.constant'
 import {
     emit_update_product_whenCreatingOrder,
-    getProductSaleEvent,
     getStoreDetail,
     refreshProductSale
 } from 'common/constants/event.constant'
@@ -267,6 +266,9 @@ export class ProductService {
             storeId,
             category,
             status,
+            currentQuantity: {
+                gt: 0
+            },
             priceAfter: {
                 lte: price_max,
                 gte: price_min
@@ -327,7 +329,7 @@ export class ProductService {
     }
 
     async getProductDetail(productId: string): Promise<Return> {
-        const [productExist, cached, imgs, productSale] = await Promise.all([
+        const [productExist, cached, imgs] = await Promise.all([
             this.prisma.product.findUnique({
                 where: {
                     id: productId,
@@ -342,8 +344,7 @@ export class ProductService {
                 where: {
                     productId
                 }
-            }),
-            firstValueFrom(this.store_client.send<MessageReturn>(getProductSaleEvent, productId))
+            })
         ])
 
         if (!productExist) throw new NotFoundException('Sản phẩm không tồn tại')
@@ -353,10 +354,7 @@ export class ProductService {
             result: {
                 ...productExist,
                 productImages: imgs,
-                currentQuantity: cached
-                    ? JSON.parse(cached).quantity
-                    : productExist.currentQuantity,
-                sale: productSale.action ? productSale.result : null
+                currentQuantity: cached ? JSON.parse(cached).quantity : productExist.currentQuantity
             } as Product
         }
     }

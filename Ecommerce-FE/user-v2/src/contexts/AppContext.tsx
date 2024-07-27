@@ -1,4 +1,4 @@
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { cloneDeep } from 'lodash'
 import { ReactNode, createContext, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
@@ -37,8 +37,14 @@ const ContextWrap = ({ children }: { children: ReactNode }) => {
     const [products, setProducts] = useState<AppContextType['products']>(defaultValueContext.products)
     const { current: actionId } = useRef<string>(uuidv7())
     const toastIdRef = useRef<string | number>()
-    const { isCanOrder, socket } = useSocket({ actionId })
-    const [currentSaleId, setCurrentSaleId] = useState<string>('')
+    const { isCanOrder, socket, currentSaleId, setCurrentSaleId } = useSocket({ actionId })
+
+    const { data: categories } = useQuery({
+        queryKey: ['categories'],
+        queryFn: productFetching.categoryList,
+        staleTime: Infinity,
+        select: (data) => data.data.result
+    })
 
     const { mutate: createViewAddToCart } = useMutation({
         mutationFn: productFetching.createViewAddToCart
@@ -130,7 +136,8 @@ const ContextWrap = ({ children }: { children: ReactNode }) => {
                 addToCart,
                 ids,
                 currentSaleId,
-                setCurrentSaleId
+                setCurrentSaleId,
+                categories
             }}
         >
             {children}

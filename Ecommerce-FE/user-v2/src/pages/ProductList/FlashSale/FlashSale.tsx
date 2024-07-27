@@ -5,8 +5,7 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import { ArrowRightIcon } from '@radix-ui/react-icons'
 import { Flex } from '@radix-ui/themes'
 import { useQuery } from '@tanstack/react-query'
-import { add, endOfHour } from 'date-fns'
-import { useContext, useEffect } from 'react'
+import { useContext } from 'react'
 import { sale_api } from 'src/apis/sale_promotion.api'
 import { route } from 'src/constants/route'
 import { AppContext } from 'src/contexts/AppContext'
@@ -18,23 +17,19 @@ type FlashSaleProps = {
 }
 
 const FlashSale = ({ isHiddenMore = false }: FlashSaleProps) => {
-    const { setCurrentSaleId } = useContext(AppContext)
+    const { currentSaleId } = useContext(AppContext)
+
     const { data: current_sale_promotino } = useQuery({
-        queryKey: ['current-sale-promotion'],
-        queryFn: sale_api.current_sale_promotin,
+        queryKey: ['current-sale-promotion', currentSaleId],
+        queryFn: sale_api.current_sale_promotin(currentSaleId),
         select: (data) => data.data.result,
-        staleTime:
-            add(endOfHour(new Date()), { hours: 7 }).getMilliseconds() - add(new Date(), { hours: 7 }).getMilliseconds()
+        staleTime: Infinity,
+        enabled: !!currentSaleId
     })
 
     if (!current_sale_promotino?.productPromotions.length) {
         return <></>
     }
-    useEffect(() => {
-        if (current_sale_promotino?.productPromotions?.length) {
-            setCurrentSaleId(current_sale_promotino.salePromotion.id)
-        }
-    }, [])
 
     return (
         <div className='space-y-3'>

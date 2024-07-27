@@ -60,8 +60,7 @@ const routes = createBrowserRouter([
         children: [
             {
                 index: true,
-                element: <ProductList />,
-                loader: productListLoader
+                element: <ProductList />
             },
             {
                 path: 'store/:storeId',
