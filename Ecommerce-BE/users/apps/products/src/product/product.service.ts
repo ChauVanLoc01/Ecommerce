@@ -9,7 +9,7 @@ import {
     NotFoundException
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { ClientProxy } from '@nestjs/microservices'
+import { ClientProxy, RmqContext } from '@nestjs/microservices'
 import { SchedulerRegistry } from '@nestjs/schedule'
 import { Prisma, PrismaClient, Product } from '@prisma/client'
 import { DefaultArgs } from '@prisma/client/runtime/library'
@@ -32,10 +32,10 @@ import {
 import { MessageReturn, Return } from 'common/types/result.type'
 import {
     commit_create_order_success,
+    emit_roll_back_order,
     emit_update_quantity_of_product,
     emit_update_status_of_order,
     hash,
-    roll_back_order,
     voucher_next_step
 } from 'common/utils/order_helper'
 import { format } from 'date-fns'
@@ -596,7 +596,12 @@ export class ProductService {
         }
     }
 
-    async updateProductWhenCreatingOrder(body: CreateOrderPayload<'update_product'>) {
+    async updateProductWhenCreatingOrder(
+        body: CreateOrderPayload<'update_product'>,
+        context: RmqContext
+    ) {
+        const channel = context.getChannelRef()
+        const originalMsg = context.getMessage()
         let { userId, payload, actionId } = body
         let map = new Map<
             number,
@@ -613,6 +618,7 @@ export class ProductService {
                     let hashValue = hash('product', productId)
                     let fromCache = await this.cacheManager.get<string>(hashValue)
                     if (fromCache) {
+                        console.log('Trường hợp CÓ cache')
                         let { quantity, priceAfter } = JSON.parse(fromCache) as {
                             quantity: number
                             priceAfter: number
@@ -629,6 +635,7 @@ export class ProductService {
                             original_quantity: quantity
                         })
                     } else {
+                        console.log('Trường hợp KHÔNG CÓ cache')
                         map.set(idx, undefined)
                         const productExist = await this.prisma.product.findUnique({
                             where: {
@@ -639,25 +646,51 @@ export class ProductService {
                                 priceAfter: true
                             }
                         })
+                        console.log('productExist', productExist)
 
                         if (!productExist) {
                             console.log('Sản phẩm không tồn tại')
+                            map.delete(idx)
                             throw new Error('Sản phẩm không tồn tại')
                         }
                         if (productExist.currentQuantity == 0) {
                             console.log('sản phẩm đã hết hàng')
+                            map.delete(idx)
                             throw new Error('Sản phẩm đã hết hàng')
                         }
                         if (productExist.currentQuantity < buy) {
                             console.log('Sản phẩm không đủ số lượng')
+                            map.delete(idx)
                             throw new Error('Sản phẩm không đủ số lượng')
                         }
                         if (productExist) {
-                            map.set(idx, {
-                                ...product,
-                                remaining_quantity: productExist.currentQuantity - product.buy,
-                                original_quantity: productExist.currentQuantity
-                            })
+                            console.log('Sản phẩm tồn tại2')
+                            let fromCache_inner = await this.cacheManager.get<string>(hashValue)
+                            if (fromCache_inner) {
+                                console.log('Trường hợp có cache 2')
+                                let { quantity } = JSON.parse(fromCache_inner) as {
+                                    quantity: number
+                                }
+                                if (quantity == 0) {
+                                    console.log('Sản phẩm đã hết thàng 2')
+                                    throw new Error('Sản phẩm đã hết hàng')
+                                }
+                                if (buy > quantity) {
+                                    console.log('sản phẩm không đủ số lượng 2')
+                                    throw new Error('Sản phẩm không đủ số lượng')
+                                }
+                                map.set(idx, {
+                                    ...product,
+                                    remaining_quantity: quantity - buy,
+                                    original_quantity: quantity
+                                })
+                            } else {
+                                map.set(idx, {
+                                    ...product,
+                                    remaining_quantity: productExist.currentQuantity - product.buy,
+                                    original_quantity: productExist.currentQuantity
+                                })
+                            }
                         }
                     }
                     return this.cacheManager.set(
@@ -723,8 +756,10 @@ export class ProductService {
                             })
                         }
                     )
+                    channel.ack(originalMsg)
                 } catch (err) {
                     console.log('******Lỗi lỗi ở bước tạo cập nhật thành công product********', err)
+                    channel.ack(originalMsg)
                 }
             }
         } catch (err) {
@@ -737,31 +772,49 @@ export class ProductService {
                     }
                 }
                 console.log('********Cập nhật product thất bại********', err)
-                roll_back_order([this.order_client], payloadTmp)
-                await Promise.all(
-                    payloadTmp.payload.products.map(({ id, original_quantity, price_after }) => {
-                        let hashValue = hash('product', id)
-                        return this.cacheManager.set(
-                            hashValue,
-                            JSON.stringify({
-                                quantity: original_quantity,
-                                priceAfter: price_after,
-                                times: 3
-                            })
+                emit_roll_back_order([this.order_client], payloadTmp)
+                emit_update_status_of_order(this.socket_client, {
+                    action: false,
+                    id: actionId,
+                    msg: err?.message,
+                    result: null
+                })
+                if (payloadTmp.payload.products.length) {
+                    await Promise.all(
+                        payloadTmp.payload.products.map(
+                            ({ id, original_quantity, price_after }) => {
+                                let hashValue = hash('product', id)
+                                return this.cacheManager.set(
+                                    hashValue,
+                                    JSON.stringify({
+                                        quantity: original_quantity,
+                                        priceAfter: price_after,
+                                        times: 3
+                                    })
+                                )
+                            }
                         )
-                    })
-                )
+                    )
+                }
+                channel.ack(originalMsg)
             } catch (err) {
                 console.log('*****Lỗi trong try catch*******', err)
+                channel.ack(originalMsg)
             }
         }
     }
 
-    async rollbackUpdateQuantityProduct(payload: CreateOrderPayload<'roll_back_order'>) {
+    async rollbackUpdateQuantityProduct(
+        payload: CreateOrderPayload<'roll_back_order'>,
+        context: RmqContext
+    ) {
         console.log(
             '*******Roll back product khi cập nhật voucher thất bại***********',
             format(new Date(), 'hh:mm:ss:SSS dd/MM')
         )
+        const channel = context.getChannelRef()
+        const originalMsg = context.getMessage()
+        channel.ack(originalMsg)
         try {
             await this.productBackgroundQueue.add(
                 BackgroundAction.resetValueCacheWhenUpdateProductFail,

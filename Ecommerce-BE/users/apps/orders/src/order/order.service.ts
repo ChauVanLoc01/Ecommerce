@@ -10,7 +10,7 @@ import {
     NotFoundException
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { ClientProxy } from '@nestjs/microservices'
+import { ClientProxy, RmqContext } from '@nestjs/microservices'
 import { SchedulerRegistry } from '@nestjs/schedule'
 import { Prisma, PrismaClient, Product } from '@prisma/client'
 import { DefaultArgs } from '@prisma/client/runtime/library'
@@ -280,7 +280,9 @@ export class OrderService {
         }
     }
 
-    async checkCache(userId: string, payload: CreateOrder) {
+    async checkCache(userId: string, payload: CreateOrder, context: RmqContext) {
+        const channel = context.getChannelRef()
+        const originalMsg = context.getMessage()
         let { orders, actionId } = payload
         console.log(':::::::::Kiểm tra cache:::::::::', format(new Date(), 'hh:mm:ss:SSS dd/MM'))
         try {
@@ -335,19 +337,23 @@ export class OrderService {
                     userId,
                     payload
                 } as CreateOrderPayload<'process_order'>)
+                channel.ack(originalMsg)
             }
         } catch (err) {
-            console.log('*****Lỗi tại bước check cache********', err)
             emit_update_status_of_order(this.socketClient, {
                 action: false,
                 id: actionId,
                 msg: err.message,
                 result: null
             })
+            console.log('*****Lỗi tại bước check cache********', err)
+            channel.ack(originalMsg)
         }
     }
 
-    async processOrder(userId: string, body: CreateOrder) {
+    async processOrder(userId: string, body: CreateOrder, context: RmqContext) {
+        const channel = context.getChannelRef()
+        const originalMsg = context.getMessage()
         const { orders, globalVoucherId, delivery_info, currentSaleId } = body
         console.log(
             ':::::::::::Tiến hành tạo đơn, shipping::::::::::::',
@@ -452,6 +458,7 @@ export class OrderService {
                     userId,
                     payload: tmp
                 })
+                channel.ack(originalMsg)
             }
         } catch (err) {
             console.log(
@@ -467,10 +474,14 @@ export class OrderService {
             console.log(
                 ':::::::::::Emit thông tin đơn hàng thất bại tới người dùng thành công::::::::::::'
             )
+            channel.ack(originalMsg)
         }
     }
 
-    async rollbackOrder(body: CreateOrderPayload<'roll_back_order'>) {
+    async rollbackOrder(body: CreateOrderPayload<'roll_back_order'>, context: RmqContext) {
+        const channel = context.getChannelRef()
+        const originalMsg = context.getMessage()
+        channel.ack(originalMsg)
         let {
             payload: { orderIds }
         } = body
@@ -489,7 +500,10 @@ export class OrderService {
         }
     }
 
-    async commitOrder(body: CreateOrderPayload<'commit_success'>) {
+    async commitOrder(body: CreateOrderPayload<'commit_success'>, context: RmqContext) {
+        const channel = context.getChannelRef()
+        const originalMsg = context.getMessage()
+        channel.ack(originalMsg)
         console.log(
             '::::::::::Commit order ==> Product hoặc voucher đã cập nhật thành công ==> Quá trình đặt hàng thành công::::::::::::',
             format(new Date(), 'hh:mm:ss:SSS dd/MM')

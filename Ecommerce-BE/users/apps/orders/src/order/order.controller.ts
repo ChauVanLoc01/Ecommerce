@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common'
-import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices'
+import { Ctx, EventPattern, MessagePattern, Payload, RmqContext } from '@nestjs/microservices'
 import { ApiBearerAuth } from '@nestjs/swagger'
 import {
     commit_order,
@@ -16,7 +16,6 @@ import { JwtGuard } from 'common/guards/jwt.guard'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
 import { CreateOrderPayload } from 'common/types/order_payload.type'
 import { CreateOrderDTO } from '../../../../common/dtos/create_order.dto'
-import { AnalyticsOrderDTO } from '../dtos/analytics_order.dto'
 import {
     CreateOrderRefundDTO,
     ReOpenOrderRefundDTO,
@@ -25,7 +24,6 @@ import {
 } from '../dtos/order_refund.dto'
 import { QueryOrderDTO } from '../dtos/query-order.dto'
 import { OrderService } from './order.service'
-import { AnalyticsType } from 'common/constants/analytics.constants'
 
 @ApiBearerAuth()
 @UseGuards(JwtGuard)
@@ -107,26 +105,33 @@ export class OrderController {
 
     @Public()
     @EventPattern(processStepOneToCreatOrder)
-    checkCache(payload: CreateOrderPayload<'check_cache'>) {
-        return this.ordersService.checkCache(payload.userId, payload.payload)
+    checkCache(@Ctx() context: RmqContext, @Payload() payload: CreateOrderPayload<'check_cache'>) {
+        return this.ordersService.checkCache(payload.userId, payload.payload, context)
     }
 
     @Public()
     @EventPattern(processStepTwoToCreateOrder)
-    processOrder(data: CreateOrderPayload<'process_order'>) {
-        return this.ordersService.processOrder(data.userId, data.payload)
+    processOrder(@Payload() data: CreateOrderPayload<'process_order'>, @Ctx() context: RmqContext) {
+        return this.ordersService.processOrder(data.userId, data.payload, context)
     }
 
     @Public()
     @EventPattern(roll_back_order)
-    rollbackOrder(payload: CreateOrderPayload<'roll_back_order'>) {
-        return this.ordersService.rollbackOrder(payload)
+    rollbackOrder(
+        @Payload() payload: CreateOrderPayload<'roll_back_order'>,
+        @Ctx() context: RmqContext
+    ) {
+        console.log('roll back order nhận được thông tin')
+        return this.ordersService.rollbackOrder(payload, context)
     }
 
     @Public()
     @EventPattern(commit_order)
-    commitOrder(payload: CreateOrderPayload<'commit_success'>) {
-        return this.ordersService.commitOrder(payload)
+    commitOrder(
+        @Payload() payload: CreateOrderPayload<'commit_success'>,
+        @Ctx() context: RmqContext
+    ) {
+        return this.ordersService.commitOrder(payload, context)
     }
 
     @Roles(Role.USER, Role.EMPLOYEE, Role.STORE_OWNER)

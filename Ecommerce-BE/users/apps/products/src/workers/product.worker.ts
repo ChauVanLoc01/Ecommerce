@@ -61,16 +61,19 @@ export class ProductConsummer {
                     let hashValue = hash('product', productId)
                     let fromCache = await this.cacheManager.get<string>(hashValue)
                     let isExistCronJob = this.schedulerRegistry.doesExist('cron', hashValue)
-                    console.log('cron job')
                     if (isExistCronJob && fromCache) {
                         console.log(
                             '::::::::Background Job: Cron Job đã tồn tại ==> Không tạo cron job:::::::::',
                             hashValue
                         )
-                        let { quantity } = JSON.parse(fromCache) as {
+                        let { quantity, priceAfter } = JSON.parse(fromCache) as {
                             quantity: number
+                            priceAfter: number
                         }
-                        this.cacheManager.set(hashValue, JSON.stringify({ quantity, times: 3 }))
+                        this.cacheManager.set(
+                            hashValue,
+                            JSON.stringify({ quantity, priceAfter, times: 3 })
+                        )
                         return true
                     } else {
                         console.log(
@@ -80,6 +83,7 @@ export class ProductConsummer {
                             CronExpression.EVERY_30_SECONDS,
                             async () => {
                                 try {
+                                    let fromCache = await this.cacheManager.get<string>(hashValue)
                                     if (fromCache) {
                                         let { quantity, times } = JSON.parse(fromCache) as {
                                             quantity: number
@@ -88,12 +92,6 @@ export class ProductConsummer {
                                         console.log(
                                             `:::::::Lần chạy cron job thứ ${times} - số lượng cập nhật ${quantity}::::::::::`
                                         )
-                                        if (times == 0) {
-                                            this.schedulerRegistry.getCronJob(hashValue).stop()
-                                            this.schedulerRegistry.deleteCronJob(hashValue)
-                                            this.cacheManager.del(hashValue)
-                                            return
-                                        }
                                         await Promise.all([
                                             this.prisma.product.update({
                                                 where: {
@@ -109,6 +107,12 @@ export class ProductConsummer {
                                             )
                                         ])
                                         console.log('::::::::::Đã cập nhật xong:::::::::')
+                                        if (times == 1) {
+                                            console.log(':::::::::::::Xoá cron job::::::::::::::')
+                                            this.schedulerRegistry.deleteCronJob(hashValue)
+                                            this.cacheManager.del(hashValue)
+                                            return
+                                        }
                                     }
                                 } catch (err) {
                                     console.log(

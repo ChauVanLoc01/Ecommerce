@@ -1,5 +1,5 @@
 import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common'
-import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices'
+import { Ctx, EventPattern, MessagePattern, Payload, RmqContext } from '@nestjs/microservices'
 import { ApiBearerAuth, ApiProperty } from '@nestjs/swagger'
 import {
     commit_order,
@@ -127,16 +127,22 @@ export class ProductController {
 
     @Public()
     @EventPattern(update_Product_WhenCreatingOrder)
-    updateProductWhenCreatingOrder(payload: CreateOrderPayload<'update_product'>) {
+    updateProductWhenCreatingOrder(
+        @Payload() payload: CreateOrderPayload<'update_product'>,
+        @Ctx() context: RmqContext
+    ) {
         console.log('::::::Bước 2: Cập nhật lại số lượng product::::::::')
-        return this.productsService.updateProductWhenCreatingOrder(payload)
+        return this.productsService.updateProductWhenCreatingOrder(payload, context)
     }
 
     @Public()
     @EventPattern(roll_back_order)
-    rollbackUpdateQuantityProduct(payload: CreateOrderPayload<'roll_back_order'>) {
+    rollbackUpdateQuantityProduct(
+        @Payload() payload: CreateOrderPayload<'roll_back_order'>,
+        @Ctx() context: RmqContext
+    ) {
         console.log('*****Roll Back Bước 2: Cập nhật voucher******')
-        return this.productsService.rollbackUpdateQuantityProduct(payload)
+        return this.productsService.rollbackUpdateQuantityProduct(payload, context)
     }
 
     @Public()

@@ -3,6 +3,7 @@ import {
     commit_order,
     emit_update_product_whenCreatingOrder,
     emit_update_voucher_whenCreatingOrder,
+    roll_back_order,
     statusOfOrder,
     update_Product_WhenCreatingOrder,
     update_voucher_whenCreatingOrder
@@ -18,6 +19,7 @@ import {
 export const hash = (type: keyof typeof room_obj, id: string) => `${type}::${id}`
 
 export const emit_update_status_of_order = (client: ClientProxy, payload: OrderStatusPayload) => {
+    console.log('emit status to order')
     client.emit(statusOfOrder, payload)
 }
 
@@ -60,7 +62,7 @@ export const commit_create_order_success = (
     clients.forEach((client) => client.emit(commit_order, payload))
 }
 
-export const roll_back_order = (
+export const emit_roll_back_order = (
     clients: ClientProxy[],
     payload: CreateOrderPayload<'roll_back_order'>
 ) => {

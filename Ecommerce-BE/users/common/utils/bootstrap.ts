@@ -22,7 +22,9 @@ export async function bootstrap(mainModule: any) {
                 queue: configService.get<string>('rabbitmq.queue_name'),
                 queueOptions: {
                     durable: true
-                }
+                },
+                noAck: false
+                // prefetchCount: 1
             }
         })
 

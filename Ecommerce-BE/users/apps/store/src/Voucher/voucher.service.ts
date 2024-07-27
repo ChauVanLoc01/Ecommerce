@@ -28,10 +28,10 @@ import { CreateOrderPayload } from 'common/types/order_payload.type'
 import { MessageReturn, Return } from 'common/types/result.type'
 import {
     commit_create_order_success,
+    emit_roll_back_order,
     emit_update_quantity_of_voucher,
     emit_update_status_of_order,
-    hash,
-    roll_back_order
+    hash
 } from 'common/utils/order_helper'
 import { addHours, addMinutes, format } from 'date-fns'
 import { v4 as uuidv4 } from 'uuid'
@@ -623,7 +623,7 @@ export class VoucherService {
                 '*********Fail: Cập nhật voucher thất bại ==> Emit rollback tới product************',
                 err
             )
-            roll_back_order([this.orderClient, this.productClient], payload as any)
+            emit_roll_back_order([this.orderClient, this.productClient], payload as any)
             await this.voucherBackgroundQueue.add(
                 BackgroundAction.resetValueVoucherWHenUpdateProductFail,
                 payload.payload.vouchers.map((e) => e.id),
