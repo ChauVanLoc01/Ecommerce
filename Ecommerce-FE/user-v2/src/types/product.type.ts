@@ -61,7 +61,11 @@ export type ProductDetailResponse = Product & {
     sale: { id: string; productId: string; quantity: number; bought: number; priceAfter: number }
 }
 
-export type RefreshProduct = { [key: string]: Product }
+export type RefreshProduct = {
+    [storeId: string]: {
+        [productId: string]: Product
+    }
+}
 
 export type ProductSearch = Return<{
     scroll_id: string

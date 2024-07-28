@@ -73,6 +73,7 @@ type SaleAlertProps = {
     page_size: number
     search_key: string
     handleSearch: (e: React.ChangeEvent<HTMLInputElement>) => void
+    productListRefetch: () => void
 }
 
 const SaleAlert = ({
@@ -99,7 +100,8 @@ const SaleAlert = ({
     handlePreviousPage,
     page_size,
     handleSearch,
-    search_key
+    search_key,
+    productListRefetch
 }: SaleAlertProps) => {
     const { data: categories } = useQuery({
         queryKey: ['categories'],
@@ -110,8 +112,8 @@ const SaleAlert = ({
 
     const { mutate: joinSalePromotion, isPending } = useMutation({
         mutationFn: sale_api.joinSalePromotion,
-        onSuccess: () => {
-            refetchSalePromotion()
+        onSuccess: async () => {
+            await Promise.all([refetchSalePromotion(), productListRefetch()])
             onClear()
             setSelectedEvent((pre) => ({ ...pre, open: false }))
             toast.success('Tham gia thành công')

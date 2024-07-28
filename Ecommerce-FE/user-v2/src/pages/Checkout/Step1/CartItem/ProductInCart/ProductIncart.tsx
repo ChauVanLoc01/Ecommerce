@@ -1,17 +1,13 @@
 import { TrashIcon } from '@radix-ui/react-icons'
 import { AlertDialog, Button, Checkbox, Flex, IconButton, Text, Tooltip } from '@radix-ui/themes'
 import { motion } from 'framer-motion'
-import { debounce } from 'lodash'
-import { useEffect, useState } from 'react'
+import { debounce, DebouncedFunc } from 'lodash'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import InputNumber from 'src/components/InputNumber'
 import Countdown from 'src/pages/ProductList/FlashSale/Countdown'
 import { ProductOrder, ProductOrderSale } from 'src/types/context.type'
-import { convertCurrentcy, removeSpecialCharacter } from 'src/utils/utils.ts'
-
-const isSale = (product: ProductOrder | ProductOrderSale): product is ProductOrderSale => {
-    return 'salePromotionId' in product
-}
+import { convertCurrentcy, isProductSale, removeSpecialCharacter } from 'src/utils/utils.ts'
 
 type ProductInCartType = {
     product: ProductOrder | ProductOrderSale
@@ -21,27 +17,25 @@ type ProductInCartType = {
 }
 
 const ProductIncart = ({ product, handleChecked, handleChangeQuantity, handleDelete }: ProductInCartType) => {
+    let isSale = isProductSale(product)
+    console.log('product', product)
     const [quantity, setQuantity] = useState<number>(product.buy)
-
-    // const { data: saleId } = useQuery({
-    //     queryKey: ['current-sale-promotion'],
-    //     queryFn: sale_api.current_sale_promotin,
-    //     select: (data) => data.data.result.salePromotion.id
-    // })
+    const debounceRef = useRef<DebouncedFunc<() => void> | undefined>(undefined)
 
     useEffect(() => {
-        let changeQuantityDebounce = debounce(() => handleChangeQuantity(product.productId, quantity), 2000)
-        changeQuantityDebounce()
+        debounceRef.current = debounce(() => handleChangeQuantity(product.productId, quantity), 150)
+        debounceRef.current()
         return () => {
-            changeQuantityDebounce.cancel()
+            debounceRef.current?.cancel()
         }
     }, [quantity])
 
     useEffect(() => {
         if (product?.isBlock) {
             setQuantity(0)
-        } else {
-            setQuantity(Math.min(product.buy, product.currentQuantity))
+        }
+        if (!product?.isBlock) {
+            setQuantity(product.buy)
         }
     }, [product])
 
@@ -63,7 +57,7 @@ const ProductIncart = ({ product, handleChecked, handleChangeQuantity, handleDel
                 <img src={product?.image} alt='cart-item' className='object-cover w-16 h-16' />
             </Link>
             <div className='flex-grow flex flex-col'>
-                {isSale(product) && (
+                {isSale && (
                     <Flex className='space-x-3 pr-24'>
                         <h3 className='font-semibold font-mono text-xl bg-gradient-to-tr to-[#fcb045] via-[#fd1d1d] from-[#833ab4] bg-clip-text text-transparent'>
                             Sản phẩm giảm giá
@@ -81,17 +75,18 @@ const ProductIncart = ({ product, handleChecked, handleChangeQuantity, handleDel
                 </Link>
             </div>
             <div className='flex items-center space-x-4'>
-                {isSale(product) ? (
+                {isProductSale(product) ? (
                     <h3 className='font-semibold font-mono bg-gradient-to-tr to-[#fcb045] via-[#fd1d1d] from-[#833ab4] bg-clip-text text-transparent'>
-                        {convertCurrentcy(product.priceAfter)}
+                        {convertCurrentcy(product.sale.priceAfter)}
                     </h3>
                 ) : (
                     <h3 className='font-semibold'>{convertCurrentcy(product.priceAfter)}</h3>
                 )}
                 <InputNumber
-                    quantity={Math.min(product.buy, product.currentQuantity)}
+                    quantity={quantity}
                     setQuantity={setQuantity}
-                    currentQuantity={product?.isBlock ? 0 : product.currentQuantity}
+                    max={isProductSale(product) ? product.sale.currentQuantity : product.currentQuantity}
+                    isSale={isSale}
                 />
                 <AlertDialog.Root>
                     <AlertDialog.Trigger>

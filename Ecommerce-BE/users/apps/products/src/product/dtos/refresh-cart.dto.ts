@@ -1,12 +1,21 @@
-import { IsArray, IsNotEmpty, IsOptional, IsString } from 'class-validator'
+import { ApiProperty } from '@nestjs/swagger'
+import { Type } from 'class-transformer'
+import { IsArray, IsNotEmpty, IsString } from 'class-validator'
 
-export class RefreshCartDTO {
+export class CartDTO {
     @IsArray()
     @IsString({ each: true })
     @IsNotEmpty()
-    productsId: string[]
+    productIds: string[]
 
     @IsString()
-    @IsOptional()
-    saleId?: string
+    @IsNotEmpty()
+    storeId: string
+}
+
+export class RefreshCartDTO {
+    @ApiProperty()
+    @IsArray()
+    @Type(() => CartDTO)
+    ids: CartDTO[]
 }

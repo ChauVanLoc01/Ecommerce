@@ -61,15 +61,20 @@ const ContextWrap = ({ children }: { children: ReactNode }) => {
             return undefined
         }
         const ids = Object.keys(products.stores).reduce<Ids>(
-            (acum, storeId) => {
+            (acum, storeId, idx) => {
                 let store = products.stores[storeId]
                 let product_in_store = store.products
                 acum.all_storeIds.push(storeId)
+                acum.complexIds.push({
+                    storeId,
+                    productIds: []
+                })
                 product_in_store.forEach((product) => {
                     if (product.isChecked) {
                         acum.checked_productIds.push(product.productId)
                     }
                     acum.all_productIds.push(product.productId)
+                    acum.complexIds[idx].productIds.push(product.productId)
                 })
                 return { ...acum }
             },
@@ -77,11 +82,12 @@ const ContextWrap = ({ children }: { children: ReactNode }) => {
                 all_productIds: [],
                 all_storeIds: [],
                 checked_productIds: [],
-                checked_storeIds: []
+                checked_storeIds: [],
+                complexIds: []
             }
         )
         ids.checked_storeIds = Object.keys(products.stores).filter((storeId) => products.stores[storeId].checked)
-        return ids
+        return cloneDeep(ids)
     }, [products])
 
     const addToCart = (storeId: string, store_name: string, payload: ProductOrder | ProductOrderSale) => {
@@ -145,9 +151,9 @@ const ContextWrap = ({ children }: { children: ReactNode }) => {
                                     }
                                     tmp.isChecked = false
                                 }
-                                if (status && status == 'ACTIVE' && productInMap.isBlock) {
+                                if (status && status == 'ACTIVE' && productInMap?.isBlock) {
                                     tmp.isBlock = false
-                                    tmp.buy = 1
+                                    tmp.buy = productInMap.buy
                                 }
                                 products.set(productId, tmp)
                             }

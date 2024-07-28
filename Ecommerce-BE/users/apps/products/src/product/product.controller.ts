@@ -233,6 +233,7 @@ export class ProductController {
     updatingProductToSale(
         @Payload() payload: { userId: string; body: { quantity: number; productId: string }[] }
     ) {
+        console.log('update product sale from product side', JSON.stringify(payload))
         return this.productsService.updatingProductToSale(payload)
     }
 

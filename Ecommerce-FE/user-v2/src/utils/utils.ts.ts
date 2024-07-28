@@ -1,7 +1,7 @@
 import { type ClassValue, clsx } from 'clsx'
 import { cloneDeep } from 'lodash'
 import { endLoadingLoader, startLoadingLoader } from 'src/constants/event'
-import { ProductCart } from 'src/types/context.type'
+import { ProductCart, ProductOrder, ProductOrderSale } from 'src/types/context.type'
 import { twMerge } from 'tailwind-merge'
 import { ls } from './localStorage'
 
@@ -75,4 +75,8 @@ export const clearProductAfterCreatingOrder = (checkedStoreIds: string[], payloa
     })
 
     return cloneDeep(payload)
+}
+
+export const isProductSale = (product: ProductOrder | ProductOrderSale): product is ProductOrderSale => {
+    return 'sale' in product
 }

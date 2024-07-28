@@ -3,8 +3,12 @@ import { LoginResponse } from './auth.type'
 import { CategoryListResponse } from './category.type'
 
 export type ProductOrderSale = ProductOrder & {
-    salePromotionId: string
-    product_sale_quantity: number
+    sale: {
+        salePromotionId: string
+        productPromotionId: string
+        currentQuantity: number
+        priceAfter: number
+    }
 }
 
 export type ProductOrder = {
@@ -45,11 +49,17 @@ export type ProductCart = {
     >
 }
 
+export type StoreAndProductsId = {
+    storeId: string
+    productIds: string[]
+}
+
 export type Ids = {
     all_productIds: string[]
     checked_productIds: string[]
     all_storeIds: string[]
     checked_storeIds: string[]
+    complexIds: StoreAndProductsId[]
 }
 
 export type AppContext = {

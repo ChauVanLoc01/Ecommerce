@@ -181,10 +181,10 @@ export class ProductConsummer {
                         let isGt0 = quantity > 0
                         let currentQuantity: Prisma.ProductUpdateInput['currentQuantity'] = isGt0
                             ? {
-                                  decrement: data.quantity
+                                  increment: data.quantity
                               }
                             : {
-                                  increment: data.quantity
+                                  decrement: data.quantity
                               }
                         return tx.product.update({
                             where: {

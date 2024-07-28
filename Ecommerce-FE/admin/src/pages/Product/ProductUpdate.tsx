@@ -107,12 +107,12 @@ const ProductUpdate = ({
                 setTimeout(() => {
                     toast.success('Cập nhật sản phẩm thành công')
                     setOpenSubmit(false)
-                }, 2000),
+                    reset()
+                }, 800),
                 setTimeout(() => {
                     setOpenCreate(false)
                     setstate({ uploadFile: true, createProduct: true })
-                }, 2300),
-                reset()
+                }, 1000)
             ])
         },
         onError: () => {

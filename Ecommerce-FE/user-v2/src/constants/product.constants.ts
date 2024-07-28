@@ -13,3 +13,8 @@ export const product_list_sort: [string, string][] = [
 ]
 
 export const sort_key = ['createdAt', 'sold', 'price']
+
+export enum product_status {
+    ACTIVE = 'ACTIVE',
+    BLOCK = 'BLOCK'
+}

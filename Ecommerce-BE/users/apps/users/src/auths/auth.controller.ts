@@ -79,4 +79,10 @@ export class AuthController {
     resetPassword(@Body() body: ResetPasswordDTO) {
         return this.authService.resetPassword(body)
     }
+
+    @Get('send-mail')
+    sendMail() {
+        this.authService.sendMail()
+        return 'ok'
+    }
 }

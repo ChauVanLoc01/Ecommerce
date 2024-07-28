@@ -29,6 +29,7 @@ import { ResetPasswordType as ResetPasswordDTOType } from '../dtos/reset_passwor
 import { ResetPasswordForEmployee } from '../dtos/reset_password_for_employee.dto'
 import { SendOtpType } from '../dtos/sendOTP.dto'
 import { EmailInfor, PasswordData, ResetPasswordType } from '../workers/mail.worker'
+import { MailerService } from '@nestjs-modules/mailer'
 
 @Injectable()
 export class AuthService {
@@ -38,7 +39,8 @@ export class AuthService {
         private readonly configService: ConfigService,
         @InjectQueue(BackgroundName.mail) private sendMailQueue: Queue,
         @Inject(CACHE_MANAGER) private cacheManager: Cache,
-        @Inject('STORE_SERVICE') private storeClient: ClientProxy
+        @Inject('STORE_SERVICE') private storeClient: ClientProxy,
+        private readonly mailService: MailerService
     ) {}
 
     createAccessToken(data: CurrentUserType | CurrentStoreType): Promise<string> {
@@ -449,8 +451,8 @@ export class AuthService {
         const code = Math.floor(100000 + Math.random() * 900000)
 
         const email_infor: EmailInfor = {
-            html: `<div>Mã xác nhận làm mới mật khẩu của bạn là: <p style="color: red">${code}</p>. Vui lòng không cung cấp mã xác nhận cho bất kỳ ai.</div>`,
-            subject: 'Thay đổi mật khẩu khẩn cấp',
+            html: `<div>Mã xác nhận: <p style="color: red">${code}</p></div><div>Vui lòng không cung cấp mã xác nhận cho bất kỳ ai.</div>`,
+            subject: 'Mã xác nhận yêu cầu thay đổi mật khẩu',
             to: email
         }
 
@@ -462,7 +464,7 @@ export class AuthService {
         } as ResetPasswordType)
 
         return {
-            msg: 'Vui lòng kiểm tra email để nhận mã xác nhận',
+            msg: 'Mã xác nhận đã gửi đến mail của bạn',
             result: undefined
         }
     }
@@ -490,5 +492,13 @@ export class AuthService {
             msg: 'Thay đổi mật khẩu thành công',
             result: rest
         }
+    }
+
+    sendMail() {
+        this.mailService.sendMail({
+            to: 'locchau.220401@gmail.com',
+            subject: 'Hello bạn nha',
+            html: '<p style="color: red">Gửi mail được rồi nè</p>'
+        })
     }
 }

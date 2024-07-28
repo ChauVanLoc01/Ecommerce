@@ -83,6 +83,7 @@ export class SaleController {
         @CurrentUser() user: CurrentStoreType,
         @Body() body: UpdateProductsSalePromotion
     ) {
+        console.log('update product sale')
         return this.saleService.updateProduct(user, body)
     }
 

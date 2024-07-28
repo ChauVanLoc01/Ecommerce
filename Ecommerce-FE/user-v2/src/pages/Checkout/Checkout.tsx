@@ -55,8 +55,6 @@ const Checkout = () => {
         setSelectedVoucher
     } = useDataCheckout({ setStep })
 
-    console.log('selectedVoucher', selectedVoucher)
-
     const handleOrder = () => {
         if (!isCanOrder) {
             toast.warning('Hệ thống đang gặp lỗi!')
@@ -74,10 +72,6 @@ const Checkout = () => {
                     quantity: buy
                 }
             })
-            console.log(
-                'selectedVoucher?.[storeId]?.map((voucher) => voucher.id)',
-                selectedVoucher?.[storeId]?.map((voucher) => voucher.id)
-            )
             return {
                 storeId,
                 total,

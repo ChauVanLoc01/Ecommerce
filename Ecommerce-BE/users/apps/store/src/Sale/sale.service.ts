@@ -33,6 +33,7 @@ import { ProductSaleIds } from './dtos/product-sale-ids.dto'
 import { QuerySalePromotionDTO } from './dtos/query-promotion.dto'
 import { CreateSpecialSaleDTO } from './dtos/special-sale.dto'
 import { UpdateProductsSalePromotion } from './dtos/update-product-sale.dto'
+import { keyBy, omit } from 'lodash'
 
 @Injectable()
 export class SaleService {
@@ -176,7 +177,10 @@ export class SaleService {
         body: UpdateProductsSalePromotion
     ): Promise<Return> {
         const { productPromotions } = body
-        let payload: { productId: string; quantity: number }[] = []
+        let payload: {
+            userId: string
+            body: { productId: string; quantity: number }[]
+        } = { userId: user.userId, body: [] }
         try {
             const productsPromotionExist = await Promise.all(
                 productPromotions.map((product) => {
@@ -193,7 +197,7 @@ export class SaleService {
             )
 
             if (!productPromotions.length) {
-                throw new BadRequestException('Danh sách sản phẩm giảm giá không tồn tại')
+                throw new NotFoundException('Danh sách sản phẩm giảm giá không tồn tại')
             }
 
             productsPromotionExist.forEach((product, idx) => {
@@ -202,10 +206,10 @@ export class SaleService {
                     ...productPromotions[idx],
                     quantity
                 }
-                payload[idx] = {
+                payload.body.push({
                     productId: product.productId,
                     quantity
-                }
+                })
             })
 
             await this.prisma.$transaction(async (tx) => {
@@ -217,30 +221,34 @@ export class SaleService {
                     throw new InternalServerErrorException('Lỗi cập nhật lại số lượng product')
                 }
 
-                await Promise.all(
-                    productPromotions.map(
-                        ({ productPromotionId, isDelete, priceAfter, quantity }) =>
-                            tx.productPromotion.update({
-                                where: {
-                                    id: productPromotionId
-                                },
-                                data: {
-                                    quantity:
-                                        quantity > 0
-                                            ? {
-                                                  increment: quantity
-                                              }
-                                            : {
-                                                  decrement: quantity
-                                              },
-                                    priceAfter,
-                                    isDelete,
-                                    updatedAt: new Date(),
-                                    updatedBy: user.userId
-                                }
-                            })
+                try {
+                    await Promise.all(
+                        productPromotions.map(
+                            ({ productPromotionId, isDelete, priceAfter, quantity }) =>
+                                tx.productPromotion.update({
+                                    where: {
+                                        id: productPromotionId
+                                    },
+                                    data: {
+                                        quantity:
+                                            quantity > 0
+                                                ? {
+                                                      increment: quantity
+                                                  }
+                                                : {
+                                                      decrement: quantity
+                                                  },
+                                        priceAfter,
+                                        isDelete,
+                                        updatedAt: new Date(),
+                                        updatedBy: user.userId
+                                    }
+                                })
+                        )
                     )
-                )
+                } catch (err) {
+                    throw new BadRequestException('Lỗi cập nhật product sale')
+                }
             })
 
             return {
@@ -248,8 +256,11 @@ export class SaleService {
                 result: undefined
             }
         } catch (err) {
-            this.productClient.emit(rollbackUpdatingProductToSale, payload)
-            throw new InternalServerErrorException('Lỗi cập nhật product sale')
+            console.log('update error', err)
+            if (err.statusCode == 400) {
+                this.productClient.emit(rollbackUpdatingProductToSale, payload)
+            }
+            throw new HttpException(err.message, err.statusCode)
         }
     }
 
@@ -320,44 +331,46 @@ export class SaleService {
         salePromotionId: string,
         query: ProductSaleIds
     ): Promise<Return> {
-        const productSale = await this.prisma.productPromotion.findMany({
-            where: {
-                productId: {
-                    in: query.productIds
-                },
-                salePromotionId,
-                currentQuantity: {
-                    gt: 0
-                },
-                StorePromotion: {
-                    status: Status.ACTIVE
-                }
-            },
-            select: {
-                productId: true,
-                currentQuantity: true,
-                priceAfter: true,
-                StorePromotion: {
+        const result = await Promise.all(
+            query.ids.map((item) => {
+                let { productIds, storeId } = item
+                return this.prisma.productPromotion.findMany({
+                    where: {
+                        productId: {
+                            in: productIds
+                        },
+                        currentQuantity: {
+                            gt: 0
+                        },
+                        salePromotionId,
+                        isDelete: false,
+                        StorePromotion: {
+                            storeId
+                        }
+                    },
                     select: {
-                        storeId: true
+                        productId: true,
+                        id: true,
+                        currentQuantity: true,
+                        priceAfter: true,
+                        StorePromotion: {
+                            select: {
+                                storeId: true
+                            }
+                        }
                     }
-                }
-            }
-        })
+                })
+            })
+        )
 
-        let convert = productSale.reduce<
-            Record<string, Omit<(typeof productSale)[number], 'StorePromotion'>[]>
-        >((acum, product) => {
-            let { StorePromotion, ...rest } = product
-            if (acum?.[StorePromotion.storeId]) {
-                acum[StorePromotion.storeId].push(rest)
-            } else {
-                acum = {
-                    ...acum,
-                    [StorePromotion.storeId]: [rest]
-                }
+        let convert = result.reduce((acum, item) => {
+            if (!item.length) {
+                return acum
             }
-            return acum
+            return {
+                ...acum,
+                [item[0].StorePromotion.storeId]: keyBy(omit(item, 'StorePromotion'), 'productId')
+            }
         }, {})
 
         return {

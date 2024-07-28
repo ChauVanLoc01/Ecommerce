@@ -6,12 +6,15 @@ import 'react-big-calendar/lib/css/react-big-calendar.css'
 import { toast } from 'sonner'
 import { ProductApi } from 'src/apis/product.api'
 import { sale_api } from 'src/apis/sale.api'
+import { Status } from 'src/constants/product.status'
 import { AppContext } from 'src/contexts/AppContext'
 import { Store } from 'src/types/auth.type'
 import { ProductQueryAndPagination } from 'src/types/product.type'
 import { ProductSaleMix, SalePromotion, UpdateProductSaleBody } from 'src/types/sale.type'
 import Calendar from './CalendarEvent'
 import SaleAlert from './SaleAlert'
+
+const default_seach = { limit: import.meta.env.VITE_LIMIT, status: Status.active }
 
 export type ProductSelected = {
     products: Dictionary<ProductSaleMix>
@@ -47,7 +50,7 @@ const FlashSale = () => {
     >(undefined)
     const [isJoin, setIsJoin] = useState<boolean>(false)
 
-    const [query, setQuery] = useState<ProductQueryAndPagination>({ limit: import.meta.env.VITE_LIMIT })
+    const [query, setQuery] = useState<ProductQueryAndPagination>(default_seach)
     const [page, setPage] = useState<number>(0)
     const [category, setCategory] = useState<string>()
     const [search_key, setSearch_key] = useState<string>('')
@@ -65,7 +68,7 @@ const FlashSale = () => {
     })
 
     const handleClear = () => {
-        setQuery({ limit: import.meta.env.VITE_LIMIT })
+        setQuery(default_seach)
         setCategory('')
         setSearch_key('')
     }
@@ -122,8 +125,8 @@ const FlashSale = () => {
 
     const { mutate: updateProductSale } = useMutation({
         mutationFn: sale_api.updateProductPromotion,
-        onSuccess: () => {
-            refetchSalePromotion()
+        onSuccess: async () => {
+            await Promise.all([productListRefetch(), refetchSalePromotion()])
             toast.success('Cập nhật thành công')
             setSelectedEvent({ open: false })
             onClear()
@@ -229,6 +232,7 @@ const FlashSale = () => {
                 page_size={productList?.query.page_size || 0}
                 search_key={search_key}
                 handleSearch={handleSearch}
+                productListRefetch={productListRefetch}
             />
         </>
     )

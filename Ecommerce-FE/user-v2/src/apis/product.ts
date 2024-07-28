@@ -1,5 +1,6 @@
 import { GenericAbortSignal } from 'axios'
 import { CategoryListResponse } from 'src/types/category.type'
+import { Ids } from 'src/types/context.type'
 import {
     ProductDetailResponse,
     ProductListQuery,
@@ -29,8 +30,10 @@ export const productFetching = {
             signal
         })
     },
-    refreshProduct: (body: { productsId: string[]; saleId?: string }) => () => {
-        return http.post<Return<RefreshProduct>>('/product/product/refresh-cart', body)
+    refreshProduct: (body: { ids: Ids['complexIds']; saleId?: string }, signal?: AbortSignal) => {
+        return http.post<Return<RefreshProduct>>('/product/product/refresh-cart', body, {
+            signal
+        })
     },
     createViewProduct: (body: { productId: string; userId?: string }) => {
         return http.post('/product/product/view-product', body)

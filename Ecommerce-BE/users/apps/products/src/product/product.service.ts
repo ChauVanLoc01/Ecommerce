@@ -18,8 +18,7 @@ import { Cache } from 'cache-manager'
 import { BackgroundAction, BackgroundName } from 'common/constants/background-job.constant'
 import {
     emit_update_product_whenCreatingOrder,
-    getStoreDetail,
-    refreshProductSale
+    getStoreDetail
 } from 'common/constants/event.constant'
 import { Status } from 'common/enums/status.enum'
 import { CurrentStoreType } from 'common/types/current.type'
@@ -1217,32 +1216,53 @@ export class ProductService {
     }
 
     async refreshCart(body: RefreshCartDTO): Promise<Return> {
-        const products = await Promise.all(
-            body.productsId.map((productId) => this.findProductUnique(productId))
+        let { ids } = body
+
+        const result = await Promise.all(
+            ids.map((item) => {
+                let { productIds, storeId } = item
+                return this.prisma.product.findMany({
+                    where: {
+                        storeId,
+                        id: {
+                            in: productIds
+                        },
+                        isDelete: false,
+                        currentQuantity: {
+                            gt: 0
+                        }
+                    },
+                    omit: {
+                        createdAt: true,
+                        createdBy: true,
+                        updatedAt: true,
+                        updatedBy: true,
+                        deletedAt: true,
+                        deletedBy: true,
+                        description: true,
+                        rate: true
+                    }
+                })
+            })
         )
 
-        let productSale = undefined
-        if (body.saleId) {
-            productSale = await firstValueFrom<MessageReturn>(
-                this.store_client.send(refreshProductSale, {
-                    saleId: body.saleId,
-                    productIds: body.productsId
-                })
-            )
-        }
+        let revert = result.reduce<{
+            [storeId: string]: {
+                [productId: string]: (typeof result)[number][number]
+            }
+        }>((acum, item) => {
+            if (!item.length) {
+                return acum
+            }
+            return {
+                ...acum,
+                [item[0].storeId]: keyBy(item, 'id')
+            }
+        }, {})
 
         return {
             msg: 'ok',
-            result: body.productsId.reduce<Record<string, Product>>(
-                (acum, productId, idx) => ({
-                    ...acum,
-                    [productId]: {
-                        ...products[idx],
-                        sale: productSale?.action ? productSale?.result?.[productId] : undefined
-                    }
-                }),
-                {}
-            )
+            result: revert
         }
     }
 
@@ -1438,10 +1458,10 @@ export class ProductService {
                         let isGt0 = quantity > 0
                         let currentQuantity: Prisma.ProductUpdateInput['currentQuantity'] = isGt0
                             ? {
-                                  increment: data.quantity
+                                  decrement: data.quantity
                               }
                             : {
-                                  decrement: data.quantity
+                                  increment: data.quantity
                               }
                         return tx.product.update({
                             where: {

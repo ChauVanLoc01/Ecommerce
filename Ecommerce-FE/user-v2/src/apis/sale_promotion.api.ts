@@ -1,3 +1,4 @@
+import { Ids } from 'src/types/context.type'
 import { Return } from 'src/types/return.type'
 import {
     GetProductOfSalePromotion,
@@ -17,9 +18,9 @@ export const sale_api = {
     getProductOfSalePromotion: (salePromotionId: string) => () => {
         return http.get<GetProductOfSalePromotion>(`/store/sale-promotion/${salePromotionId}/product`)
     },
-    getProductListSale: (salePromotionId: string, productIds: string[], signal?: AbortSignal) => {
+    getProductListSale: (salePromotionId: string, ids: Ids['complexIds'], signal?: AbortSignal) => {
         return http.get<SalePromotionDetailList>(`/store/sale-promotion/products/${salePromotionId}`, {
-            params: { productIds },
+            params: { ids },
             signal
         })
     },

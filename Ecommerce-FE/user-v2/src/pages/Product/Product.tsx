@@ -57,11 +57,15 @@ const Product = () => {
                 category
             }
             if (currentSaleId && productSale) {
+                let { currentQuantity, id, priceAfter } = productSale
                 payload = {
                     ...payload,
-                    salePromotionId: currentSaleId,
-                    product_sale_quantity: productSale.currentQuantity,
-                    priceAfter: productSale.priceAfter
+                    sale: {
+                        currentQuantity,
+                        priceAfter,
+                        productPromotionId: id,
+                        salePromotionId: currentSaleId
+                    }
                 } as ProductOrderSale
             }
             addToCart(storeId, storeDetail.name, payload)
@@ -134,19 +138,11 @@ const Product = () => {
                             <Text color='gray'>{storeDetail.name}</Text>
                         </Flex>
                     </Link>
-                    {productSale ? (
-                        <InputNumber
-                            quantity={quantity}
-                            setQuantity={setQuantity}
-                            currentQuantity={productSale.currentQuantity}
-                        />
-                    ) : (
-                        <InputNumber
-                            quantity={quantity}
-                            setQuantity={setQuantity}
-                            currentQuantity={productDetail.currentQuantity}
-                        />
-                    )}
+                    <InputNumber
+                        quantity={quantity}
+                        setQuantity={setQuantity}
+                        max={productSale ? productSale.currentQuantity : productDetail?.currentQuantity}
+                    />
                     {productSale ? (
                         <div className='space-x-3 text-2xl flex items-center'>
                             <Text
