@@ -21,6 +21,7 @@ export class VoucherConsummer {
 
     @Process(BackgroundAction.resetValueVoucherWHenUpdateProductFail)
     async resetQuantityVoucherInCache({ data }: Job<string[]>) {
+        console.log('::::::::::::Tiến hành rollback voucher:::::::::::::')
         try {
             await Promise.all(
                 data.map(async (id) => {
@@ -52,10 +53,16 @@ export class VoucherConsummer {
 
     @Process(BackgroundAction.createCronJobVoucherToUpdateQuanttiy)
     async createCronJobToUpdateVoucher({ data }: Job<string[]>) {
+        console.log('::::::::::Tạo cron job để cập nhật số lượng voucher::::::::::::')
         try {
-            await Promise.all(
-                data.map((voucherId) => {
-                    let hashValue = hash('voucher', voucherId)
+            data.forEach((voucherId) => {
+                let hashValue = hash('voucher', voucherId)
+                let isExist = this.schedulerRegistry.doesExist('cron', hashValue)
+                if (isExist) {
+                    console.log(
+                        `:::::::::::Cron job cập nhật số lượng voucher [${voucherId}]::::::::::::::`
+                    )
+                } else {
                     let cron_job = new CronJob(CronExpression.EVERY_30_SECONDS, async () => {
                         try {
                             let fromCache = await this.cacheManager.get<string>(hashValue)
@@ -63,6 +70,9 @@ export class VoucherConsummer {
                                 let { quantity: quantityFromCache, times } = JSON.parse(
                                     fromCache
                                 ) as { quantity: number; times: number }
+                                console.log(
+                                    `::::::::::::::Lần cập nhật thứ ${times}::::::::::Số lượng [${quantityFromCache}]:::::::::::`
+                                )
                                 const result = await Promise.all([
                                     this.prisma.voucher.update({
                                         where: {
@@ -82,6 +92,9 @@ export class VoucherConsummer {
                                     )
                                 ])
                                 if (result && times == 1) {
+                                    console.log(
+                                        '::::::::::::Times = 1 ==> Xóa Cron Job và clear Cache:::::::::::::::'
+                                    )
                                     let cron_job = this.schedulerRegistry.getCronJob(hashValue)
                                     cron_job.stop()
                                     this.schedulerRegistry.deleteCronJob(hashValue)
@@ -94,8 +107,8 @@ export class VoucherConsummer {
                     })
                     this.schedulerRegistry.addCronJob(hashValue, cron_job)
                     cron_job.start()
-                })
-            )
+                }
+            })
         } catch (err) {
             console.log('Lỗi cập nhật lại cache khi voucher fail', err)
             throw new Error('Lỗi tạo cron job voucher')

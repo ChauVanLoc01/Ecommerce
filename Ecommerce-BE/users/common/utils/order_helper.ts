@@ -66,5 +66,6 @@ export const emit_roll_back_order = (
     clients: ClientProxy[],
     payload: CreateOrderPayload<'roll_back_order'>
 ) => {
+    console.log('emit rollback từ order helper')
     clients.forEach((client) => client.emit(roll_back_order, payload))
 }

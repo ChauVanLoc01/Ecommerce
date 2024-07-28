@@ -134,9 +134,11 @@ const ProductList = () => {
                                 </Box>
                             </Flex>
                             <Flex align={'baseline'} gapX={'3'}>
-                                <Text size={'4'}>
-                                    {page}/{productList?.query.page_size}
-                                </Text>
+                                <Skeleton className='w-10'>
+                                    <Text size={'4'}>
+                                        {page}/{productList?.query.page_size}
+                                    </Text>
+                                </Skeleton>
                                 <Flex gapX={'1'}>
                                     <IconButton variant='soft' color='gray' onClick={handlePreviousPage}>
                                         <ChevronLeftIcon />
@@ -161,11 +163,17 @@ const ProductList = () => {
                                 {Array(15)
                                     .fill(0)
                                     .map((_, idx) => (
-                                        <Skeleton
+                                        <div
                                             key={`skeleton_product_list_${idx}`}
-                                            height={'350px'}
-                                            className='rounded-12'
-                                        />
+                                            className='rounded-12 border border-gray-200 p-5 space-y-3'
+                                        >
+                                            <Skeleton height={'230px'} className='rounded-12' />
+                                            <Skeleton className='w-4/5 h-6' />
+                                            <Flex gapX={'5'} align={'center'} justify={'between'}>
+                                                <Skeleton className='flex-grow h-6' />
+                                                <Skeleton className='w-20 h-10 rounded-8' />
+                                            </Flex>
+                                        </div>
                                     ))}
                             </Grid>
                         )}
