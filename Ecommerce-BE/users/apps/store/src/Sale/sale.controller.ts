@@ -74,6 +74,7 @@ export class SaleController {
         @CurrentUser() user: CurrentStoreType,
         @Body() body: CreateProductSalePromotionDTO
     ) {
+        console.log('adding product ccontroller')
         return this.saleService.addingProduct(user, body)
     }
 

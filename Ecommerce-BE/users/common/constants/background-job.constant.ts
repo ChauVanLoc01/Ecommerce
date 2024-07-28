@@ -10,7 +10,9 @@ export enum BackgroundAction {
     resetValueCacheWhenUpdateProductFail = 'resetValueCacheWhenUpdateProductFail',
     createCronJobToUpdateProduct = 'createCronJobToUpdateProduct',
     resetValueVoucherWHenUpdateProductFail = 'resetValueVOucherWhenUpdateProductFail',
-    createCronJobVoucherToUpdateQuanttiy = 'createCronJobVoucherToUpdateQuantity'
+    createCronJobVoucherToUpdateQuanttiy = 'createCronJobVoucherToUpdateQuantity',
+    rollbackAddingProductToSale = 'rollbackAddingProductToSale',
+    rollbackUpdatingProductToSale = 'rollbackUpdatingProductToSale'
 }
 
 export enum BackgroundName {

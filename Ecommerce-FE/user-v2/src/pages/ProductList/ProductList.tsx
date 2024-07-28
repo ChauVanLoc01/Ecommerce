@@ -133,12 +133,14 @@ const ProductList = () => {
                                     </Select.Root>
                                 </Box>
                             </Flex>
-                            <Flex align={'baseline'} gapX={'3'}>
-                                <Skeleton className='w-10'>
+                            <Flex align={'center'} gapX={'3'}>
+                                {productList ? (
                                     <Text size={'4'}>
                                         {page}/{productList?.query.page_size}
                                     </Text>
-                                </Skeleton>
+                                ) : (
+                                    <Skeleton className='w-16 h-8' />
+                                )}
                                 <Flex gapX={'1'}>
                                     <IconButton variant='soft' color='gray' onClick={handlePreviousPage}>
                                         <ChevronLeftIcon />

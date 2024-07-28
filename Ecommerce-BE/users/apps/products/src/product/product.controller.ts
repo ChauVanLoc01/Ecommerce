@@ -2,6 +2,7 @@ import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseGuards } fro
 import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices'
 import { ApiBearerAuth, ApiProperty } from '@nestjs/swagger'
 import {
+    addingProductToSale,
     commit_order,
     countProduct,
     createProductOrder,
@@ -9,9 +10,12 @@ import {
     getProductImageByProductSalePromotion,
     getProductOrderByRating,
     roll_back_order,
+    rollbackAddingProductToSale,
     rollbackUpdateQuantiyProductsWhenCancelOrder,
+    rollbackUpdatingProductToSale,
     update_Product_WhenCreatingOrder,
-    updateQuantiyProductsWhenCancelOrder
+    updateQuantiyProductsWhenCancelOrder,
+    updatingProductToSale
 } from 'common/constants/event.constant'
 import { CurrentUser } from 'common/decorators/current_user.decorator'
 import { Public } from 'common/decorators/public.decorator'
@@ -205,5 +209,38 @@ export class ProductController {
     @MessagePattern(countProduct)
     countProduct(@Payload() storeId: string) {
         return this.productsService.countProduct(storeId)
+    }
+
+    @Public()
+    @MessagePattern(addingProductToSale)
+    addingProductToSale(
+        @Payload() payload: { userId: string; body: { quantity: number; productId: string }[] }
+    ) {
+        return this.productsService.addingProductToSale(payload.userId, payload.body)
+    }
+
+    @Public()
+    @EventPattern(rollbackAddingProductToSale)
+    rollbackAddingProductToSale(
+        @Payload() payload: { userId: string; body: { quantity: number; productId: string }[] }
+    ) {
+        console.log('roll back khi thêm sản phẩm vào sale')
+        return this.productsService.rollbackAddingProductToSale(payload)
+    }
+
+    @Public()
+    @MessagePattern(updatingProductToSale)
+    updatingProductToSale(
+        @Payload() payload: { userId: string; body: { quantity: number; productId: string }[] }
+    ) {
+        return this.productsService.updatingProductToSale(payload)
+    }
+
+    @Public()
+    @EventPattern(rollbackUpdatingProductToSale)
+    rollbackUpdatingProductToSale(
+        @Payload() payload: { userId: string; body: { quantity: number; productId: string }[] }
+    ) {
+        return this.productsService.rollbackUpdatingProductToSale(payload)
     }
 }

@@ -82,3 +82,12 @@ export const countProduct = 'count::product::by::store::id'
 export const updateStatusOfStore = 'update::status::of::store'
 
 export const updateCurrentSalePromotionId = 'update::current::sale::promotion::id'
+
+export const addingProductToSale = 'adding::product::to::sale::product::client'
+
+export const rollbackAddingProductToSale = 'rollback::adding::product::to::sale::product::client'
+
+export const updatingProductToSale = 'updating::product::to::sale::product::client'
+
+export const rollbackUpdatingProductToSale =
+    'rollback::updating::product::to::sale::product::client'

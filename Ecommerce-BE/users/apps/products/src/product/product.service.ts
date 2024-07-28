@@ -1377,4 +1377,106 @@ export class ProductService {
             }
         }
     }
+
+    async addingProductToSale(
+        userId: string,
+        body: { productId: string; quantity: number }[]
+    ): Promise<MessageReturn> {
+        try {
+            await this.prisma.$transaction(async (tx) => {
+                await Promise.all(
+                    body.map((product) => {
+                        return tx.product.update({
+                            where: {
+                                id: product.productId
+                            },
+                            data: {
+                                currentQuantity: {
+                                    decrement: product.quantity
+                                },
+                                updatedAt: new Date(),
+                                updatedBy: userId
+                            }
+                        })
+                    })
+                )
+            })
+            return {
+                msg: 'ok',
+                action: true,
+                result: null
+            }
+        } catch (err) {
+            return {
+                msg: 'ok',
+                action: false,
+                result: null
+            }
+        }
+    }
+
+    async rollbackAddingProductToSale(payload: {
+        userId: string
+        body: { productId: string; quantity: number }[]
+    }) {
+        this.productBackgroundQueue.add(BackgroundAction.rollbackAddingProductToSale, payload, {
+            attempts: 3,
+            removeOnComplete: true
+        })
+    }
+
+    async updatingProductToSale(payload: {
+        userId: string
+        body: { productId: string; quantity: number }[]
+    }): Promise<MessageReturn> {
+        let { body, userId } = payload
+        try {
+            await this.prisma.$transaction(async (tx) => {
+                await Promise.all(
+                    body.map((data) => {
+                        let { productId, quantity } = data
+                        let isGt0 = quantity > 0
+                        let currentQuantity: Prisma.ProductUpdateInput['currentQuantity'] = isGt0
+                            ? {
+                                  increment: data.quantity
+                              }
+                            : {
+                                  decrement: data.quantity
+                              }
+                        return tx.product.update({
+                            where: {
+                                id: productId
+                            },
+                            data: {
+                                currentQuantity,
+                                updatedAt: new Date(),
+                                updatedBy: userId
+                            }
+                        })
+                    })
+                )
+            })
+            return {
+                msg: 'ok',
+                action: true,
+                result: null
+            }
+        } catch (err) {
+            return {
+                msg: 'fail',
+                action: false,
+                result: null
+            }
+        }
+    }
+
+    async rollbackUpdatingProductToSale(payload: {
+        userId: string
+        body: { productId: string; quantity: number }[]
+    }) {
+        this.productBackgroundQueue.add(BackgroundAction.rollbackUpdatingProductToSale, payload, {
+            attempts: 3,
+            removeOnComplete: true
+        })
+    }
 }
