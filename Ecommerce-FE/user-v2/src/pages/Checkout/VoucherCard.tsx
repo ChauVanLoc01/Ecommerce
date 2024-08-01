@@ -16,11 +16,13 @@ type VoucherCardProps = {
 
 const VoucherCard = ({ vouchers, storeId, handleSelectVoucher, select, selectedVoucher }: VoucherCardProps) => {
     const { products } = useContext(AppContext)
+    const store_name = storeId === 'system' ? 'Mã giảm giá của hệ thống' : products.stores[storeId].store_name
+    console.log('vouchers', vouchers)
     return (
         <>
             {vouchers.length > 0 && (
-                <Text color='gray' weight={'bold'} size={'3'}>
-                    {products.stores[storeId].store_name}
+                <Text color='gray' size={'3'}>
+                    {store_name}
                 </Text>
             )}
             <RadioCards.Root

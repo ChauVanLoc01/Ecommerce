@@ -1,0 +1,140 @@
+@startuml
+
+actor user
+participant "Front End" as fe
+participant "VNPay" as vn
+participant "Kong API Gateway" as k
+participant "Order Service" as order
+database "Order DB" as order_db
+participant "Product Service" as pro
+database "Product DB" as pro_db
+participant "Store Service" as sale
+database "Store DB" as sale_db
+participant "Voucher Service" as voucher
+database "Store DB" as voucher_db
+queue "RabbitMQ" as rabbit
+participant "Redis" as redis
+participant "Socket Service" as socket
+queue "BullMQ" as bull
+
+user -> fe++ #d9d9d9: Chọn sản phẩm, voucher, địa chỉ và phương thức thanh toán
+user -> fe: Nhấn nút 'Thanh toán'
+fe -> k++ #d9d9d9: Gửi request create transaction /order/order/create-transaction
+k -> order++ #d9d9d9: createTransaction()
+order --> k--: Trả về Url thanh toán
+k --> fe--: Nhận Url thanh toán từ service
+fe --> vn++ #d9d9d9: Truy cập url
+vn -> vn: Xác thực 
+alt Url không hợp lệ
+    vn --> user: Hiển thị màn hình thông báo lỗi
+else Url hợp lệ
+    vn --> vn: Xác thực thành công
+    vn -> vn: Tạo form thông tin
+    vn --> user: Hiển thị form thông tin ngân hàng
+    user -> vn: Thực hiện điền thông tin
+    user -> vn: Nhấn nút "Thanh toán" 
+    vn --> user++ #d9d9d9: Hệ thống gửi 6 số đó qua email hoặc sdt
+    user -> vn: Nhập mã để xác nhận
+    vn -> vn: Xác nhận mã
+
+    alt Mã không hợp lệ
+        vn --> user: Giao dịch thất bại
+    else Mã hợp lệ
+        vn --> user: Giao dịch thành công
+        vn --> fe--: Điều hướng trang web trở về trang order
+        fe --> user: Hiển thị thông báo 'Thanh toán thành công'
+        fe -> k++  #d9d9d9: Tiến hành gọi request đặt hàng /order/order/create-order
+        k -> k: Xác thực url
+        k -> order++ #d9d9d9: Điều hướng đến order service
+        order -> rabbitmq++ #d9d9d9: Push message [check::cache]
+        order --> k: Đơn hàng đang được xử lý
+        k --> fe: Đơn hàng đang được xử lý
+        fe --> user: Hiển thị thông báo "Đơn hàng đang được xử lý"
+        rabbitmq -> order--: Trả về message [check::cache]
+        order -> order++ #69c0ff: Thực hiện kiểm tra cache
+        order -> redis++ #d9d9d9: Kiểm tra vouche cache [voucher::voucherId] và product cache [product::productId]
+        redis --> order--: Trả về kết quả
+        alt Dữ liệu có tồn tại nhưng không đủ số lượng
+            order -> rabbitmq++ #d9d9d9: Push message "thất bại"
+            rabbitmq -> socket--++ #d9d9d9: updateStatusOfOrder()
+            socket --> k--: Đặt hàng thất bại
+            k --> fe: Đặt hàng thất bại
+            fe --> user: Hiển thị thông báo "Đặt hàng thất bại"
+        else Dữ liệu không tồn tại hoặc tồn tại nhưng đủ số lượng
+            order -> rabbitmq--++ #d9d9d9: Push message [create::order]
+            rabbitmq -> order--++ #69c0ff: createOrder()
+            alt Transaction
+                order -> order_db++ #69c0ff: Tạo dữ liệu order, product_order, \nvoucher_order, shipping_order, order_flow
+                alt Tạo thất bại
+                    order_db --> order_db: Thất bại -> Rollback dữ liệu
+                    order_db --> order: Tạo dữ liệu đơn hàng thất bại
+                    order -> rabbitmq++: Push message [update::status::of::order]
+                    rabbitmq -> socket--++: Có lỗi trong quá trình tạo đơn hàng
+                    socket --> k--: Có lỗi trong quá trình tạo đơn hàng
+                    k --> fe: Có lỗi trong quá trình tạo đơn hàng
+                    fe --> user: Hiển thị thông báo 'Tạo đơn hàng thất bại'
+                else Tạo thành công
+                    order_db --> order--: Thành công
+                    order -> order++: Kiểm tra product hay là product sale
+                        group product
+                            order -> rabbitmq++: push message [update::quantity::product]
+                            rabbitmq -> pro--++: Tiến hàng cập nhật số lượng
+                            pro -> redis++: Kiểm tra cache với key 'product::productId' \n theo format JSON.stringify({ quantity, priceAfter })
+                            note left: kiểm tra product trong cache.\nNếu trong cache không có thì gọi product từ db lên
+                            group Bước 1: Gọi dữ liệu Product
+                                group Tồn tại product trong cache
+                                redis -> pro: trả về dữ liệu product
+                                end
+                                group Không tồn tại trong cache
+                                    redis -> pro--: trả về undefine
+                                    pro -> pro_db++: [Prisma] Tìm sản phẩm
+                                    pro_db --> pro--: Trả về dữ liệu
+                                end
+                            end
+                            group Bước 2: Kiểm tra dữ liệu được trả về ở bước 1
+                                group Trường hợp valid: product tồn tại và đủ số lượng
+                                    group product cache tồn tại. Lấy quantity từ cache rồi cập nhật
+                                        pro -> redis++: const {quantity} = JSON.parse(data) -> redis.set(id, quantity + buy) 
+                                    end
+                                    group product cache không tồn tại. Lấy quantity từ db để cập nhật vào cache
+                                        pro -> redis: redis.set(id, productFromDB.quantity + buy)
+                                    end
+                                    redis --> pro--: Cập nhật thành công
+                                    pro -> pro: Kiểm tra đơn hàng có sử dụng voucher?
+                                        group Không có sử dụng voucher
+                                            group Bước 1: Thông báo đơn hàng thành công
+                                                pro -> rabbitmq++: push message [update::stus::of::order]
+                                                rabbitmq -> socket--: Cập nhật trạng thái đơn hàng. Đơn hàng thành công
+                                                socket -> kong++: Đơn hàng thành công
+                                                kong --> fe--: Đơn hàng thành công
+                                                fe --> user: Hiển thị thông báo "Đơn hàng thành công"
+                                            end
+                                            group Bước 2: Update field isDraf của order thành false
+                                        
+                                            end
+                                        end
+                                end
+                                group Trường hợp invalid: product không tồn tại hoặc không đủ số lượng
+                                    group Bước 1: Thông báo cập nhật product thất bại
+                                        pro -> rabbitmq++: push message [update::status::of::order] [Sản phẩm không tồn tại, Sản phẩm không đủ số lượng]
+                                        rabbitmq -> socket--: Thông báo lỗi\n[Sản phẩm không tồn tại\n, Sản phẩm không đủ số lượng]
+                                    end
+                                    group Bước 2: Roll back lại đơn hàng và dữ liệu liên quan
+                                        pro -> rabbitmq++: push message [roll::back::order]
+                                        rabbitmq -> order--: rollback order
+                                        order -> bull: run job rollback order [attemps: 3, remove_on_complete: true]. Set lại giá trị redis new_quantity = current_quantity - buy
+                                    end 
+                                end
+                            end
+                        else product sale
+                        end
+                end
+            end
+        end 
+    end
+
+end
+
+
+
+@enduml

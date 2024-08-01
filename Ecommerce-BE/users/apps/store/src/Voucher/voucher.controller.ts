@@ -74,6 +74,12 @@ export class VoucherController {
         return this.voucherService.getGlobalVoucher(query)
     }
 
+    @Roles(Role.USER)
+    @Get('global/user')
+    getGlobalVoucherForUser() {
+        return this.voucherService.getGlobalVoucherForUser()
+    }
+
     @Roles(Role.EMPLOYEE, Role.STORE_OWNER)
     @Get()
     getAllVoucher(@CurrentUser() user: CurrentStoreType, @Query() query: VoucherQueryDTO) {

@@ -12,15 +12,25 @@ import {
     TextField,
     Tooltip
 } from '@radix-ui/themes'
-import { useMutation, useQueries } from '@tanstack/react-query'
+import { useMutation, useQueries, useQuery } from '@tanstack/react-query'
 import { cloneDeep } from 'lodash'
-import { useContext, useState } from 'react'
+import { useContext, useEffect, useState } from 'react'
 import SimpleBar from 'simplebar-react'
 import { VoucherFetching } from 'src/apis/voucher.api'
 import { AppContext } from 'src/contexts/AppContext'
 import { Voucher as VoucherType, VoucherWithCondition } from 'src/types/voucher.type'
 import { convertCurrentcy } from 'src/utils/utils.ts'
 import VoucherCard from './VoucherCard'
+
+const VoucherNotFound = (
+    <Flex justify={'center'} align={'center'} className='py-10'>
+        <Avatar
+            className='w-20 h-20'
+            fallback='voucher_empty'
+            src='https://cdn-icons-png.flaticon.com/512/11696/11696700.png'
+        />
+    </Flex>
+)
 
 type VoucherProps = {
     selectedVoucher?: Record<string, VoucherType[]>
@@ -33,6 +43,16 @@ const Voucher = ({ selectedVoucher, setSelectedVoucher }: VoucherProps) => {
     const [search, setSearch] = useState<string>('')
     const handleFocus = () => setTimeout(() => setOpen(true), 150)
     const [voucher, setVoucher] = useState<Record<string, VoucherWithCondition> | undefined>(undefined)
+    const [allVoucher, setAllVoucher] = useState<{
+        [storeId: string]: VoucherType[]
+    }>({})
+
+    const { data: globalVouchers } = useQuery({
+        queryKey: ['global_vouchers'],
+        queryFn: VoucherFetching.getGlobalVoucher,
+        staleTime: 1000 * 30,
+        select: (result) => result.data.result
+    })
 
     const voucherQuery = useQueries({
         queries: (ids?.checked_storeIds || []).map((storeId) => ({
@@ -69,6 +89,17 @@ const Voucher = ({ selectedVoucher, setSelectedVoucher }: VoucherProps) => {
     const handleSearch = () => searchVoucher({ code: search, storesID: ids?.checked_storeIds || [] })
 
     const handleSelectVoucher = (storeId: string, voucherId: string) => {
+        if (storeId == 'system') {
+            setVoucher((pre) => {
+                pre = pre || {}
+                pre = {
+                    ...pre,
+                    ['system' as keyof typeof voucher]: globalVouchers?.find((voucher) => voucher.id === voucherId)
+                }
+                return cloneDeep(pre)
+            })
+            return
+        }
         setVoucher((pre) => {
             return {
                 ...pre,
@@ -82,22 +113,10 @@ const Voucher = ({ selectedVoucher, setSelectedVoucher }: VoucherProps) => {
             setVoucher(undefined)
             setSelectedVoucher((pre) => {
                 Object.keys(voucher).forEach((storeId) => {
-                    if (!pre) {
-                        pre = {
-                            [storeId]: [voucher[storeId]]
-                        }
-                        return
-                    }
-                    if (!pre[storeId].length) {
-                        pre = {
-                            ...pre,
-                            [storeId]: [voucher[storeId]]
-                        }
-                    } else {
-                        pre = {
-                            ...pre,
-                            [storeId]: [...pre[storeId], voucher[storeId]]
-                        }
+                    pre = pre ? pre : {}
+                    pre = {
+                        ...pre,
+                        [storeId]: [...(pre?.[storeId] || []), voucher[storeId]]
                     }
                 })
                 return cloneDeep(pre)
@@ -121,6 +140,32 @@ const Voucher = ({ selectedVoucher, setSelectedVoucher }: VoucherProps) => {
         })
     }
 
+    useEffect(() => {
+        if (globalVouchers?.length) {
+            setAllVoucher((pre) => {
+                pre = {
+                    ...pre,
+                    system: globalVouchers
+                }
+                return cloneDeep(pre)
+            })
+        }
+    }, [globalVouchers])
+
+    useEffect(() => {
+        if (voucherQuery) {
+            setAllVoucher((pre) => {
+                pre = {
+                    ...pre,
+                    ...voucherQuery
+                }
+                return cloneDeep(pre)
+            })
+        }
+    }, [voucherQuery])
+
+    console.log('allVoucher', allVoucher)
+
     return (
         <>
             <div className='p-24 rounded-8 border border-border/30 bg-[#FFFFFF] space-y-4'>
@@ -136,8 +181,8 @@ const Voucher = ({ selectedVoucher, setSelectedVoucher }: VoucherProps) => {
                         Áp dụng
                     </Button>
                 </div>
-                <div>
-                    {selectedVoucher &&
+                <div className='space-y-4'>
+                    {!!selectedVoucher &&
                         Object.keys(selectedVoucher).map((storeId) => {
                             return selectedVoucher?.[storeId].map((voucher) => (
                                 <Card>
@@ -201,31 +246,27 @@ const Voucher = ({ selectedVoucher, setSelectedVoucher }: VoucherProps) => {
                             </Button>
                         </div>
                     </div>
-                    {voucherQuery && Object.keys(voucherQuery).length ? (
+                    {Object.keys(allVoucher).length ? (
                         <SimpleBar style={{ maxHeight: '317px', paddingBottom: '5px' }}>
                             <div className='space-y-2'>
-                                {Object.keys(voucherQuery).map((storeId, idx) => (
-                                    <div className='space-y-1' key={`voucher_card_${idx}`}>
-                                        <VoucherCard
-                                            key={`voucher_${storeId}_${idx}`}
-                                            vouchers={voucherQuery[storeId]}
-                                            storeId={storeId}
-                                            handleSelectVoucher={handleSelectVoucher}
-                                            select={voucher || {}}
-                                            selectedVoucher={selectedVoucher}
-                                        />
-                                    </div>
-                                ))}
+                                {Object.keys(allVoucher).map((storeId, idx) => {
+                                    return (
+                                        <div className='space-y-1' key={`voucher_card_${idx}`}>
+                                            <VoucherCard
+                                                key={`voucher_${storeId}_${idx}`}
+                                                vouchers={allVoucher[storeId]}
+                                                storeId={storeId}
+                                                handleSelectVoucher={handleSelectVoucher}
+                                                select={voucher || {}}
+                                                selectedVoucher={selectedVoucher}
+                                            />
+                                        </div>
+                                    )
+                                })}
                             </div>
                         </SimpleBar>
                     ) : (
-                        <Flex justify={'center'} align={'center'} className='py-10'>
-                            <Avatar
-                                className='w-20 h-20'
-                                fallback='voucher_empty'
-                                src='https://cdn-icons-png.flaticon.com/512/11696/11696700.png'
-                            />
-                        </Flex>
+                        VoucherNotFound
                     )}
                     <Flex justify={'end'} gapX={'4'}>
                         <AlertDialog.Cancel>

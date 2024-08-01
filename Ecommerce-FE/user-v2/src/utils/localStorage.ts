@@ -1,7 +1,7 @@
 import localStorage from 'localstorage-slim'
 import { ProductCart, ProductCartSavingToLS } from 'src/types/context.type'
 
-export type key = 'profile' | 'products' | 'vouchers'
+export type key = 'profile' | 'products' | 'vouchers' | 'global_voucher'
 
 export const ls = {
     setItem: (key: key, value: any) => localStorage.set(key, value),

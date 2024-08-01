@@ -33,6 +33,7 @@
         "date-fns": "^3.6.0",
         "embla-carousel-react": "^8.0.4",
         "framer-motion": "^11.0.3",
+        "localstorage-slim": "^2.7.1",
         "lodash": "^4.17.21",
         "lucide-react": "^0.368.0",
         "react": "^18.2.0",

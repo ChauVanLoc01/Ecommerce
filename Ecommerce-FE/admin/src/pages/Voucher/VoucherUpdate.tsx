@@ -68,8 +68,7 @@ const VoucherUpdate = ({ refetchDataAll, voucher }: VoucherUpdateProps) => {
     })
 
     const onSubmit: SubmitHandler<UpdateVoucher> = (data) => {
-        console.log('data', data)
-        // updateVoucherMutate(data)
+        updateVoucherMutate(data)
     }
 
     return (

@@ -1,0 +1,77 @@
+@startuml
+actor user
+participant "Front End" as fe
+participant "Kong API Gateway" as k
+participant "User Service" as us
+database "MySQL" as db
+
+footer User Register
+
+autonumber
+user -> fe++ #d9d9d9: Điền thông tin form
+user -> fe: Nhấn nút 'Đăng ký'
+fe -> k++ #d9d9d9: Gửi request tới user/authenticationi/user-register
+
+alt Url request không hợp lệ
+    autonumber 3.1
+    k --> fe: url không hợp lệ
+    fe --> user: Hiển thị thông báo lỗi
+else Url request hợp lệ
+    autonumber 4
+    k -> us++ #d9d9d9: chuyển request tới service mục tiêu
+    us -> us++ #bae0ff: validUser()
+    us -> db++ #d9d9d9: [Prisma] Kiểm tra username + email
+    db -> db: Thực hiện truy vấn dữ liệu
+        alt Người dùng đã tồn tại
+            db --> us: Tồn tại người dùng
+            autonumber 8.1
+            us -[#f5222d]-> k: Người dùng đã tồn tại
+            k -[#f5222d]-> fe: Người dùng đã tồn tại
+            fe -[#f5222d]-> user: Hiển thị thông báo lỗi 'Người dùng đã tồn tại'
+        else Người dùng chưa tồn tại
+            autonumber 9
+            db --> us--: Không tồn tại người dùng
+            us --> us--: Hợp lệ
+            alt Transaction
+                alt Tạo mới người dùng
+                    us -> db++ #d9d9d9: Tạo mới người dùng
+                    db -> db: Thực hiện tạo mới vào db
+                    alt Thất bại
+                        db --> us: Tạo người dùng thất bại
+                        autonumber 13.1
+                        us -[#f5222d]-> k: Hệ thống đã gặp lỗi. Vui lòng thử lại sau!
+                        k -[#f5222d]-> fe: Hệ thống đã gặp lỗi. Vui lòng thử lại sau!
+                        fe -[#f5222d]-> user: Hiển thị thông báo lỗi 'Hệ thống đã gặp lỗi. Vui lòng thử lại sau!'
+                    else Thành công
+                        autonumber 14
+                        db --> us--: Tạo người dùng thành công
+                        us -> us++ #bae0ff: Thực hiện tạo mới account
+                        alt Tạo mới tài khoản 
+                            us -> db++ #d9d9d9 : [Prisma] Tạo tài khoản mới cho người dùng
+                            db -> db: Tạo mới tài khoản vào db
+                            alt Thất bại
+                                db -> db: Tạo tài khoản thất bại
+                                db -> db++ #bae0ff: rollback lại thông tin \nuser đã tạo khi nãy
+                                db --> us--: Tạo tài khoản thất bại
+                                autonumber 20.1
+                                us -[#f5222d]-> k: Hệ thống đã gặp lỗi. Vui lòng thử lại sau!
+                                k -[#f5222d]-> fe: Hệ thống đã gặp lỗi. Vui lòng thử lại sau!
+                                fe -[#f5222d]-> user: Hiển thị thông báo lỗi 'Hệ thống đã gặp lỗi. Vui lòng thử lại sau!'
+                            else Thành công
+                                autonumber 21
+                                db --> us--: Tạo tài khoản thành công
+                                us --> us--: Thành công
+                                us --> us: Tạo access token, refresh token
+                                us --> k--: Đăng kí người dùng thành công
+                                k --> fe--: Đăng kí người dùng thành công
+                                fe -> fe: Lưu dữ liệu vào local storage
+                                fe --> user--: Hiển thị thống báo "Đăng kí người dùng thành công"
+                            end 
+                        end
+                    end
+                end
+            end 
+        end
+end
+
+@enduml

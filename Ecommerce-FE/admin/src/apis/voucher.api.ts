@@ -16,7 +16,7 @@ export const VoucherApi = {
         return http.post<Return<VoucherDetailReponse>>('store/voucher', body)
     },
     updateVoucher: (voucherId: string) => (body: UpdateVoucher) => {
-        return http.put<Return<Voucher>>(`store/voucher/${voucherId}`, body)
+        return http.put(`store/voucher/${voucherId}`, body)
     },
     getAnalytics: () => {
         return http.get<Return<{ all: number; active: number; block: number }>>('store/voucher/analytics')

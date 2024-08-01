@@ -6,9 +6,9 @@ import { OrderFetching } from 'src/apis/order'
 import { AppContext } from 'src/contexts/AppContext'
 import { Payment } from 'src/types/payment.type'
 import { Voucher as VoucherType } from 'src/types/voucher.type'
-import { convertCurrentcy } from 'src/utils/utils.ts'
-import Voucher from './Voucher'
 import { ls } from 'src/utils/localStorage'
+import { convertCurrentcy, isProductSale } from 'src/utils/utils.ts'
+import Voucher from './Voucher'
 
 type CheckoutSummaryProps = {
     isPending: boolean
@@ -100,7 +100,13 @@ const CheckoutSummary = ({
                                                     </div>
                                                     <div className='flex flex-col items-end'>
                                                         <Text color='red'>x{product.buy}</Text>
-                                                        <Text size={'3'}>{convertCurrentcy(product.priceAfter)}</Text>
+                                                        <Text size={'3'}>
+                                                            {convertCurrentcy(
+                                                                isProductSale(product)
+                                                                    ? product.sale.priceAfter
+                                                                    : product.priceAfter
+                                                            )}
+                                                        </Text>
                                                     </div>
                                                 </div>
                                             ))
@@ -165,18 +171,22 @@ const CheckoutSummary = ({
                         </div>
                         {!!ids?.checked_productIds.length && (
                             <div className='p-24 space-y-4'>
-                                <div className='flex justify-between'>
+                                <Flex justify={'between'} align={'center'}>
                                     <Text weight={'bold'} size={'3'}>
                                         Tổng
                                     </Text>
-                                    <Text>{convertCurrentcy(summary.overview.total)}</Text>
-                                </div>
-                                <div className='flex justify-between'>
+                                    <Badge size={'3'} color='gray'>
+                                        {convertCurrentcy(summary.overview.total)}
+                                    </Badge>
+                                </Flex>
+                                <Flex justify={'between'} align={'center'}>
                                     <Text weight={'bold'} size={'3'}>
                                         Giảm giá
                                     </Text>
-                                    <Text color='red'>{convertCurrentcy(summary.overview.discount) || 0}</Text>
-                                </div>
+                                    <Badge size={'3'} color='red'>
+                                        {convertCurrentcy(summary.overview.discount) || 0}
+                                    </Badge>
+                                </Flex>
                             </div>
                         )}
                     </div>
@@ -185,7 +195,7 @@ const CheckoutSummary = ({
                             <Text weight={'bold'} size={'3'}>
                                 Thanh toán
                             </Text>
-                            <Badge size={'3'} color='red' className='font-bold'>
+                            <Badge size={'3'} color='blue' className='font-bold'>
                                 {convertCurrentcy(summary.overview.pay) || 0}
                             </Badge>
                         </div>

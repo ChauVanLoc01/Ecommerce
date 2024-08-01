@@ -1,7 +1,6 @@
-import Button from 'src/components/Button'
 import InputNumber from 'src/components/InputNumber'
 
-import { Avatar, Flex, Text } from '@radix-ui/themes'
+import { Avatar, Button, Flex, Text } from '@radix-ui/themes'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import classNames from 'classnames'
 import { motion } from 'framer-motion'
@@ -176,12 +175,12 @@ const Product = () => {
                         </div>
                     )}
                     <div className='flex justify-start gap-3'>
-                        <Button
-                            className='w-fit bg-red-600 hover:bg-red-700'
-                            text='Mua ngay'
-                            onClick={handleCheckout}
-                        />
-                        <Button className='w-fit' text='Thêm vào giỏ hàng' onClick={handleAddToCart(false)} />
+                        <Button color='red' size={'3'} onClick={handleCheckout}>
+                            Mua ngay
+                        </Button>
+                        <Button size={'3'} onClick={handleAddToCart(false)}>
+                            Thêm vào giỏ hàng
+                        </Button>
                     </div>
                 </div>
             </section>

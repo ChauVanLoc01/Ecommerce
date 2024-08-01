@@ -1,0 +1,55 @@
+@startuml
+actor User
+participant "Front End" as fe
+participant "Kong API Gateway" as k
+participant "User Service" as us
+participant "Middleware" as mw
+database "MySQL" as db
+
+footer User Login Function
+autonumber
+User -> fe ++: Nhập user name và password
+User -> fe: Nhấn nút "Đăng nhập"
+fe -> k++: Gửi request /user/authentication/user-login
+k -> k++: Kiểm tra cấu hình
+alt Path name không hợp lệ
+    autonumber 4.1
+    k --> fe: Không tìm thấy service phù hợp
+    fe --> User: Không tìm thấy service phù hợp
+else Path name hợp lệ
+    autonumber 5
+    k -> us--: Chuyển hướng request
+    us -> mw++: local strategy
+    mw -> us++: validateUser() 
+    us -> db++: [Prisma] Tìm kiếm người dùng
+    db -> db: Thực hiện truy vấn
+    alt Tìm thấy người dùng
+        db --> us: Trả về thông tin người dùng
+        us -> us++: Kiểm tra password
+        alt Mật khẩu không hợp lệ
+            us --> mw: Mật khẩu không đúng
+            autonumber 12.1
+            mw --> k: Mật khẩu không đúng
+            k --> fe: Mật khẩu không đúng
+            fe --> User: Hiển thị thông báo 'Mật khẩu không đúng'
+        else Mật khẩu hợp lệ
+            autonumber 13
+            us --> us--: Mật khẩu hợp lệ
+            us --> mw: Thông tin hợp lệ <req.user>
+            mw -> us++: next()
+            us -> us: login() -> create token
+            us --> k--: Đăng nhập thành công
+            k --> fe: Đăng nhập thành công
+            fe -> fe++: Lưu dữ liệu vào local storage
+            fe --> User--: Thông báo 'Đăng nhập thành công'
+        end
+    else Không tìm thấy người dùng
+        autonumber 9.1
+        db --> us--: Không tìm thấy người dùng
+        us --> mw--: Người dùng không tồn tại
+        mw --> k--: Người dùng không tồn tại
+        k --> fe--: Người dùng không tồn tại
+        fe --> User--: Hiển thị thông báo 'Người dùng không tồn tại'
+    end
+end
+@enduml

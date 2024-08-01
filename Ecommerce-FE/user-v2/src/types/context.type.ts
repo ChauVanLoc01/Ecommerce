@@ -17,6 +17,7 @@ export type ProductOrder = {
     name: string
     image: string
     priceAfter: number
+    priceBefore?: number
     buy: number
     currentQuantity: number
     isChecked: boolean

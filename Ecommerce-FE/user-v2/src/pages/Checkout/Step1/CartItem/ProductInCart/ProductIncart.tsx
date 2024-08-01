@@ -7,7 +7,7 @@ import { Link } from 'react-router-dom'
 import InputNumber from 'src/components/InputNumber'
 import Countdown from 'src/pages/ProductList/FlashSale/Countdown'
 import { ProductOrder, ProductOrderSale } from 'src/types/context.type'
-import { convertCurrentcy, isProductSale, removeSpecialCharacter } from 'src/utils/utils.ts'
+import { cn, convertCurrentcy, isProductSale, removeSpecialCharacter } from 'src/utils/utils.ts'
 
 type ProductInCartType = {
     product: ProductOrder | ProductOrderSale
@@ -18,7 +18,6 @@ type ProductInCartType = {
 
 const ProductIncart = ({ product, handleChecked, handleChangeQuantity, handleDelete }: ProductInCartType) => {
     let isSale = isProductSale(product)
-    console.log('product', product)
     const [quantity, setQuantity] = useState<number>(product.buy)
     const debounceRef = useRef<DebouncedFunc<() => void> | undefined>(undefined)
 
@@ -75,13 +74,24 @@ const ProductIncart = ({ product, handleChecked, handleChangeQuantity, handleDel
                 </Link>
             </div>
             <div className='flex items-center space-x-4'>
-                {isProductSale(product) ? (
-                    <h3 className='font-semibold font-mono bg-gradient-to-tr to-[#fcb045] via-[#fd1d1d] from-[#833ab4] bg-clip-text text-transparent'>
-                        {convertCurrentcy(product.sale.priceAfter)}
-                    </h3>
-                ) : (
-                    <h3 className='font-semibold'>{convertCurrentcy(product.priceAfter)}</h3>
-                )}
+                <Flex direction={'column'} justify={'center'}>
+                    {isProductSale(product) && (
+                        <Text
+                            size={'4'}
+                            className='font-semibold bg-gradient-to-tr to-[#fcb045] via-[#fd1d1d] from-[#833ab4] bg-clip-text text-transparent'
+                        >
+                            {convertCurrentcy(product.sale.priceAfter)}
+                        </Text>
+                    )}
+                    <Text
+                        className={cn('font-semibold text-center', {
+                            'line-through text-gray-400': isSale
+                        })}
+                        size={isSale ? '2' : '4'}
+                    >
+                        {convertCurrentcy(product.priceAfter)}
+                    </Text>
+                </Flex>
                 <InputNumber
                     quantity={quantity}
                     setQuantity={setQuantity}

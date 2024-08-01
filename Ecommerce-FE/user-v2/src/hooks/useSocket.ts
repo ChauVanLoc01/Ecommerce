@@ -42,7 +42,6 @@ const useSocket = ({ actionId }: UseSocketProps) => {
             }
         })
         socket.on(channel.current_sale_promotion, (currentId: string) => {
-            console.log('currentSaleID', currentId)
             setCurrentSaleId(currentId)
         })
         socket.emit(join_room, { type: channel.order, id: actionId })

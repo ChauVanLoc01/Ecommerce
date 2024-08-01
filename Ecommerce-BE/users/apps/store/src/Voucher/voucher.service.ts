@@ -199,22 +199,22 @@ export class VoucherService {
                     updatedAt: new Date(),
                     updatedBy: user.userId
                 }
+                console.log('voucher', voucherExist)
 
                 if (category) {
-                    if (
-                        voucherExist.categoryConditionId &&
-                        voucherExist.CategoryConditionVoucher?.categoryShortName !== category
-                    ) {
-                        await tx.categoryConditionVoucher.update({
-                            where: {
-                                id: voucherExist.categoryConditionId
-                            },
-                            data: {
-                                categoryShortName: category,
-                                updatedAt: new Date(),
-                                updatedBy: user.userId
-                            }
-                        })
+                    if (voucherExist.categoryConditionId) {
+                        if (voucherExist.CategoryConditionVoucher.categoryShortName !== category) {
+                            await tx.categoryConditionVoucher.update({
+                                where: {
+                                    id: voucherExist.categoryConditionId
+                                },
+                                data: {
+                                    categoryShortName: category,
+                                    updatedAt: new Date(),
+                                    updatedBy: user.userId
+                                }
+                            })
+                        }
                     } else {
                         let conditionalCategoryId = uuidv4()
                         await tx.categoryConditionVoucher.create({
@@ -745,7 +745,6 @@ export class VoucherService {
     }
 
     async getGlobalVoucher(query: QueryGlobalVoucherDTO) {
-        console.log('global voucher')
         let { end_date, search_key, limit, page, start_date, status } = query
 
         let pre_page = page
@@ -806,6 +805,32 @@ export class VoucherService {
                     page_size: Math.ceil(count / limit)
                 }
             }
+        }
+    }
+
+    async getGlobalVoucherForUser(): Promise<Return> {
+        const vouchers = await this.prisma.voucher.findMany({
+            where: {
+                type: VoucherType.global,
+                endDate: {
+                    gt: new Date()
+                },
+                startDate: {
+                    lte: new Date()
+                }
+            },
+            omit: {
+                updatedAt: true,
+                updatedBy: true,
+                createdAt: true,
+                createdBy: true,
+                startDate: true,
+                endDate: true
+            }
+        })
+        return {
+            msg: 'ok',
+            result: vouchers
         }
     }
 
