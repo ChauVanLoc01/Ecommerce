@@ -1,0 +1,41 @@
+@startuml
+
+footer Update Product
+
+actor "Store Manager" as user
+actor "User" as u1
+participant "Front End" as fe
+participant "Kong Api Gateway" as k
+participant "Product Service" as pro
+database "Product DB" as pro_db
+participant "Redis" as redis
+participant "Socket Service" as socket
+
+user -> fe++: Thay đổi thông tin cần cập nhật
+user -> fe: Nhấn nút "Cập nhật"
+fe -> k++: Cập nhật sản phẩm
+k -> pro++: Cập nhật sản phẩm
+pro -> pro_db++: [Prisma] Cập nhật sản phẩm
+
+alt Cập nhật sản phẩm thất bại
+    pro_db --> pro: Cập nhật sản phẩm thất bại
+    pro --> k: Cập nhật sản phẩm thất bại
+    k --> fe: Cập nhật sản phẩm thất bại
+    fe --> user: Hiển thị thông báo 'Cập nhật sản phẩm thất bại'
+else Cập nhật sản phẩm thành công
+    pro_db --> pro--: Cập nhật sản phẩm thành công
+    pro -> redis++: Kiểm tra product trong cache
+    group Có tồn tại product trong cache
+        redis -> pro--: Có tồn tại
+        pro -> redis: Set lại giá trị
+        pro -> socket++: push message [update::quantity::product]
+        socket -> k--: Cập nhật sản phẩm
+        k --> fe: Cập nhật sản phẩm
+        fe --> u1: Set lại giá trị và hiển thị lại giá trị mới
+    end
+    pro --> k--: Cập nhật sản phẩm thành công
+    k --> fe--: Cập nhật sản phẩm thành công
+    fe --> user--: Hiển thị thông báo "Cập nhật sản phẩm thành công"
+end
+
+@enduml

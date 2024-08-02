@@ -29,6 +29,7 @@ import { AllStoreQueryDTO } from './dtos/all-store.dto'
 import { CreateStoreDTO } from './dtos/create-store.dto'
 import { StoreByUserDTO } from './dtos/store-by-user.dto'
 import { UpdateStatusOfStoreDTO, UpdateStoreDTO } from './dtos/update-store.dto'
+import { UserViewStoreDTO } from './dtos/view-store.dto'
 import { StoreService } from './store.service'
 
 @UseGuards(JwtGuard)
@@ -85,6 +86,18 @@ export class StoreController {
     @Post('register')
     registerStore(@CurrentUser() user: CurrentUserType, @Body() body: CreateStoreDTO) {
         return this.storeService.registerStore(user, body)
+    }
+
+    @Public()
+    @Post('user-view-store')
+    userViewStore(@Body() body: UserViewStoreDTO) {
+        return this.storeService.viewStore(body)
+    }
+
+    @Roles(Role.STORE_OWNER)
+    @Get('count-view/:type')
+    countUserViewStore(@CurrentUser() store: CurrentStoreType, @Param('type') type: string) {
+        return this.storeService.countUserViewStore(store, type)
     }
 
     @UseInterceptors(FileInterceptor('image'))

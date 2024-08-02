@@ -57,20 +57,17 @@ export class OrderController {
         return this.ordersService.getAllOrderByStore(user, query)
     }
 
-    // @Roles(Role.STORE_OWNER)
-    // @Get('receipt-analytic/:type')
-    // receiptAnalyticByDate(
-    //     @CurrentUser() user: CurrentStoreType,
-    //     @Param('type') type: AnalyticsType
-    // ) {
-    //     return this.ordersService.receiptAnalyticByDate(user, body)
-    // }
+    @Roles(Role.STORE_OWNER)
+    @Get('taking-analytic/:type')
+    receiptAnalyticByDate(@CurrentUser() user: CurrentStoreType, @Param('type') type: string) {
+        return this.ordersService.receiptAnalyticByDate(user, type)
+    }
 
-    // @Roles(Role.STORE_OWNER)
-    // @Post('order-analytic')
-    // orderAnalyticByDate(@CurrentUser() user: CurrentStoreType, @Body() body: AnalyticsOrderDTO) {
-    //     return this.ordersService.orderAnalyticByDate(user, body)
-    // }
+    @Roles(Role.STORE_OWNER)
+    @Get('order-analytic/:type')
+    orderStatistic(@CurrentUser() user: CurrentStoreType, @Param('type') type: string) {
+        return this.ordersService.orderStatistic(user, type)
+    }
 
     @Roles(Role.STORE_OWNER, Role.ADMIN, Role.EMPLOYEE)
     @Get('store-order-status/:orderId')

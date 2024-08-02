@@ -32,7 +32,21 @@ import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
 import { CreateOrderPayload } from 'common/types/order_payload.type'
 import { MessageReturn, Return } from 'common/types/result.type'
 import { emit_update_status_of_order, hash, product_next_step } from 'common/utils/order_helper'
-import { add, addHours, compareDesc, format, isPast, sub, subDays } from 'date-fns'
+import {
+    add,
+    addHours,
+    compareDesc,
+    eachDayOfInterval,
+    eachMonthOfInterval,
+    eachWeekOfInterval,
+    endOfDay,
+    endOfMonth,
+    endOfWeek,
+    format,
+    isPast,
+    sub,
+    subDays
+} from 'date-fns'
 import { Dictionary, isUndefined, omitBy } from 'lodash'
 import { firstValueFrom } from 'rxjs'
 import { v4 as uuidv4 } from 'uuid'
@@ -583,7 +597,8 @@ export class OrderService {
                             id: orderId
                         },
                         data: {
-                            status
+                            status,
+                            updatedAt: new Date()
                         }
                     }),
                     tx.orderFlow.create({
@@ -1167,116 +1182,183 @@ export class OrderService {
     //     return ['ok']
     // }
 
-    // async receiptAnalyticByDate(user: CurrentStoreType, type: AnalyticsType): Promise<Return> {
-    //     const { storeId } = user
+    async receiptAnalyticByDate(user: CurrentStoreType, type: string): Promise<Return> {
+        const { storeId } = user
+        const select: Prisma.OrderSelect = {
+            id: true,
+            total: true,
+            pay: true,
+            discount: true
+        }
+        let general_where: Prisma.OrderWhereInput = {
+            status: OrderFlowEnum.FINISH,
+            storeId
+        }
+        let time_wheres: Prisma.OrderWhereInput[] = []
+        var end, start
+        var times = []
+        var tmp: { start: Date; end: Date }[] = []
+        switch (type) {
+            case 'day':
+                end = new Date()
+                start = sub(end, { days: 7 })
+                times = eachDayOfInterval({ start, end })
+                time_wheres = times.map((day) => {
+                    let gte = day
+                    let lte = endOfDay(day)
+                    tmp.push({ start: gte, end: lte })
+                    return {
+                        ...general_where,
+                        updatedAt: {
+                            gte,
+                            lte
+                        }
+                    }
+                })
+                break
+            case 'week':
+                end = new Date()
+                start = sub(end, { weeks: 7 })
+                times = eachWeekOfInterval({ start, end }, { weekStartsOn: 1 })
+                time_wheres = times.map((day) => {
+                    let gte = day
+                    let lte = endOfWeek(day)
+                    tmp.push({ start: gte, end: lte })
+                    return {
+                        ...general_where,
+                        updatedAt: {
+                            gte,
+                            lte
+                        }
+                    }
+                })
+                break
+            case 'month':
+                end = new Date()
+                start = sub(end, { months: 12 })
+                times = eachMonthOfInterval({ start, end })
+                time_wheres = times.map((day) => {
+                    let gte = day
+                    let lte = endOfMonth(day)
+                    tmp.push({ start: gte, end: lte })
+                    return {
+                        ...general_where,
+                        updatedAt: {
+                            gte,
+                            lte
+                        }
+                    }
+                })
+                break
+            default:
+                break
+        }
+        let result = await Promise.all(
+            time_wheres.map((time_where) => {
+                return this.prisma.order.findMany({
+                    where: {
+                        ...general_where,
+                        ...time_where
+                    },
+                    select: {
+                        ...select
+                    }
+                })
+            })
+        )
+        return {
+            msg: 'ok',
+            result: {
+                data: result,
+                times: tmp
+            }
+        }
+    }
 
-    //     var result: Pick<Order, 'id' | 'total' | 'pay' | 'discount'>[][]
-    //     const select: Prisma.OrderSelect = {
-    //         id: true,
-    //         total: true,
-    //         pay: true,
-    //         discount: true
-    //     }
+    async orderStatistic(user: CurrentStoreType, type: string): Promise<Return> {
+        const { storeId } = user
+        let general_where: Prisma.OrderWhereInput = {
+            storeId
+        }
+        let time_wheres: Prisma.OrderWhereInput[] = []
+        var end, start
+        var times = []
+        var tmp: { start: Date; end: Date }[] = []
+        switch (type) {
+            case 'day':
+                end = new Date()
+                start = sub(end, { days: 7 })
+                times = eachDayOfInterval({ start, end })
+                time_wheres = times.map((day) => {
+                    let gte = day
+                    let lte = endOfDay(day)
+                    tmp.push({ start: gte, end: lte })
+                    return {
+                        createdAt: {
+                            gte,
+                            lte
+                        }
+                    }
+                })
+                break
+            case 'week':
+                end = new Date()
+                start = sub(end, { weeks: 7 })
+                times = eachWeekOfInterval({ start, end }, { weekStartsOn: 1 })
+                time_wheres = times.map((day) => {
+                    let gte = day
+                    let lte = endOfWeek(day)
+                    tmp.push({ start: gte, end: lte })
+                    return {
+                        createdAt: {
+                            gte,
+                            lte
+                        }
+                    }
+                })
+                break
+            case 'month':
+                end = new Date()
+                start = sub(end, { months: 12 })
+                times = eachMonthOfInterval({ start, end })
+                time_wheres = times.map((day) => {
+                    let gte = day
+                    let lte = endOfMonth(day)
+                    tmp.push({ start: gte, end: lte })
+                    return {
+                        createdAt: {
+                            gte,
+                            lte
+                        }
+                    }
+                })
+                break
+            default:
+                break
+        }
+        let result = await Promise.all(
+            time_wheres.map((time_where) => {
+                return this.prisma.order.findMany({
+                    where: {
+                        ...general_where,
+                        ...time_where
+                    },
+                    select: {
+                        id: true,
+                        status: true
+                    }
+                })
+            })
+        )
 
-    //     switch (type) {
-    //         case 'day':
-    //             let dayType = eachDayOfInterval({
-    //                 start: add(startOfWeek(new Date(), { weekStartsOn: 1 }), { hours: 7 }),
-    //                 end: add(endOfWeek(new Date(), { weekStartsOn: 1 }), { hours: 7 })
-    //             })
-    //             result = await Promise.all(
-    //                 dayType.map((time) => {
-    //                     return this.prisma.order.findMany({
-    //                         where: {
-    //                             status: OrderFlowEnum.FINISH,
-    //                             updatedAt: {
-    //                                 gte: add(startOfDay(time), { hours: 7 }),
-    //                                 lte: add(endOfDay(time), { hours: 7 })
-    //                             }
-    //                         }
-    //                     })
-    //                 })
-    //             )
-    //             break
-    //         case 'weekInMonth':
-    //             let weekType = eachWeekOfInterval({
-    //                 start: add(startOfMonth(new Date()), { hours: 7 }),
-    //                 end: add(endOfMonth(new Date()), { hours: 7 })
-    //             })
-    //             result = await Promise.all(
-    //                 weekType.map((time) => {
-    //                     return this.prisma.order.findMany({
-    //                         where: {
-    //                             status: OrderFlowEnum.FINISH,
-    //                             updatedAt: {
-    //                                 gte: add(startOfWeek(time), { hours: 7 }),
-    //                                 lte: add(endOfWeek(time), { hours: 7 })
-    //                             }
-    //                         }
-    //                     })
-    //                 })
-    //             )
-    //             break
-    //         default:
-    //             let monthType = eachMonthOfInterval({
-    //                 start: add(startOfYear(new Date()), { hours: 7 }),
-    //                 end: add(endOfYear(new Date()), { hours: 7 })
-    //             })
-    //             result = await Promise.all(
-    //                 monthType.map((time) => {
-    //                     return this.prisma.order.findMany({
-    //                         where: {
-    //                             status: OrderFlowEnum.FINISH,
-    //                             updatedAt: {
-    //                                 gte: add(startOfMonth(time), { hours: 7 }),
-    //                                 lte: add(endOfMonth(time), { hours: 7 })
-    //                             }
-    //                         }
-    //                     })
-    //                 })
-    //             )
-    //             break
-    //     }
-
-    //     const receipts = orders.map((e) => sumBy(e, (o) => o.pay))
-
-    //     return {
-    //         msg: 'ok',
-    //         result: {
-    //             receipts: receipts.map((e, idx) => ({ date: dates[idx], total: e })),
-    //             current: receipts[receipts.length - 1],
-    //             percent: Math.floor((receipts[receipts.length - 1] * 100) / max(receipts))
-    //         }
-    //     }
-    // }
-
-    // async orderAnalyticByDate(user: CurrentStoreType, type: AnalysisType): Promise<Return> {
-    //     const { dates } = body
-    //     const { storeId } = user
-
-    //     const orders = await Promise.all(
-    //         dates.map((day, idx) =>
-    //             this.prisma.order.count({
-    //                 where: {
-    //                     storeId,
-    //                     createdAt: {
-    //                         gte: day,
-    //                         lt: dates[idx + 1]
-    //                     }
-    //                 }
-    //             })
-    //         )
-    //     )
-
-    //     return {
-    //         msg: 'ok',
-    //         result: {
-    //             orders: orders.map((e, idx) => ({ date: dates[idx], order: e })),
-    //             current: orders[orders.length - 1],
-    //             percent: Math.floor((orders[orders.length - 1] * 100) / max(orders))
-    //         }
-    //     }
-    // }
+        return {
+            msg: 'ok',
+            result: {
+                data: result,
+                times: tmp
+            }
+        }
+    }
 
     async test() {
         return this.productClient.send('test', ['ok'])

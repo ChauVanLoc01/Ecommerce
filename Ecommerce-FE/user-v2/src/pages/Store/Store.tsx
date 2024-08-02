@@ -1,13 +1,26 @@
 import { CalendarIcon, ChatBubbleIcon, HomeIcon, PersonIcon, PlusIcon, StarIcon } from '@radix-ui/react-icons'
 import { Avatar, Box, DataList, Flex, Tabs, Text } from '@radix-ui/themes'
-import { useLoaderData } from 'react-router-dom'
+import { useMutation } from '@tanstack/react-query'
+import { useContext, useEffect } from 'react'
+import { useLoaderData, useParams } from 'react-router-dom'
+import { StoreFetching } from 'src/apis/store'
+import { AppContext } from 'src/contexts/AppContext'
 import { Product } from 'src/types/product.type'
 import { Store as StoreType } from 'src/types/store.type'
 import Home from './Home'
 import ProductAll from './ProductAll'
 
 const Store = () => {
+    const { profile } = useContext(AppContext)
+    const params = useParams()
     const [storeDetail, solds, news] = useLoaderData() as [StoreType, Product[], Product[]]
+    const { mutate: userViewStore } = useMutation({
+        mutationFn: StoreFetching.userViewStore({ userId: profile?.user?.id, storeId: params.storeId || '' })
+    })
+
+    useEffect(() => {
+        userViewStore()
+    }, [])
 
     return (
         <div className='space-y-5'>

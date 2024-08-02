@@ -1,0 +1,51 @@
+@startuml
+
+footer Create Product
+
+actor "Store Manager" as user
+actor "User" as u1
+participant "Front End" as fe
+participant "Kong Api Gateway" as k
+participant "Store Service" as store
+database "Store DB" as store_db
+participant "Product Service" as pro
+database "Product DB" as pro_db
+participant "Redis" as redis
+participant "Socket service" as socket
+
+user -> fe++: Chọn sản phẩm, khởi tạo số lượng, giá tiền sale
+user -> fe: Nhấn nút "Tham gia"
+fe -> k++: Tham gia chương trình giảm giá
+k -> store++: Tham gia chương trình giảm giá
+    group Transaction
+        store -> store_db++: [Prisma] Tạo StorePromotion
+        store_db --> store--: Tạo Store Promotion thành công
+        store -> store_db++: [Prisma] Tạo ProductPromotion
+        store_db --> store--: Tạo ProductPromotion Thành công
+        store -> pro++: Cập nhật sản phẩm
+        pro -> pro_db++: [Prisma] Cập nhật sản phẩm,\ntrừ đi số lượng product tham gia sale
+        pro_db --> pro--: Trả về kết quả
+        pro --> store--: Trả về kết quả
+        store -> store: Kiểm tra kết quả, ném qua ngoại lệ nếu action = false
+        alt Transaction thất bại
+            store --> store_db: rollback
+            store --> k: Tham gia chương trình sale thất bại
+            k --> fe: Tham gia chương trình thất bại
+            fe --> user: Hiển thị thông báo "Tham gia chương trình thất bại"
+        else Transaction thành công
+            store -> redis++: Kiểm tra product trong cache
+            redis --> store--: Trả về data
+            group tồn tại product trong cache
+                store -> redis: Set lại giá trị mới
+                store -> socket: Push message cập nhật product [update::quantity::product]
+                socket --> k: Cập nhật product
+                k --> fe: Cập nhật product
+                fe --> u1: Set lại giá trị product\nhiển thị data real time
+            end
+            store --> k--: Tham gia chương trình thành công
+            k --> fe--: Tham gia chương trình thành công
+            fe --> user--: Hiển thị thông báo "Tham gia chương trình thành công"
+        end
+    end
+
+@enduml

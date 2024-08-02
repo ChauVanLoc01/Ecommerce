@@ -1,0 +1,56 @@
+@startuml
+
+footer Create Voucher
+
+actor "Store Manager" as user
+participant "Front End" as fe
+participant "Kong Api Gateway" as k
+participant "Store Service" as store
+database "Store DB" as db
+
+user -> fe++: Điền giá trị tương ứng vào form
+user -> fe: Nhấn nút "Tạo mới"\nPOST<store/voucher/create-voucher>
+fe -> k--++: Tạo mới voucher
+k -> store++: Tạo mới voucher
+store -> store++: createVoucher()
+store -> db++: Tìm voucher với mã code được gửi lên
+alt Mã code tồn tại
+    db --> store: Trả về voucher
+    store --> k: Mã code đã tồn tại
+    k --> fe: Mã code đã tồn tại
+    fe --> user: Hiển thị thông báo 'Mã code đã tồn tại'
+else Mã code không tồn tại
+    db --> store--: Trả về null
+    group Transaction
+        group Thực thi thành công
+            store -> db++ : Tạo mới voucher
+            db --> store--: Tạo voucher thành công
+            store -> store: Kiểm tra xem có \nyêu cầu tạo điều kiện hay không?
+            alt Có điều kiện
+                store -> db++: [Prisma] Tạo điều kiện\n[CategoryConditionVoucher, PriceConditionVoucher]
+                alt Tạo điều kiện thất bại
+                    db --> store: Tạo điều kiện thất bại
+                    store --> k: Tạo voucher thất bại
+                    k --> fe: Tạo voucher thất bại
+                    fe --> user: Hiển thị thông báo 'Tạo voucher thất bại'
+                else Tạo điều kiện thành công
+                    db --> store: Tạo điều kiện thành công
+                    store --> k: Tạo voucher thất bại
+                    k --> fe: Tạo voucher thất bại
+                    fe --> user: Hiển thị thông báo 'Tạo voucher thất bại'
+                end
+            else Không có điều kiện
+                store --> k: Tạo voucher thành công
+                k --> fe: Tạo voucher thành công
+                fe --> user: Hiển thị thông báo 'Tạo voucher thành công'
+            end
+        end
+        group Lỗi thực thi trong transaction
+            store -> db: [Prisma] Rollback
+            store --> k--: Tạo voucher thất bại
+            k --> fe: Tạo voucher thất bại
+            fe --> user: Hiển thị thông báo 'Tạo voucher thất bại'
+        end
+    end
+end
+@enduml

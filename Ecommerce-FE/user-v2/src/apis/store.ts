@@ -8,5 +8,8 @@ export const StoreFetching = {
     },
     refreshStore: (body: string[]) => {
         return http.post<Return<RefreshStore>>('/store/store/user-store', { storesId: body })
+    },
+    userViewStore: (body: { userId?: string; storeId: string }) => () => {
+        return http.post('/store/store/user-view-store', body)
     }
 }

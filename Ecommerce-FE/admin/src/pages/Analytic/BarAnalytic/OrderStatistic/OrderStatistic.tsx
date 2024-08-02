@@ -1,46 +1,45 @@
-import { Flex, IconButton, Select, Text } from '@radix-ui/themes'
-import { useRef } from 'react'
-import { Bar, BarChart, Rectangle, Tooltip } from 'recharts'
+import { Box, DataList, Flex, IconButton, Skeleton, Text } from '@radix-ui/themes'
+import { useQuery } from '@tanstack/react-query'
+import { format } from 'date-fns'
+import { useEffect, useRef, useState } from 'react'
+import { Bar, BarChart, LabelList, Rectangle, Tooltip, XAxis, YAxis } from 'recharts'
+import { AnalyticApi } from 'src/apis/analytics.api'
+import AnalyticSelect from 'src/components/AnalyticState/AnalyticSelect'
+import { OrderFlowEnum } from 'src/constants/order.status'
+import useAnalytic from 'src/hooks/useAnalytic'
+import { convertCurrentcy } from 'src/utils/utils'
 
 const OrderStatistic = () => {
+    const { type, setType } = useAnalytic()
     const widthRef = useRef<null | HTMLDivElement>(null)
-    const data = [
-        {
-            name: 'Page A',
-            uv: 4000,
-            pv: 4400
-        },
-        {
-            name: 'Page B',
-            uv: 3000,
-            pv: 6398
-        },
-        {
-            name: 'Page C',
-            uv: 2000,
-            pv: 9800
-        },
-        {
-            name: 'Page D',
-            uv: 2780,
-            pv: 3908
-        },
-        {
-            name: 'Page B',
-            uv: 3000,
-            pv: 8398
-        },
-        {
-            name: 'Page C',
-            uv: 2000,
-            pv: 5800
-        },
-        {
-            name: 'Page D',
-            uv: 2780,
-            pv: 3908
+    const [size, setSize] = useState<number>(300)
+    const { data: takings, refetch: takingRefetch } = useQuery({
+        queryKey: ['order_analytics'],
+        queryFn: AnalyticApi.orderAnalytics(type),
+        staleTime: 1000 * 60 * 60 * 3,
+        select: (result) => {
+            let data = result.data.result
+            return {
+                list: data.data.map((item, idx) => ({
+                    count: item.length,
+                    date: format(data.times[idx].start, 'dd/MM'),
+                    waiting: item.filter((e) => e.status === OrderFlowEnum.WAITING_CONFIRM).length,
+                    shipping: item.filter((e) => e.status === OrderFlowEnum.CONFIRM_AND_SHIPPING).length,
+                    finish: item.filter((e) => e.status === OrderFlowEnum.FINISH).length
+                }))
+            }
         }
-    ]
+    })
+    useEffect(() => {
+        if (widthRef?.current) {
+            setSize(widthRef.current?.clientWidth)
+        }
+    }, [widthRef])
+
+    useEffect(() => {
+        takingRefetch()
+    }, [type])
+
     return (
         <div className='bg-white p-[16px] rounded-8 border-border/20 border shadow-sm space-y-3' ref={widthRef}>
             <Flex justify={'between'} align={'center'}>
@@ -64,42 +63,90 @@ const OrderStatistic = () => {
                         Đơn Hàng
                     </Text>
                 </Flex>
-                <Select.Root defaultValue='day' size={'2'}>
-                    <Select.Trigger />
-                    <Select.Content>
-                        <Select.Item value='day'>Day</Select.Item>
-                        <Select.Item value='month'>Month</Select.Item>
-                        <Select.Item value='year'>Year</Select.Item>
-                    </Select.Content>
-                </Select.Root>
+                <AnalyticSelect setAnalyticType={setType} />
             </Flex>
-            <Flex className='rounded-8 bg-gray-100 p-12 w-full' justify={'between'}>
-                <BarChart
-                    width={widthRef.current ? ((widthRef.current.offsetWidth - 32) / 3) * 2 : 300}
-                    height={80}
-                    data={data}
-                    className='flex-shrink-0 basis-2/3'
-                >
-                    <Tooltip cursor={{ fill: 'transparent' }} />
-                    <Bar dataKey='pv' fill='#d46b08' barSize={30} shape={<Rectangle radius={6} />} />
-                </BarChart>
-                <Flex direction={'column'} justify={'center'} align={'center'} className='basis-1/3 flex-shrink-0'>
-                    <Text weight={'medium'} size={'4'}>
-                        +10tr
-                    </Text>
-                    <Text weight={'medium'} size={'3'} color='blue' className='flex items-center space-x-1'>
-                        <svg width='15' height='15' viewBox='0 0 15 15' fill='none' xmlns='http://www.w3.org/2000/svg'>
-                            <path
-                                d='M3.64645 11.3536C3.45118 11.1583 3.45118 10.8417 3.64645 10.6465L10.2929 4L6 4C5.72386 4 5.5 3.77614 5.5 3.5C5.5 3.22386 5.72386 3 6 3L11.5 3C11.6326 3 11.7598 3.05268 11.8536 3.14645C11.9473 3.24022 12 3.36739 12 3.5L12 9.00001C12 9.27615 11.7761 9.50001 11.5 9.50001C11.2239 9.50001 11 9.27615 11 9.00001V4.70711L4.35355 11.3536C4.15829 11.5488 3.84171 11.5488 3.64645 11.3536Z'
-                                fill='currentColor'
-                                fill-rule='evenodd'
-                                clip-rule='evenodd'
-                            ></path>
-                        </svg>
-                        <span>110%</span>
-                    </Text>
-                </Flex>
-            </Flex>
+            {takings && takings?.list?.length ? (
+                <>
+                    <Flex gapX={'5'} wrap='wrap'>
+                        <Flex gapX={'3'}>
+                            <Text className='font-bold'>Tổng:</Text>
+                            <Text>{convertCurrentcy(takings.list[takings.list.length - 1].count, false)}</Text>
+                        </Flex>
+                        <Flex gapX={'3'}>
+                            <Text className='font-bold'>Chờ xác nhận:</Text>
+                            <Text>{convertCurrentcy(takings.list[takings.list.length - 1].waiting, false)}</Text>
+                        </Flex>
+                        <Flex gapX={'3'}>
+                            <Text className='font-bold'>Đang giao hàng:</Text>
+                            <Text>{convertCurrentcy(takings.list[takings.list.length - 1].shipping, false)}</Text>
+                        </Flex>
+                    </Flex>
+                    <div className='rounded-8 bg-gray-100 p-12 w-full'>
+                        <BarChart
+                            margin={{ top: 20, left: 10, right: 10 }}
+                            width={size}
+                            height={150}
+                            data={takings.list}
+                            className='flex-shrink-0 w-full h-full'
+                        >
+                            <YAxis allowDataOverflow />
+                            <XAxis dataKey='date' />
+                            <Tooltip
+                                allowEscapeViewBox={{ x: true, y: true }}
+                                content={({ payload }) => {
+                                    let item = payload?.[0]
+                                    return (
+                                        <div className='bg-white rounded-6 shadow-md p-4 border border-gray-200'>
+                                            <DataList.Root>
+                                                <DataList.Item align='center'>
+                                                    <DataList.Label className='font-bold'>Tổng</DataList.Label>
+                                                    <DataList.Value className='font-bold'>
+                                                        {convertCurrentcy(item?.payload?.count as number, false)}
+                                                    </DataList.Value>
+                                                </DataList.Item>
+                                                <DataList.Item align='center'>
+                                                    <DataList.Label className='font-bold'>Chờ xác nhận</DataList.Label>
+                                                    <DataList.Value className='font-bold'>
+                                                        {convertCurrentcy(item?.payload?.waiting as number, false)}
+                                                    </DataList.Value>
+                                                </DataList.Item>
+                                                <DataList.Item align='center'>
+                                                    <DataList.Label className='font-bold'>
+                                                        Đang giao hàng
+                                                    </DataList.Label>
+                                                    <DataList.Value className='font-bold'>
+                                                        {convertCurrentcy(item?.payload?.shipping as number, false)}
+                                                    </DataList.Value>
+                                                </DataList.Item>
+                                            </DataList.Root>
+                                        </div>
+                                    )
+                                }}
+                            />
+                            <Bar dataKey={'count'} fill='#ff4d4f' barSize={30} shape={<Rectangle radius={6} />}>
+                                <LabelList dataKey='count' position='top' />
+                            </Bar>
+                        </BarChart>
+                    </div>
+                </>
+            ) : (
+                <div className='flex flex-col justify-between space-y-2'>
+                    <Flex gapX={'3'}>
+                        <Skeleton>
+                            <Box width={'100px'} height={'30px'} />
+                        </Skeleton>
+                        <Skeleton>
+                            <Box width={'100px'} height={'30px'} />
+                        </Skeleton>
+                        <Skeleton>
+                            <Box width={'100px'} height={'30px'} />
+                        </Skeleton>
+                    </Flex>
+                    <Skeleton>
+                        <Box width={`${size - 40}px`} height={'150px'} />
+                    </Skeleton>
+                </div>
+            )}
         </div>
     )
 }

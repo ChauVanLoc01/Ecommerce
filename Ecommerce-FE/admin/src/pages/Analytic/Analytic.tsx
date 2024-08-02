@@ -10,13 +10,13 @@ import ProductRate from './PieAnalytic/ProductRate'
 const Analytic = () => {
     return (
         <div className='space-y-5'>
-            <Grid columns={'4'} gap={'5'}>
+            <Grid columns={'2'} gap={'5'}>
                 <TakingStatistic />
                 <OrderStatistic />
                 <ProductStatistic />
                 <CustomerStatistic />
             </Grid>
-            <Grid columns={'3'} gapX={'5'}>
+            <Grid columns={'2'} gap={'5'}>
                 <Top10Product />
                 <ProductRate />
                 <ProductView />

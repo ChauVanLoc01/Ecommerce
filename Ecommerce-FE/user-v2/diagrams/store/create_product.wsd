@@ -1,0 +1,45 @@
+@startuml
+
+footer Create Product
+
+actor "Store Manager" as user
+participant "Front End" as fe
+participant "Kong Api Gateway" as k
+participant "Store Service" as store
+participant "Product Service" as pro
+database "Product DB" as db
+participant "S3 Bucket" as s3
+
+user -> fe++: Chọn ảnh, điền vào form
+user -> fe: Nhấn nút "Tạo mới"
+fe -> k--++: Tải ảnh lên server
+k -> store++: Tải ảnh lên server
+store -> s3++: Upload ảnh lên S3
+
+alt Tải ảnh lên server thất bại
+    s3 --> store: Tải ảnh thất bại
+    store --> k: Tải ảnh thất bại
+    k --> fe: Tải ảnh thất bại
+    fe --> user: Hiển thị thông báo 'Tải ảnh lên server thất bại'
+else Tải ảnh lên server thành công   
+    s3 --> store--: Tải ảnh thành công
+    store --> k--: Tải ảnh thành công
+    k --> fe: Tải ảnh thành công
+    fe -> k: Tạo mới sản phẩm Post<product/product/create-product>
+    k -> pro++: Tạo mới sản phẩm Post<product/product/create-product>
+    pro -> db++: [Prisma] Tạo mới sản phẩm
+    alt Tạo mới sản phẩm thất bại
+        db --> pro: Tạo thất bại
+        pro --> k: Tạo sản phẩm thất bại
+        k --> fe: Tạo sản phẩm thất bại
+        fe --> user: Hiển thị thông báo lỗi 'Tạo sản phẩm thất bại'
+    else Tạo mới sản phẩm thành công
+        db --> pro--: Tạo thành công
+        pro --> k--: Tạo sản phẩm thành công
+        k --> fe--++: Tạo sản phẩm thành công
+        fe -> fe: Refetch api liên quan
+        fe --> user--: Hiển thị thông báo "Tạo sản phẩm thành công"
+    end
+end
+
+@enduml

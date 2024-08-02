@@ -19,6 +19,15 @@ import { Role } from 'common/enums/role.enum'
 import { Status } from 'common/enums/status.enum'
 import { CurrentStoreType, CurrentUserType } from 'common/types/current.type'
 import { MessageReturn, Return } from 'common/types/result.type'
+import {
+    eachDayOfInterval,
+    eachMonthOfInterval,
+    eachWeekOfInterval,
+    endOfDay,
+    endOfMonth,
+    endOfWeek,
+    sub
+} from 'date-fns'
 import { keyBy } from 'lodash'
 import { firstValueFrom } from 'rxjs'
 import { v4 as uuidv4 } from 'uuid'
@@ -26,6 +35,7 @@ import { AllStoreQueryDTO } from './dtos/all-store.dto'
 import { CreateStoreDTO } from './dtos/create-store.dto'
 import { StoreByUserDTO } from './dtos/store-by-user.dto'
 import { UpdateStatusOfStoreDTO, UpdateStoreDTO } from './dtos/update-store.dto'
+import { UserViewStoreDTO } from './dtos/view-store.dto'
 
 @Injectable()
 export class StoreService {
@@ -159,6 +169,95 @@ export class StoreService {
         return {
             msg: 'Tạo cửa hàng thành công',
             result: createdStore
+        }
+    }
+
+    async viewStore(body: UserViewStoreDTO) {
+        await this.prisma.userViewStore.create({
+            data: {
+                id: uuidv4(),
+                userId: body.userId,
+                storeId: body.storeId,
+                createdAt: new Date()
+            }
+        })
+    }
+
+    async countUserViewStore(store: CurrentStoreType, type: string) {
+        const { storeId } = store
+        let time_wheres: Prisma.UserViewStoreWhereInput[] = []
+        var end, start
+        var times = []
+        var tmp: { start: Date; end: Date }[] = []
+        switch (type) {
+            case 'day':
+                end = new Date()
+                start = sub(end, { days: 7 })
+                times = eachDayOfInterval({ start, end })
+                time_wheres = times.map((day) => {
+                    let gte = day
+                    let lte = endOfDay(day)
+                    tmp.push({ start: gte, end: lte })
+                    return {
+                        createdAt: {
+                            gte,
+                            lte
+                        }
+                    }
+                })
+                break
+            case 'week':
+                end = new Date()
+                start = sub(end, { weeks: 7 })
+                times = eachWeekOfInterval({ start, end }, { weekStartsOn: 1 })
+                time_wheres = times.map((day) => {
+                    let gte = day
+                    let lte = endOfWeek(day)
+                    tmp.push({ start: gte, end: lte })
+                    return {
+                        createdAt: {
+                            gte,
+                            lte
+                        }
+                    }
+                })
+                break
+            case 'month':
+                end = new Date()
+                start = sub(end, { months: 12 })
+                times = eachMonthOfInterval({ start, end })
+                time_wheres = times.map((day) => {
+                    let gte = day
+                    let lte = endOfMonth(day)
+                    tmp.push({ start: gte, end: lte })
+                    return {
+                        createdAt: {
+                            gte,
+                            lte
+                        }
+                    }
+                })
+                break
+            default:
+                break
+        }
+        let result = await Promise.all(
+            time_wheres.map(async (time_where, idx) => {
+                let list = await this.prisma.userViewStore.findMany({
+                    where: {
+                        ...time_where,
+                        storeId
+                    },
+                    select: {
+                        userId: true
+                    }
+                })
+                return { ...tmp[idx], list }
+            })
+        )
+        return {
+            msg: 'ok',
+            result
         }
     }
 

@@ -207,109 +207,113 @@ export class ProductService {
     }
 
     async getALlProductForStore(storeId: string, query: QueryProductType): Promise<Return> {
-        const {
-            category,
-            createdAt,
-            price_max,
-            price_min,
-            sold,
-            price,
-            limit,
-            page,
-            max_date,
-            min_date,
-            status,
-            search_key
-        } = query
+        try {
+            const {
+                category,
+                createdAt,
+                price_max,
+                price_min,
+                sold,
+                price,
+                limit,
+                page,
+                max_date,
+                min_date,
+                status,
+                search_key
+            } = query
 
-        if (
-            Object.keys(
-                omitBy(
+            if (
+                Object.keys(
+                    omitBy(
+                        {
+                            createdAt,
+                            sold,
+                            price
+                        },
+                        isUndefined
+                    )
+                ).length > 1
+            ) {
+                throw new BadRequestException('Tối đa 1 field order')
+            }
+
+            let page_tmp = page || 1
+            let take = limit || this.configService.get<number>('app.limit_default')
+            let skip = (page_tmp - 1) * take
+
+            let search_params: Prisma.StringNullableFilter = {
+                contains: search_key
+            }
+
+            let search: Prisma.ProductWhereInput = {
+                OR: [
                     {
+                        name: search_params
+                    },
+                    {
+                        description: search_params
+                    },
+                    {
+                        Category: {
+                            name: search_params
+                        }
+                    }
+                ]
+            }
+
+            let where: Prisma.ProductWhereInput = {
+                storeId,
+                category,
+                status,
+                currentQuantity: {
+                    gt: 0
+                },
+                priceAfter: {
+                    lte: price_max,
+                    gte: price_min
+                },
+                createdAt: {
+                    gte: min_date,
+                    lte: max_date
+                }
+            }
+
+            const [count, products] = await Promise.all([
+                this.prisma.product.count({
+                    where: {
+                        ...where,
+                        ...search
+                    }
+                }),
+                this.prisma.product.findMany({
+                    where: {
+                        ...where,
+                        ...search
+                    },
+                    orderBy: {
                         createdAt,
                         sold,
-                        price
+                        priceAfter: price
                     },
-                    isUndefined
-                )
-            ).length > 1
-        ) {
-            throw new BadRequestException('Tối đa 1 field order')
-        }
+                    take,
+                    skip
+                })
+            ])
 
-        let page_tmp = page || 1
-        let take = limit || this.configService.get<number>('app.limit')
-        let skip = (page_tmp - 1) * take
-
-        let search_params: Prisma.StringNullableFilter = {
-            contains: search_key
-        }
-
-        let search: Prisma.ProductWhereInput = {
-            OR: [
-                {
-                    name: search_params
-                },
-                {
-                    description: search_params
-                },
-                {
-                    Category: {
-                        name: search_params
+            return {
+                msg: 'ok',
+                result: {
+                    data: products,
+                    query: {
+                        ...query,
+                        page: page_tmp,
+                        page_size: Math.ceil(count / take)
                     }
                 }
-            ]
-        }
-
-        let where: Prisma.ProductWhereInput = {
-            storeId,
-            category,
-            status,
-            currentQuantity: {
-                gt: 0
-            },
-            priceAfter: {
-                lte: price_max,
-                gte: price_min
-            },
-            createdAt: {
-                gte: min_date,
-                lte: max_date
             }
-        }
-
-        const [count, products] = await Promise.all([
-            this.prisma.product.count({
-                where: {
-                    ...where,
-                    ...search
-                }
-            }),
-            this.prisma.product.findMany({
-                where: {
-                    ...where,
-                    ...search
-                },
-                orderBy: {
-                    createdAt,
-                    sold,
-                    priceAfter: price
-                },
-                take,
-                skip
-            })
-        ])
-
-        return {
-            msg: 'ok',
-            result: {
-                data: products,
-                query: {
-                    ...query,
-                    page: page_tmp,
-                    page_size: Math.ceil(count / take)
-                }
-            }
+        } catch (err) {
+            console.log('errrororro', err)
         }
     }
 

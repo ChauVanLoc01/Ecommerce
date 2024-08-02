@@ -9,7 +9,7 @@ import { deliveryLoader } from 'src/loaders/delivery.loader'
 import { flashSaleLoader } from 'src/loaders/flash_sale.loader'
 import { ordersLoader } from 'src/loaders/order.loader'
 import { privateLoader } from 'src/loaders/private.loader'
-import { productDetailLoader, productListLoader } from 'src/loaders/product.loader'
+import { productDetailLoader } from 'src/loaders/product.loader'
 import { profileLoader } from 'src/loaders/profile.loader'
 import { storeLoader } from 'src/loaders/store.loader'
 import Checkout from 'src/pages/Checkout'
@@ -68,14 +68,14 @@ const routes = createBrowserRouter([
                 loader: storeLoader
             },
             {
-                path: ':productId',
-                element: <Product />,
-                loader: productDetailLoader
-            },
-            {
                 path: `${route.flashSale}/:salePromotionId`,
                 element: <FlashSale />,
                 loader: flashSaleLoader
+            },
+            {
+                path: ':productId',
+                element: <Product />,
+                loader: productDetailLoader
             },
             {
                 loader: privateLoader,
