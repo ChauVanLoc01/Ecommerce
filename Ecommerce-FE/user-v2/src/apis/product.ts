@@ -35,7 +35,7 @@ export const productFetching = {
             signal
         })
     },
-    createViewProduct: (body: { productId: string; userId?: string }) => {
+    createViewProduct: (body: { storeId: string; productId: string; userId?: string }) => {
         return http.post('/product/product/view-product', body)
     },
     createViewAddToCart: (body: { productId: string; quantity: number }) => {

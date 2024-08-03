@@ -58,9 +58,9 @@ export class ProductController {
     }
 
     @Roles(Role.STORE_OWNER)
-    @Get('top-10')
-    top10ProductView(@CurrentUser() user: CurrentStoreType, @Body() body: AnalyticsProductDTO) {
-        return this.productsService.top10ProductView(user, body)
+    @Get('top-10-view')
+    top10ProductView(@CurrentUser() user: CurrentStoreType) {
+        return this.productsService.top10ProductView(user)
     }
 
     @Public()

@@ -40,7 +40,6 @@ import { format } from 'date-fns'
 import { isUndefined, keyBy, omitBy } from 'lodash'
 import { firstValueFrom } from 'rxjs'
 import { v4 as uuidv4 } from 'uuid'
-import { AnalyticsProductDTO } from './dtos/analytics-product.dto'
 import { CreateUserAddProductToCartDTO } from './dtos/create-product-add-to-cart.dto'
 import { CreateUserViewProductDto } from './dtos/create-product-view.dto'
 import { CreateProductType } from './dtos/create-product.dto'
@@ -463,6 +462,7 @@ export class ProductService {
                 id: uuidv4(),
                 userId: body.userId,
                 productId: body.productId,
+                storeId: body.storeId,
                 createdAt: new Date().toISOString()
             }
         })
@@ -1193,17 +1193,40 @@ export class ProductService {
         }
     }
 
-    async top10ProductView(user: CurrentStoreType, body: AnalyticsProductDTO) {
-        const { dates } = body
+    async top10ProductView(user: CurrentStoreType) {
         const { storeId } = user
-
-        const orders_dates = await Promise.all(
-            dates.map((day, idx) =>
-                this.prisma.userViewProduct.count({
-                    where: {}
-                })
-            )
-        )
+        const result = await this.prisma.userViewProduct.groupBy({
+            by: ['productId'],
+            _count: {
+                _all: true
+            },
+            where: {
+                storeId
+            },
+            orderBy: {
+                _count: {
+                    productId: 'desc'
+                }
+            },
+            take: 10
+        })
+        const convert = await this.prisma.product.findMany({
+            where: {
+                id: {
+                    in: result.map((item) => item.productId)
+                }
+            },
+            select: {
+                id: true,
+                name: true,
+                image: true
+            }
+        })
+        return convert.map((item, idx) => ({
+            ...item,
+            productId: item.id,
+            count: result[idx]._count._all
+        }))
     }
 
     async getProductOrderByRating(productId: string, orders: string[]) {

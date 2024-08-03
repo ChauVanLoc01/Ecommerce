@@ -64,6 +64,10 @@ export class OrderController {
     }
 
     @Roles(Role.STORE_OWNER)
+    @Get('best-sell')
+    bestSell() {}
+
+    @Roles(Role.STORE_OWNER)
     @Get('order-analytic/:type')
     orderStatistic(@CurrentUser() user: CurrentStoreType, @Param('type') type: string) {
         return this.ordersService.orderStatistic(user, type)

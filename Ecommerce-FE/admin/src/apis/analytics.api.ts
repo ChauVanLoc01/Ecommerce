@@ -16,5 +16,10 @@ export const AnalyticApi = {
         return http.get<Return<{ start: Date; end: Date; list: { userId?: string }[] }[]>>(
             `store/store/count-view/${type}`
         )
+    },
+    top10ViewProduct: () => {
+        return http.get<{ productId: string; name: string; count: number; image: string }[]>(
+            'product/product/top-10-view'
+        )
     }
 }

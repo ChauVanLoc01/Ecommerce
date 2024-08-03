@@ -78,7 +78,7 @@ const Product = () => {
     }
 
     useEffect(() => {
-        createViewProduct({ productId: productDetail.id, userId: profile?.user?.id })
+        createViewProduct({ storeId: storeDetail.id, productId: productDetail.id, userId: profile?.user?.id })
         window.scrollTo({ top: 0, behavior: 'smooth' })
     }, [])
 
