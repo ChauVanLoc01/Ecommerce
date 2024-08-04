@@ -56,7 +56,7 @@ export class ScheduleService {
         return eachHourOfInterval({ start, end })
     }
 
-    @Cron('1 35 * * * *', {
+    @Cron('1 19 * * * 1', {
         name: 'auto creating sale promotion'
     })
     async autoCreatingSalePromotion() {
@@ -65,7 +65,7 @@ export class ScheduleService {
     }
 
     async createSalePromotion(name: string, second: number, data: Date[]) {
-        const cron_job = new CronJob(`${second} 36 * * * *`, async () => {
+        const cron_job = new CronJob(`${second} 20 * * * 1`, async () => {
             await Promise.all(
                 data.map((date) => {
                     let formatDate = format(sub(date, { hours: 7 }), 'HH:mm dd-MM-yyyy')
@@ -93,7 +93,7 @@ export class ScheduleService {
         console.log('ok')
     }
 
-    @Cron(CronExpression.EVERY_HOUR)
+    @Cron(CronExpression.EVERY_SECOND)
     async setCurrentSalePromotion() {
         let currentDate = add(startOfHour(new Date()), { hours: 7 }).toISOString()
         let process = async (

@@ -125,8 +125,10 @@ const ProductList = () => {
                                         <Select.Content position='popper' className='rounded-6' align='end'>
                                             <Select.Group>
                                                 <Select.Label>Sắp xếp theo</Select.Label>
-                                                {product_list_sort.map((item) => (
-                                                    <Select.Item value={item[0]}>{item[1]}</Select.Item>
+                                                {product_list_sort.map((item, idx) => (
+                                                    <Select.Item key={`sort_${idx}`} value={item[0]}>
+                                                        {item[1]}
+                                                    </Select.Item>
                                                 ))}
                                             </Select.Group>
                                         </Select.Content>

@@ -59,7 +59,7 @@ export class ProductSaleConsummer {
                                             times: number
                                         }
                                         console.log(
-                                            `:::::::Lần chạy cron job thứ ${times} - số lượng cập nhật ${quantity}::::::::::`
+                                            `:::::::Lần chạy cron job thứ ${times} - số lượng cập nhật product sale ${quantity}::::::::::`
                                         )
                                         await Promise.all([
                                             this.prisma.productPromotion.update({
@@ -77,7 +77,9 @@ export class ProductSaleConsummer {
                                         ])
                                         console.log('::::::::::Đã cập nhật xong:::::::::')
                                         if (times == 1) {
-                                            console.log(':::::::::::::Xoá cron job::::::::::::::')
+                                            console.log(
+                                                ':::::::::::::Xoá cron job product sale::::::::::::::'
+                                            )
                                             this.schedulerRegistry.deleteCronJob(hashValue)
                                             this.cacheManager.del(hashValue)
                                             return

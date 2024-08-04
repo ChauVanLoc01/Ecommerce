@@ -490,9 +490,11 @@ export class SaleService {
     }
 
     async createCronJobToUpdateProductSale(productPromotionIds: string[]) {
+        console.log('Yêu cầu tạo cron job để cập nhật product sale')
         this.productSaleBackground.add(
             BackgroundAction.createCronJobToUpdateProductSale,
-            productPromotionIds
+            productPromotionIds,
+            { attempts: 3, removeOnComplete: true }
         )
     }
 

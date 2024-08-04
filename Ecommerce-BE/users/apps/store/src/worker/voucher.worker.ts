@@ -71,7 +71,7 @@ export class VoucherConsummer {
                                     fromCache
                                 ) as { quantity: number; times: number }
                                 console.log(
-                                    `::::::::::::::Lần cập nhật thứ ${times}::::::::::Số lượng [${quantityFromCache}]:::::::::::`
+                                    `::::::::::::::Lần cập nhật voucher thứ ${times}::::::::::Số lượng [${quantityFromCache}]:::::::::::`
                                 )
                                 const result = await Promise.all([
                                     this.prisma.voucher.update({
@@ -93,7 +93,7 @@ export class VoucherConsummer {
                                 ])
                                 if (result && times == 1) {
                                     console.log(
-                                        '::::::::::::Times = 1 ==> Xóa Cron Job và clear Cache:::::::::::::::'
+                                        '::::::::::::Times = 1 ==> Voucher: Xóa Cron Job và clear Cache:::::::::::::::'
                                     )
                                     let cron_job = this.schedulerRegistry.getCronJob(hashValue)
                                     cron_job.stop()

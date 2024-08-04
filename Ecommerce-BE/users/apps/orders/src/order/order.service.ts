@@ -448,7 +448,8 @@ export class OrderService {
                                     address: delivery_info.address,
                                     name: delivery_info.name,
                                     type: OrderFlowEnum.WAITING_CONFIRM,
-                                    createdBy: userId
+                                    createdBy: userId,
+                                    createdAt: new Date()
                                 }
                             },
                             OrderFlow: {

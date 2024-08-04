@@ -26,13 +26,7 @@ export async function bootstrap(mainModule: any) {
             }
         })
 
-        app.enableCors({
-            origin: [
-                'http://localhost:3000',
-                'http://localhost:4000',
-                'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html'
-            ]
-        })
+        app.enableCors()
 
         app.use(cookieParser())
 

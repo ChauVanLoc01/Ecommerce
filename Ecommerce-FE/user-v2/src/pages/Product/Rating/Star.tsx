@@ -9,7 +9,11 @@ const Star = ({ count }: StarProps) => {
 
     let starYellow = Array(5)
         .fill(0)
-        .map((_) => <span className='text-yellow-500'>★</span>)
+        .map((_, idx) => (
+            <span key={`star_${count}_${idx}`} className='text-yellow-500'>
+                ★
+            </span>
+        ))
 
     return <>{[...starYellow, ...starWhite].slice(5 - count, -count)}</>
 }

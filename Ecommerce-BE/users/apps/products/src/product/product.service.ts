@@ -38,6 +38,7 @@ import {
     hash,
     voucher_next_step
 } from 'common/utils/order_helper'
+import { isProductSale } from 'common/utils/utils'
 import { format } from 'date-fns'
 import { isUndefined, keyBy, omitBy } from 'lodash'
 import { firstValueFrom } from 'rxjs'
@@ -48,7 +49,6 @@ import { CreateProductType } from './dtos/create-product.dto'
 import { QueryProductType } from './dtos/query-product.dto'
 import { RefreshCartDTO } from './dtos/refresh-cart.dto'
 import { UpdateProductType } from './dtos/update-product.dto'
-import { isProductSale } from 'common/utils/utils'
 
 @Injectable()
 export class ProductService {
@@ -637,10 +637,10 @@ export class ProductService {
                         if (!productSale.action) {
                             throw new Error(productSale.msg)
                         }
-                        let {
-                            result: { original_quantity, remaining_quantity }
-                        } = productSale
                         if (productSale) {
+                            let {
+                                result: { original_quantity, remaining_quantity }
+                            } = productSale
                             map.set(idx, { ...product, original_quantity, remaining_quantity })
                         }
                         return true
@@ -823,21 +823,22 @@ export class ProductService {
                     result: null
                 })
                 if (payloadTmp.payload.products.length) {
-                    await Promise.all(
+                    await this.productBackgroundQueue.add(
+                        BackgroundAction.resetValueCacheWhenUpdateProductFail,
                         payloadTmp.payload.products.map(
-                            ({ id, original_quantity, price_after, productPromotionId }) => {
-                                let tmp_id = productPromotionId || id
-                                let hashValue = hash('product', tmp_id)
-                                return this.cacheManager.set(
-                                    hashValue,
-                                    JSON.stringify({
-                                        quantity: original_quantity,
-                                        priceAfter: price_after,
-                                        times: 3
-                                    })
-                                )
-                            }
-                        )
+                            ({ id, price_after, original_quantity, productPromotionId }) => ({
+                                original_quantity,
+                                price_after,
+                                id: productPromotionId || id
+                            })
+                        ) as Pick<
+                            RollbackOrder['products'][number],
+                            'id' | 'price_after' | 'original_quantity'
+                        >[],
+                        {
+                            attempts: 3,
+                            removeOnComplete: true
+                        }
                     )
                 }
             } catch (err) {
@@ -852,17 +853,23 @@ export class ProductService {
             format(new Date(), 'hh:mm:ss:SSS dd/MM')
         )
         try {
-            // await this.productBackgroundQueue.add(
-            //     BackgroundAction.resetValueCacheWhenUpdateProductFail,
-            //     payload.payload.products.map(({ id, price_after, original_quantity }) => ({
-            //         original_quantity,
-            //         price_after,
-            //         id
-            //     })) as Pick<
-            //         RollbackOrder['products'][number],
-            //         'id' | 'price_after' | 'original_quantity'
-            //     >[]
-            // )
+            await this.productBackgroundQueue.add(
+                BackgroundAction.resetValueCacheWhenUpdateProductFail,
+                payload.payload.products.map(
+                    ({ id, price_after, original_quantity, productPromotionId }) => ({
+                        original_quantity,
+                        price_after,
+                        id: productPromotionId || id
+                    })
+                ) as Pick<
+                    RollbackOrder['products'][number],
+                    'id' | 'price_after' | 'original_quantity'
+                >[],
+                {
+                    attempts: 3,
+                    removeOnComplete: true
+                }
+            )
         } catch (err) {
             console.log('*****Có lỗi trong roll back product********', err)
         }
@@ -876,11 +883,23 @@ export class ProductService {
             )
             await this.productBackgroundQueue.add(
                 BackgroundAction.createCronJobToUpdateProduct,
-                payload.payload.products.map((e) => e.id),
+                payload.payload.products.filter((e) => {
+                    if (!isProductSale(e)) {
+                        return e.id
+                    }
+                }),
                 {
                     attempts: 3,
                     removeOnComplete: true
                 }
+            )
+            this.store_client.emit(
+                createCronJobToUpdateProductSale,
+                payload.payload.products.filter((e) => {
+                    if (isProductSale(e)) {
+                        return e.productPromotionId
+                    }
+                })
             )
         } catch (err) {
             console.log('******Bước 2: Lỗi commit product (LINE 829) *******')

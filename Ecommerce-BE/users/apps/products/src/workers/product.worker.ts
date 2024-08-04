@@ -36,9 +36,8 @@ export class ProductConsummer {
                 ':::::::::::::Đơn hàng thất bại ==> roll back lại số lượng ban đầu của sản phẩm::::::::::::'
             )
             await Promise.all(
-                job.data.map(({ id, price_after, productPromotionId, original_quantity }) => {
-                    let tmp_id = productPromotionId || id
-                    let hashValue = hash('product', tmp_id)
+                job.data.map(({ id, price_after, original_quantity }) => {
+                    let hashValue = hash('product', id)
                     return this.cacheManager.set(
                         hashValue,
                         JSON.stringify({
