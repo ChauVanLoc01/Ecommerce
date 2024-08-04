@@ -381,7 +381,13 @@ export class OrderService {
                     let produtOrderCreate: Prisma.OrderCreateInput['ProductOrder'] = {
                         createMany: {
                             data: order.productOrders.map(
-                                ({ productId, quantity, priceAfter, priceBefore }) => {
+                                ({
+                                    productId,
+                                    quantity,
+                                    priceAfter,
+                                    priceBefore,
+                                    productPromotionId
+                                }) => {
                                     tmp.products.push({
                                         buy: quantity,
                                         remaining_quantity: 0,
@@ -389,7 +395,8 @@ export class OrderService {
                                         original_quantity: 0,
                                         price_after: priceAfter,
                                         storeId: order.storeId,
-                                        currentSaleId
+                                        currentSaleId,
+                                        productPromotionId
                                     })
                                     return {
                                         id: uuidv4(),
@@ -1273,6 +1280,42 @@ export class OrderService {
                 times: tmp
             }
         }
+    }
+
+    async ratingOfBestSellProduct(user: CurrentStoreType) {
+        let { storeId } = user
+        const orders = await this.prisma.order.findMany({
+            where: {
+                storeId,
+                status: OrderFlowEnum.FINISH
+            },
+            select: {
+                id: true
+            }
+        })
+        const result = await this.prisma.productOrder.groupBy({
+            by: ['productId'],
+            _count: {
+                _all: true
+            },
+            _sum: {
+                quantity: true
+            },
+            where: {
+                orderId: { in: orders.map((e) => e.id) }
+            },
+            orderBy: {
+                _count: {
+                    productId: 'desc'
+                }
+            },
+            take: 10
+        })
+        return result.map((e) => ({
+            productId: e.productId,
+            count: e._count._all,
+            quantity: e._sum.quantity
+        }))
     }
 
     async orderStatistic(user: CurrentStoreType, type: string): Promise<Return> {

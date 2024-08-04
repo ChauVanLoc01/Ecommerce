@@ -3,7 +3,7 @@ import ls_slim from 'localstorage-slim'
 export type key = 'profile' | 'store' | 'access_token' | 'refresh_token' | 'role' | 'who'
 
 export const ls = {
-    setItem: (key: key, value: string) => ls_slim.set(key, value),
+    setItem: (key: key, value: any) => ls_slim.set(key, value),
     getItem: (key: key) => ls_slim.get(key),
     deleteItem: (key: key) => ls_slim.remove(key),
     clearAll: () => ls_slim.clear()

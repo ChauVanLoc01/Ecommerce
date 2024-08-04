@@ -164,8 +164,6 @@ const Voucher = ({ selectedVoucher, setSelectedVoucher }: VoucherProps) => {
         }
     }, [voucherQuery])
 
-    console.log('allVoucher', allVoucher)
-
     return (
         <>
             <div className='p-24 rounded-8 border border-border/30 bg-[#FFFFFF] space-y-4'>

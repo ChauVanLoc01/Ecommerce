@@ -65,7 +65,9 @@ export class OrderController {
 
     @Roles(Role.STORE_OWNER)
     @Get('best-sell')
-    bestSell() {}
+    bestSell(@CurrentUser() user: CurrentStoreType) {
+        return this.ordersService.ratingOfBestSellProduct(user)
+    }
 
     @Roles(Role.STORE_OWNER)
     @Get('order-analytic/:type')
@@ -80,6 +82,12 @@ export class OrderController {
         @Param('orderId') orderId: string
     ) {
         return this.ordersService.getOrderStatusByStore(user, orderId)
+    }
+
+    @Roles(Role.STORE_OWNER)
+    @Get('best-sell')
+    ratingOfBestSellProduct(@CurrentUser() user: CurrentStoreType) {
+        return this.ordersService.ratingOfBestSellProduct(user)
     }
 
     @Roles(Role.EMPLOYEE, Role.STORE_OWNER, Role.ADMIN)

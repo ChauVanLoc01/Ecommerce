@@ -17,7 +17,7 @@ const Step3 = ({ payment, setPayment }: Step3Props) => {
             <Text weight={'bold'} size={'4'} className='text-gray-600'>
                 Chọn phương thức thanh toán
             </Text>
-            <RadioCards.Root defaultValue={payment} columns={{ initial: '4' }} onValueChange={onPaymentChange}>
+            <RadioCards.Root defaultValue={payment} columns={{ initial: '3' }} onValueChange={onPaymentChange}>
                 {payment_data.map(({ key, lable }) => (
                     <RadioCards.Item value={key}>
                         <Text>{lable}</Text>

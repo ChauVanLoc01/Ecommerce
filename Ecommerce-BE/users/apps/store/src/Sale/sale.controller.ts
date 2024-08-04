@@ -1,6 +1,10 @@
 import { Body, Controller, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common'
-import { MessagePattern, Payload } from '@nestjs/microservices'
-import { refreshProductSale } from 'common/constants/event.constant'
+import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices'
+import {
+    createCronJobToUpdateProductSale,
+    refreshProductSale,
+    updateProductSaleWhenCreatingOrder
+} from 'common/constants/event.constant'
 import { CurrentUser } from 'common/decorators/current_user.decorator'
 import { PaginationDTO } from 'common/decorators/pagination.dto'
 import { Public } from 'common/decorators/public.decorator'
@@ -50,6 +54,22 @@ export class SaleController {
         return this.saleService.getProductListSaleDetail(salePromotionId, query)
     }
 
+    @Public()
+    @MessagePattern(updateProductSaleWhenCreatingOrder)
+    updateQuantityProductSaleWhenCreatingOrder(
+        @Payload() payload: { productPromotionId: string; salePromotionId: string; buy: number }
+    ) {
+        return this.saleService.updateQuantityProductSaleWhenCreatingOrder(payload)
+    }
+
+    @Public()
+    @MessagePattern(createCronJobToUpdateProductSale)
+    createCronJobToUpdateProductSale(@Payload() payload: string[]) {
+        return this.saleService.createCronJobToUpdateProductSale(payload)
+    }
+
+    @Public()
+    @EventPattern()
     @Public()
     @Get(':salePromotionId/product')
     getAllProduct(

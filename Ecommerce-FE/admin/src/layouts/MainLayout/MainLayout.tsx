@@ -35,9 +35,9 @@ const MainLayout = () => {
 
     useBeforeUnload(() => {
         if (!/login/.test(location.pathname)) {
-            ls.setItem('profile', JSON.stringify(profile))
-            ls.setItem('store', JSON.stringify(store))
-            ls.setItem('role', JSON.stringify(role))
+            ls.setItem('profile', profile)
+            ls.setItem('store', store)
+            ls.setItem('role', role)
             ls.setItem('who', who as string)
         }
     })

@@ -20,7 +20,7 @@ export const convertDigitalNumber = (value: number, digit = 0) =>
         maximumFractionDigits: digit
     }).format(value)
 
-export const removeSpecialCharacter = (str: string) =>
+export const removeSpecialCharacter = (str = '') =>
     str
         .replace(/!|@|%|\^|\*|\(|\)|\+|\=|\<|\>|\?|\/|,|\.|\:|\;|\'|\"|\&|\#|\[|\]|~|\$|_|`|-|{|}|\||\\/g, '')
         .split(' ')
@@ -59,16 +59,14 @@ export const clearProductAfterCreatingOrder = (checkedStoreIds: string[], payloa
     const { stores } = payload
     checkedStoreIds.forEach((storeId) => {
         let productInStore = stores[storeId].products
-        let numberOfChecked = stores[storeId].checked
         productInStore.forEach((product) => {
             let { productId, isChecked } = product
             if (isChecked) {
                 payload.total -= 1
-                if (numberOfChecked == 1) {
+                productInStore.delete(productId)
+                stores[storeId].checked -= 1
+                if (productInStore.size == 0) {
                     delete stores[storeId]
-                } else {
-                    productInStore.delete(productId)
-                    stores[storeId].checked -= 1
                 }
             }
         })

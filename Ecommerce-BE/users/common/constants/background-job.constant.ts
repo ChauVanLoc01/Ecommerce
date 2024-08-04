@@ -12,12 +12,14 @@ export enum BackgroundAction {
     resetValueVoucherWHenUpdateProductFail = 'resetValueVOucherWhenUpdateProductFail',
     createCronJobVoucherToUpdateQuanttiy = 'createCronJobVoucherToUpdateQuantity',
     rollbackAddingProductToSale = 'rollbackAddingProductToSale',
-    rollbackUpdatingProductToSale = 'rollbackUpdatingProductToSale'
+    rollbackUpdatingProductToSale = 'rollbackUpdatingProductToSale',
+    createCronJobToUpdateProductSale = 'createCronJobToUpdateProductSale'
 }
 
 export enum BackgroundName {
     mail = 'sendMail',
     product = 'product',
     order = 'order',
-    voucher = 'voucher'
+    voucher = 'voucher',
+    product_sale = 'product_sale'
 }

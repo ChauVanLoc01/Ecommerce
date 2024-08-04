@@ -2,7 +2,8 @@ import { CreateOrder } from 'common/dtos/create_order.dto'
 
 export type PayloadCache = CreateOrder
 export type PayloadProcess = CreateOrder
-type UpdateOtherService = {
+
+export type UpdateOtherService = {
     products: {
         id: string
         storeId: string
@@ -11,6 +12,7 @@ type UpdateOtherService = {
         remaining_quantity: number
         original_quantity: number
         currentSaleId?: string
+        productPromotionId?: string
     }[]
     vouchers: {
         id: string

@@ -440,19 +440,20 @@ model UserVoucher {
 }
 
 model SalePromotion {
-  id                                                   String           @id @db.VarChar(50)
-  title                                                String           @db.TinyText
-  description                                          String?          @db.Text
-  type                                                 String           @db.VarChar(50)
-  categoryId                                           String?          @db.VarChar(50)
-  status                                               String           @db.VarChar(50)
-  startDate                                            DateTime         @db.Timestamp(0)
-  endDate                                              DateTime?        @db.Timestamp(0)
-  createdAt                                            DateTime         @db.Timestamp(0)
-  createdBy                                            String           @db.VarChar(50)
-  updatedAt                                            DateTime?        @db.Timestamp(0)
-  updatedBy                                            String?          @db.VarChar(50)
-  StorePromotion_StorePromotion_salePromotionIdToStore StorePromotion[] @relation("StorePromotion_salePromotionIdToStore")
+  id                                                   String             @id @db.VarChar(50)
+  title                                                String             @db.TinyText
+  description                                          String?            @db.Text
+  type                                                 String             @db.VarChar(50)
+  categoryId                                           String?            @db.VarChar(50)
+  status                                               String             @db.VarChar(50)
+  startDate                                            DateTime           @db.Timestamp(0)
+  endDate                                              DateTime?          @db.Timestamp(0)
+  createdAt                                            DateTime           @db.Timestamp(0)
+  createdBy                                            String             @db.VarChar(50)
+  updatedAt                                            DateTime?          @db.Timestamp(0)
+  updatedBy                                            String?            @db.VarChar(50)
+  ProductPromotion                                     ProductPromotion[]
+  StorePromotion_StorePromotion_salePromotionIdToStore StorePromotion[]   @relation("StorePromotion_salePromotionIdToStore")
 
   @@index([endDate], map: "endDate")
   @@index([startDate], map: "startDate")
@@ -479,6 +480,7 @@ model ProductPromotion {
   Product          Product        @relation(fields: [productId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "ProductPromotion_ibfk_2")
   User             User           @relation(fields: [createdBy], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "ProductPromotion_ibfk_3")
   StorePromotion   StorePromotion @relation(fields: [storePromotionId], references: [id], onUpdate: Restrict, map: "ProductPromotion_ibfk_4")
+  SalePromotion    SalePromotion  @relation(fields: [salePromotionId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "ProductPromotion_ibfk_5")
 
   @@index([createdBy], map: "createdBy")
   @@index([productId], map: "productId")

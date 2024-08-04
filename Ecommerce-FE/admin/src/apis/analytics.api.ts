@@ -21,5 +21,11 @@ export const AnalyticApi = {
         return http.get<{ productId: string; name: string; count: number; image: string }[]>(
             'product/product/top-10-view'
         )
+    },
+    ratingOfBestSell: () => {
+        return http.get<{ productId: string; count: number; quantity: number }[]>('/order/order/best-sell')
+    },
+    getProductDetail: (productId: string) => () => {
+        return http.get<{ name: string; image: string }>(`/product/product/best-sell/${productId}`)
     }
 }

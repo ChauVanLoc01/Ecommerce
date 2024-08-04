@@ -11,6 +11,7 @@ import { Delivery } from 'src/types/delivery.type'
 import { OrderBody } from 'src/types/order.type'
 import { Payment } from 'src/types/payment.type'
 import { ls } from 'src/utils/localStorage'
+import { isProductSale } from 'src/utils/utils.ts'
 import CheckoutHeader from './CheckoutHeader'
 import CheckoutSummary from './CheckoutSummary'
 import CreateOrder from './CreateOrder'
@@ -63,13 +64,31 @@ const Checkout = () => {
         let vouchers = ls.getItem('vouchers') as Record<string, string[]>
         const orders: OrderBody['orders'] = ids.checked_storeIds.map((storeId) => {
             let { discount, pay, total } = summary.detail[storeId]
-            let productOrders = [...products.stores[storeId].products].map<
-                OrderBody['orders'][number]['productOrders'][number]
-            >(([_, { priceAfter, buy, productId }]) => {
-                return {
-                    priceAfter,
-                    productId,
-                    quantity: buy
+            let productOrders: OrderBody['orders'][number]['productOrders'] = []
+            let voucherIds: OrderBody['orders'][number]['voucherIds'] = []
+            products.stores[storeId].products.forEach((product) => {
+                if (!product.isChecked) return
+                if (selectedVoucher?.[storeId]) {
+                    voucherIds = selectedVoucher[storeId].map((item) => item.id)
+                }
+                let { priceAfter, buy, productId } = product
+                if (isProductSale(product)) {
+                    let {
+                        sale: { salePromotionId, productPromotionId }
+                    } = product
+                    productOrders.push({
+                        priceAfter,
+                        productId,
+                        quantity: buy,
+                        productPromotionId,
+                        salePromotionId
+                    })
+                } else {
+                    productOrders.push({
+                        priceAfter,
+                        productId,
+                        quantity: buy
+                    })
                 }
             })
             return {
@@ -77,7 +96,7 @@ const Checkout = () => {
                 total,
                 discount,
                 pay,
-                voucherIds: vouchers?.[storeId] || [],
+                voucherIds: isOpen ? vouchers?.[storeId] : voucherIds,
                 productOrders
             }
         })

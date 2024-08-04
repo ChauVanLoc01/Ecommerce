@@ -1,1 +1,1 @@
-export type Payment = '' | 'VNPAYQR' | 'VNBANK' | 'INTCARD'
+export type Payment = 'cash' | 'VNPAYQR' | 'VNBANK' | 'INTCARD'

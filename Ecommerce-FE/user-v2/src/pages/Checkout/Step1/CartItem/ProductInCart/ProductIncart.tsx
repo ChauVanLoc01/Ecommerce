@@ -50,7 +50,7 @@ const ProductIncart = ({ product, handleChecked, handleChangeQuantity, handleDel
                 disabled={product?.isBlock}
             />
             <Link
-                to={`/${removeSpecialCharacter(product.name)}-0-${product.productId}`}
+                to={`/${removeSpecialCharacter(product?.name)}-0-${product?.productId}`}
                 className='max-w-16 max-h-16 w-16 h-16 border border-border/30 flex-shrink-0 rounded-12 overflow-hidden'
             >
                 <img src={product?.image} alt='cart-item' className='object-cover w-16 h-16' />
@@ -67,7 +67,7 @@ const ProductIncart = ({ product, handleChecked, handleChangeQuantity, handleDel
                     </Flex>
                 )}
                 <Link
-                    to={`/${removeSpecialCharacter(product.name)}-0-${product.productId}`}
+                    to={`/${removeSpecialCharacter(product?.name)}-0-${product?.productId}`}
                     className='font-semibold line-clamp-2'
                 >
                     <Text>{product?.name}</Text>

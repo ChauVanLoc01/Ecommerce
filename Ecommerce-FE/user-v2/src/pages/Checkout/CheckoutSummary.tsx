@@ -56,6 +56,14 @@ const CheckoutSummary = ({
         }
     })
 
+    const handleCheckTransaction = () => {
+        if (payment === 'cash') {
+            handleOrder()
+        } else {
+            hanldeTransaction()
+        }
+    }
+
     const hanldeTransaction = () => {
         let tmp: { [storeId: string]: string[] } = {}
         Object.keys(selectedVoucher || {}).map((storeId) => {
@@ -202,7 +210,7 @@ const CheckoutSummary = ({
                     )}
                 </div>
             </SimpleBar>
-            <Button onClick={step < 3 ? handleNextStep : hanldeTransaction} size={'3'} className='!w-full'>
+            <Button onClick={step < 3 ? handleNextStep : handleCheckTransaction} size={'3'} className='!w-full'>
                 {isPending && <Spinner />}
                 {step === 3 ? 'Thanh toán' : 'Tiếp tục'}
             </Button>

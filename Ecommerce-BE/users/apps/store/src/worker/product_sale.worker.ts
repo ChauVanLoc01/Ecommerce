@@ -1,20 +1,17 @@
 import { PrismaService } from '@app/common/prisma/prisma.service'
 import { Process, Processor } from '@nestjs/bull'
 import { CACHE_MANAGER } from '@nestjs/cache-manager'
-import { InternalServerErrorException } from '@nestjs/common'
 import { Inject } from '@nestjs/common/decorators'
 import { ConfigService } from '@nestjs/config'
 import { CronExpression, SchedulerRegistry } from '@nestjs/schedule'
-import { Prisma } from '@prisma/client'
 import { Job } from 'bull'
 import { Cache } from 'cache-manager'
 import { BackgroundAction, BackgroundName } from 'common/constants/background-job.constant'
-import { RollbackOrder } from 'common/types/order_payload.type'
 import { hash } from 'common/utils/order_helper'
 import { CronJob } from 'cron'
 
-@Processor(BackgroundName.product)
-export class ProductConsummer {
+@Processor(BackgroundName.product_sale)
+export class ProductSaleConsummer {
     constructor(
         @Inject(CACHE_MANAGER) private cacheManager: Cache,
         private readonly configService: ConfigService,
@@ -22,45 +19,11 @@ export class ProductConsummer {
         private readonly prisma: PrismaService
     ) {}
 
-    @Process(BackgroundAction.resetValueCacheWhenUpdateProductFail)
-    async resetValueCacheProduct(
-        job: Job<
-            Pick<
-                RollbackOrder['products'][number],
-                'id' | 'productPromotionId' | 'price_after' | 'original_quantity'
-            >[]
-        >
-    ) {
+    @Process(BackgroundAction.createCronJobToUpdateProductSale)
+    async createCronJobToUpdateProductSale(job: Job<string[]>) {
         try {
             console.log(
-                ':::::::::::::Đơn hàng thất bại ==> roll back lại số lượng ban đầu của sản phẩm::::::::::::'
-            )
-            await Promise.all(
-                job.data.map(({ id, price_after, productPromotionId, original_quantity }) => {
-                    let tmp_id = productPromotionId || id
-                    let hashValue = hash('product', tmp_id)
-                    return this.cacheManager.set(
-                        hashValue,
-                        JSON.stringify({
-                            quantity: original_quantity,
-                            priceAfter: price_after,
-                            times: 3
-                        })
-                    )
-                })
-            )
-            console.log(':::::::::Success: Roll back lại số lượng sản phẩm thành công:::::::::::')
-        } catch (err) {
-            console.log('*******Fail: Roll back lại số lượng ban đầu của', err)
-            throw new Error('Lỗi cập nhật lại số lượng product')
-        }
-    }
-
-    @Process(BackgroundAction.createCronJobToUpdateProduct)
-    async createCronJobToUpdateProductQuantity(job: Job<string[]>) {
-        try {
-            console.log(
-                '::::::::Background job: Tiến hành tạo cron job để cập nhật số lượng sản phẩm từ cache::::::::::'
+                '::::::::Background job: Tiến hành tạo cron job để cập nhật số lượng product sale từ cache::::::::::'
             )
             await Promise.all(
                 job.data.map(async (productId) => {
@@ -83,7 +46,7 @@ export class ProductConsummer {
                         return true
                     } else {
                         console.log(
-                            ':::::::::Background job: Tạo cron job để cập nhật product:::::::::::'
+                            ':::::::::Background job: Tạo cron job để cập nhật product sale:::::::::::'
                         )
                         const update_product_cron_job = new CronJob(
                             CronExpression.EVERY_30_SECONDS,
@@ -99,7 +62,7 @@ export class ProductConsummer {
                                             `:::::::Lần chạy cron job thứ ${times} - số lượng cập nhật ${quantity}::::::::::`
                                         )
                                         await Promise.all([
-                                            this.prisma.product.update({
+                                            this.prisma.productPromotion.update({
                                                 where: {
                                                     id: productId
                                                 },
@@ -135,75 +98,10 @@ export class ProductConsummer {
             )
         } catch (err) {
             console.log(
-                '**********Có lõi trong quá trình tạo cron job để cập nhật product**********',
+                '**********Có lõi trong quá trình tạo cron job để cập nhật product sale**********',
                 err
             )
             throw new Error('Tạo cron job cho product thất bại')
-        }
-    }
-
-    @Process(BackgroundAction.rollbackAddingProductToSale)
-    async rollbackAddingProductToSale(
-        job: Job<{ userId: string; body: { quantity: number; productId: string }[] }>
-    ) {
-        let { body, userId } = job.data
-        try {
-            await this.prisma.$transaction(async (tx) => {
-                await Promise.all(
-                    body.map((product) => {
-                        return tx.product.update({
-                            where: {
-                                id: product.productId
-                            },
-                            data: {
-                                currentQuantity: {
-                                    increment: product.quantity
-                                },
-                                updatedAt: new Date(),
-                                updatedBy: userId
-                            }
-                        })
-                    })
-                )
-            })
-        } catch (err) {
-            throw new InternalServerErrorException('Roll back sản phẩm khi tạo sale gặp lỗi')
-        }
-    }
-
-    @Process(BackgroundAction.rollbackUpdatingProductToSale)
-    async rollbackUpdatingProductToSale(
-        job: Job<{ userId: string; body: { quantity: number; productId: string }[] }>
-    ) {
-        let { body, userId } = job.data
-        try {
-            await this.prisma.$transaction(async (tx) => {
-                await Promise.all(
-                    body.map((data) => {
-                        let { productId, quantity } = data
-                        let isGt0 = quantity > 0
-                        let currentQuantity: Prisma.ProductUpdateInput['currentQuantity'] = isGt0
-                            ? {
-                                  increment: data.quantity
-                              }
-                            : {
-                                  decrement: data.quantity
-                              }
-                        return tx.product.update({
-                            where: {
-                                id: productId
-                            },
-                            data: {
-                                currentQuantity,
-                                updatedAt: new Date(),
-                                updatedBy: userId
-                            }
-                        })
-                    })
-                )
-            })
-        } catch (err) {
-            throw new InternalServerErrorException('Rollback lại product sale gặp lỗi')
         }
     }
 }

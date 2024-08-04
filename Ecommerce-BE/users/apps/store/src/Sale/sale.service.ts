@@ -25,7 +25,9 @@ import { PaginationDTO } from 'common/decorators/pagination.dto'
 import { Status } from 'common/enums/status.enum'
 import { CurrentStoreType } from 'common/types/current.type'
 import { MessageReturn, Return } from 'common/types/result.type'
+import { hash } from 'common/utils/order_helper'
 import { add, endOfHour, startOfHour } from 'date-fns'
+import { keyBy, omit } from 'lodash'
 import { firstValueFrom } from 'rxjs'
 import { v4 as uuidv4 } from 'uuid'
 import { CreateProductSalePromotionDTO } from './dtos/create-product-sale.dto'
@@ -33,7 +35,9 @@ import { ProductSaleIds } from './dtos/product-sale-ids.dto'
 import { QuerySalePromotionDTO } from './dtos/query-promotion.dto'
 import { CreateSpecialSaleDTO } from './dtos/special-sale.dto'
 import { UpdateProductsSalePromotion } from './dtos/update-product-sale.dto'
-import { keyBy, omit } from 'lodash'
+import { Queue } from 'bull'
+import { InjectQueue } from '@nestjs/bull'
+import { BackgroundAction, BackgroundName } from 'common/constants/background-job.constant'
 
 @Injectable()
 export class SaleService {
@@ -41,7 +45,8 @@ export class SaleService {
         private readonly prisma: PrismaService,
         private readonly configService: ConfigService,
         @Inject('PRODUCT_SERVICE') private productClient: ClientProxy,
-        @Inject(CACHE_MANAGER) private cacheManager: Cache
+        @Inject(CACHE_MANAGER) private cacheManager: Cache,
+        @InjectQueue(BackgroundName.product_sale) private productSaleBackground: Queue
     ) {}
 
     async getSalePromotionDetail(storePromotionId: string): Promise<Return> {
@@ -377,6 +382,118 @@ export class SaleService {
             msg: 'ok',
             result: convert || null
         }
+    }
+
+    async updateQuantityProductSaleWhenCreatingOrder(payload: {
+        productPromotionId: string
+        salePromotionId: string
+        buy: number
+    }): Promise<MessageReturn> {
+        try {
+            console.log('Cập nhật số lượng [PRODUCT::SALE]')
+            let { productPromotionId, salePromotionId, buy } = payload
+            let remaining_quantity = 0
+            let origin_quantity = 0
+            let hashValue = hash('product', productPromotionId)
+            let fromCache = await this.cacheManager.get<string>(hashValue)
+            if (fromCache) {
+                let { quantity, times, ...rest } = JSON.parse(fromCache) as {
+                    quantity: number
+                    times: number
+                }
+                origin_quantity = quantity
+                quantity = quantity - buy
+                await this.cacheManager.set(
+                    hashValue,
+                    JSON.stringify({ quantity, times: 3, ...rest })
+                )
+                remaining_quantity = quantity
+            } else {
+                const product_promotion = await this.prisma.productPromotion.findUnique({
+                    where: {
+                        id: productPromotionId,
+                        salePromotionId,
+                        isDelete: false
+                    },
+                    select: {
+                        currentQuantity: true,
+                        priceAfter: true
+                    }
+                })
+                let { currentQuantity, priceAfter } = product_promotion
+                if (!product_promotion) {
+                    return {
+                        msg: 'Sản phẩm không tồn tại',
+                        action: false,
+                        result: null
+                    }
+                }
+                if (!currentQuantity) {
+                    return {
+                        msg: 'Sản phẩm đã hết hàng',
+                        action: false,
+                        result: null
+                    }
+                }
+                if (currentQuantity < buy) {
+                    return {
+                        msg: 'Sản phẩm không đủ số lượng',
+                        action: true,
+                        result: null
+                    }
+                }
+                if (product_promotion) {
+                    let fromCache = await this.cacheManager.get<string>(hashValue)
+                    if (fromCache) {
+                        let { quantity, times, ...rest } = JSON.parse(fromCache) as {
+                            quantity: number
+                            times: number
+                        }
+                        origin_quantity = quantity
+                        quantity = quantity - buy
+                        await this.cacheManager.set(
+                            hashValue,
+                            JSON.stringify({ quantity, times: 3, ...rest })
+                        )
+                        remaining_quantity = quantity
+                    } else {
+                        await this.cacheManager.set(
+                            hashValue,
+                            JSON.stringify({
+                                quantity: currentQuantity - buy,
+                                priceAfter,
+                                times: 3
+                            })
+                        )
+                        origin_quantity = currentQuantity
+                        remaining_quantity = currentQuantity - buy
+                    }
+                }
+            }
+            return {
+                msg: 'Cập nhật số lượng product sale thành công',
+                action: true,
+                result: {
+                    remaining_quantity: remaining_quantity,
+                    original_quantity: origin_quantity,
+                    salePromotionId,
+                    productPromotionId
+                }
+            }
+        } catch (err) {
+            return {
+                msg: 'Cập nhật product sale thất bại',
+                action: false,
+                result: null
+            }
+        }
+    }
+
+    async createCronJobToUpdateProductSale(productPromotionIds: string[]) {
+        this.productSaleBackground.add(
+            BackgroundAction.createCronJobToUpdateProductSale,
+            productPromotionIds
+        )
     }
 
     async getProductSaleDetail(salePromotionId: string, productId: string): Promise<Return> {

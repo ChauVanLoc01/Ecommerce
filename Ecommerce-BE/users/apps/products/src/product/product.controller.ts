@@ -63,6 +63,12 @@ export class ProductController {
         return this.productsService.top10ProductView(user)
     }
 
+    @Roles(Role.STORE_OWNER)
+    @Get('best-sell/:productId')
+    getProductDetailInBestSell(@Param('productId') productId: string) {
+        return this.productsService.getProductDetailInBestSell(productId)
+    }
+
     @Public()
     @Get('product-store/:storeId')
     getAllForStore(@Param('storeId') storeId: string, @Query() query: QueryProductDTO) {

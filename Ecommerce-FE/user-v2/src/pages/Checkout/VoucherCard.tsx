@@ -36,7 +36,10 @@ const VoucherCard = ({ vouchers, storeId, handleSelectVoucher, select, selectedV
                         <RadioCards.Item
                             key={voucher.id}
                             value={voucher.id}
-                            disabled={!!selectedVoucher?.[storeId]?.find((voucher) => voucher?.id === voucher.id)}
+                            disabled={
+                                !voucher.currentQuantity ||
+                                !!selectedVoucher?.[storeId]?.find((voucher) => voucher?.id === voucher.id)
+                            }
                         >
                             <Flex direction='column' width='100%' className='relative'>
                                 <Text weight='bold' size={'3'}>

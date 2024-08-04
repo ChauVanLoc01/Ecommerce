@@ -2,8 +2,8 @@ import { Payment } from 'src/types/payment.type'
 
 export const payment_data: { key: Payment; lable: string }[] = [
     {
-        key: '',
-        lable: 'QR'
+        key: 'cash',
+        lable: 'Thanh toán khi nhận hàng'
     },
     {
         key: 'VNPAYQR',

@@ -75,6 +75,10 @@ export const getProductSaleEvent = 'get::product::sale::event'
 
 export const refreshProductSale = 'refresh::product::sale'
 
+export const updateProductSaleWhenCreatingOrder = 'update::product::sale::when::creating::order'
+
+export const createCronJobToUpdateProductSale = 'create::cron::job::to::update::product::sale'
+
 export const countEmployee = 'count::employee::by::store::id'
 
 export const countProduct = 'count::product::by::store::id'

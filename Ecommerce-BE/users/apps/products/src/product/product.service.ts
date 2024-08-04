@@ -17,8 +17,10 @@ import { Queue } from 'bull'
 import { Cache } from 'cache-manager'
 import { BackgroundAction, BackgroundName } from 'common/constants/background-job.constant'
 import {
+    createCronJobToUpdateProductSale,
     emit_update_product_whenCreatingOrder,
-    getStoreDetail
+    getStoreDetail,
+    updateProductSaleWhenCreatingOrder
 } from 'common/constants/event.constant'
 import { Status } from 'common/enums/status.enum'
 import { CurrentStoreType } from 'common/types/current.type'
@@ -46,6 +48,7 @@ import { CreateProductType } from './dtos/create-product.dto'
 import { QueryProductType } from './dtos/query-product.dto'
 import { RefreshCartDTO } from './dtos/refresh-cart.dto'
 import { UpdateProductType } from './dtos/update-product.dto'
+import { isProductSale } from 'common/utils/utils'
 
 @Injectable()
 export class ProductService {
@@ -613,93 +616,124 @@ export class ProductService {
             )
             const result = await Promise.all(
                 payload.products.map(async (product, idx) => {
-                    let { buy, id: productId } = product
-                    let hashValue = hash('product', productId)
-                    let fromCache = await this.cacheManager.get<string>(hashValue)
-                    if (fromCache) {
-                        console.log('Trường hợp CÓ cache')
-                        let { quantity, priceAfter } = JSON.parse(fromCache) as {
-                            quantity: number
-                            priceAfter: number
-                        }
-                        if (quantity == 0) {
-                            throw new Error('Sản phẩm đã hết hàng')
-                        }
-                        if (buy > quantity) {
-                            throw new Error('Sản phẩm không đủ số lượng')
-                        }
-                        map.set(idx, {
-                            ...product,
-                            remaining_quantity: quantity - buy,
-                            original_quantity: quantity
-                        })
-                    } else {
-                        console.log('Trường hợp KHÔNG CÓ cache')
+                    if (isProductSale(product)) {
+                        console.log('product sale ==> Cập nhật product sale')
+                        let { productPromotionId, currentSaleId, buy } = product
                         map.set(idx, undefined)
-                        const productExist = await this.prisma.product.findUnique({
-                            where: {
-                                id: productId
-                            },
-                            select: {
-                                currentQuantity: true,
-                                priceAfter: true
+                        const productSale = await firstValueFrom<
+                            MessageReturn<{
+                                remaining_quantity: number
+                                original_quantity: number
+                                salePromotionId: string
+                                productPromotionId: string
+                            }>
+                        >(
+                            this.store_client.send(updateProductSaleWhenCreatingOrder, {
+                                productPromotionId,
+                                salePromotionId: currentSaleId,
+                                buy
+                            })
+                        )
+                        if (!productSale.action) {
+                            throw new Error(productSale.msg)
+                        }
+                        let {
+                            result: { original_quantity, remaining_quantity }
+                        } = productSale
+                        if (productSale) {
+                            map.set(idx, { ...product, original_quantity, remaining_quantity })
+                        }
+                        return true
+                    } else {
+                        let { buy, id: productId } = product
+                        let hashValue = hash('product', productId)
+                        let fromCache = await this.cacheManager.get<string>(hashValue)
+                        if (fromCache) {
+                            console.log('Trường hợp CÓ cache')
+                            let { quantity, priceAfter } = JSON.parse(fromCache) as {
+                                quantity: number
+                                priceAfter: number
                             }
-                        })
-                        console.log('productExist', productExist)
+                            if (quantity == 0) {
+                                throw new Error('Sản phẩm đã hết hàng')
+                            }
+                            if (buy > quantity) {
+                                throw new Error('Sản phẩm không đủ số lượng')
+                            }
+                            map.set(idx, {
+                                ...product,
+                                remaining_quantity: quantity - buy,
+                                original_quantity: quantity
+                            })
+                        } else {
+                            console.log('Trường hợp KHÔNG CÓ cache')
+                            map.set(idx, undefined)
+                            const productExist = await this.prisma.product.findUnique({
+                                where: {
+                                    id: productId
+                                },
+                                select: {
+                                    currentQuantity: true,
+                                    priceAfter: true
+                                }
+                            })
+                            console.log('productExist', productExist)
 
-                        if (!productExist) {
-                            console.log('Sản phẩm không tồn tại')
-                            map.delete(idx)
-                            throw new Error('Sản phẩm không tồn tại')
-                        }
-                        if (productExist.currentQuantity == 0) {
-                            console.log('sản phẩm đã hết hàng')
-                            map.delete(idx)
-                            throw new Error('Sản phẩm đã hết hàng')
-                        }
-                        if (productExist.currentQuantity < buy) {
-                            console.log('Sản phẩm không đủ số lượng')
-                            map.delete(idx)
-                            throw new Error('Sản phẩm không đủ số lượng')
-                        }
-                        if (productExist) {
-                            console.log('Sản phẩm tồn tại2')
-                            let fromCache_inner = await this.cacheManager.get<string>(hashValue)
-                            if (fromCache_inner) {
-                                console.log('Trường hợp có cache 2')
-                                let { quantity } = JSON.parse(fromCache_inner) as {
-                                    quantity: number
+                            if (!productExist) {
+                                console.log('Sản phẩm không tồn tại')
+                                map.delete(idx)
+                                throw new Error('Sản phẩm không tồn tại')
+                            }
+                            if (productExist.currentQuantity == 0) {
+                                console.log('sản phẩm đã hết hàng')
+                                map.delete(idx)
+                                throw new Error('Sản phẩm đã hết hàng')
+                            }
+                            if (productExist.currentQuantity < buy) {
+                                console.log('Sản phẩm không đủ số lượng')
+                                map.delete(idx)
+                                throw new Error('Sản phẩm không đủ số lượng')
+                            }
+                            if (productExist) {
+                                console.log('Sản phẩm tồn tại2')
+                                let fromCache_inner = await this.cacheManager.get<string>(hashValue)
+                                if (fromCache_inner) {
+                                    console.log('Trường hợp có cache 2')
+                                    let { quantity } = JSON.parse(fromCache_inner) as {
+                                        quantity: number
+                                    }
+                                    if (quantity == 0) {
+                                        console.log('Sản phẩm đã hết thàng 2')
+                                        throw new Error('Sản phẩm đã hết hàng')
+                                    }
+                                    if (buy > quantity) {
+                                        console.log('sản phẩm không đủ số lượng 2')
+                                        throw new Error('Sản phẩm không đủ số lượng')
+                                    }
+                                    map.set(idx, {
+                                        ...product,
+                                        remaining_quantity: quantity - buy,
+                                        original_quantity: quantity
+                                    })
+                                } else {
+                                    map.set(idx, {
+                                        ...product,
+                                        remaining_quantity:
+                                            productExist.currentQuantity - product.buy,
+                                        original_quantity: productExist.currentQuantity
+                                    })
                                 }
-                                if (quantity == 0) {
-                                    console.log('Sản phẩm đã hết thàng 2')
-                                    throw new Error('Sản phẩm đã hết hàng')
-                                }
-                                if (buy > quantity) {
-                                    console.log('sản phẩm không đủ số lượng 2')
-                                    throw new Error('Sản phẩm không đủ số lượng')
-                                }
-                                map.set(idx, {
-                                    ...product,
-                                    remaining_quantity: quantity - buy,
-                                    original_quantity: quantity
-                                })
-                            } else {
-                                map.set(idx, {
-                                    ...product,
-                                    remaining_quantity: productExist.currentQuantity - product.buy,
-                                    original_quantity: productExist.currentQuantity
-                                })
                             }
                         }
+                        return this.cacheManager.set(
+                            hashValue,
+                            JSON.stringify({
+                                quantity: map.get(idx).remaining_quantity,
+                                priceAfter: map.get(idx).price_after,
+                                times: 3
+                            })
+                        )
                     }
-                    return this.cacheManager.set(
-                        hashValue,
-                        JSON.stringify({
-                            quantity: map.get(idx).remaining_quantity,
-                            priceAfter: map.get(idx).price_after,
-                            times: 3
-                        })
-                    )
                 })
             )
 
@@ -736,11 +770,23 @@ export class ProductService {
                         commit_create_order_success([this.order_client], payloadTmp)
                         await this.productBackgroundQueue.add(
                             BackgroundAction.createCronJobToUpdateProduct,
-                            payload.products.map((e) => e.id),
+                            payload.products.filter((e) => {
+                                if (!isProductSale(e)) {
+                                    return e.id
+                                }
+                            }),
                             {
                                 attempts: 3,
                                 removeOnComplete: true
                             }
+                        )
+                        this.store_client.emit(
+                            createCronJobToUpdateProductSale,
+                            payload.products.filter((e) => {
+                                if (isProductSale(e)) {
+                                    return e.productPromotionId
+                                }
+                            })
                         )
                     }
                     // Emit cập nhật số lượng và cache cho từng sản phẩm
@@ -779,8 +825,9 @@ export class ProductService {
                 if (payloadTmp.payload.products.length) {
                     await Promise.all(
                         payloadTmp.payload.products.map(
-                            ({ id, original_quantity, price_after }) => {
-                                let hashValue = hash('product', id)
+                            ({ id, original_quantity, price_after, productPromotionId }) => {
+                                let tmp_id = productPromotionId || id
+                                let hashValue = hash('product', tmp_id)
                                 return this.cacheManager.set(
                                     hashValue,
                                     JSON.stringify({
@@ -805,17 +852,17 @@ export class ProductService {
             format(new Date(), 'hh:mm:ss:SSS dd/MM')
         )
         try {
-            await this.productBackgroundQueue.add(
-                BackgroundAction.resetValueCacheWhenUpdateProductFail,
-                payload.payload.products.map(({ id, price_after, original_quantity }) => ({
-                    original_quantity,
-                    price_after,
-                    id
-                })) as Pick<
-                    RollbackOrder['products'][number],
-                    'id' | 'price_after' | 'original_quantity'
-                >[]
-            )
+            // await this.productBackgroundQueue.add(
+            //     BackgroundAction.resetValueCacheWhenUpdateProductFail,
+            //     payload.payload.products.map(({ id, price_after, original_quantity }) => ({
+            //         original_quantity,
+            //         price_after,
+            //         id
+            //     })) as Pick<
+            //         RollbackOrder['products'][number],
+            //         'id' | 'price_after' | 'original_quantity'
+            //     >[]
+            // )
         } catch (err) {
             console.log('*****Có lỗi trong roll back product********', err)
         }
@@ -1227,6 +1274,19 @@ export class ProductService {
             productId: item.id,
             count: result[idx]._count._all
         }))
+    }
+
+    async getProductDetailInBestSell(id: string) {
+        const product = await this.prisma.product.findUnique({
+            where: {
+                id
+            },
+            select: {
+                name: true,
+                image: true
+            }
+        })
+        return product
     }
 
     async getProductOrderByRating(productId: string, orders: string[]) {

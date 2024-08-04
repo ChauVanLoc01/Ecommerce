@@ -1,8 +1,9 @@
-import { Avatar, Box, Card, Flex, Inset, Text } from '@radix-ui/themes'
+import { Card, Flex, Text } from '@radix-ui/themes'
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
-import { Bar, BarChart, LabelList, Rectangle, Tooltip, XAxis, YAxis } from 'recharts'
+import { Cell, Pie, PieChart, Tooltip } from 'recharts'
 import { AnalyticApi } from 'src/apis/analytics.api'
+import { colors } from 'src/constants/color.constants'
 
 const Top10Product = () => {
     const widthRef = useRef<null | HTMLDivElement>(null)
@@ -12,44 +13,6 @@ const Top10Product = () => {
         queryFn: AnalyticApi.top10ViewProduct,
         select: (result) => result.data
     })
-    const data = [
-        {
-            name: 'Iphone 15',
-            uv: 4000,
-            pv: 4400
-        },
-        {
-            name: 'Tai nghe chụp',
-            uv: 3000,
-            pv: 6398
-        },
-        {
-            name: 'Laptop',
-            uv: 2000,
-            pv: 9800
-        },
-        {
-            name: 'Monitor',
-            uv: 2780,
-            pv: 3908
-        },
-        {
-            name: 'Macbook',
-            uv: 2780,
-            pv: 6786
-        },
-        {
-            name: 'Máy giặt',
-            uv: 2780,
-            pv: 4533
-        },
-        {
-            name: 'Tủ Lạnh',
-            uv: 2780,
-            pv: 3456
-        }
-    ]
-    console.log('top-10-view', views)
 
     useEffect(() => {
         if (widthRef.current) {
@@ -64,70 +27,62 @@ const Top10Product = () => {
                     Top 10 sản phẩm lượt xem cao nhất
                 </Text>
             </Flex>
-            <BarChart
-                width={width}
-                height={400}
-                data={views}
-                className='flex-shrink-0 basis-2/3'
-                layout='vertical'
-                margin={{ right: 40 }}
-            >
-                <XAxis type='number' hide />
-                <YAxis type='category' dataKey={'name'} hide />
-                <Tooltip
-                    cursor={{ fill: 'transparent' }}
-                    content={(data) => {
-                        let view = data?.payload?.[0]?.payload
-                        return (
-                            <Box maxWidth='450px'>
+            <Flex justify={'center'} align={'center'} width={`${width}px`}>
+                <PieChart width={width} height={400}>
+                    <Tooltip
+                        content={(data) => {
+                            console.log('tooltip content', data)
+                            let result = data.payload?.[0]?.payload
+                            return (
                                 <Card>
-                                    <Flex gap='3' align='start'>
+                                    <Flex gapX={'2'} className='max-w-80'>
                                         <img
-                                            src={view?.image}
-                                            alt='top_10'
-                                            className='rounded-8 overflow-hidden w-20 h-20 flex-shrink-0'
+                                            src={result?.image}
+                                            alt='pie_bg'
+                                            className='w-20 h-20 rounded-6 overflow-hidden flex-shrink-0'
                                         />
-                                        <Flex justify={'between'} direction={'column'}>
-                                            <Text as='div' size='2' weight='bold'>
-                                                {view?.name}
-                                            </Text>
-                                            <Flex gapX={'3'}>
-                                                <Text size={'2'}>Tổng lượt view</Text>
-                                                <Text size={'2'}>{view?.count}</Text>
-                                            </Flex>
-                                        </Flex>
+                                        <Text>{result?.name}</Text>
                                     </Flex>
                                 </Card>
-                            </Box>
-                        )
-                    }}
-                />
-                <Bar dataKey='count' fill='#1677ff' barSize={50} shape={<Rectangle radius={6} />}>
-                    <LabelList
-                        dataKey={'name'}
-                        position={'insideLeft'}
-                        style={{ fill: '#FFF', fontSize: '50%' }}
-                        content={(data) => {
-                            let { x, y, width, value, height } = data
-                            width = width ? +width * 0.9 : 0
-                            height = height ? +height : 0
-                            return (
-                                <g>
-                                    <foreignObject x={x} y={y} width={width} height={height} className='relative'>
-                                        <Text
-                                            className='text-white absolute left-2 top-1/2 -translate-y-1/2 line-clamp-1'
-                                            size={'4'}
-                                        >
-                                            {value}
-                                        </Text>
-                                    </foreignObject>
-                                </g>
                             )
                         }}
                     />
-                    <LabelList dataKey={'count'} position={'right'} />
-                </Bar>
-            </BarChart>
+                    <Pie
+                        data={views}
+                        fill='#8884d8'
+                        dataKey='count'
+                        label={({ cx, cy, midAngle, innerRadius, outerRadius, percent, index }) => {
+                            const RADIAN = Math.PI / 180
+                            const radius = 25 + innerRadius + (outerRadius - innerRadius)
+                            const x = cx + radius * Math.cos(-midAngle * RADIAN)
+                            const y = cy + radius * Math.sin(-midAngle * RADIAN)
+                            const radius2 = innerRadius + (outerRadius - innerRadius) * 0.5
+                            const x2 = cx + radius2 * Math.cos(-midAngle * RADIAN)
+                            const y2 = cy + radius2 * Math.sin(-midAngle * RADIAN)
+                            return (
+                                <>
+                                    <text
+                                        x={x2}
+                                        y={y2}
+                                        fill='white'
+                                        textAnchor={x2 > cx ? 'start' : 'end'}
+                                        dominantBaseline='central'
+                                    >
+                                        {`${(percent * 100).toFixed(0)}%`}
+                                    </text>
+                                    <text x={x} y={y} textAnchor={x > cx ? 'start' : 'end'} dominantBaseline='central'>
+                                        {views?.[index].count} lượt xem
+                                    </text>
+                                </>
+                            )
+                        }}
+                    >
+                        {colors.map((color) => (
+                            <Cell key={`color-1-${color}`} fill={color} />
+                        ))}
+                    </Pie>
+                </PieChart>
+            </Flex>
         </div>
     )
 }
