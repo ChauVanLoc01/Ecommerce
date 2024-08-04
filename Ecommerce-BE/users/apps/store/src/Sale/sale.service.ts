@@ -390,7 +390,7 @@ export class SaleService {
         buy: number
     }): Promise<MessageReturn> {
         try {
-            console.log('Cập nhật số lượng [PRODUCT::SALE]')
+            console.log(':::::::::::Cập nhật số lượng [PRODUCT::SALE]:::::::::::')
             let { productPromotionId, salePromotionId, buy } = payload
             let remaining_quantity = 0
             let origin_quantity = 0
@@ -400,6 +400,12 @@ export class SaleService {
                 let { quantity, times, ...rest } = JSON.parse(fromCache) as {
                     quantity: number
                     times: number
+                }
+                if (!quantity) {
+                    throw new Error('Sản phẩm đã hết hàng')
+                }
+                if (buy > quantity) {
+                    throw new Error('Sản phẩm không đủ số lượng')
                 }
                 origin_quantity = quantity
                 quantity = quantity - buy
@@ -422,25 +428,13 @@ export class SaleService {
                 })
                 let { currentQuantity, priceAfter } = product_promotion
                 if (!product_promotion) {
-                    return {
-                        msg: 'Sản phẩm không tồn tại',
-                        action: false,
-                        result: null
-                    }
+                    throw new Error('Sản phẩm không tồn tại')
                 }
                 if (!currentQuantity) {
-                    return {
-                        msg: 'Sản phẩm đã hết hàng',
-                        action: false,
-                        result: null
-                    }
+                    throw new Error('Sản phẩm đã hết hàng')
                 }
                 if (currentQuantity < buy) {
-                    return {
-                        msg: 'Sản phẩm không đủ số lượng',
-                        action: true,
-                        result: null
-                    }
+                    throw new Error('Sản phẩm không đủ số lượng')
                 }
                 if (product_promotion) {
                     let fromCache = await this.cacheManager.get<string>(hashValue)
@@ -448,6 +442,12 @@ export class SaleService {
                         let { quantity, times, ...rest } = JSON.parse(fromCache) as {
                             quantity: number
                             times: number
+                        }
+                        if (!quantity) {
+                            throw new Error('Sản phẩm đã hết hàng')
+                        }
+                        if (buy > quantity) {
+                            throw new Error('Sản phẩm không đủ số lượng')
                         }
                         origin_quantity = quantity
                         quantity = quantity - buy
@@ -470,6 +470,16 @@ export class SaleService {
                     }
                 }
             }
+            console.log(
+                ':::::::::product sale quantity ',
+                JSON.stringify({
+                    remaining_quantity: remaining_quantity,
+                    original_quantity: origin_quantity,
+                    salePromotionId,
+                    productPromotionId
+                }),
+                ':::::::::::::::'
+            )
             return {
                 msg: 'Cập nhật số lượng product sale thành công',
                 action: true,
@@ -482,7 +492,7 @@ export class SaleService {
             }
         } catch (err) {
             return {
-                msg: 'Cập nhật product sale thất bại',
+                msg: err?.message,
                 action: false,
                 result: null
             }

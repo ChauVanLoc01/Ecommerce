@@ -12,7 +12,6 @@ import {
     roll_back_order,
     rollbackAddingProductToSale,
     rollbackUpdateQuantiyProductsWhenCancelOrder,
-    rollbackUpdatingProductToSale,
     update_Product_WhenCreatingOrder,
     updateQuantiyProductsWhenCancelOrder,
     updatingProductToSale
@@ -24,7 +23,6 @@ import { Role } from 'common/enums/role.enum'
 import { JwtGuard } from 'common/guards/jwt.guard'
 import { CurrentStoreType } from 'common/types/current.type'
 import { CreateOrderPayload } from 'common/types/order_payload.type'
-import { AnalyticsProductDTO } from './dtos/analytics-product.dto'
 import { CreateUserAddProductToCartDTO } from './dtos/create-product-add-to-cart.dto'
 import { CreateUserViewProductDto } from './dtos/create-product-view.dto'
 import { CreateProductDTO } from './dtos/create-product.dto'
@@ -241,13 +239,5 @@ export class ProductController {
     ) {
         console.log('update product sale from product side', JSON.stringify(payload))
         return this.productsService.updatingProductToSale(payload)
-    }
-
-    @Public()
-    @EventPattern(rollbackUpdatingProductToSale)
-    rollbackUpdatingProductToSale(
-        @Payload() payload: { userId: string; body: { quantity: number; productId: string }[] }
-    ) {
-        return this.productsService.rollbackUpdatingProductToSale(payload)
     }
 }

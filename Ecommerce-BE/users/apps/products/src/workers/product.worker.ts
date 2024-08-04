@@ -85,7 +85,7 @@ export class ProductConsummer {
                             ':::::::::Background job: Tạo cron job để cập nhật product:::::::::::'
                         )
                         const update_product_cron_job = new CronJob(
-                            CronExpression.EVERY_30_SECONDS,
+                            CronExpression.EVERY_MINUTE,
                             async () => {
                                 try {
                                     let fromCache = await this.cacheManager.get<string>(hashValue)
@@ -128,6 +128,7 @@ export class ProductConsummer {
                             }
                         )
                         this.schedulerRegistry.addCronJob(hashValue, update_product_cron_job)
+                        update_product_cron_job.start()
                         return true
                     }
                 })

@@ -63,7 +63,7 @@ export class VoucherConsummer {
                         `:::::::::::Cron job cập nhật số lượng voucher [${voucherId}]::::::::::::::`
                     )
                 } else {
-                    let cron_job = new CronJob(CronExpression.EVERY_30_SECONDS, async () => {
+                    let cron_job = new CronJob(CronExpression.EVERY_MINUTE, async () => {
                         try {
                             let fromCache = await this.cacheManager.get<string>(hashValue)
                             if (fromCache) {

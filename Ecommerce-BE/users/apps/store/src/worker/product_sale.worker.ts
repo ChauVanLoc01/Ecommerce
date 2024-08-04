@@ -94,6 +94,7 @@ export class ProductSaleConsummer {
                             }
                         )
                         this.schedulerRegistry.addCronJob(hashValue, update_product_cron_job)
+                        update_product_cron_job.start()
                         return true
                     }
                 })

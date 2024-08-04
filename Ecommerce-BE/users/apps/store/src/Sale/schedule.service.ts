@@ -93,7 +93,7 @@ export class ScheduleService {
         console.log('ok')
     }
 
-    @Cron(CronExpression.EVERY_SECOND)
+    @Cron(CronExpression.EVERY_HOUR)
     async setCurrentSalePromotion() {
         let currentDate = add(startOfHour(new Date()), { hours: 7 }).toISOString()
         let process = async (

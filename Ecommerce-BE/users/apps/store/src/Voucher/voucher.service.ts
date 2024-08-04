@@ -541,7 +541,7 @@ export class VoucherService {
     }
 
     async updateVoucherWhenCreatingOrder(payload: CreateOrderPayload<'update_voucher'>) {
-        let tmp: { voucherId: string; quantity: number; storeId: string }[] = []
+        let map = new Map<string, { voucherId: string; quantity: number; storeId: string }>()
         try {
             const result = await Promise.all(
                 payload.payload.vouchers.map(async ({ id: voucherId, storeId }, idx) => {
@@ -558,12 +558,13 @@ export class VoucherService {
                         if (quantityFromCache == 0) {
                             throw new Error('Voucher đã hết lượt sử dụng')
                         }
-                        tmp.push({
+                        map.set(voucherId, {
                             storeId,
                             quantity: quantityFromCache - 1,
                             voucherId
                         })
                     } else {
+                        map.set(voucherId, undefined)
                         const voucherExist = await this.prisma.voucher.findUnique({
                             where: {
                                 id: voucherId,
@@ -588,16 +589,16 @@ export class VoucherService {
                                 quantity: number
                                 times: number
                             }
-                            if (quantityFromCache == 0) {
+                            if (!quantityFromCache) {
                                 throw new Error('Voucher đã hết lượt sử dụng')
                             }
-                            tmp.push({
+                            map.set(voucherId, {
                                 storeId,
                                 quantity: quantityFromCache - 1,
                                 voucherId
                             })
                         } else {
-                            tmp.push({
+                            map.set(voucherId, {
                                 storeId,
                                 quantity: voucherExist.currentQuantity - 1,
                                 voucherId
@@ -606,7 +607,7 @@ export class VoucherService {
                     }
                     return this.cacheManager.set(
                         hashValue,
-                        JSON.stringify({ quantity: tmp[idx].quantity, times: 3 })
+                        JSON.stringify({ quantity: map.get(voucherId).quantity, times: 3 })
                     )
                 })
             )
@@ -622,7 +623,7 @@ export class VoucherService {
                     result: null
                 })
                 commit_create_order_success([this.orderClient, this.productClient], payload as any)
-                tmp.forEach(({ quantity, storeId, voucherId }) =>
+                map.forEach(({ quantity, storeId, voucherId }) =>
                     emit_update_quantity_of_voucher(this.socketClient, {
                         quantity,
                         storeId,
@@ -631,7 +632,11 @@ export class VoucherService {
                 )
                 await this.voucherBackgroundQueue.add(
                     BackgroundAction.createCronJobVoucherToUpdateQuanttiy,
-                    tmp.map((e) => e.voucherId)
+                    [...map.values()].filter((e) => {
+                        if (e) {
+                            return e.voucherId
+                        }
+                    })
                 )
             }
         } catch (err) {
@@ -639,6 +644,12 @@ export class VoucherService {
                 '*********Fail: Cập nhật voucher thất bại ==> Emit rollback tới product************',
                 err
             )
+            emit_update_status_of_order(this.socketClient, {
+                action: false,
+                id: payload.actionId,
+                msg: err?.message,
+                result: null
+            })
             emit_roll_back_order([this.orderClient, this.productClient], payload as any)
             await this.voucherBackgroundQueue.add(
                 BackgroundAction.resetValueVoucherWHenUpdateProductFail,

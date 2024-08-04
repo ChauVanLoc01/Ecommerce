@@ -617,7 +617,7 @@ export class ProductService {
             const result = await Promise.all(
                 payload.products.map(async (product, idx) => {
                     if (isProductSale(product)) {
-                        console.log('product sale ==> Cập nhật product sale')
+                        console.log(':::::::::product sale ==> Cập nhật product sale:::::::::')
                         let { productPromotionId, currentSaleId, buy } = product
                         map.set(idx, undefined)
                         const productSale = await firstValueFrom<
@@ -634,6 +634,7 @@ export class ProductService {
                                 buy
                             })
                         )
+                        console.log('product SALE', productSale)
                         if (!productSale.action) {
                             throw new Error(productSale.msg)
                         }
@@ -768,26 +769,34 @@ export class ProductService {
                             result: null
                         })
                         commit_create_order_success([this.order_client], payloadTmp)
-                        await this.productBackgroundQueue.add(
-                            BackgroundAction.createCronJobToUpdateProduct,
-                            payload.products.filter((e) => {
-                                if (!isProductSale(e)) {
-                                    return e.id
-                                }
-                            }),
-                            {
-                                attempts: 3,
-                                removeOnComplete: true
+                        let tmp_ids: { product: string[]; product_sale: string[] } = {
+                            product: [],
+                            product_sale: []
+                        }
+                        payload.products.forEach((product) => {
+                            let { productPromotionId, id } = product
+                            if (isProductSale(product)) {
+                                tmp_ids.product_sale.push(productPromotionId)
+                            } else {
+                                tmp_ids.product.push(id)
                             }
-                        )
-                        this.store_client.emit(
-                            createCronJobToUpdateProductSale,
-                            payload.products.filter((e) => {
-                                if (isProductSale(e)) {
-                                    return e.productPromotionId
+                        })
+                        if (tmp_ids.product.length) {
+                            await this.productBackgroundQueue.add(
+                                BackgroundAction.createCronJobToUpdateProduct,
+                                tmp_ids.product,
+                                {
+                                    attempts: 3,
+                                    removeOnComplete: true
                                 }
-                            })
-                        )
+                            )
+                        }
+                        if (tmp_ids.product_sale.length) {
+                            this.store_client.emit(
+                                createCronJobToUpdateProductSale,
+                                tmp_ids.product_sale
+                            )
+                        }
                     }
                     // Emit cập nhật số lượng và cache cho từng sản phẩm
                     payloadTmp.payload.products.forEach(
@@ -825,13 +834,18 @@ export class ProductService {
                 if (payloadTmp.payload.products.length) {
                     await this.productBackgroundQueue.add(
                         BackgroundAction.resetValueCacheWhenUpdateProductFail,
-                        payloadTmp.payload.products.map(
-                            ({ id, price_after, original_quantity, productPromotionId }) => ({
-                                original_quantity,
-                                price_after,
-                                id: productPromotionId || id
-                            })
-                        ) as Pick<
+                        payloadTmp.payload.products.filter((product) => {
+                            if (product) {
+                                console.log('product nè', product)
+                                let { id, price_after, original_quantity, productPromotionId } =
+                                    product
+                                return {
+                                    original_quantity,
+                                    price_after,
+                                    id: productPromotionId || id
+                                }
+                            }
+                        }) as Pick<
                             RollbackOrder['products'][number],
                             'id' | 'price_after' | 'original_quantity'
                         >[],
@@ -881,26 +895,33 @@ export class ProductService {
                 '*********commit cập nhật voucher thành công ==> product emit đến order thành công********',
                 format(new Date(), 'hh:mm:ss:SSS dd/MM')
             )
-            await this.productBackgroundQueue.add(
-                BackgroundAction.createCronJobToUpdateProduct,
-                payload.payload.products.filter((e) => {
-                    if (!isProductSale(e)) {
-                        return e.id
-                    }
-                }),
-                {
-                    attempts: 3,
-                    removeOnComplete: true
+            let tmp: { product: string[]; product_sale: string[] } = {
+                product: [],
+                product_sale: []
+            }
+            payload.payload.products.forEach((product) => {
+                let { productPromotionId, id } = product
+                if (isProductSale(product)) {
+                    tmp.product_sale.push(productPromotionId)
+                } else {
+                    tmp.product.push(id)
                 }
-            )
-            this.store_client.emit(
-                createCronJobToUpdateProductSale,
-                payload.payload.products.filter((e) => {
-                    if (isProductSale(e)) {
-                        return e.productPromotionId
+            })
+            if (tmp.product.length) {
+                console.log('::::::::commit order - update PRODUCT:::::::::::')
+                await this.productBackgroundQueue.add(
+                    BackgroundAction.createCronJobToUpdateProduct,
+                    tmp.product,
+                    {
+                        attempts: 3,
+                        removeOnComplete: true
                     }
-                })
-            )
+                )
+            }
+            if (tmp.product_sale.length) {
+                console.log('::::::::commit order - update PRODUCT SALE:::::::::::')
+                this.store_client.emit(createCronJobToUpdateProductSale, tmp.product_sale)
+            }
         } catch (err) {
             console.log('******Bước 2: Lỗi commit product (LINE 829) *******')
         }
@@ -1594,15 +1615,5 @@ export class ProductService {
                 result: null
             }
         }
-    }
-
-    async rollbackUpdatingProductToSale(payload: {
-        userId: string
-        body: { productId: string; quantity: number }[]
-    }) {
-        this.productBackgroundQueue.add(BackgroundAction.rollbackUpdatingProductToSale, payload, {
-            attempts: 3,
-            removeOnComplete: true
-        })
     }
 }
