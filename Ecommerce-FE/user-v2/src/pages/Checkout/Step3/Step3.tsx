@@ -19,7 +19,7 @@ const Step3 = ({ payment, setPayment }: Step3Props) => {
             </Text>
             <RadioCards.Root defaultValue={payment} columns={{ initial: '3' }} onValueChange={onPaymentChange}>
                 {payment_data.map(({ key, lable }) => (
-                    <RadioCards.Item value={key}>
+                    <RadioCards.Item key={`payment_${key}_${lable}`} value={key}>
                         <Text>{lable}</Text>
                     </RadioCards.Item>
                 ))}

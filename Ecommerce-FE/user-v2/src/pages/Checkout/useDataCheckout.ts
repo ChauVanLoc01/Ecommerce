@@ -5,12 +5,12 @@ import { toast } from 'sonner'
 import { OrderFetching } from 'src/apis/order'
 import { productFetching } from 'src/apis/product'
 import { sale_api } from 'src/apis/sale_promotion.api'
-import { channel, join_room, leave_room } from 'src/constants/event'
+import { channel, join_room, leave_room, updateProductInCart } from 'src/constants/event'
 import { product_status } from 'src/constants/product.constants'
 import { AppContext } from 'src/contexts/AppContext'
 import { SocketReturn, VoucherSocket } from 'src/types/socket.type'
 import { VoucherWithCondition } from 'src/types/voucher.type'
-import { clearProductAfterCreatingOrder, isProductSale } from 'src/utils/utils.ts'
+import { isProductSale } from 'src/utils/utils.ts'
 
 type UseDataCheckoutProps = {
     setStep: React.Dispatch<React.SetStateAction<number>>
@@ -52,10 +52,7 @@ const useDataCheckout = ({ setStep }: UseDataCheckoutProps) => {
                 duration: Infinity
             })
             setToastId(toastId)
-            setTimeout(() => {
-                setProducts((pre) => clearProductAfterCreatingOrder(ids?.checked_storeIds as string[], pre))
-                setStep(1)
-            }, 1000)
+            setStep(1)
         }
     })
 
@@ -160,24 +157,28 @@ const useDataCheckout = ({ setStep }: UseDataCheckoutProps) => {
     useEffect(() => {
         if (socket && selectedVoucher && Object.values(selectedVoucher).length) {
             socket.on(channel.voucher, (res: SocketReturn<VoucherSocket>) => {
+                console.log('listen voucher socket')
                 if (res.action) {
                     let { voucherId, quantity, storeId } = res.result
+                    console.log('result from update vouhcer', res.result)
                     setSelectedVoucher((pre) => {
-                        pre?.[storeId].map((voucher) => {
+                        let vouchers = pre?.[storeId] || []
+                        vouchers.forEach((voucher, idx) => {
                             if (voucher.id == voucherId) {
-                                return {
+                                vouchers[idx] = {
                                     ...voucher,
                                     currentQuantity: quantity
                                 }
                             }
-                            return quantity
                         })
                         return cloneDeep(pre)
                     })
                 }
             })
-            Object.values(selectedVoucher).forEach((id) => {
-                socket.emit(join_room, { type: channel.voucher, id })
+            Object.values(selectedVoucher || {}).forEach((list) => {
+                list.forEach(({ id }) => {
+                    socket.emit(join_room, { type: channel.voucher, id })
+                })
             })
         }
 
@@ -251,6 +252,10 @@ const useDataCheckout = ({ setStep }: UseDataCheckoutProps) => {
             })
         }
     }, [refreshProducts])
+
+    window.addEventListener(updateProductInCart, () => {
+        setSelectedVoucher(undefined)
+    })
 
     useEffect(() => {
         if (productSaleList) {

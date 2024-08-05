@@ -632,11 +632,12 @@ export class VoucherService {
                 )
                 await this.voucherBackgroundQueue.add(
                     BackgroundAction.createCronJobVoucherToUpdateQuanttiy,
-                    [...map.values()].filter((e) => {
+                    [...map.values()].reduce((acum, e) => {
                         if (e) {
-                            return e.voucherId
+                            acum.push(e.voucherId)
                         }
-                    })
+                        return acum
+                    }, [])
                 )
             }
         } catch (err) {

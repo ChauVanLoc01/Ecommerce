@@ -1,7 +1,7 @@
 import { useContext, useEffect, useRef, useState } from 'react'
 import { io } from 'socket.io-client'
 import { toast } from 'sonner'
-import { channel, current_sale_promotion, join_room, leave_room } from 'src/constants/event'
+import { channel, current_sale_promotion, join_room, leave_room, updateProductInCartEvent } from 'src/constants/event'
 import { AppContext } from 'src/contexts/AppContext'
 import { SocketReturn } from 'src/types/socket.type'
 
@@ -10,7 +10,7 @@ type UseSocketProps = {
 }
 
 const useSocket = ({ actionId }: UseSocketProps) => {
-    const { toastIdRef, ids, products, setProducts } = useContext(AppContext)
+    const { toastIdRef, ids, setProducts } = useContext(AppContext)
     const { current: socket } = useRef(
         io(import.meta.env.VITE_SOCKET_ENPOINT, {
             autoConnect: false
@@ -21,7 +21,6 @@ const useSocket = ({ actionId }: UseSocketProps) => {
 
     useEffect(() => {
         socket.connect()
-
         return () => {
             socket.disconnect()
         }
@@ -35,9 +34,11 @@ const useSocket = ({ actionId }: UseSocketProps) => {
             if (res.action) {
                 toast.dismiss(toastIdRef)
                 setTimeout(() => {
+                    window.dispatchEvent(updateProductInCartEvent)
                     toast.success(res.msg)
                 }, 500)
             } else {
+                toast.dismiss(toastIdRef)
                 toast.error(res.msg)
             }
         })

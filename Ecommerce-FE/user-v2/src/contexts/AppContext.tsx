@@ -3,12 +3,13 @@ import { cloneDeep } from 'lodash'
 import { ReactNode, createContext, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { productFetching } from 'src/apis/product'
-import { channel, join_room, leave_room } from 'src/constants/event'
+import { channel, join_room, leave_room, updateProductInCart } from 'src/constants/event'
 import useSocket from 'src/hooks/useSocket'
 import { LoginResponse } from 'src/types/auth.type'
 import { AppContext as AppContextType, Ids, ProductOrder, ProductOrderSale } from 'src/types/context.type'
 import { ProductSocket, SocketReturn } from 'src/types/socket.type'
 import { getProducts, ls } from 'src/utils/localStorage'
+import { clearProductAfterCreatingOrder } from 'src/utils/utils.ts'
 import { v7 as uuidv7 } from 'uuid'
 
 let profileLS = ls.getItem('profile')
@@ -90,6 +91,10 @@ const ContextWrap = ({ children }: { children: ReactNode }) => {
         return cloneDeep(ids)
     }, [products])
 
+    window.addEventListener(updateProductInCart, () => {
+        setProducts((pre) => clearProductAfterCreatingOrder(ids?.checked_storeIds as string[], pre))
+    })
+
     const addToCart = (storeId: string, store_name: string, payload: ProductOrder | ProductOrderSale) => {
         setProducts((pre) => {
             let { productId, isChecked, buy } = payload
@@ -142,7 +147,7 @@ const ContextWrap = ({ children }: { children: ReactNode }) => {
                                     ...productInMap,
                                     currentQuantity: quantity,
                                     priceAfter,
-                                    name
+                                    name: name || productInMap.name
                                 }
                                 if (status && status == 'BLOCK') {
                                     tmp.isBlock = true

@@ -55,14 +55,17 @@ export class VoucherConsummer {
     async createCronJobToUpdateVoucher({ data }: Job<string[]>) {
         console.log('::::::::::Tạo cron job để cập nhật số lượng voucher::::::::::::')
         try {
-            data.forEach((voucherId) => {
+            console.log('data', data)
+            data.forEach(async (voucherId) => {
                 let hashValue = hash('voucher', voucherId)
                 let isExist = this.schedulerRegistry.doesExist('cron', hashValue)
+                console.log('isExist', isExist)
                 if (isExist) {
                     console.log(
                         `:::::::::::Cron job cập nhật số lượng voucher [${voucherId}]::::::::::::::`
                     )
                 } else {
+                    console.log('no exist')
                     let cron_job = new CronJob(CronExpression.EVERY_MINUTE, async () => {
                         try {
                             let fromCache = await this.cacheManager.get<string>(hashValue)

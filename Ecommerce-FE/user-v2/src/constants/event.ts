@@ -16,6 +16,10 @@ export const leave_room = 'leave-room'
 
 export const current_sale_promotion = 'current_sale_promotion'
 
+export const updateProductInCart = 'update::product::in::cart'
+
+export const updateProductInCartEvent = new Event(updateProductInCart)
+
 export const channel = {
     order: 'order',
     product: 'product',

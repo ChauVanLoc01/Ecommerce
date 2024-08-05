@@ -37,7 +37,7 @@ const Step2 = ({ address, setAddress }: Step2Props) => {
                     columns={{ initial: '1', sm: '3' }}
                     color='blue'
                 >
-                    {deliveriesQuery.data?.data.result.map((delivery) => (
+                    {deliveriesQuery.data?.data?.result?.map((delivery) => (
                         <RadioCards.Item
                             value={delivery.id}
                             className={cn({

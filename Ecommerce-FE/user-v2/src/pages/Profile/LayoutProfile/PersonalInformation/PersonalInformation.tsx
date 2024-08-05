@@ -21,7 +21,7 @@ import LayoutProfile from '..'
 const PersonalInformation = () => {
     const { profile, setProfile } = useContext(AppContext)
     const [date, setDate] = useState<Date | undefined>(
-        profile?.user.birthday ? new Date(profile?.user.birthday) : undefined
+        profile?.user?.birthday ? new Date(profile?.user?.birthday) : undefined
     )
     const [profileDataLoader] = useLoaderData() as [ProfileResponse]
     const {
@@ -33,9 +33,9 @@ const PersonalInformation = () => {
         }
     } = useForm<ProfileSchemaType>({
         defaultValues: {
-            address: profileDataLoader.address,
-            email: profileDataLoader.email,
-            full_name: profileDataLoader.full_name
+            address: profileDataLoader?.address,
+            email: profileDataLoader?.email,
+            full_name: profileDataLoader?.full_name
         },
         resolver: yupResolver(profile_schema)
     })

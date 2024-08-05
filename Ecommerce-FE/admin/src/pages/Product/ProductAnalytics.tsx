@@ -30,19 +30,19 @@ const ProductAnalytics = ({ categories, analytics, analyticsRefetch, productList
             <Flex gapX={'2'} align={'center'}>
                 <Text size={'3'}>Tổng sản phẩm:</Text>
                 <Kbd size={'3'} className='rounded-6 font-medium !text-green-500'>
-                    {analytics?.data.result.all}
+                    {analytics?.data?.result?.all}
                 </Kbd>
             </Flex>
             <Flex gapX={'2'} align={'center'}>
                 <Text size={'3'}>Đang bán:</Text>
                 <Kbd size={'3'} className='rounded-6 font-medium !text-blue'>
-                    {analytics?.data.result.active}
+                    {analytics?.data?.result?.active}
                 </Kbd>
             </Flex>
             <Flex gapX={'2'} align={'center'}>
                 <Text size={'3'}>Đã xóa:</Text>
                 <Kbd size={'3'} className='rounded-6 font-medium !text-red'>
-                    {analytics?.data.result.block}
+                    {analytics?.data?.result?.block}
                 </Kbd>
             </Flex>
             <ProductCreate
