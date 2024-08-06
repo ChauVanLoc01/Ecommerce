@@ -20,7 +20,8 @@ import {
     createCronJobToUpdateProductSale,
     emit_update_product_whenCreatingOrder,
     getStoreDetail,
-    updateProductSaleWhenCreatingOrder
+    updateProductSaleWhenCreatingOrder,
+    updateQuantityProductSalePromotion
 } from 'common/constants/event.constant'
 import { Status } from 'common/enums/status.enum'
 import { CurrentStoreType } from 'common/types/current.type'
@@ -618,7 +619,7 @@ export class ProductService {
                 payload.products.map(async (product, idx) => {
                     if (isProductSale(product)) {
                         console.log(':::::::::product sale ==> Cập nhật product sale:::::::::')
-                        let { productPromotionId, currentSaleId, buy } = product
+                        let { productPromotionId, salePromotionId, buy } = product
                         map.set(idx, undefined)
                         const productSale = await firstValueFrom<
                             MessageReturn<{
@@ -630,7 +631,7 @@ export class ProductService {
                         >(
                             this.store_client.send(updateProductSaleWhenCreatingOrder, {
                                 productPromotionId,
-                                salePromotionId: currentSaleId,
+                                salePromotionId: salePromotionId,
                                 buy
                             })
                         )
@@ -642,6 +643,14 @@ export class ProductService {
                             let {
                                 result: { original_quantity, remaining_quantity }
                             } = productSale
+                            console.log(
+                                'setQuantity',
+                                JSON.stringify({
+                                    ...product,
+                                    original_quantity,
+                                    remaining_quantity
+                                })
+                            )
                             map.set(idx, { ...product, original_quantity, remaining_quantity })
                         }
                         return true
@@ -751,6 +760,7 @@ export class ProductService {
                             products: [...map.values()]
                         }
                     }
+                    console.log('payloadTMp', payloadTmp)
                     if (body.payload.vouchers.length) {
                         console.log(':::::::::Bước kế tiếp: gọi cập nhật VOUCHER:::::::::::')
                         voucher_next_step(this.store_client, {
@@ -799,17 +809,37 @@ export class ProductService {
                         }
                     }
                     // Emit cập nhật số lượng và cache cho từng sản phẩm
-                    payloadTmp.payload.products.forEach(
-                        ({ id, price_after, storeId, currentSaleId, remaining_quantity }) => {
-                            return emit_update_quantity_of_product(this.socket_client, {
-                                priceAfter: price_after,
-                                productId: id,
-                                quantity: remaining_quantity,
-                                storeId,
-                                currentSaleId
+                    payloadTmp.payload.products.forEach((product) => {
+                        let {
+                            id,
+                            price_after,
+                            storeId,
+                            salePromotionId,
+                            remaining_quantity,
+                            productPromotionId,
+                            original_quantity
+                        } = product
+                        console.log('product', JSON.stringify(product))
+                        emit_update_quantity_of_product(this.socket_client, {
+                            priceAfter: price_after,
+                            productId: productPromotionId || id,
+                            quantity: remaining_quantity,
+                            storeId,
+                            currentSaleId: salePromotionId
+                        })
+                        if (isProductSale(product)) {
+                            console.log('product sale emit', {
+                                saleId: salePromotionId,
+                                productId: productPromotionId,
+                                bought: original_quantity - remaining_quantity
+                            })
+                            this.socket_client.emit(updateQuantityProductSalePromotion, {
+                                saleId: salePromotionId,
+                                productId: productPromotionId,
+                                bought: original_quantity - remaining_quantity
                             })
                         }
-                    )
+                    })
                 } catch (err) {
                     console.log('******Lỗi lỗi ở bước tạo cập nhật thành công product********', err)
                 }
@@ -884,6 +914,32 @@ export class ProductService {
                     removeOnComplete: true
                 }
             )
+            payload.payload.products.forEach((product) => {
+                let {
+                    id,
+                    productPromotionId,
+                    salePromotionId,
+                    remaining_quantity,
+                    price_after,
+                    storeId,
+                    buy
+                } = product
+                remaining_quantity = remaining_quantity + buy
+                emit_update_quantity_of_product(this.socket_client, {
+                    priceAfter: price_after,
+                    productId: productPromotionId || id,
+                    quantity: remaining_quantity,
+                    storeId,
+                    currentSaleId: salePromotionId
+                })
+                if (isProductSale(product)) {
+                    this.socket_client.emit(updateQuantityProductSalePromotion, {
+                        saleId: salePromotionId,
+                        productId: productPromotionId,
+                        quantity: remaining_quantity
+                    })
+                }
+            })
         } catch (err) {
             console.log('*****Có lỗi trong roll back product********', err)
         }
@@ -1530,6 +1586,7 @@ export class ProductService {
         body: { productId: string; quantity: number }[]
     ): Promise<MessageReturn> {
         try {
+            console.log('sub quantity')
             await this.prisma.$transaction(async (tx) => {
                 await Promise.all(
                     body.map((product) => {

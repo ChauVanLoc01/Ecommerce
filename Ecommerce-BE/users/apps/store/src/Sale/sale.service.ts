@@ -26,7 +26,7 @@ import { Status } from 'common/enums/status.enum'
 import { CurrentStoreType } from 'common/types/current.type'
 import { MessageReturn, Return } from 'common/types/result.type'
 import { hash } from 'common/utils/order_helper'
-import { add, endOfHour, startOfHour } from 'date-fns'
+import { add, endOfHour, format, startOfHour } from 'date-fns'
 import { keyBy, omit } from 'lodash'
 import { firstValueFrom } from 'rxjs'
 import { v4 as uuidv4 } from 'uuid'
@@ -390,7 +390,10 @@ export class SaleService {
         buy: number
     }): Promise<MessageReturn> {
         try {
-            console.log(':::::::::::Cập nhật số lượng [PRODUCT::SALE]:::::::::::')
+            console.log(
+                ':::::::::::Cập nhật số lượng [PRODUCT::SALE]:::::::::::',
+                format(new Date(), 'hh:mm dd/MM')
+            )
             let { productPromotionId, salePromotionId, buy } = payload
             let remaining_quantity = 0
             let origin_quantity = 0

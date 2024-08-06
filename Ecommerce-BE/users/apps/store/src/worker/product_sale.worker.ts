@@ -61,13 +61,23 @@ export class ProductSaleConsummer {
                                         console.log(
                                             `:::::::Lần chạy cron job thứ ${times} - số lượng cập nhật product sale ${quantity}::::::::::`
                                         )
+                                        let productSaleExist =
+                                            await this.prisma.productPromotion.findUnique({
+                                                where: {
+                                                    id: productId
+                                                },
+                                                select: {
+                                                    quantity: true
+                                                }
+                                            })
                                         await Promise.all([
                                             this.prisma.productPromotion.update({
                                                 where: {
                                                     id: productId
                                                 },
                                                 data: {
-                                                    currentQuantity: quantity
+                                                    currentQuantity: quantity,
+                                                    bought: productSaleExist.quantity - quantity
                                                 }
                                             }),
                                             this.cacheManager.set(

@@ -25,5 +25,6 @@ export const channel = {
     product: 'product',
     voucher: 'voucher',
     transaction: 'transaction',
-    current_sale_promotion: 'current_sale_promotion'
+    current_sale_promotion: 'current_sale_promotion',
+    sale_promotion: 'sale-promotion'
 }

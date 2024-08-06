@@ -284,6 +284,7 @@ export class OrderService {
     }
 
     async createOrder(user: CurrentUserType, body: CreateOrderDTO): Promise<Return> {
+        console.log('createOrder', body)
         this.orderClient.emit(processStepOneToCreatOrder, {
             userId: user.id,
             payload: body
@@ -296,6 +297,7 @@ export class OrderService {
 
     async checkCache(userId: string, payload: CreateOrder) {
         let { orders, actionId } = payload
+        console.log('checkCache', JSON.stringify(payload))
         console.log(':::::::::Kiểm tra cache:::::::::', format(new Date(), 'hh:mm:ss:SSS dd/MM'))
         try {
             const result = await Promise.all(
@@ -345,6 +347,7 @@ export class OrderService {
                     '::::::::::Kiểm tra cache thành công ==> Tiến hành tạo đơn với mode là Draft::::::::::',
                     format(new Date(), 'hh:mm:ss:SSS dd/MM')
                 )
+                console.log('payload checkCache', JSON.stringify(payload))
                 this.orderClient.emit(processStepTwoToCreateOrder, {
                     userId,
                     payload
@@ -386,7 +389,8 @@ export class OrderService {
                                     quantity,
                                     priceAfter,
                                     priceBefore,
-                                    productPromotionId
+                                    productPromotionId,
+                                    salePromotionId
                                 }) => {
                                     tmp.products.push({
                                         buy: quantity,
@@ -395,7 +399,7 @@ export class OrderService {
                                         original_quantity: 0,
                                         price_after: priceAfter,
                                         storeId: order.storeId,
-                                        currentSaleId,
+                                        salePromotionId,
                                         productPromotionId
                                     })
                                     return {

@@ -135,7 +135,7 @@ export class ProductController {
     @Public()
     @EventPattern(update_Product_WhenCreatingOrder)
     updateProductWhenCreatingOrder(@Payload() payload: CreateOrderPayload<'update_product'>) {
-        console.log('::::::Bước 2: Cập nhật lại số lượng product::::::::')
+        console.log('::::::Bước 2: Cập nhật lại số lượng product::::::::', JSON.stringify(payload))
         return this.productsService.updateProductWhenCreatingOrder(payload)
     }
 

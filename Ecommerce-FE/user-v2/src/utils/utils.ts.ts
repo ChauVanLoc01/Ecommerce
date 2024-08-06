@@ -57,11 +57,10 @@ export const sortObject = (obj: any) => {
 
 export const clearProductAfterCreatingOrder = (checkedStoreIds: string[], payload: ProductCart): ProductCart => {
     const { stores } = payload
-    console.log('stores', stores);
-    console.log('checkedStoreIds', checkedStoreIds);
+    checkedStoreIds = checkedStoreIds || []
     checkedStoreIds.forEach((storeId) => {
         let productInStore = stores?.[storeId]?.products || []
-        console.log('productInStore', productInStore);
+        console.log('productInStore', productInStore)
         productInStore.forEach((product) => {
             let { productId, isChecked } = product
             if (isChecked) {

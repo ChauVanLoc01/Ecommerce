@@ -11,7 +11,7 @@ export type UpdateOtherService = {
         buy: number
         remaining_quantity: number
         original_quantity: number
-        currentSaleId?: string
+        salePromotionId?: string
         productPromotionId?: string
     }[]
     vouchers: {

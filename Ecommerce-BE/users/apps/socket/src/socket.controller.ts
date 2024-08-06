@@ -1,6 +1,6 @@
 import { CACHE_MANAGER } from '@nestjs/cache-manager'
 import { Controller, Get, Inject } from '@nestjs/common'
-import { Ctx, EventPattern, Payload, RmqContext } from '@nestjs/microservices'
+import { EventPattern, Payload } from '@nestjs/microservices'
 import { Cache } from 'cache-manager'
 import {
     emit_update_product_whenCreatingOrder,
@@ -30,10 +30,7 @@ export class SocketController {
     }
 
     @EventPattern(statusOfOrder)
-    statusOfOrder(@Payload() payload: OrderStatusPayload, @Ctx() context: RmqContext) {
-        const channel = context.getChannelRef()
-        const originalMsg = context.getMessage()
-        channel.ack(originalMsg)
+    statusOfOrder(@Payload() payload: OrderStatusPayload) {
         let { action, id, result, msg } = payload
         console.log(
             `:::::::::Socket Controller đã nhận được yêu cầu cập nhật trạng thái đơn hàng [id: ${id}] [msg: ${msg}] [action: ${action}]`
@@ -51,26 +48,14 @@ export class SocketController {
     }
 
     @EventPattern(emit_update_voucher_whenCreatingOrder)
-    updateQuantityVoucher(
-        @Payload() payload: Update_Voucher_WhenCreatingOrderPayload,
-        @Ctx() context: RmqContext
-    ) {
-        const channel = context.getChannelRef()
-        const originalMsg = context.getMessage()
-        channel.ack(originalMsg)
+    updateQuantityVoucher(@Payload() payload: Update_Voucher_WhenCreatingOrderPayload) {
         let { quantity, voucherId, storeId } = payload
         console.log('socket update quantity voucher')
         this.socketGateway.updateQuantityVoucher(voucherId, storeId, quantity)
     }
 
     @EventPattern(emit_update_product_whenCreatingOrder)
-    updateProduct(
-        @Payload() payload: Update_Product_WhenCreatingOrderPayload,
-        @Ctx() context: RmqContext
-    ) {
-        const channel = context.getChannelRef()
-        const originalMsg = context.getMessage()
-        channel.ack(originalMsg)
+    updateProduct(@Payload() payload: Update_Product_WhenCreatingOrderPayload) {
         let { quantity, productId, storeId, priceAfter, currentSaleId, name, status } = payload
         this.socketGateway.updateProduct(
             productId,
@@ -89,22 +74,16 @@ export class SocketController {
         payload: {
             saleId: string
             productId: string
-            quantity: number
-        },
-        @Ctx() context: RmqContext
+            bought: number
+        }
     ) {
-        const channel = context.getChannelRef()
-        const originalMsg = context.getMessage()
-        channel.ack(originalMsg)
-        let { productId, quantity, saleId } = payload
-        this.socketGateway.updateProductSalePromotion(saleId, productId, quantity)
+        console.log('payload socket controller', payload)
+        let { productId, bought, saleId } = payload
+        this.socketGateway.updateProductSalePromotion(saleId, productId, bought)
     }
 
     @EventPattern(updateCurrentSalePromotionId)
-    updateCurrentSale(@Payload() payload: string, @Ctx() context: RmqContext) {
-        const channel = context.getChannelRef()
-        const originalMsg = context.getMessage()
+    updateCurrentSale(@Payload() payload: string) {
         this.socketGateway.updateCurrentSalePromotion(payload)
-        channel.ack(originalMsg)
     }
 }
