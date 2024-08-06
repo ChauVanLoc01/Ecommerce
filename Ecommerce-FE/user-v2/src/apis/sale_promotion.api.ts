@@ -15,9 +15,12 @@ export const sale_api = {
     getSalePromotionIds: () => {
         return http.get<SalePromotionIds>('/store/sale-promotion/sale-promotion-in-day')
     },
-    getProductOfSalePromotion: (salePromotionId: string) => () => {
-        return http.get<GetProductOfSalePromotion>(`/store/sale-promotion/${salePromotionId}/product`)
-    },
+    getProductOfSalePromotion:
+        (salePromotionId: string, query: { search?: string; category?: string; page: number }) => () => {
+            return http.get<GetProductOfSalePromotion>(`/store/sale-promotion/${salePromotionId}/product`, {
+                params: query
+            })
+        },
     getProductListSale: (salePromotionId: string, ids: Ids['complexIds'], signal?: AbortSignal) => {
         return http.get<SalePromotionDetailList>(`/store/sale-promotion/products/${salePromotionId}`, {
             params: { ids },

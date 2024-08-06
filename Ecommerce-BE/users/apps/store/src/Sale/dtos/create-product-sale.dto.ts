@@ -31,6 +31,10 @@ export class ProductJoinPromotionDTO {
     @IsNotEmpty()
     @IsUrl()
     image: string
+
+    @IsString()
+    @IsNotEmpty()
+    category: string
 }
 
 export class CreateProductSalePromotionDTO {

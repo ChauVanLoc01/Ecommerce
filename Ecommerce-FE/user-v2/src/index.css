@@ -185,3 +185,7 @@ body {
   background-color: #ff4d4f;
   /* the main color  */
 }
+
+.rt-ProgressRoot:where(.rt-variant-surface) {
+  background-color: #8c8c8c !important;
+}

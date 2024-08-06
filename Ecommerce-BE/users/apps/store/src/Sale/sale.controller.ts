@@ -6,7 +6,6 @@ import {
     updateProductSaleWhenCreatingOrder
 } from 'common/constants/event.constant'
 import { CurrentUser } from 'common/decorators/current_user.decorator'
-import { PaginationDTO } from 'common/decorators/pagination.dto'
 import { Public } from 'common/decorators/public.decorator'
 import { Roles } from 'common/decorators/roles.decorator'
 import { Role } from 'common/enums/role.enum'
@@ -14,6 +13,7 @@ import { JwtGuard } from 'common/guards/jwt.guard'
 import { CurrentStoreType } from 'common/types/current.type'
 import { CreateProductSalePromotionDTO } from './dtos/create-product-sale.dto'
 import { ProductSaleIds } from './dtos/product-sale-ids.dto'
+import { ProductSaleQuery } from './dtos/product-sale-query.dto'
 import { QuerySalePromotionDTO } from './dtos/query-promotion.dto'
 import { CreateSpecialSaleDTO } from './dtos/special-sale.dto'
 import { UpdateProductsSalePromotion } from './dtos/update-product-sale.dto'
@@ -74,7 +74,7 @@ export class SaleController {
     @Get(':salePromotionId/product')
     getAllProduct(
         @Param('salePromotionId') salePromotionId: string,
-        @Query() query: PaginationDTO
+        @Query() query: ProductSaleQuery
     ) {
         return this.saleService.getAllProduct(salePromotionId, query)
     }

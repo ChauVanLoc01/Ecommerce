@@ -70,6 +70,12 @@ export class OrderController {
     }
 
     @Roles(Role.STORE_OWNER)
+    @Get('customer-rate/:type')
+    customerRating(@CurrentUser() user: CurrentStoreType, @Param('type') type: string) {
+        return this.ordersService.customerRating(user, type)
+    }
+
+    @Roles(Role.STORE_OWNER)
     @Get('order-analytic/:type')
     orderStatistic(@CurrentUser() user: CurrentStoreType, @Param('type') type: string) {
         return this.ordersService.orderStatistic(user, type)

@@ -466,6 +466,7 @@ model ProductPromotion {
   productId        String         @db.VarChar(50)
   name             String         @db.VarChar(1000)
   image            String         @db.VarChar(500)
+  category         String         @db.VarChar(50)
   quantity         Int
   currentQuantity  Int
   bought           Int?           @default(0)

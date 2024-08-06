@@ -18,7 +18,7 @@ const ProductRate = () => {
     })
 
     const { data: detail, refetch: detailRefetch } = useQuery({
-        queryKey: ['product_detail_in_rating_of_best_sale', bestSells?.[activeIdx].productId],
+        queryKey: ['product_detail_in_rating_of_best_sale', bestSells?.[activeIdx]?.productId],
         queryFn: AnalyticApi.getProductDetail(bestSells?.[activeIdx]?.productId || ''),
         select: (result) => result.data,
         staleTime: 1000 * 60 * 60 * 3,

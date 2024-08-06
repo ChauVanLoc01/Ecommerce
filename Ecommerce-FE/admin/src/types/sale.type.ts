@@ -7,6 +7,7 @@ export type ProductJoinSale = {
     image: string
     quantity: number
     priceAfter: number
+    category: string
 }
 
 export type JoinSalePromotion = {

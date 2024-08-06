@@ -12,13 +12,23 @@ const FlashSaleProducts = ({ products }: FlashSaleProductsProps) => {
     return (
         <div>
             {products ? (
-                <Grid columns={'4'} gap={'4'}>
-                    {products.map((product) => (
-                        <ProductFlashSale key={product.id} product={product} progress_height={4} />
-                    ))}
-                </Grid>
+                products.length ? (
+                    <Grid columns={'5'} gap={'4'}>
+                        {products.map((product) => (
+                            <ProductFlashSale key={product.id} product={product} progress_height={5} />
+                        ))}
+                    </Grid>
+                ) : (
+                    <Flex justify={'center'} align={'center'} className='py-24'>
+                        <img
+                            className='w-24 h-24 object-cover'
+                            src='https://cdn-icons-png.flaticon.com/512/13982/13982857.png'
+                            alt='empty_product_sale'
+                        />
+                    </Flex>
+                )
             ) : (
-                <Grid columns={'4'} gap={'5'}>
+                <Grid columns={'5'} gap={'5'}>
                     {Array(8)
                         .fill(0)
                         .map((_, idx) => (

@@ -1323,6 +1323,103 @@ export class OrderService {
         }))
     }
 
+    async customerRating(user: CurrentStoreType, type: string) {
+        let time_wheres: Prisma.OrderWhereInput[] = []
+        var end, start
+        var times = []
+        var tmp: { start: Date; end: Date }[] = []
+        switch (type) {
+            case 'day':
+                end = new Date()
+                start = sub(end, { days: 7 })
+                times = eachDayOfInterval({ start, end })
+                time_wheres = times.map((day) => {
+                    let gte = day
+                    let lte = endOfDay(day)
+                    tmp.push({ start: gte, end: lte })
+                    return {
+                        createdAt: {
+                            gte,
+                            lte
+                        }
+                    }
+                })
+                break
+            case 'week':
+                end = new Date()
+                start = sub(end, { weeks: 7 })
+                times = eachWeekOfInterval({ start, end }, { weekStartsOn: 1 })
+                time_wheres = times.map((day) => {
+                    let gte = day
+                    let lte = endOfWeek(day)
+                    tmp.push({ start: gte, end: lte })
+                    return {
+                        createdAt: {
+                            gte,
+                            lte
+                        }
+                    }
+                })
+                break
+            case 'month':
+                end = new Date()
+                start = sub(end, { months: 12 })
+                times = eachMonthOfInterval({ start, end })
+                time_wheres = times.map((day) => {
+                    let gte = day
+                    let lte = endOfMonth(day)
+                    tmp.push({ start: gte, end: lte })
+                    return {
+                        createdAt: {
+                            gte,
+                            lte
+                        }
+                    }
+                })
+                break
+            default:
+                break
+        }
+
+        let [count, ...orders] = await Promise.all([
+            this.prisma.order.findMany({
+                distinct: ['userId'],
+                where: {
+                    storeId: user.storeId
+                },
+                select: {
+                    id: true
+                }
+            }),
+            ...time_wheres.map((time) => {
+                return this.prisma.order.findMany({
+                    distinct: ['userId'],
+                    where: {
+                        ...time,
+                        storeId: user.storeId,
+                        isDraf: false
+                    },
+                    select: {
+                        id: true,
+                        userId: true
+                    }
+                })
+            })
+        ])
+
+        let length = count.length
+
+        return {
+            count: length,
+            data: orders.map((order, idx) => ({
+                order,
+                date: tmp[idx].start,
+                total: 100,
+                percent: (order.length * 100) / length
+            }))
+        }
+    }
+
     async orderStatistic(user: CurrentStoreType, type: string): Promise<Return> {
         const { storeId } = user
         let general_where: Prisma.OrderWhereInput = {

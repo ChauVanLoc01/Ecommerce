@@ -1,4 +1,5 @@
 import { PrismaService } from '@app/common/prisma/prisma.service'
+import { InjectQueue } from '@nestjs/bull'
 import { CACHE_MANAGER } from '@nestjs/cache-manager'
 import {
     BadGatewayException,
@@ -12,7 +13,9 @@ import {
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { ClientProxy } from '@nestjs/microservices'
+import { Queue } from 'bull'
 import { Cache } from 'cache-manager'
+import { BackgroundAction, BackgroundName } from 'common/constants/background-job.constant'
 import {
     addingProductToSale,
     currentSalePromotion,
@@ -21,7 +24,6 @@ import {
     updatingProductToSale
 } from 'common/constants/event.constant'
 import { SalePromotion } from 'common/constants/sale-promotion.constant'
-import { PaginationDTO } from 'common/decorators/pagination.dto'
 import { Status } from 'common/enums/status.enum'
 import { CurrentStoreType } from 'common/types/current.type'
 import { MessageReturn, Return } from 'common/types/result.type'
@@ -32,12 +34,10 @@ import { firstValueFrom } from 'rxjs'
 import { v4 as uuidv4 } from 'uuid'
 import { CreateProductSalePromotionDTO } from './dtos/create-product-sale.dto'
 import { ProductSaleIds } from './dtos/product-sale-ids.dto'
+import { ProductSaleQuery } from './dtos/product-sale-query.dto'
 import { QuerySalePromotionDTO } from './dtos/query-promotion.dto'
 import { CreateSpecialSaleDTO } from './dtos/special-sale.dto'
 import { UpdateProductsSalePromotion } from './dtos/update-product-sale.dto'
-import { Queue } from 'bull'
-import { InjectQueue } from '@nestjs/bull'
-import { BackgroundAction, BackgroundName } from 'common/constants/background-job.constant'
 
 @Injectable()
 export class SaleService {
@@ -144,7 +144,7 @@ export class SaleService {
                     }
                     await tx.productPromotion.createMany({
                         data: products.map((product) => {
-                            let { image, name, priceAfter, productId, quantity } = product
+                            let { image, name, priceAfter, productId, quantity, category } = product
                             return {
                                 id: uuidv4(),
                                 storePromotionId: storePromotionId || id,
@@ -157,7 +157,8 @@ export class SaleService {
                                 salePromotionId,
                                 image,
                                 name,
-                                currentQuantity: quantity
+                                currentQuantity: quantity,
+                                category
                             }
                         })
                     })
@@ -269,11 +270,13 @@ export class SaleService {
         }
     }
 
-    async getAllProduct(promotionId: string, pagination: PaginationDTO): Promise<Return> {
+    async getAllProduct(promotionId: string, query: ProductSaleQuery): Promise<Return> {
         try {
-            const { limit, page } = pagination
+            let { limit, page, search, category } = query
 
-            let take = limit || this.configService.get<number>('app.limit_default') || 10
+            let take = 15
+            page = Math.max(page || 0, 1)
+            let skip = (page - 1) * take
 
             const promotionExist = await this.prisma.salePromotion.findUnique({
                 where: {
@@ -296,32 +299,62 @@ export class SaleService {
                 throw new BadRequestException('Chương trình giảm giá không tồn tại')
             }
 
-            const products = await this.prisma.productPromotion.findMany({
-                where: {
-                    salePromotionId: promotionId,
-                    isDelete: false,
-                    quantity: {
-                        gt: 0
-                    }
+            let where = {
+                salePromotionId: promotionId,
+                isDelete: false,
+                quantity: {
+                    gt: 0
                 },
-                take,
-                skip: take * ((page || 1) - 1),
-                select: {
-                    id: true,
-                    name: true,
-                    productId: true,
-                    bought: true,
-                    quantity: true,
-                    image: true,
-                    priceAfter: true
-                }
-            })
+                name: {
+                    contains: search
+                },
+                category
+            }
+
+            let [count, products] = await Promise.all([
+                this.prisma.productPromotion.count({
+                    where
+                }),
+                this.prisma.productPromotion.findMany({
+                    where,
+                    take,
+                    skip,
+                    select: {
+                        id: true,
+                        name: true,
+                        productId: true,
+                        bought: true,
+                        quantity: true,
+                        image: true,
+                        priceAfter: true
+                    }
+                })
+            ])
+
+            products = await Promise.all(
+                products.map(async (product) => {
+                    let hashValue = hash('product', product.id)
+                    let fromCache = await this.cacheManager.get<string>(hashValue)
+                    if (fromCache) {
+                        let { quantity } = JSON.parse(fromCache) as { quantity: number }
+                        product.bought = product.quantity - quantity
+                    }
+                    return product
+                })
+            )
 
             return {
                 msg: 'ok',
                 result: {
-                    salePromotion: promotionExist,
-                    productPromotions: products
+                    data: {
+                        salePromotion: promotionExist,
+                        productPromotions: products
+                    },
+                    query: {
+                        ...query,
+                        page,
+                        page_size: Math.ceil(count / take)
+                    }
                 }
             }
         } catch (err) {
@@ -572,6 +605,7 @@ export class SaleService {
 
     async getCurrentSale(salePromotionId: string) {
         try {
+            console.log('current sale')
             const current = add(startOfHour(new Date()), { hours: 7 })
 
             const salePromotion = await this.prisma.salePromotion.findFirst({
@@ -591,7 +625,7 @@ export class SaleService {
                 throw new NotFoundException('Chương trình giảm giá không tồn tại')
             }
 
-            const products = await this.prisma.productPromotion.findMany({
+            let products = await this.prisma.productPromotion.findMany({
                 where: {
                     salePromotionId: salePromotion.id,
                     isDelete: false,
@@ -608,6 +642,20 @@ export class SaleService {
                 },
                 take: 20
             })
+
+            products = await Promise.all(
+                products.map(async (product) => {
+                    let hashValue = hash('product', product.id)
+                    const quantityFromCache = await this.cacheManager.get<string>(hashValue)
+                    if (quantityFromCache) {
+                        let { quantity } = JSON.parse(quantityFromCache) as { quantity: number }
+                        product.currentQuantity = quantity
+                        product.bought = product.quantity - product.currentQuantity
+                        console.log('sale products', JSON.stringify(product))
+                    }
+                    return product
+                })
+            )
 
             return {
                 msg: 'ok',

@@ -27,5 +27,11 @@ export const AnalyticApi = {
     },
     getProductDetail: (productId: string) => () => {
         return http.get<{ name: string; image: string }>(`/product/product/best-sell/${productId}`)
+    },
+    customerRating: (type: AnalyticType) => () => {
+        return http.get<{
+            count: number
+            data: { order: { id: string; userId: string }; start: Date; total: number; percent: number }[]
+        }>(`/order/order/customer-rate/${type}`)
     }
 }

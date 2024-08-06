@@ -79,15 +79,15 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
         })
     }
 
-    updateProductSalePromotion(saleId: string, productId: string, bought: number) {
+    updateProductSalePromotion(saleId: string, productId: string, quantity: number) {
         let hash = this.hash(room_obj.sale_promotion, saleId)
         console.log(
-            `::::::Socket cập nhật số lượng product sale tới client ==> [ProductID----${productId}] với số lượng [${bought}]----SalID: [${saleId}]::::::::`
+            `::::::Socket cập nhật số lượng product sale tới client ==> [ProductID----${productId}] với số lượng [${quantity}]----SalID: [${saleId}]::::::::`
         )
         this.server.to(hash).emit(room_obj.sale_promotion, {
             msg: 'Cập nhật số lượng',
             action: true,
-            result: { saleId, productId, bought }
+            result: { saleId, productId, quantity }
         })
     }
 

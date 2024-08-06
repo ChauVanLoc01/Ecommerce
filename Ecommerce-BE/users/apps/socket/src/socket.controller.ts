@@ -74,12 +74,12 @@ export class SocketController {
         payload: {
             saleId: string
             productId: string
-            bought: number
+            quantity: number
         }
     ) {
         console.log('payload socket controller', payload)
-        let { productId, bought, saleId } = payload
-        this.socketGateway.updateProductSalePromotion(saleId, productId, bought)
+        let { productId, quantity, saleId } = payload
+        this.socketGateway.updateProductSalePromotion(saleId, productId, quantity)
     }
 
     @EventPattern(updateCurrentSalePromotionId)

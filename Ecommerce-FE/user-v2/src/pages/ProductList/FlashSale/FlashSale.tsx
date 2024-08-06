@@ -30,7 +30,8 @@ const FlashSale = ({ isHiddenMore = false }: FlashSaleProps) => {
         queryFn: sale_api.current_sale_promotin(currentSaleId),
         select: (data) => data.data.result,
         staleTime: Infinity,
-        enabled: !!currentSaleId
+        enabled: !!currentSaleId,
+        gcTime: 1000
     })
 
     useEffect(() => {
@@ -48,14 +49,20 @@ const FlashSale = ({ isHiddenMore = false }: FlashSaleProps) => {
             socket?.emit(join_room, { type: channel.sale_promotion, id: currentSaleId })
             socket?.on(
                 channel.sale_promotion,
-                (res: SocketReturn<{ productPromotionId: string; quantity: number }>) => {
-                    console.log('sale', res)
+                (res: SocketReturn<{ saleId: string; productId: string; quantity: number }>) => {
                     if (res?.action) {
-                        let { result } = res
-                        let updatedProductSale = productSale.get(result.productPromotionId)
-                        if (updatedProductSale) {
+                        let {
+                            result: { productId, quantity, saleId }
+                        } = res
+                        if (currentSaleId == saleId) {
                             setProductSale((pre) => {
-                                pre.set(result.productPromotionId, { ...updatedProductSale, quantity: result.quantity })
+                                let productSaleExist = pre.get(productId)
+                                if (productSaleExist) {
+                                    pre.set(productId, {
+                                        ...productSaleExist,
+                                        bought: productSaleExist.quantity - quantity
+                                    })
+                                }
                                 return cloneDeep(pre)
                             })
                         }
@@ -80,7 +87,7 @@ const FlashSale = ({ isHiddenMore = false }: FlashSaleProps) => {
                     <h3 className='font-semibold font-mono text-3xl bg-gradient-to-tr to-[#fcb045] via-[#fd1d1d] from-[#833ab4] bg-clip-text text-transparent'>
                         Flash Sale
                     </h3>
-                    <Countdown targetTime={new Date(2024, 3, 6, 23, 59)} />
+                    <Countdown />
                 </div>
                 {!isHiddenMore && (
                     <Link
@@ -96,7 +103,7 @@ const FlashSale = ({ isHiddenMore = false }: FlashSaleProps) => {
                 <CarouselContent className=''>
                     {[...productSale.values()].map((product, idx) => (
                         <CarouselItem key={idx} className='basis-1/6'>
-                            <ProductFlashSale product={product} />
+                            <ProductFlashSale product={product} progress_height={4} />
                         </CarouselItem>
                     ))}
                 </CarouselContent>

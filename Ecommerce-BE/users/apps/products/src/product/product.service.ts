@@ -760,7 +760,6 @@ export class ProductService {
                             products: [...map.values()]
                         }
                     }
-                    console.log('payloadTMp', payloadTmp)
                     if (body.payload.vouchers.length) {
                         console.log(':::::::::Bước kế tiếp: gọi cập nhật VOUCHER:::::::::::')
                         voucher_next_step(this.store_client, {
@@ -819,7 +818,6 @@ export class ProductService {
                             productPromotionId,
                             original_quantity
                         } = product
-                        console.log('product', JSON.stringify(product))
                         emit_update_quantity_of_product(this.socket_client, {
                             priceAfter: price_after,
                             productId: productPromotionId || id,
@@ -828,15 +826,10 @@ export class ProductService {
                             currentSaleId: salePromotionId
                         })
                         if (isProductSale(product)) {
-                            console.log('product sale emit', {
-                                saleId: salePromotionId,
-                                productId: productPromotionId,
-                                bought: original_quantity - remaining_quantity
-                            })
                             this.socket_client.emit(updateQuantityProductSalePromotion, {
                                 saleId: salePromotionId,
                                 productId: productPromotionId,
-                                bought: original_quantity - remaining_quantity
+                                quantity: remaining_quantity
                             })
                         }
                     })
@@ -922,13 +915,13 @@ export class ProductService {
                     remaining_quantity,
                     price_after,
                     storeId,
-                    buy
+                    buy,
+                    original_quantity
                 } = product
-                remaining_quantity = remaining_quantity + buy
                 emit_update_quantity_of_product(this.socket_client, {
                     priceAfter: price_after,
                     productId: productPromotionId || id,
-                    quantity: remaining_quantity,
+                    quantity: original_quantity,
                     storeId,
                     currentSaleId: salePromotionId
                 })
@@ -936,7 +929,7 @@ export class ProductService {
                     this.socket_client.emit(updateQuantityProductSalePromotion, {
                         saleId: salePromotionId,
                         productId: productPromotionId,
-                        quantity: remaining_quantity
+                        quantity: original_quantity
                     })
                 }
             })

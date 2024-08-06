@@ -1,46 +1,33 @@
-import { Flex, IconButton, Select, Text } from '@radix-ui/themes'
-import { useRef } from 'react'
-import { Bar, BarChart, Rectangle, Tooltip } from 'recharts'
+import { Box, Flex, IconButton, Skeleton, Text } from '@radix-ui/themes'
+import { useQuery } from '@tanstack/react-query'
+import { useEffect, useRef, useState } from 'react'
+import { CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from 'recharts'
+import { AnalyticApi } from 'src/apis/analytics.api'
+import AnalyticSelect from 'src/components/AnalyticState/AnalyticSelect'
+import useAnalytic from 'src/hooks/useAnalytic'
 
 const CustomerStatistic = () => {
+    const { type, setType } = useAnalytic()
     const widthRef = useRef<null | HTMLDivElement>(null)
-    const data = [
-        {
-            name: 'Page A',
-            uv: 4000,
-            pv: 4400
-        },
-        {
-            name: 'Page B',
-            uv: 3000,
-            pv: 6398
-        },
-        {
-            name: 'Page C',
-            uv: 2000,
-            pv: 9800
-        },
-        {
-            name: 'Page D',
-            uv: 2780,
-            pv: 3908
-        },
-        {
-            name: 'Page B',
-            uv: 3000,
-            pv: 8398
-        },
-        {
-            name: 'Page C',
-            uv: 2000,
-            pv: 5800
-        },
-        {
-            name: 'Page D',
-            uv: 2780,
-            pv: 3908
+    const [size, setSize] = useState<number>(300)
+
+    const { data: customerRating, refetch: customerRefetch } = useQuery({
+        queryKey: ['customer_rating_analytics'],
+        queryFn: AnalyticApi.customerRating(type),
+        staleTime: 1000 * 60 * 60 * 3,
+        select: (result) => result.data
+    })
+
+    useEffect(() => {
+        if (widthRef?.current) {
+            setSize(widthRef.current?.clientWidth)
         }
-    ]
+    }, [widthRef])
+
+    useEffect(() => {
+        customerRefetch()
+    }, [type])
+
     return (
         <div className='bg-white p-[16px] rounded-8 border-border/20 border shadow-sm space-y-3' ref={widthRef}>
             <Flex justify={'between'} align={'center'}>
@@ -61,44 +48,62 @@ const CustomerStatistic = () => {
                         </svg>
                     </IconButton>
                     <Text weight={'medium'} size={'4'}>
-                        Khách Hàng
+                        Tỉ lệ khách hàng quay lại
                     </Text>
                 </Flex>
-                <Select.Root defaultValue='day' size={'2'}>
-                    <Select.Trigger />
-                    <Select.Content>
-                        <Select.Item value='day'>Day</Select.Item>
-                        <Select.Item value='month'>Month</Select.Item>
-                        <Select.Item value='year'>Year</Select.Item>
-                    </Select.Content>
-                </Select.Root>
+                <AnalyticSelect setAnalyticType={setType} />
             </Flex>
             <Flex className='rounded-8 bg-gray-100 p-12 w-full' justify={'between'}>
-                <BarChart
-                    width={widthRef.current ? ((widthRef.current.offsetWidth - 32) / 3) * 2 : 300}
-                    height={80}
-                    data={data}
-                    className='flex-shrink-0 basis-2/3'
-                >
-                    <Tooltip cursor={{ fill: 'transparent' }} />
-                    <Bar dataKey='pv' fill='#cf1322' barSize={30} shape={<Rectangle radius={6} />} />
-                </BarChart>
-                <Flex direction={'column'} justify={'center'} align={'center'} className='basis-1/3 flex-shrink-0'>
-                    <Text weight={'medium'} size={'4'}>
-                        +10tr
-                    </Text>
-                    <Text weight={'medium'} size={'3'} color='blue' className='flex items-center space-x-1'>
-                        <svg width='15' height='15' viewBox='0 0 15 15' fill='none' xmlns='http://www.w3.org/2000/svg'>
-                            <path
-                                d='M3.64645 11.3536C3.45118 11.1583 3.45118 10.8417 3.64645 10.6465L10.2929 4L6 4C5.72386 4 5.5 3.77614 5.5 3.5C5.5 3.22386 5.72386 3 6 3L11.5 3C11.6326 3 11.7598 3.05268 11.8536 3.14645C11.9473 3.24022 12 3.36739 12 3.5L12 9.00001C12 9.27615 11.7761 9.50001 11.5 9.50001C11.2239 9.50001 11 9.27615 11 9.00001V4.70711L4.35355 11.3536C4.15829 11.5488 3.84171 11.5488 3.64645 11.3536Z'
-                                fill='currentColor'
-                                fill-rule='evenodd'
-                                clip-rule='evenodd'
-                            ></path>
-                        </svg>
-                        <span>110%</span>
-                    </Text>
-                </Flex>
+                {customerRating ? (
+                    <LineChart
+                        width={730}
+                        height={250}
+                        data={customerRating?.data}
+                        margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                    >
+                        <CartesianGrid strokeDasharray='3 3' />
+                        <XAxis dataKey='date' />
+                        <YAxis />
+                        <Tooltip
+                            allowEscapeViewBox={{ x: true, y: true }}
+                            content={({ payload }) => {
+                                let value = +(payload?.[0]?.value || 0)
+                                let percent = Math.round(value)
+                                let count = payload?.[0]?.payload?.order?.length
+                                return (
+                                    <div className='bg-white rounded-6 shadow-md p-4 border border-gray-200'>
+                                        <Flex gapX={'3'}>
+                                            <Text className='font-bold'>Tỉ lệ:</Text>
+                                            <Text>{`${percent}`}%</Text>
+                                        </Flex>
+                                        <Flex gapX={'3'}>
+                                            <Text className='font-bold'>Tổng khách hàng:</Text>
+                                            <Text>{count}</Text>
+                                        </Flex>
+                                    </div>
+                                )
+                            }}
+                        />
+                        <Line type='monotone' dataKey='percent' stroke='#8884d8' />
+                    </LineChart>
+                ) : (
+                    <div className='flex flex-col justify-between space-y-2'>
+                        <Flex gapX={'3'}>
+                            <Skeleton>
+                                <Box width={'100px'} height={'30px'} />
+                            </Skeleton>
+                            <Skeleton>
+                                <Box width={'100px'} height={'30px'} />
+                            </Skeleton>
+                            <Skeleton>
+                                <Box width={'100px'} height={'30px'} />
+                            </Skeleton>
+                        </Flex>
+                        <Skeleton>
+                            <Box width={`${size - 40}px`} height={'150px'} />
+                        </Skeleton>
+                    </div>
+                )}
             </Flex>
         </div>
     )

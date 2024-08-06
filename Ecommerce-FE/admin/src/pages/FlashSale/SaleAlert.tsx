@@ -224,7 +224,8 @@ const SaleAlert = ({
                 image: selectedProduct.products[e].image,
                 productId: e,
                 priceAfter: selectedProduct.products[e].priceAfterInSale,
-                quantity: selectedProduct.products[e].quantityInSale
+                quantity: selectedProduct.products[e].quantityInSale,
+                category: selectedProduct.products[e].category
             }))
         })
     }

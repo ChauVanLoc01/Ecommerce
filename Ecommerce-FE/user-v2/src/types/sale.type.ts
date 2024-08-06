@@ -51,8 +51,16 @@ export type SalePromotionIds = Return<
 >
 
 export type GetProductOfSalePromotion = Return<{
-    salePromotion: SalePromotion
-    productPromotions: ProductPromotion[]
+    data: {
+        salePromotion: SalePromotion
+        productPromotions: ProductPromotion[]
+    }
+    query: {
+        search?: string
+        category?: string
+        page: number
+        page_size: number
+    }
 }>
 
 export type SalePromotionDetail = {
