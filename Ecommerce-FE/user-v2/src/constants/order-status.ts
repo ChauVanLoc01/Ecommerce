@@ -58,6 +58,10 @@ export const OrderStatus: { [key: string]: { label: string; color: string } } = 
     REJECT_CANCEL: {
         label: 'Bạn đã từ chối hủy đơn',
         color: 'purple'
+    },
+    NOT_RECEIVED: {
+        label: 'Bạn vẫn chưa nhận được hàng',
+        color: 'red'
     }
 }
 
@@ -76,17 +80,22 @@ export enum OrderFlowEnum {
     REFUND_SHIPPING_SUCCESS = 'REFUND_SHIPPING_SUCCESS',
     RE_OPEN_REFUND = 'RE_OPEN_REFUND',
     CLOSE_REFUND = 'CLOSE_REFUND',
-    FINISH = 'FINISH'
+    FINISH = 'FINISH',
+    NOT_RECEIVED = 'NOT_RECEIVED'
 }
 
 export const order_next_flow = {
     [OrderFlowEnum.WAITING_CONFIRM]: [OrderFlowEnum.CLIENT_CANCEL],
-    [OrderFlowEnum.SHIPING_SUCCESS]: [OrderFlowEnum.REQUEST_REFUND, OrderFlowEnum.FINISH],
-    [OrderFlowEnum.REQUEST_REFUND]: [OrderFlowEnum.UPDATE_REFUND, OrderFlowEnum.CANCEL_REFUND],
+    [OrderFlowEnum.SHIPING_SUCCESS]: [OrderFlowEnum.NOT_RECEIVED, OrderFlowEnum.REQUEST_REFUND, OrderFlowEnum.FINISH],
+    [OrderFlowEnum.REQUEST_REFUND]: [OrderFlowEnum.CANCEL_REFUND],
     [OrderFlowEnum.REQUEST_CANCEL]: [OrderFlowEnum.ACCEPT_CANCEL, OrderFlowEnum.REJECT_CANCEL],
     [OrderFlowEnum.UPDATE_REFUND]: [OrderFlowEnum.CANCEL_REFUND],
     [OrderFlowEnum.CANCEL_REFUND]: [OrderFlowEnum.REQUEST_REFUND, OrderFlowEnum.FINISH],
-    [OrderFlowEnum.REFUND_SHIPPING_SUCCESS]: [OrderFlowEnum.RE_OPEN_REFUND, OrderFlowEnum.CLOSE_REFUND]
+    [OrderFlowEnum.REFUND_SHIPPING_SUCCESS]: [
+        OrderFlowEnum.NOT_RECEIVED,
+        OrderFlowEnum.RE_OPEN_REFUND,
+        OrderFlowEnum.CLOSE_REFUND
+    ]
 }
 
 export const OrderFlowLabel = {
@@ -104,7 +113,8 @@ export const OrderFlowLabel = {
     RE_OPEN_REFUND: 'Bạn đã yêu cầu hoàn đổi tiếp tục',
     CLOSE_REFUND: 'Bạn đã đóng yêu cầu hoàn đổi sản phẩm',
     FINISH: 'Đơn hàng đã hoàn thành',
-    REJECT_CANCEL: 'Bạn đã từ chối hủy đơn'
+    REJECT_CANCEL: 'Bạn đã từ chối hủy đơn',
+    NOT_RECEIVED: 'Bạn vẫn chưa nhận được hàng?'
 }
 
 export const OrderNextFlowLabel = {
@@ -122,7 +132,8 @@ export const OrderNextFlowLabel = {
     RE_OPEN_REFUND: 'Sản phẩm không như mong đợi. Bạn muốn tiếp tục hoàn đổi?',
     CLOSE_REFUND: 'Hoàn thành đơn hàng?',
     FINISH: 'Xác nhận hoàn thành đơn hàng?',
-    REJECT_CANCEL: 'Từ chối hủy đơn?'
+    REJECT_CANCEL: 'Từ chối hủy đơn?',
+    NOT_RECEIVED: 'Bạn vẫn chưa nhận được hàng?'
 }
 
 export const ValidRequestRefund = [OrderFlowEnum.ACCEPT_CANCEL, OrderFlowEnum.RE_OPEN_REFUND]

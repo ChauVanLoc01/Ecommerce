@@ -27,20 +27,8 @@ const RatingList = ({ storeId }: RatingListProps) => {
             <section className='bg-[#FFFFFF] rounded-12 border border-border/30 p-[24px] basis-2/3 sticky top-0 space-y-4'>
                 <Flex justify={'between'} width={'100%'} gap={'1'}>
                     <Flex direction={'column'} justify={'start'} align={'start'} gapY={'3'}>
-                        <Text size={'6'}>Nhận xét</Text>
-                        <Flex align={'center'} gapX={'2'}>
-                            <Text size={'2'}>Số lượt nhận xét:</Text>
-                            <Skeleton width={'50px'} height={'15px'} />
-                        </Flex>
+                        <Text size={'6'}>Đánh giá sản phẩm</Text>
                     </Flex>
-                    <div>
-                        <Flex>
-                            <Text>4*</Text>
-                            <Box maxWidth='300px'>
-                                <Progress />
-                            </Box>
-                        </Flex>
-                    </div>
                 </Flex>
                 <div className='space-y-5'>
                     {Array(3)
@@ -96,16 +84,16 @@ const RatingList = ({ storeId }: RatingListProps) => {
             <Flex justify={'between'} width={'100%'} gap={'1'}>
                 <Flex direction={'column'} justify={'start'} align={'start'} gapY={'3'}>
                     <Text size={'6'}>Đánh giá sản phẩm</Text>
-                    <Flex align={'center'} gapX={'2'}>
+                    {/* <Flex align={'center'} gapX={'2'}>
                         <Text size={'2'}>Tỉ lệ đánh giá:</Text>
                         <Text size={'2'}>{ratingList.data.summary.average}⭐</Text>
                     </Flex>
                     <Flex align={'center'} gapX={'2'}>
                         <Text size={'2'}>Số lượt nhận xét:</Text>
                         <Text size={'2'}>{ratingList.data.summary.total}</Text>
-                    </Flex>
+                    </Flex> */}
                 </Flex>
-                <div className='basis-1/3 flex-shrink-1'>
+                {/* <div className='basis-1/3 flex-shrink-1'>
                     <Flex align={'center'} className='space-x-2'>
                         <Text size={'2'}>5⭐</Text>
                         <Progress
@@ -136,7 +124,7 @@ const RatingList = ({ storeId }: RatingListProps) => {
                             value={calcPercentRating(ratingList.data.summary.total, ratingList.data.summary.one)}
                         />
                     </Flex>
-                </div>
+                </div> */}
             </Flex>
             <div className='space-y-5'>
                 {ratingList.data.ratings.map((rating) => (

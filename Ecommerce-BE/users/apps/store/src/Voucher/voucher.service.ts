@@ -619,7 +619,7 @@ export class VoucherService {
                 emit_update_status_of_order(this.socketClient, {
                     action: true,
                     id: payload.actionId,
-                    msg: 'Tạo đơn hàng thành công',
+                    msg: 'Đặt hàng thành công',
                     result: null
                 })
                 commit_create_order_success([this.orderClient, this.productClient], payload as any)
@@ -686,28 +686,28 @@ export class VoucherService {
                                 storeId,
                                 quantity + 1
                             )
-                            return
-                        }
-                        const voucherExist = await tx.voucher.findUnique({
-                            where: {
-                                id: voucherId
-                            }
-                        })
-
-                        if (!voucherExist) {
-                            throw new Error('Voucher không tồn tại')
-                        }
-
-                        await tx.voucher.update({
-                            where: {
-                                id: voucherId
-                            },
-                            data: {
-                                currentQuantity: {
-                                    increment: 1
+                        } else {
+                            const voucherExist = await tx.voucher.findUnique({
+                                where: {
+                                    id: voucherId
                                 }
+                            })
+
+                            if (!voucherExist) {
+                                throw new Error('Voucher không tồn tại')
                             }
-                        })
+
+                            await tx.voucher.update({
+                                where: {
+                                    id: voucherId
+                                },
+                                data: {
+                                    currentQuantity: {
+                                        increment: 1
+                                    }
+                                }
+                            })
+                        }
                     })
                 } catch (err) {
                     throw new Error('Lỗi cập nhật voucher')
@@ -719,7 +719,6 @@ export class VoucherService {
                 result: null
             }
         } catch (err) {
-            await this.rollbackUpdateVoucherWhenCancelOrdere(payload)
             return {
                 msg: err?.message || 'Lỗi cập nhật số lượng voucher',
                 action: false,

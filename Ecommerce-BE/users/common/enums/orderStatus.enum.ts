@@ -13,7 +13,8 @@ export enum OrderFlowEnum {
     RE_OPEN_REFUND = 'RE_OPEN_REFUND',
     CLOSE_REFUND = 'CLOSE_REFUND',
     FINISH = 'FINISH',
-    REJECT_CANCEL = 'REJECT_CANCEL'
+    REJECT_CANCEL = 'REJECT_CANCEL',
+    NOT_RECEIVED = 'NOT_RECEIVED'
 }
 
 export const NormalStatus = {

@@ -30,9 +30,9 @@ const Table = function <T extends { id: string }>({
             <TableHeader className='bg-gray-100 sticky top-0'>
                 {table.getHeaderGroups().map((headerGroup) => (
                     <TableRow key={headerGroup.id}>
-                        {headerGroup.headers.map((header) => {
+                        {headerGroup.headers.map((header, idx) => {
                             return (
-                                <TableHead key={uuid()}>
+                                <TableHead key={`table_header_${idx}`}>
                                     {header.isPlaceholder
                                         ? null
                                         : flexRender(header.column.columnDef.header, header.getContext())}
@@ -44,15 +44,15 @@ const Table = function <T extends { id: string }>({
             </TableHeader>
             <TableBody className={bodyClassName}>
                 {table.getRowModel().rows?.length ? (
-                    table.getRowModel().rows.map((row) => (
+                    table.getRowModel().rows.map((row, idx) => (
                         <TableRow
                             onMouseOver={onMouseOverInTableRow && onMouseOverInTableRow(row.original.id)}
                             className='border-none'
-                            key={uuid()}
+                            key={`table_row_${idx}`}
                             data-state={row.getIsSelected() && 'selected'}
                         >
-                            {row.getVisibleCells().map((cell) => (
-                                <TableCell key={uuid()}>
+                            {row.getVisibleCells().map((cell, col_idx) => (
+                                <TableCell key={`table_row_${idx}_col_${col_idx}`}>
                                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                 </TableCell>
                             ))}

@@ -104,7 +104,7 @@ export class StoreService {
     async registerStore(user: CurrentUserType, body: CreateStoreDTO): Promise<Return> {
         const { id } = user
 
-        const { name, description, location, image } = body
+        const { name, description, location, image, tax } = body
 
         const accountExist = await this.prisma.account.findFirst({
             where: {
@@ -128,7 +128,8 @@ export class StoreService {
                         location,
                         status: Status.ACTIVE,
                         createdBy: id,
-                        description
+                        description,
+                        tax
                     }
                 }),
                 tx.storeRole.create({

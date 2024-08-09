@@ -584,15 +584,15 @@ export class OrderService {
 
             if (!orderExist) throw new NotFoundException('Đơn hàng không tồn tại')
 
-            if (
-                status === OrderFlowEnum.CLIENT_CANCEL &&
-                orderExist.status === OrderFlowEnum.FINISH
-            ) {
-                throw new BadRequestException('Không thể hủy đơn hàng đang được vận chuyển')
-            }
-
             if (orderExist.status === OrderFlowEnum.FINISH) {
                 throw new BadRequestException('Không thể cập nhật đơn hàng đã thành công')
+            }
+
+            if (
+                status === OrderFlowEnum.CLIENT_CANCEL &&
+                OrderFlowEnum.SHIPING_SUCCESS == orderExist.status
+            ) {
+                throw new BadRequestException('Không thể hủy đơn khi đơn hàng đã được giao')
             }
 
             let updateStatus = (
@@ -666,8 +666,6 @@ export class OrderService {
                             )
                         ])
 
-                        console.log('update voucher', updatedVoucher)
-
                         if (!updatedProduct.action) {
                             throw new Error(updatedProduct.msg)
                         }
@@ -676,7 +674,6 @@ export class OrderService {
                             throw new Error(updatedVoucher.msg)
                         }
                     } catch (err) {
-                        console.log('error', err)
                         let storeId = orderExist.storeId
                         this.productClient.emit(rollbackUpdateQuantiyProductsWhenCancelOrder, {
                             storeId,
@@ -700,61 +697,55 @@ export class OrderService {
 
                 await this.prisma.$transaction(async (tx) => {
                     try {
-                        await updateStatus(tx, orderId, status)
-                        let arr = []
+                        let order_flows = []
+                        let order_status = status
+                        let order_refund_status = status
+                        order_flows.push(
+                            tx.orderFlow.create({
+                                data: {
+                                    id: uuidv4(),
+                                    createdAt: new Date(),
+                                    createdBy: userId,
+                                    status,
+                                    orderId,
+                                    note
+                                }
+                            })
+                        )
                         if (status === OrderFlowEnum.CLOSE_REFUND) {
-                            arr.push(
-                                ...[OrderFlowEnum.CLOSE_REFUND, OrderFlowEnum.FINISH].map(
-                                    (status) =>
-                                        tx.orderFlow.create({
-                                            data: {
-                                                id: uuidv4(),
-                                                status,
-                                                orderId,
-                                                createdAt:
-                                                    status === OrderFlowEnum.FINISH
-                                                        ? add(new Date(), { seconds: 10 })
-                                                        : new Date(),
-                                                createdBy: userId
-                                            }
-                                        })
-                                )
-                            )
-                            arr.push(
-                                tx.order.update({
-                                    where: {
-                                        id: orderId
-                                    },
+                            order_flows.push(
+                                tx.orderFlow.create({
                                     data: {
-                                        updatedAt: new Date(),
-                                        status: OrderFlowEnum.FINISH
-                                    }
-                                })
-                            )
-                            arr.push(
-                                tx.orderRefund.update({
-                                    where: {
-                                        id: orderRefundId
-                                    },
-                                    data: {
+                                        id: uuidv4(),
                                         status: OrderFlowEnum.FINISH,
-                                        updatedAt: add(new Date(), { seconds: 10 })
+                                        orderId,
+                                        createdAt: add(new Date(), { seconds: 10 }),
+                                        createdBy: userId
                                     }
                                 })
                             )
+                            order_status = OrderFlowEnum.FINISH
+                            order_refund_status = OrderFlowEnum.FINISH
                         }
-
                         await Promise.all([
+                            tx.order.update({
+                                where: {
+                                    id: orderId
+                                },
+                                data: {
+                                    status: order_status
+                                }
+                            }),
                             tx.orderRefund.update({
                                 where: {
                                     id: orderRefundId
                                 },
                                 data: {
-                                    status
+                                    status: order_refund_status
                                 }
-                            }),
-                            ...arr
+                            })
                         ])
+                        await Promise.all(order_flows)
                     } catch (err) {
                         throw new BadRequestException('Cập nhật trạng thái thất bại')
                     }
@@ -766,10 +757,7 @@ export class OrderService {
             }
         } catch (err) {
             console.log('error', err)
-            throw new HttpException(
-                (err?.message as string).length > 100 ? 'Lỗi server' : err?.message || 'Lỗi server',
-                err?.statusCode || 500
-            )
+            throw new HttpException(err?.message, err?.statusCode || 500)
         }
     }
 
@@ -1119,6 +1107,8 @@ export class OrderService {
             )
         }
     }
+
+    async requestComplain() {}
 
     async getOrderStatusByStore(user: CurrentStoreType, orderId: string): Promise<Return> {
         try {

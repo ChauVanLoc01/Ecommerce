@@ -1,21 +1,18 @@
-import { Avatar, Button, Checkbox, Flex, Grid, Spinner, Text, TextArea, TextField } from '@radix-ui/themes'
+import { Flex, Grid, Text, TextArea } from '@radix-ui/themes'
 import { QueryObserverResult, RefetchOptions, useMutation } from '@tanstack/react-query'
-import { ColumnDef } from '@tanstack/react-table'
 import { AxiosError, AxiosResponse, isAxiosError } from 'axios'
 import { format } from 'date-fns'
-import { debounce } from 'lodash'
+import { cloneDeep } from 'lodash'
 import { useEffect, useState } from 'react'
-import { BiSolidSortAlt } from 'react-icons/bi'
 import { FaQuestion } from 'react-icons/fa6'
 import { VerticalTimeline, VerticalTimelineElement } from 'react-vertical-timeline-component'
 import SimpleScrollbar from 'simplebar-react'
 import { toast } from 'sonner'
 import { OrderFetching } from 'src/apis/order'
 import { UploadApi } from 'src/apis/upload_file.api'
-import MultiUploadFile from 'src/components/MultiUploadFile/MultiUploadFile'
-import Table from 'src/components/Table'
+import Avatar from 'src/components/Avatar/Avatar'
 import { defaultFormat } from 'src/constants/date-format'
-import { order_next_flow, OrderFlowEnum, OrderFlowLabel, OrderNextFlowLabel } from 'src/constants/order-status'
+import { order_next_flow, OrderFlowEnum, OrderFlowLabel } from 'src/constants/order-status'
 import {
     CreateOrderRefund,
     OrderDetailResponse,
@@ -25,6 +22,7 @@ import {
 } from 'src/types/order.type'
 import { Return } from 'src/types/return.type'
 import { cn } from 'src/utils/utils.ts'
+import OrderFlowForm from './OrderFlowForm'
 
 type OrderFlowProps = {
     orderData: OrderDetailResponse
@@ -38,17 +36,18 @@ const OrderFlow = ({ orderData, orderRefetch, refetch }: OrderFlowProps) => {
     let { OrderFlow, ProductOrder } = orderData
 
     const [filesRefun, setFilesRefun] = useState<{ files: Map<number, File>; primary?: number }>({ files: new Map() })
-    const [note, setNote] = useState<string>('')
     const [height, setHeight] = useState<number>(0)
     const [orderRefund, setOrderRefund] = useState<
         Omit<CreateOrderRefund, 'productOrders'> & {
-            productOrders: Map<string, Pick<ProductOrder, 'id' | 'quantity'>>
+            productOrders: Map<string, Pick<ProductOrder, 'id' | 'quantity'> & { original_quantity: number }>
         }
     >({
         title: '',
         description: '',
         materials: [],
-        productOrders: new Map(ProductOrder.map(({ quantity, id }) => [id, { id, quantity, note: '' }]))
+        productOrders: new Map(
+            ProductOrder.map(({ quantity, id }) => [id, { id, original_quantity: quantity, quantity, note: '' }])
+        )
     })
     const [checked, setChecked] = useState<Set<string>>(new Set())
     const [updating, setUpdating] = useState<{ id?: number; isUpdating: boolean }>({ isUpdating: false })
@@ -87,16 +86,17 @@ const OrderFlow = ({ orderData, orderRefetch, refetch }: OrderFlowProps) => {
         mutationFn: UploadApi.updateMultipleFile
     })
 
-    const handleUpdateStatusOfOrder = (idx: number, status: OrderFlowEnum, orderRefundId?: string) => () => {
-        setUpdating({ id: idx, isUpdating: true })
-        updateStatusOrderMutation({
-            status,
-            note,
-            orderRefundId
-        }).then(() => setUpdating({ id: idx, isUpdating: false }))
-    }
+    const handleUpdateStatusOfOrder =
+        (idx: number, status: OrderFlowEnum, note: string, orderRefundId?: string) => () => {
+            setUpdating({ id: idx, isUpdating: true })
+            updateStatusOrderMutation({
+                status,
+                note,
+                orderRefundId
+            }).then(() => setUpdating({ id: idx, isUpdating: false }))
+        }
 
-    const handleRequestRefund = (idx: number) => () => {
+    const handleRequestRefund = (idx: number, note: string) => () => {
         if (!checked.size) {
             toast.warning('Bạn cần chọn sản phẩm để hoàn hàng')
             return
@@ -121,7 +121,7 @@ const OrderFlow = ({ orderData, orderRefetch, refetch }: OrderFlowProps) => {
                 })
                 requestRefundMutation({
                     title: 'Yêu cầu hoàn đổi',
-                    description: 'Sản phẩm bị lỗi',
+                    description: note,
                     materials: result.data.result.map((url) => ({ url, type: 'image' })),
                     productOrders
                 })
@@ -141,7 +141,7 @@ const OrderFlow = ({ orderData, orderRefetch, refetch }: OrderFlowProps) => {
         }
     }
 
-    const handleSelectProductRefund = (productOrderId: string, isChecked: boolean) => {
+    const handleSelectProductRefund = (productOrderId: string) => (isChecked: boolean) => {
         setChecked((pre) => {
             if (isChecked) {
                 pre.add(productOrderId)
@@ -152,84 +152,16 @@ const OrderFlow = ({ orderData, orderRefetch, refetch }: OrderFlowProps) => {
         })
     }
 
-    const handleChangeNoteForNormalFlow = debounce((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-        setNote(e.target.value)
-    }, 150)
-
-    const columns: ColumnDef<OrderDetailResponse['ProductOrder'][number]>[] = [
-        {
-            accessorKey: 'Mã đơn hàng',
-            header: () => {
-                return (
-                    <div className='flex items-center gap-x-1'>
-                        <Checkbox
-                            checked={orderRefund.productOrders.size === checked.size}
-                            onCheckedChange={(checked) => handleSelectAll(checked as boolean)}
-                        />
-                    </div>
-                )
-            },
-            cell: ({
-                row: {
-                    original: { id }
-                }
-            }) => (
-                <div>
-                    <Checkbox
-                        checked={checked.has(id)}
-                        onCheckedChange={(checked) => handleSelectProductRefund(id, checked as boolean)}
-                    />
-                </div>
-            )
-        },
-        {
-            accessorKey: 'Image',
-            header: () => {
-                return (
-                    <div className='flex items-center justify-center gap-x-1'>
-                        Hình ảnh
-                        <BiSolidSortAlt />
-                    </div>
-                )
-            },
-            cell: ({
-                row: {
-                    original: { image }
-                }
-            }) => (
-                <Flex justify={'center'} align={'center'}>
-                    <Avatar src={image} fallback={'A'} size={'4'} />
-                </Flex>
-            )
-        },
-        {
-            accessorKey: 'Số lượng',
-            header: () => {
-                return (
-                    <div className='flex items-center justify-center gap-x-1 max-w-20 mx-auto'>
-                        Số lượng
-                        <BiSolidSortAlt />
-                    </div>
-                )
-            },
-            cell: ({
-                row: {
-                    original: { id }
-                }
-            }) => (
-                <Flex justify={'center'} align={'center'} className='text-center'>
-                    <TextField.Root
-                        type='number'
-                        value={orderRefund.productOrders.get(id)?.quantity || 0}
-                        max={orderRefund.productOrders.get(id)?.quantity || 0}
-                        min={0}
-                        disabled={!checked.has(id)}
-                        className='flex-grow max-w-16'
-                    />
-                </Flex>
-            )
-        }
-    ]
+    const handleChangeQuantity = (productId: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
+        let value = +e.target.value.replace(/\D+/, '')
+        setOrderRefund((pre) => {
+            let tmp = pre.productOrders.get(productId)
+            if (tmp) {
+                pre.productOrders.set(productId, { ...tmp, quantity: Math.min(value || 1, tmp?.original_quantity) })
+            }
+            return cloneDeep(pre)
+        })
+    }
 
     useEffect(() => {
         let dataList = document.querySelector('#order-detail-list')
@@ -239,10 +171,6 @@ const OrderFlow = ({ orderData, orderRefetch, refetch }: OrderFlowProps) => {
         }
     }, [])
 
-    useEffect(() => {
-        return () => handleChangeNoteForNormalFlow.cancel()
-    }, [handleChangeNoteForNormalFlow])
-
     return (
         <SimpleScrollbar style={{ maxHeight: `${height}px` }} forceVisible={false}>
             <VerticalTimeline layout='1-column-left' lineColor='#7BB2DE' className='!py-2 !pr-5 !space-y-4'>
@@ -251,13 +179,8 @@ const OrderFlow = ({ orderData, orderRefetch, refetch }: OrderFlowProps) => {
                         let isLast = OrderFlow.length === idx + 1
                         let isRequestRefund = flow.status === OrderFlowEnum.REQUEST_REFUND
                         let orderRefund = isRequestRefund
-                            ? orderData?.OrderRefund.find(
-                                  (refund) =>
-                                      refund.status === OrderFlowEnum.REQUEST_REFUND &&
-                                      flow?.orderRefundId === refund.id
-                              )
+                            ? orderData?.OrderRefund.find((refund) => flow?.orderRefundId === refund.id)
                             : undefined
-                        console.log('orderRefund', orderRefund)
                         return (
                             <VerticalTimelineElement
                                 key={flow.id}
@@ -275,15 +198,24 @@ const OrderFlow = ({ orderData, orderRefetch, refetch }: OrderFlowProps) => {
                                 )}
                             >
                                 <h3>{OrderFlowLabel[flow.status as keyof typeof OrderFlowLabel]}</h3>
+                                {!isRequestRefund && (
+                                    <div>
+                                        <Text size={'2'}>Ghi Chú</Text>
+                                        <TextArea
+                                            value={flow?.note}
+                                            autoComplete='none'
+                                            translate='no'
+                                            className='!bg-[#FAF9FA]'
+                                            disabled
+                                        />
+                                    </div>
+                                )}
+
                                 {isRequestRefund && orderRefund && (
                                     <div className='space-y-3 mt-3'>
                                         <Flex direction={'column'} className='space-y-1'>
-                                            <Text size={'2'}>Tiêu đề</Text>
-                                            <TextField.Root disabled value={orderRefund.title} />
-                                        </Flex>
-                                        <Flex direction={'column'} className='space-y-1'>
                                             <Text size={'2'}>Mô tả chi tiết</Text>
-                                            <TextArea disabled value={orderRefund.description} />
+                                            <TextArea disabled value={orderRefund?.description} />
                                         </Flex>
                                         <Grid columns={'4'} gap={'3'}>
                                             {orderRefund.RefundMaterial.map(({ url }) => (
@@ -315,6 +247,7 @@ const OrderFlow = ({ orderData, orderRefetch, refetch }: OrderFlowProps) => {
                                 OrderFlowEnum.CLOSE_REFUND,
                                 OrderFlowEnum.CANCEL_REFUND
                             ].includes(new_flow)
+                            let isComplain = new_flow === OrderFlowEnum.NOT_RECEIVED
                             let isRequestRefund =
                                 isRefund &&
                                 [
@@ -342,53 +275,25 @@ const OrderFlow = ({ orderData, orderRefetch, refetch }: OrderFlowProps) => {
                                     icon={<FaQuestion />}
                                 >
                                     <div className='space-y-2'>
-                                        <h3>{OrderNextFlowLabel[new_flow as keyof typeof OrderFlowLabel]}</h3>
-                                        <TextArea
-                                            value={note}
-                                            onChange={handleChangeNoteForNormalFlow}
-                                            placeholder={isRefund ? 'Nhập lý do hoàn đổi sản phẩm' : 'Lưu ý của bạn'}
-                                            autoComplete='none'
-                                            translate='no'
-                                            className='!bg-[#FAF9FA]'
+                                        <OrderFlowForm
+                                            ProductOrder={ProductOrder}
+                                            checked={checked}
+                                            filesRefun={filesRefun}
+                                            setFilesRefun={setFilesRefun}
+                                            handleChangeQuantity={handleChangeQuantity}
+                                            handleSelectAll={handleSelectAll}
+                                            handleSelectProductRefund={handleSelectProductRefund}
+                                            isRefund={isRefund}
+                                            isRequestRefund={isRequestRefund}
+                                            new_flow={new_flow}
+                                            orderRefund={orderRefund}
+                                            handleRequestRefund={handleRequestRefund}
+                                            handleUpdateStatusOfOrder={handleUpdateStatusOfOrder}
+                                            id={id}
+                                            orderRefundSorted={orderRefundSorted}
+                                            updating={updating}
+                                            isComplain={isComplain}
                                         />
-
-                                        <div>
-                                            {isRequestRefund && (
-                                                <div className='space-y-5'>
-                                                    <Table<OrderDetailResponse['ProductOrder'][number]>
-                                                        columns={columns}
-                                                        data={ProductOrder}
-                                                        className='w-full h-full !rounded-6 overflow-hidden'
-                                                        bodyClassName='bg-[#FAF9FA]'
-                                                    />
-                                                    <MultiUploadFile
-                                                        min={1}
-                                                        size={3}
-                                                        total={5}
-                                                        files={filesRefun}
-                                                        setFiles={setFilesRefun}
-                                                    />
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        <Flex justify={'end'}>
-                                            <Button
-                                                type='button'
-                                                onClick={
-                                                    isRequestRefund
-                                                        ? handleRequestRefund(id)
-                                                        : handleUpdateStatusOfOrder(
-                                                              id,
-                                                              new_flow,
-                                                              orderRefundSorted[orderRefundSorted.length - 1]?.id
-                                                          ) || ''
-                                                }
-                                            >
-                                                {updating.id == id && updating.isUpdating && <Spinner />}
-                                                {['Xác nhận', 'Yêu cầu hoàn hàng'][+isRequestRefund]}
-                                            </Button>
-                                        </Flex>
                                     </div>
                                 </VerticalTimelineElement>
                             )

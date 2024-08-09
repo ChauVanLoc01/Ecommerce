@@ -1,13 +1,13 @@
-import { Button, Flex, Spinner, TextArea } from '@radix-ui/themes'
 import { format } from 'date-fns'
-import { useState } from 'react'
 import { FaQuestion } from 'react-icons/fa6'
 import { VerticalTimeline, VerticalTimelineElement } from 'react-vertical-timeline-component'
 import SimpleScrollbar from 'simplebar-react'
 import { formatDefault } from 'src/constants/date.constants'
-import { order_next_flow, OrderFlowEnum, OrderFlowLable, OrderNextFlowLable } from 'src/constants/order.status'
+import { order_next_flow, OrderFlowEnum, OrderFlowLable } from 'src/constants/order.status'
 import { OrderFlow as OrderFlowType, OrderRefund } from 'src/types/order.type'
 import { cn } from 'src/utils/utils'
+import OrderFlowForm from './OrderFlowForm'
+import { Text, TextArea } from '@radix-ui/themes'
 
 type OrderFlowProps = {
     orderFlows: OrderFlowType[]
@@ -20,16 +20,6 @@ type OrderFlowProps = {
 }
 
 const OrderFlow = ({ orderFlows, updateStatusOfOrder, orderRefunds, updating }: OrderFlowProps) => {
-    const [note, setNote] = useState<string>('')
-
-    const handleChangeNote = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-        let chanegText = () => {
-            setNote(e.target.value)
-        }
-        document.removeEventListener('focusout', chanegText)
-        document.addEventListener('focusout', chanegText)
-    }
-
     return (
         <SimpleScrollbar style={{ maxHeight: `450px`, width: '100%' }} forceVisible={false}>
             <VerticalTimeline layout='1-column-left' lineColor='#7BB2DE' className='!py-2 !pr-5 !space-y-4'>
@@ -52,6 +42,10 @@ const OrderFlow = ({ orderFlows, updateStatusOfOrder, orderRefunds, updating }: 
                             )}
                         >
                             <h3>{OrderFlowLable[flow.status as keyof typeof OrderFlowLable]}</h3>
+                            <div>
+                                <Text>Ghi Chú</Text>
+                                <TextArea value={flow?.note} autoComplete='none' translate='no' disabled />
+                            </div>
                         </VerticalTimelineElement>
                     )
                 })}
@@ -71,29 +65,14 @@ const OrderFlow = ({ orderFlows, updateStatusOfOrder, orderRefunds, updating }: 
                                 )}
                                 icon={<FaQuestion />}
                             >
-                                <div className='space-y-2'>
-                                    <h3>{OrderNextFlowLable[new_flow as keyof typeof OrderFlowLable]}?</h3>
-                                    <TextArea
-                                        onChange={handleChangeNote}
-                                        placeholder='Ghi chú cho đơn hàng'
-                                        autoComplete='none'
-                                        translate='no'
-                                    />
-                                    <Flex justify={'end'}>
-                                        <Button
-                                            type='button'
-                                            onClick={updateStatusOfOrder(
-                                                id,
-                                                new_flow,
-                                                note,
-                                                orderRefunds[orderRefunds.length - 1]?.id || ''
-                                            )}
-                                        >
-                                            {updating.id === id && updating.isUpdating && <Spinner />}
-                                            Xác nhận
-                                        </Button>
-                                    </Flex>
-                                </div>
+                                <OrderFlowForm
+                                    key={`next_flow_${id}`}
+                                    id={id}
+                                    new_flow={new_flow}
+                                    orderRefunds={orderRefunds}
+                                    updateStatusOfOrder={updateStatusOfOrder}
+                                    updating={updating}
+                                />
                             </VerticalTimelineElement>
                         )
                     )}

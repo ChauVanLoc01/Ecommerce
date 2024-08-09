@@ -17,9 +17,10 @@ export type MultiUploadFileProps = {
         }>
     >
     children?: (total: number, current: number, min: number) => ReactNode
+    className?: string
 }
 
-const MultiUploadFile = ({ total = 10, size = 4, files, min, setFiles, children }: MultiUploadFileProps) => {
+const MultiUploadFile = ({ total = 10, size = 4, files, min, setFiles, children, className }: MultiUploadFileProps) => {
     return (
         <div>
             <Carousel className='w-full'>
@@ -32,12 +33,18 @@ const MultiUploadFile = ({ total = 10, size = 4, files, min, setFiles, children 
                                 data-size={size}
                                 className='data-[size="3"]:basis-1/3 data-[size="4"]:basis-1/4 data-[size="5"]:basis-1/5 data-[size="6"]:basis-1/6 last:mr-0 flex-shrink-0'
                             >
-                                <UploadFile id={idx} files={files} setFiles={setFiles} key={idx} />
+                                <UploadFile
+                                    id={idx}
+                                    files={files}
+                                    setFiles={setFiles}
+                                    key={idx}
+                                    className={className}
+                                />
                             </div>
                         ))}
                 </CarouselContent>
-                <CarouselPrevious type='button' />
-                <CarouselNext type='button' />
+                <CarouselPrevious type='button' className='text-gray-600' />
+                <CarouselNext type='button' className='text-gray-600' />
             </Carousel>
             {children && children(size, files.files.size, Math.min(min, size))}
         </div>

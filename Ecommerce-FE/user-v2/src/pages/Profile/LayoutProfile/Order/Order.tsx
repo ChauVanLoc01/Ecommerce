@@ -112,18 +112,20 @@ const Order = () => {
             accessorKey: 'Trạng thái',
             header: () => {
                 return (
-                    <div className='flex items-center gap-x-2'>
-                        Trạng thái
-                        <BiSolidSortAlt />
-                    </div>
+                    <Flex justify={'center'}>
+                        <div className='flex items-center gap-x-2'>
+                            Trạng thái
+                            <BiSolidSortAlt />
+                        </div>
+                    </Flex>
                 )
             },
             cell: ({ row }) => (
-                <div className='text-left'>
+                <Flex justify={'center'}>
                     <Badge color={(OrderStatus?.[row.original.status]?.color as any) || 'red'} size={'2'}>
                         {OrderStatus?.[row.original.status]?.label}
                     </Badge>
-                </div>
+                </Flex>
             )
         },
         {
@@ -178,6 +180,29 @@ const Order = () => {
                     <Text>{format(row.original.createdAt, 'dd/LL/y')}</Text>
                 </Flex>
             )
+        },
+        {
+            accessorKey: 'Cập nhật',
+            header: () => {
+                return (
+                    <div className='flex justify-center items-center gap-x-2'>
+                        Cập nhật
+                        <BiSolidSortAlt />
+                    </div>
+                )
+            },
+            cell: ({ row }) => {
+                let updatedAt = row.original?.updatedAt
+                if (!updatedAt) {
+                    return <></>
+                }
+                return (
+                    <Flex align={'center'} justify={'center'} direction={'column'}>
+                        <Text>{format(updatedAt, 'HH:mm')}</Text>
+                        <Text>{format(updatedAt, 'dd/LL/y')}</Text>
+                    </Flex>
+                )
+            }
         },
         {
             accessorKey: ' ',
@@ -425,7 +450,7 @@ const Order = () => {
                     columns={columns}
                     data={data?.data.result.data || []}
                     tableMaxHeight='520px'
-                    className='w-[1200px] max-w-[1300px]'
+                    className='w-[1400px] max-w-[1400px]'
                     onMouseOverInTableRow={handleFetchOrderDetailWhenHovering}
                 />
             </Flex>

@@ -1,6 +1,7 @@
 import { CheckIcon, DrawingPinIcon, MoveIcon, TrashIcon, UploadIcon } from '@radix-ui/react-icons'
 import { Flex, IconButton, Tooltip } from '@radix-ui/themes'
 import { useEffect, useRef, useState } from 'react'
+import { cn } from 'src/utils/utils.ts'
 
 type UploadFileProps = {
     id: number
@@ -14,9 +15,10 @@ type UploadFileProps = {
             primary?: number
         }>
     >
+    className?: string
 }
 
-const UploadFile = ({ id, setFiles, files }: UploadFileProps) => {
+const UploadFile = ({ id, setFiles, files, className }: UploadFileProps) => {
     const [url, setUrl] = useState<string | undefined>(undefined)
     const fileRef = useRef<HTMLInputElement | null>(null)
 
@@ -57,7 +59,10 @@ const UploadFile = ({ id, setFiles, files }: UploadFileProps) => {
         <button
             type='button'
             onClick={handleTriggerOpenFile}
-            className='w-full relative h-48 border border-gray-400 rounded-8 border-dashed hover:bg-gray-50 cursor-pointer group overflow-hidden'
+            className={cn(
+                'w-full relative h-48 border border-gray-400 rounded-8 border-dashed hover:bg-gray-50 cursor-pointer group overflow-hidden',
+                className
+            )}
         >
             <div className='relative'>
                 {url ? (

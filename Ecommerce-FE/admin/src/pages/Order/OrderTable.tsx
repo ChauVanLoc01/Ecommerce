@@ -74,7 +74,7 @@ const OrderTable = ({ data, orderListRefetch, analyticOrderStoreRefetching }: Or
         setUpdating({ id, isUpdating: true })
         updateOrderStatusMutation({
             status,
-            note: '',
+            note,
             orderRefundId
         }).then(() => setUpdating({ id, isUpdating: false }))
     }
